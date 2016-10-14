@@ -873,7 +873,6 @@ class processor:
             deletions = self._compute_all_deletions()
             if len(deletions) > self._proc_limit:
                 deletions = sample(deletions, self._proc_limit)
-                assert False, `self._edgelist`
             return (self._subprocessor(d) for d in deletions)
         else:
             return (self._random_subprocessor() for i in xrange(self._proc_limit))
