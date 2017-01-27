@@ -239,6 +239,8 @@ if __name__ == '__main__':
             parser.error("argument --cliquesize: values must be greater than zero")
         if len(args.cliquesize) not in [1, 2]:
             parser.error("argument --cliquesize: expects one or two arguments""")
+        if len(args.cliquesize) == 2:
+            args.bipartite = True
     cliquesize = args.cliquesize
 
     # Check the dimensions of the input graph
