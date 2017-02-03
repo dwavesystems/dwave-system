@@ -16,8 +16,6 @@
 #limitations under the License.
 #
 
-import sys
-import re
 from chimera_embedding import processor
 
 def _to_chimera(M, N, L, q):
@@ -177,13 +175,13 @@ def draw_tikz(proc, emb, spins=None, target=None, midhole=False, hues=None, colo
     if target is None:
         os.system("pdflatex .chimera_drawing_temp_dir/chimera.tex > /dev/null")
 
-_usage_text = """Polynomial-time 'ell' clique embedder
-Usage:
-    python %s [options]
+_description = """Polynomial-time 'ell' clique embedder.
+
 Computes a native clique embedding, either reading a coupler list from
 stdin (default) or from file.  If reading from stdin, prints the
-embedding to stdout; otherwise the embedding is written to file.
+embedding to stdout; otherwise the embedding is written to file. """
 
+_erata = """
 Input format:
 A list of couplers, one on each line.  Qubits are specified as linear
 indices, separated by a single space or a single comma. Note: the size
@@ -193,82 +191,99 @@ Output format:
 Each line is a comma-separated list of qubits, specified as linear indices
 corresponding to chains in the embedding.  Lines are arranged so that
 each qubit is adjacent to the next.
-
-Options:
-    cliquesize=n[,m]: makes a n-clique or barfs if I can't find one.  m must
-        only be specified when looking for a biclique (if unspecified, m=n).
-    chainlength=k: all chains have length k (or barf)
-    file=xyz: read the couplers from the file xyz, and save output to xyz.out
-    dim=M[,N[,L]]: using a subgraph of C_{M,M,4}, C_{M,N,4} or C_{M,N,L}
-    draw: draws the embedding in the file 'chimera.pdf'
-    bipartite: finds the largest complete balanced bipartite embedding, where
-        the 'cliquesize' parameter specifies the sizes of the parts and
-        'chainlength' is the maximum chain length
-    help: you're looking at it"""
+"""
 
 if __name__ == '__main__':
-    if 'help' in sys.argv or '-h' in sys.argv or 'h' in sys.argv or '--help' in sys.argv:
-        print _usage_text % sys.argv[0]
-        sys.exit()
+    import argparse
+    import sys
 
-    chainlength = cliquesize = None
-    draw = False
-    filename = None
+    # Define the argument format
+    parser = argparse.ArgumentParser(
+        description=_description,
+        epilog=_erata,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument('-l', '--chainlength', type=int, metavar='k',
+        help="all chains have length k", dest='chainlength')
+
+    parser.add_argument('-c', '--cliquesize', nargs='+', type=int, metavar=('n', 'm'), dest='cliquesize',
+        help="Takes 1 or 2 values. Makes a n-clique or fails.  m must only be specified when looking for a biclique (if unspecified, m=n).")
+
+    parser.add_argument('--dim', nargs='+', type=int, metavar=('M', 'N'),
+        help="Takes 1, 2, or 3 values. Sets the shape of the chimera subgraph to C_{M,M,4}, C_{M,N,4} or C_{M,N,L}", default=[], dest='dim')
+
+    parser.add_argument('-i', '--infile', type=argparse.FileType('r'), dest='infile', default='-',
+        help="Read the couplers from the file")
+
+    parser.add_argument('-o', '--outfile', type=argparse.FileType('w'), dest='outfile', default=None,
+        help="Writes embedding to this file. With an input file defaults to INFILE.out, otherwise stdout.")
+
+    parser.add_argument('--draw', action='store_true', dest='draw', default=False,
+        help="Draws the embedding in the file 'chimera.pdf'")
+
+    parser.add_argument('--bipartite', action='store_true', dest='bipartite', default=False,
+        help="finds the largest complete balanced bipartite embedding")
+
+    # This actually parses the sys.argv list
+    args = parser.parse_args()
+    # Some value testing is done by the parser, but we are going to do a little more.
+
+    # Check the chainlength
+    if args.chainlength and args.chainlength <= 0:
+        parser.error("argument --chainlength: must be greater than zero.")
+    chainlength = args.chainlength
+
+    # Check the cliquesize
+    if args.cliquesize:
+        if any(map(lambda c: c <= 0, args.cliquesize)):
+            parser.error("argument --cliquesize: values must be greater than zero")
+        if len(args.cliquesize) not in [1, 2]:
+            parser.error("argument --cliquesize: expects one or two arguments""")
+        if len(args.cliquesize) == 2:
+            args.bipartite = True
+    cliquesize = args.cliquesize
+
+    # Check the dimensions of the input graph
     dim = None
-    bipartite = False
-    for arg in sys.argv[1:]:
-        cl = re.match('chainlength=(\\d+)', arg)
-        if cl:
-            chainlength = int(cl.group(1))
+    if args.dim:
+        if any(map(lambda c: c <= 0, args.dim)):
+            parser.error("argument --dim: values must be greater than zero")
+        if len(args.dim) not in [1, 2, 3]:
+            parser.error("argument --dim: expects one to three arguments""")
 
-        cs = re.match('cliquesize=(\\d+)(|,(\\d+))', arg)
-        if cs:
-            cliquesize = int(cs.group(1))
-            cliquesize_2 = cs.group(3)
-            if cliquesize_2 is not None:
-                cliquesize_2 = cliquesize
-            else:
-                cliquesize_2 = int(cliquesize_2)
+        dim = args.dim
+        if len(dim) == 1:
+            dim.append(dim[0])
+        if len(dim) == 2:
+            dim.append(4)
 
-        if arg == 'bipartite':
-            bipartite = True
+    # Check the output file
+    if args.outfile is None:
+        if not args.infile or args.infile == sys.stdin:
+            args.outfile = sys.stdout
+        else:
+            args.outfile = open(args.infile.name + '.out', 'w')
 
-        cs = re.match('file=(.+)', arg)
-        if cs:
-            filename = cs.group(1)
+    # Read in our adjacency file as a series of lines
+    txt = args.infile.readlines()
 
-        d = re.match('dim=(.+)', arg)
-        if d:
-            dim = d.group(1).split(',')
-            if len(dim) == 1:
-                dim = int(dim[0]), int(dim[0]), 4
-            elif len(dim) == 2:
-                dim = int(dim[0]), int(dim[1]), 4
-            else:
-                dim = map(int, dim)
-
-        if arg == 'draw':
-            draw = True
-
-    if filename is None:
-        txt = sys.stdin.read().split("\n")
-    else:
-        txt = open(filename).read().split("\n")
-
+    # Parse the input file
     edges = []
     for coupler in txt:
-        if not coupler:
+        coupler = coupler.strip()
+        if len(coupler) == 0:
             continue
         elif coupler.count(' ') == 1:
             a, b = coupler.split()
         elif coupler.count(',') == 1:
             a, b = coupler.split(",")
         else:
-            err = "file should contain a list of couplers in the format 'x,y' or 'x y' where x and y are integers"
+            err = "infile should contain a list of couplers in the format 'x,y' or 'x y' where x and y are integers"
             raise RuntimeError(err)
         a, b = int(a), int(b)
         edges.append((a, b))
 
+    # If the dimension of the input graph was not set guess it based on the adjacency
     if dim is None:
         q = max(map(max, edges))
         if q < 512:
@@ -281,13 +296,15 @@ if __name__ == '__main__':
     else:
         M, N, L = dim
 
+    # Initialize our model of the functional chimera graph of the D-Wave chip provided
     proc = processor(edges, M=M, N=N, L=L)
     emb = []
 
-    if bipartite:
+    # Make the appropriate call to the
+    if args.bipartite:
         if cliquesize is not None:
             A, B = proc.tightestNativeBiClique(
-                cliquesize, m=cliquesize_2, chain_imbalance=None, max_chain_length=chainlength)
+                cliquesize[0], m=cliquesize[-1], chain_imbalance=None, max_chain_length=chainlength)
             emb = A + B
         elif chainlength is not None:
             emb = proc.largestNativeBiClique(
@@ -298,27 +315,24 @@ if __name__ == '__main__':
         if chainlength is not None:
             emb = proc.nativeCliqueEmbed(chainlength - 1)
         elif cliquesize is not None:
-            emb = proc.tightestNativeClique(cliquesize)
+            emb = proc.tightestNativeClique(cliquesize[0])
         else:
             emb = proc.largestNativeClique()
 
     if cliquesize is not None:
-        if bipartite:
-            if len(emb) < cliquesize + cliquesize_2:
-                raise RuntimeError("Failed to obtain a K_{%s,%s}" % (
-                    cliquesize, cliquesize_2))
+        if args.bipartite:
+            if len(emb) < cliquesize[0] + cliquesize[-1]:
+                raise RuntimeError("Failed to obtain a K_{%s,%s}" % (cliquesize[0], cliquesize[-1]))
         else:
-            if len(emb) < cliquesize:
+            if len(emb) < cliquesize[0]:
                 raise RuntimeError(
-                    "Failed to obtain a %s-clique with chainlength %s" % (cliquesize, chainlength))
+                    "Failed to obtain a %s-clique with chainlength %s" % (cliquesize[0], chainlength))
             else:
-                emb = emb[:cliquesize]
+                emb = emb[:cliquesize[0]]
 
-    if draw:
+    if args.draw:
         draw_tikz(proc, emb)
 
+    # Encode and print our output
     out = "\n".join(",".join(map(str, c)) for c in emb) + '\n'
-    if filename is None:
-        print out
-    else:
-        open(filename + '.out', 'w').write(out)
+    args.outfile.write(out)
