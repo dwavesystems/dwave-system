@@ -44,11 +44,11 @@ def draw_tikz(proc, emb, spins=None, target=None, midhole=False, hues=None, colo
 
     def xcoord(q):
         x, y, u, k = q
-        return (L + 2) * x + shift(L / 2. - k - .5) * u
+        return (L + 2) * y + shift(k - L / 2. + .5) * (1-u)
 
     def ycoord(q):
         x, y, u, k = q
-        return (L + 2) * y + shift(L / 2. - k - .5) * (1 - u)
+        return -( (L + 2) * x + shift(k - L / 2. + .5) * u )
 
     def label(q):
         x, y, u, k = q
