@@ -9,14 +9,43 @@ except ImportError:  # pragma: no cover
 
 
 class DWaveMicroClient(dimod.TemplateSampler):
+    """dimod wrapper for a D-Wave Micro Client.
+
+    Args:
+        name (str): Id of the requested solver. None will return the
+            default solver.
+        url (str): URL of the SAPI server.
+        token (str): Authentication token from the SAPI server.
+        proxies (dict): Mapping from the connection scheme (http[s]) to
+            the proxy server address.
+        permissive_ssl (boolean; false by default): Disables SSL
+            verification.
+
+    Attributes:
+        structure (tuple): (nodes, edges), the set of nodes and edges
+            available to the solver.
+
+    """
 
     def __init__(self, solver_name=None, url=None, token=None, proxies=None, permissive_ssl=False):
         self.connection = connection = micro.Connection(url, token, proxies, permissive_ssl)
         self.solver = solver = connection.get_solver(solver_name)
 
+        self.structure = (solver.nodes, solver.edges)
+
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, linear, quadratic, **kwargs):
+        """Sample from the provided Ising model.
 
+        Args:
+            linear (list/dict): Linear terms of the model.
+            quadratic (dict of (int, int):float): Quadratic terms of the model.
+            **kwargs: Parameters for the sampling method, specified per solver.
+
+        Returns:
+            :obj:`SpinResponse`
+
+        """
         future = self.solver.sample_ising(linear, quadratic, **kwargs)
 
         # for now we just wait until the future is done and immediatly load into dimod response
