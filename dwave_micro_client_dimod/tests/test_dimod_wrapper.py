@@ -31,27 +31,27 @@ class TestDWaveMicroClientWithMock(unittest.TestCase):
         mock_Connection.assert_called_with('url', 'token', None, False)
         mock_connection.get_solver.assert_called_with('solvername')
 
-    @mock.patch("dwave_micro_client_dimod.dimod_wrapper.micro.Connection")
-    def test_sample_ising(self, mock_Connection):
+    # @mock.patch("dwave_micro_client_dimod.dimod_wrapper.micro.Connection")
+    # def test_sample_ising(self, mock_Connection):
 
-        sampler = microdimod.DWaveMicroClient('solvername', 'url', 'token')
+    #     sampler = microdimod.DWaveMicroClient('solvername', 'url', 'token')
 
-        # just overwrite the solver parameter
-        sampler.solver = mock.Mock()
+    #     # just overwrite the solver parameter
+    #     sampler.solver = mock.Mock()
 
-        h = {0: -1., 1: 2}
-        J = {(0, 1): 1.5}
+    #     h = {0: -1., 1: 2}
+    #     J = {(0, 1): 1.5}
 
-        sampler.sample_ising(h, J)
+    #     sampler.sample_ising(h, J)
 
-        sampler.sample_ising(h, J, kwrd='hello')
+    #     sampler.sample_ising(h, J, kwrd='hello')
 
-        h = {'a': -1., 1: 2}
-        J = {('a', 1): 1.5}
+    #     h = {'a': -1., 1: 2}
+    #     J = {('a', 1): 1.5}
 
-        sampler.sample_ising(h, J)
+    #     sampler.sample_ising(h, J)
 
-        sampler.sample_ising(h, J, kwrd='hello')
+    #     sampler.sample_ising(h, J, kwrd='hello')
 
 
 @unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
