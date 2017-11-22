@@ -22,7 +22,7 @@ class DWaveMicroClient(dimod.TemplateSampler):
             verification.
 
     Attributes:
-        structure (tuple): (nodes, edges), the set of nodes and edges
+        structure (tuple): (nodes, edges, adjency dict), the set of nodes, edges and adjeceny matrix (as a dict)
             available to the solver.
 
     """
@@ -30,8 +30,15 @@ class DWaveMicroClient(dimod.TemplateSampler):
     def __init__(self, solver_name=None, url=None, token=None, proxies=None, permissive_ssl=False):
         self.connection = connection = micro.Connection(url, token, proxies, permissive_ssl)
         self.solver = solver = connection.get_solver(solver_name)
+        self.name = solver_name
 
-        self.structure = (solver.nodes, solver.edges)
+        #initilize dict
+        adj = {node: set() for node in solver.nodes}
+
+        for edge in solver.edges:
+            adj[edge[0]].add(edge[1])
+
+        self.structure = (solver.nodes, solver.edges, adj)
 
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, linear, quadratic, **kwargs):
