@@ -3,7 +3,7 @@ import unittest
 import networkx as nx
 import dwave_networkx as dnx
 
-import dwave_virtual_graph as dvg
+import dwave_virtual_graph as vg
 
 
 class TestGetEmbedding(unittest.TestCase):
@@ -14,4 +14,4 @@ class TestGetEmbedding(unittest.TestCase):
         source_graph = nx.Graph()
         source_graph.add_edges_from([('a', 'b'), ('b', 'c'), ('a', 'c')])
 
-        dvg.get_embedding(source_graph.edges, target_graph.edges)
+        vg.get_embedding(source_graph.edges, target_graph.edges)

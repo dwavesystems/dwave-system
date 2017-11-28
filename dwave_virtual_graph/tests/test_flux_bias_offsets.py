@@ -1,6 +1,6 @@
 import unittest
 
-import dwave_virtual_graph as dvg
+import dwave_virtual_graph as vg
 
 
 class TestCalculator(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestCalculator(unittest.TestCase):
         sampler = ''  # to be replaced later
         embedding = {'a': {0, 5}, 'b': {1, 4}}
 
-        flux_biases = dvg.get_flux_biases(sampler, embedding)
+        flux_biases = vg.get_flux_biases(sampler, embedding)
 
         for chain in embedding.values():
             for s in chain:
