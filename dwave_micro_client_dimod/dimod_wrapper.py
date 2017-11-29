@@ -35,6 +35,7 @@ class DWaveMicroClient(dimod.TemplateSampler):
         #initilize dict
         adj = {node: set() for node in solver.nodes}
 
+        # add neighbors.  edges is bi-directional so don't need to add it twice here.
         for edge in solver.edges:
             adj[edge[0]].add(edge[1])
 
