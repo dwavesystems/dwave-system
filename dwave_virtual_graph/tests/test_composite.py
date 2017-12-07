@@ -23,7 +23,7 @@ class MockSampler(dimod.TemplateComposite):
 
         self.name = 'mock_sampler'
 
-    def sample_ising(self, h, J, **kwargs):
+    def sample_ising(self, h, J, flux_biases=None, **kwargs):
         nodes, edges, __ = self.structure
 
         # check that h, J fulfill the structure

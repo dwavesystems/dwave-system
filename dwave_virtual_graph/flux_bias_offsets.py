@@ -1,7 +1,7 @@
 import itertools
 
 
-def get_flux_biases(sampler, embedding,
+def get_flux_biases(chain_biases, J,
                     min_offset=-4e-5, max_offset=4e-5):
     """todo
 
@@ -10,5 +10,9 @@ def get_flux_biases(sampler, embedding,
         target problem.
 
     """
-    # for now always return 0
-    return {v: 0. for v in itertools.chain(*embedding.values())}
+    # placeholder
+    return {v: 0.0 for v in chain_biases}
+
+
+def get_chain_biases(sampler, chains):
+    raise NotImplementedError
