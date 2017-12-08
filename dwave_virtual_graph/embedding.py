@@ -1,6 +1,7 @@
-from dwave_virtual_graph.exceptions import MissingEmbedding
-
 import minorminer
+
+from dwave_virtual_graph.exceptions import MissingEmbedding
+from dwave_virtual_graph.database_manager import select_embedding
 
 
 def get_embedding(source_edges, target_edges):
@@ -17,12 +18,16 @@ def get_embedding(source_edges, target_edges):
         target.
 
     """
-    # for now let's just always generate on the fly
-    embedding = minorminer.find_embedding(source_edges, target_edges)
 
-    # this should change in later versions
-    if isinstance(embedding, list):
-        embedding = dict(enumerate(embedding))
+    embedding = select_embedding(source_edges, target_edges)
+
+    if embedding is None:
+        # for now let's just always generate on the fly
+        embedding = minorminer.find_embedding(source_edges, target_edges)
+
+        # this should change in later versions
+        if isinstance(embedding, list):
+            embedding = dict(enumerate(embedding))
 
     return embedding
 
