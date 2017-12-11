@@ -1,7 +1,7 @@
 import minorminer
 
 from dwave_virtual_graph.exceptions import MissingEmbedding
-from dwave_virtual_graph.database_manager import select_embedding
+# from dwave_virtual_graph.database_manager import select_embedding
 
 
 def get_embedding(source_edges, target_edges):

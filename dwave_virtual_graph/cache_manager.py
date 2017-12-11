@@ -8,7 +8,7 @@ __all__ = ['cache_file']
 
 APPNAME = 'dwave-virtual-graph'
 APPAUTHOR = 'dwave-systems'
-DATABASENAME = 'cache_%s.db' % __version__
+DATABASENAME = 'virtual_graph_cache_v%s.db' % __version__
 
 
 def cache_file(app_name=APPNAME, app_author=APPAUTHOR, filename=DATABASENAME):
@@ -27,5 +27,5 @@ def cache_file(app_name=APPNAME, app_author=APPAUTHOR, filename=DATABASENAME):
         Creates the directory if it does not already exist.
 
     """
-    user_data_dir = homebase.user_data_dir(app_name=APPNAME, app_author=APPAUTHOR, create=True)
-    return os.path.join(user_data_dir, DATABASENAME)
+    user_data_dir = homebase.user_data_dir(app_name=app_name, app_author=app_author, create=True)
+    return os.path.join(user_data_dir, filename)
