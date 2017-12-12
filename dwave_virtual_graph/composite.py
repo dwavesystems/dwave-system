@@ -109,6 +109,7 @@ class VirtualGraph(dimod.TemplateComposite):
 
     @property
     def chain_biases(self):
+        # to be replaced
         return {v: 0. for v in itertools.chain(*self.embedding.values())}
 
 

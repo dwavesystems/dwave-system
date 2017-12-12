@@ -4,38 +4,12 @@ import dimod
 import dwave_networkx as dnx
 
 import dwave_virtual_graph as vg
-
-
-class MockSampler(dimod.TemplateComposite):
-    """Impose a structure on an unstructured software solver."""
-    def __init__(self, sampler):
-        # puts sampler into self.children
-        dimod.TemplateComposite.__init__(self, sampler)
-
-        self._child = sampler  # faster access than self.children[0]
-
-        chimera = dnx.chimera_graph(4, 4, 4)
-
-        adj = {v: set(chimera[v]) for v in chimera}
-
-        # enforce a structure
-        self.structure = (list(sorted(chimera.nodes)), list(sorted(chimera.edges)), adj)
-
-        self.name = 'mock_sampler'
-
-    def sample_ising(self, h, J, flux_biases=None, **kwargs):
-        nodes, edges, __ = self.structure
-
-        # check that h, J fulfill the structure
-        assert all(v in nodes for v in h)
-        assert all((u, v) in edges or (v, u) in edges for u, v in J)
-
-        return self._child.sample_ising(h, J, **kwargs)
+from dwave_virtual_graph.tests.mock_sampler import MockSampler
 
 
 class TestComposite(unittest.TestCase):
     def setUp(self):
-        self.sampler = MockSampler(dimod.SimulatedAnnealingSampler())
+        self.sampler = MockSampler()
 
     def test_instantiation(self):
         """Create a composed sampler user VirtualGraph. Make sure everything
