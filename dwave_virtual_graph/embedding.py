@@ -19,7 +19,8 @@ def get_embedding(source_edges, target_edges):
 
     """
 
-    embedding = select_embedding(source_edges, target_edges)
+    embedding = None
+    # embedding = select_embedding(source_edges, target_edges)
 
     if embedding is None:
         # for now let's just always generate on the fly
