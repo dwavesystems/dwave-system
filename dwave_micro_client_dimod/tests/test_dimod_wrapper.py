@@ -66,7 +66,7 @@ class TestDWaveMicroClientWithMock(unittest.TestCase):
 @unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
 class TestDWaveMicroClient(unittest.TestCase):
     """Tests that require an actual connection. Basically just a sanity
-    chcek, everything else should be handled by mock."""
+    check, everything else should be handled by mock."""
 
     def setUp(self):
         self.sampler = microdimod.DWaveMicroClient('c4-sw_optimize')
@@ -77,7 +77,7 @@ class TestDWaveMicroClient(unittest.TestCase):
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
 
-        response = sampler.sample_ising(h, J)
+        response = sampler.sample_ising(h, J).get_response()
 
         # nothing failed and we got at least one response back
         self.assertGreaterEqual(len(response), 1)
@@ -88,7 +88,8 @@ class TestDWaveMicroClient(unittest.TestCase):
 
         # rerun without numpy
         microdimod.dimod_wrapper._numpy = False
-        response = sampler.sample_ising(h, J)
+        response = sampler.sample_ising(h, J).get_response()
+
         microdimod.dimod_wrapper._numpy = True
 
         # nothing failed and we got at least one response back
@@ -103,13 +104,13 @@ class TestDWaveMicroClient(unittest.TestCase):
 
         Q = {(0, 0): .1, (0, 4): -.8, (4, 4): 1}
 
-        response = sampler.sample_qubo(Q)
+        response = sampler.sample_qubo(Q).get_qubo_response()
 
         # nothing failed and we got at least one response back
         self.assertGreaterEqual(len(response), 1)
 
         microdimod.dimod_wrapper._numpy = False
-        response = sampler.sample_qubo(Q)
+        response = sampler.sample_qubo(Q).get_qubo_response()
         microdimod.dimod_wrapper._numpy = True
 
         # nothing failed and we got at least one response back
