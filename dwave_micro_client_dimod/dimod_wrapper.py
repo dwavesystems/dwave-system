@@ -1,13 +1,11 @@
 import dimod
 import dwave_micro_client as micro
-from dimod.responses.response import TemplateResponse
-from dimod.utilities import qubo_to_ising
+import dimod
 
 try:
     import numpy as np
-
     _numpy = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _numpy = False
 
 
@@ -80,7 +78,7 @@ class DWaveMicroClient(dimod.TemplateSampler):
             :obj:`ResponseFuture`:
 
         """
-        h, J, offset = qubo_to_ising(Q)
+        h, J, offset = dimod.qubo_to_ising(Q)
 
         future = self.solver.sample_ising(h, J, **kwargs)
         future_response = ResponseFuture(future=future, offset=offset)
@@ -88,7 +86,7 @@ class DWaveMicroClient(dimod.TemplateSampler):
         return future_response
 
 
-class ResponseFuture(TemplateResponse):
+class ResponseFuture(dimod.TemplateResponse):
 
     """
         Delays blocking until get_response is called.

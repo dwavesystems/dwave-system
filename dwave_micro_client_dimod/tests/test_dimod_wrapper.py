@@ -86,12 +86,6 @@ class TestDWaveMicroClient(unittest.TestCase):
             for v in h:
                 self.assertIn(v, sample)
 
-        # rerun without numpy
-        microdimod.dimod_wrapper._numpy = False
-        response = sampler.sample_ising(h, J).get_response()
-
-        microdimod.dimod_wrapper._numpy = True
-
         # nothing failed and we got at least one response back
         self.assertGreaterEqual(len(response), 1)
 
