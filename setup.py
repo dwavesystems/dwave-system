@@ -13,9 +13,11 @@ else:
     exec(open("./dwave_micro_client_dimod/package_info.py").read())
 
 install_requires = ['dimod==0.5.0.dev1',
-                    'dwave_micro_client==0.1']
-tests_require = []
-extras_require = {}
+                    'dwave_micro_client==0.1',
+                    'minorminer==0.1.0.dev1']
+tests_require = ['numpy']
+extras_require = {'all': ['numpy'],
+                  'tests': tests_require}
 
 packages = ['dwave_micro_client_dimod']
 
