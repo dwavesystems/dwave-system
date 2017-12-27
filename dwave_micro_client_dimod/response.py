@@ -1,3 +1,7 @@
+"""
+FutureResponse
+==============
+"""
 import dimod
 import dwave_micro_client as microclient
 

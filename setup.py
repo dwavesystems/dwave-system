@@ -18,7 +18,8 @@ install_requires = ['dimod==0.5.0.dev1',
                     'dwave_embedding_utilities']
 tests_require = ['numpy', 'coverage']
 extras_require = {'all': ['numpy'],
-                  'tests': tests_require}
+                  'tests': tests_require,
+                  'docs': ['sphinx', 'sphinx_rtd_theme', 'recommonmark']}
 
 packages = ['dwave_micro_client_dimod']
 

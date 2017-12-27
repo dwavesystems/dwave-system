@@ -1,3 +1,7 @@
+"""
+EmbeddingComposite
+==================
+"""
 import itertools
 
 import dimod
