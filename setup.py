@@ -14,7 +14,8 @@ else:
 
 install_requires = ['dimod==0.5.0.dev1',
                     'dwave_micro_client==0.1',
-                    'minorminer==0.1.0.dev1']
+                    'minorminer==0.1.0.dev1',
+                    'dwave_embedding_utilities']
 tests_require = ['numpy', 'coverage']
 extras_require = {'all': ['numpy'],
                   'tests': tests_require}
