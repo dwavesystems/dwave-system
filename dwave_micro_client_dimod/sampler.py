@@ -1,8 +1,10 @@
 import dimod
-import dwave_micro_client as micro
+import dwave_micro_client as microclient
+
+from dwave_micro_client_dimod.response import FutureResponse
 
 
-class DWaveMicroClient(dimod.TemplateSampler):
+class DWaveSampler(dimod.TemplateSampler):
     """dimod wrapper for a D-Wave Micro Client.
 
     Args:
@@ -22,18 +24,31 @@ class DWaveMicroClient(dimod.TemplateSampler):
     """
 
     def __init__(self, solver_name=None, url=None, token=None, proxies=None, permissive_ssl=False):
-        self.connection = connection = micro.Connection(url, token, proxies, permissive_ssl)
+        self.connection = connection = microclient.Connection(url, token, proxies, permissive_ssl)
         self.solver = solver = connection.get_solver(solver_name)
         self.name = solver_name
 
-        # initilize dict
+        # initilize adj dict
         adj = {node: set() for node in solver.nodes}
 
-        # add neighbors.  edges is bi-directional so don't need to add it twice here.
-        for edge in solver.edges:
-            adj[edge[0]].add(edge[1])
+        # add neighbors. edges is bi-directional so don't need to add it twice here.
+        for u, v in solver.edges:
+            adj[u].add(v)
 
-        self.structure = (solver.nodes, solver.edges, adj)
+        # nodelist, make a new list and ensure that it's sorted
+        nodelist = sorted(solver.nodes)
+
+        # edgelist, make a new list (and remove doubled edges)
+        edgelist = sorted((u, v) for u, v in solver.edges if u <= v)  # all index-labeled
+
+        self.structure = (nodelist, edgelist, adj)
+
+    def my_kwargs(self):
+        kwargs = dimod.TemplateSampler.my_kwargs(self)
+        for param in self.solver.parameters:
+            # this should be replaced by more complete info later
+            kwargs[param] = dimod.SamplerKeywordArg(param)
+        return kwargs
 
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, linear, quadratic, **kwargs):
@@ -49,9 +64,17 @@ class DWaveMicroClient(dimod.TemplateSampler):
 
         """
         future = self.solver.sample_ising(linear, quadratic, **kwargs)
+        response = FutureResponse(vartype=dimod.Vartype.SPIN)
+        response.add_samples_future(future)
 
-        raise NotImplementedError
+        return response
 
-        future_response = ResponseFuture(future=future)
+    @dimod.decorators.qubo(1)
+    def sample_qubo(self, Q, **kwargs):
+        """
+        """
+        future = self.solver.sample_qubo(Q, **kwargs)
+        response = FutureResponse(vartype=dimod.Vartype.BINARY)
+        response.add_samples_future(future)
 
-        return future_response
+        return response
