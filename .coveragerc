@@ -1,17 +1,7 @@
 [run]
-# omit virtualenv and test files
 omit = venv/*, */tests/*
+source = dwave_micro_client_dimod
 
 [report]
 exclude_lines:
     pragma: no cover
-
-    # ignore python2/3 stuff
-    iteritems = lambda d: d.items()
-    iteritems = lambda d: d.iteritems() 
-    iterkeys = lambda d: d.keys()
-    iterkeys = lambda d: d.iterkeys()
-    range = xrange
-    zip = itertools.izip
-    itervalues = lambda d: d.itervalues()
-    itervalues = lambda d: d.values()
