@@ -194,7 +194,8 @@ epub_exclude_files = ['search.html']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/3': None,
-                       'http://dwave-micro-client.readthedocs.io/en/latest': None}
+                       'http://dwave-micro-client.readthedocs.io/en/latest': None,
+                       'http://dimod.readthedocs.io/en/latest/': None}
 
 
 # sort documentation they way the appear in the source file

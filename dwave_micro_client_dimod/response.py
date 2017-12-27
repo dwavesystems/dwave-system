@@ -7,19 +7,37 @@ import dwave_micro_client as microclient
 
 
 class FutureResponse(dimod.TemplateResponse):
-    """
-        Delays blocking until get_response is called.
-        TODO: Add function for returning an iterator that only blocks if no results are ready
+    """A response object for async samples added to it.
+
+    Args:
+        info (dict): Information about the response as a whole.
+        vartype (:class:`dimod.Vartype`): The values that the variables in
+            each sample can take. See :class:`dimod.Vartype`.
+
     """
     def __init__(self, info=None, vartype=None):
         dimod.TemplateResponse.__init__(self, info, vartype)
         self._futures = []
 
     def add_samples_future(self, future):
+        """Add samples from a micro client Future.
+
+        Args:
+            future (:class:`dwave_micro_client.Future`):
+                A Future from the dwave_micro_client.
+
+        """
         self._futures.append(future)
 
     @property
     def datalist(self):
+        """
+        list: The data in order of insertion. Each datum
+        in data is a dict containing 'sample', 'energy', and
+        'num_occurences' keys as well an any other information added
+        on insert. This attribute should be treated as read-only, as
+        changing it can break the response's internal logic.
+        """
         futures = self._futures
 
         while futures:
