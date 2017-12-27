@@ -1,3 +1,5 @@
+import dimod
+
 class ResponseFuture(dimod.TemplateResponse):
 
     """
