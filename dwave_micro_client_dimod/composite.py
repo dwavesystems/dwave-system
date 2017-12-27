@@ -10,6 +10,13 @@ import minorminer
 
 
 class EmbeddingComposite(dimod.TemplateComposite):
+    """Composite to map unstructured problems to a structured sampler.
+
+    Args:
+        sampler (:class:`dimod.TemplateSampler`):
+            A structured dimod sampler to be wrapped.
+
+    """
     def __init__(self, sampler):
         # The composite __init__ adds the sampler into self.children
         dimod.TemplateComposite.__init__(self, sampler)
@@ -17,7 +24,16 @@ class EmbeddingComposite(dimod.TemplateComposite):
 
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, **kwargs):
-        """
+        """Sample from the provided unstructured Ising model.
+
+        Args:
+            h (list/dict): Linear terms of the model.
+            J (dict of (int, int):float): Quadratic terms of the model.
+            **kwargs: Parameters for the sampling method, specified per solver.
+
+        Returns:
+            :class:`dimod.SpinResponse`
+
         """
         # solve the problem on the child system
         child = self._child
