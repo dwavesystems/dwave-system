@@ -1,51 +1,68 @@
 import dimod
+import dwave_micro_client as microclient
 
-class ResponseFuture(dimod.TemplateResponse):
 
+class FutureResponse(dimod.TemplateResponse):
     """
         Delays blocking until get_response is called.
         TODO: Add function for returning an iterator that only blocks if no results are ready
     """
-    def __init__(self, future=None, offset=None):
-        if future is None:
-            raise ValueError("Given future can't be None")
+    def __init__(self, info=None, vartype=None):
+        dimod.TemplateResponse.__init__(self, info, vartype)
+        self._futures = []
 
-        self.future = future
-        self.offset = offset
+    def add_samples_future(self, future):
+        self._futures.append(future)
 
-    def get_response(self):
-        """Returns a spin response object (numpy compatible or not depending on if numpy is installed"""
+    @property
+    def datalist(self):
+        futures = self._futures
 
-        # for now we just wait until the future is done and immediatly load into dimod response
-        if _numpy:
-            response = dimod.NumpySpinResponse()
+        while futures:
+            # wait for at least one future to be done
+            microclient.Future.wait_multiple(futures, min_done=1)
+            waiting = []
 
-            # get the samples in an array
-            samples = np.asarray(self.future.samples)
-            energies = np.asarray(self.future.energies)
+            for future in futures:
+                if future.done():
+                    # we have a response! add it to datalist
+                    self._add_data_from_future(future)
+                else:
+                    waiting.append(future)
 
-            # finally load into the response
-            response.add_samples_from_array(samples, energies)
-        else:
-            response = dimod.SpinResponse()
+            futures = waiting
 
-            # convert samples to a dict
-            samples = (dict(enumerate(sample)) for sample in self.future.samples)
-            energies = self.future.energies
+        self._futures = futures
+        return self._datalist
 
-            response.add_samples_from(samples, energies)
+    @datalist.setter
+    def datalist(self, datalist):
+        self._datalist = datalist
 
-        # we will want to add other data from Future into the response.
+    def _add_data_from_future(self, future):
 
-        return response
+        samples = future.samples
+        energies = future.energies
+        num_occurrences = future.occurrences
 
-    def get_qubo_response(self):
-        """
+        nodelist = future.solver._encoding_qubits
 
-            Returns:
-                    : A `BinaryResponse`, converted from the `SpinResponse` return
-                        from get_response.
-        """
+        sample_values = self.vartype.value
 
-        spin_response = self.get_response()
-        return spin_response.as_binary(self.offset)
+        def _check_iter():
+            for sample, energy, n_o in zip(samples, energies, num_occurrences):
+                datum = {}
+
+                sample = dict(zip(nodelist, sample))
+
+                if sample_values is not None and not all(v in sample_values for v in sample.values()):
+                    raise ValueError("expected the biases of 'sample' to be in {}".format(sample_values))
+
+                datum['sample'] = sample
+
+                datum['energy'] = float(energy)
+                datum['num_occurences'] = n_o
+
+                yield datum
+
+        self._datalist.extend(_check_iter())
