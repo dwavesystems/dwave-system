@@ -31,7 +31,7 @@ matrix:
             - source env/bin/activate
 
 install:
-    - pip install .[test]
+    - pip install .[tests]
     - pip install coveralls
     
 script:
