@@ -82,6 +82,42 @@ class TestComposite(unittest.TestCase):
             self.assertAlmostEqual(dimod.qubo_energy(sample, Q),
                                    energy)
 
+    def test_max_cut(self):
+        sampler = micro.EmbeddingComposite(micro.DWaveSampler())
+
+        m = 2
+        n = 2
+        t = 2
+
+        hoff = 2 * t
+        voff = n * hoff
+        mi = m * voff
+        ni = n * hoff
+
+        edges = []
+
+        # tile edges
+        edges.extend((k0, k1)
+                     for i in range(0, ni, hoff)
+                     for j in range(i, mi, voff)
+                     for k0 in range(j, j + t)
+                     for k1 in range(j + t, j + 2 * t))
+        # horizontal edges
+        edges.extend((k, k + hoff)
+                     for i in range(t, 2 * t)
+                     for j in range(i, ni - hoff, hoff)
+                     for k in range(j, mi, voff))
+        # vertical edges
+        edges.extend((k, k + voff)
+                     for i in range(t)
+                     for j in range(i, ni, hoff)
+                     for k in range(j, mi - voff, voff))
+
+        J = {edge: 1 for edge in edges}
+        h = {v: 0 for v in set().union(*J)}
+
+        response = sampler.sample_ising(h, J)
+
 
 # @mock.patch('dwave_micro_client_dimod.sampler.microclient')
 class TestCompositeMock(unittest.TestCase):

@@ -44,6 +44,9 @@ class EmbeddingComposite(dimod.TemplateComposite):
         # get the embedding
         embedding = minorminer.find_embedding(J, target_edgelist)
 
+        if J and not embedding:
+            raise ValueError("no embedding found")
+
         # this should change in later versions
         if isinstance(embedding, list):
             embedding = dict(enumerate(embedding))
