@@ -17,7 +17,7 @@ import dwave_micro_client_dimod as micro
 try:
     microclient.Connection()
     _sapi_connection = True
-except OSError:
+except (OSError, IOError):
     # no sapi credentials are stored on the path
     _sapi_connection = False
 
