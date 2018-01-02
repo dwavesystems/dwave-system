@@ -13,7 +13,7 @@ else:
     exec(open("./dwave_micro_client_dimod/package_info.py").read())
 
 install_requires = ['dimod==0.5.0',
-                    'dwave_micro_client==0.1',
+                    'dwave_micro_client>=0.1.1',
                     'minorminer==0.1.0',
                     'dwave_embedding_utilities']
 tests_require = ['numpy', 'coverage', 'mock']
