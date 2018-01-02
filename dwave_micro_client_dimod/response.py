@@ -88,3 +88,7 @@ class FutureResponse(dimod.TemplateResponse):
                 yield datum
 
         self._datalist.extend(_check_iter())
+
+    def done(self):
+        """True if all of the futures added to the response have arrived."""
+        return all(future.done() for future in self._futures)
