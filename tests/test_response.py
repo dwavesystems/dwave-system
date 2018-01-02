@@ -121,6 +121,7 @@ class TestResponse(unittest.TestCase):
         # the response should be the length we expect
         self.assertEqual(len(response), 100)
 
+    @unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
     def test_done(self):
         solver = microclient.Connection().get_solver()
 
