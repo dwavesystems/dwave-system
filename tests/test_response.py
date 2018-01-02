@@ -121,6 +121,27 @@ class TestResponse(unittest.TestCase):
         # the response should be the length we expect
         self.assertEqual(len(response), 100)
 
+    def test_done(self):
+        solver = microclient.Connection().get_solver()
+
+        # Build a random Ising model on +1, -1. Build it to exactly fit the graph the solver provides
+        linear = {index: random.choice([-1, 1]) for index in solver.nodes if random.random() > .9}
+        quad = {key: random.choice([-1, 1]) for key in solver.undirected_edges if random.random() > .9}
+
+        # send off one problem and load the future
+        response = micro.FutureResponse(vartype=dimod.Vartype.SPIN)
+
+        # empty response should be done
+        self.assertTrue(response.done())
+
+        # send off a job
+
+        future = solver.sample_ising(linear, quad, num_reads=100)
+        response.add_samples_future(future)
+
+        # check that it's done
+        self.assertIsInstance(response.done(), bool)
+
 
 # All of the following tests are generic dimod sampler tests - in the future these
 # should be able to replaced by something inherited from the dimod library
