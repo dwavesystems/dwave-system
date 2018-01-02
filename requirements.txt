@@ -1,0 +1,7 @@
+homebase
+minorminer
+dimod
+dwave_embedding_utilities
+
+dwave_networkx
+networkx
