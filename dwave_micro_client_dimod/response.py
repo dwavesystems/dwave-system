@@ -67,7 +67,7 @@ class FutureResponse(dimod.TemplateResponse):
         energies = future.energies
         num_occurrences = future.occurrences
 
-        nodelist = future.solver._encoding_qubits
+        nodes = future.solver.nodes
 
         sample_values = self.vartype.value
 
@@ -75,7 +75,7 @@ class FutureResponse(dimod.TemplateResponse):
             for sample, energy, n_o in zip(samples, energies, num_occurrences):
                 datum = {}
 
-                sample = dict(zip(nodelist, sample))
+                sample = {v: sample[v] for v in nodes}
 
                 if sample_values is not None and not all(v in sample_values for v in sample.values()):
                     raise ValueError("expected the biases of 'sample' to be in {}".format(sample_values))

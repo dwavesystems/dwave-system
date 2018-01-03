@@ -49,7 +49,7 @@ class TestResponse(unittest.TestCase):
                                    energy)
 
         # the response should be the length we expect
-        self.assertEqual(len(response), 100)
+        self.assertEqual(sum(response.data(['num_occurences'])), 100)
 
     @unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
     def test_load_future_single_incomplete(self):
