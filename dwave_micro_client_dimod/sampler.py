@@ -82,7 +82,7 @@ class DWaveSampler(dimod.TemplateSampler):
         kwargs = dimod.TemplateSampler.my_kwargs(self)
         for param in self.solver.parameters:
             # this should be replaced by more complete info later
-            kwargs[param] = dimod.SamplerKeywordArg(param)
+            kwargs[param] = dimod.SamplerKeywordArg(str(param))
         return kwargs
 
     @dimod.decorators.ising(1, 2)
