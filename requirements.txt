@@ -1,7 +1,4 @@
 homebase
 minorminer
 dimod
-dwave_embedding_utilities
-
-dwave_networkx
-networkx
+git+ssh://git@github.com/dwavesystems/dwave_system_tuning.git
