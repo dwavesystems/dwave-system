@@ -5,13 +5,16 @@ import dimod
 import dwave_embedding_utilities as embutil
 
 from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
-from dwave_virtual_graph.embedding import get_embedding, get_embedding_from_tag
+
+FLUX_BIAS_KWARG = 'x_flux_bias'
 
 
 class VirtualGraph(dimod.TemplateComposite):
-    def __init__(self, sampler,
-                 embedding_tag=None, embedding=None):
-        """Apply the VirtualGraph composite layer to the given solver.
+    def __init__(self, sampler, embedding,
+                 flux_biases=None, flux_bias_test_reads=1000):
+        """
+        todo- update
+        Apply the VirtualGraph composite layer to the given solver.
 
         Args:
             sampler (:class:`dimod.TemplateSampler`): A dimod sampler.
@@ -20,12 +23,12 @@ class VirtualGraph(dimod.TemplateComposite):
             embedding (dict[hashable, iterable]): A mapping from a source
                 graph to the given sampler's graph (the target graph).
 
+            flux_bias_offsets: If None, calc, if []/False don't use
+
         Returns:
             `dimod.TemplateComposite`
 
         """
-        # NB: dimod should be updated to provide general types for sampler and composite,
-        # this will happen in a future version of dimod.
 
         # The composite __init__ adds the sampler into self.children
         dimod.TemplateComposite.__init__(self, sampler)
@@ -44,12 +47,8 @@ class VirtualGraph(dimod.TemplateComposite):
         # We want to track the persistent embedding so that we can map input problems
         # to the child sampler.
         #
-        if embedding is None:
-            if embedding_tag is None:
-                raise TyperError("either 'embedding' or 'embedding_tag' must be provided")
-            elif not isinstance(embedding_tag, (str, unicode)):
-                raise TypeError("expected input 'embedding_tag' to be a str")
-            embedding = get_embedding_from_tag(embedding_tag)
+        if isinstance(embedding, str):
+            raise NotImplementedError
         elif not isinstance(embedding, dict):
             raise TypeError("expected input `embedding` to be a dict.")
         self.embedding = embedding
@@ -67,6 +66,23 @@ class VirtualGraph(dimod.TemplateComposite):
             nodelist = list(source_adjacency)
             edgelist = list(_adjacency_to_edges(source_adjacency))
         self.structure = (nodelist, edgelist, source_adjacency)
+
+        #
+        # If the sampler accepts flux bias offsets, we'll want to set them
+        #
+        if flux_biases is None and FLUX_BIAS_KWARG in sampler.accepted_kwargs:
+            # If nothing is provided, then we either get them from the cache or generate them
+            flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_test_reads)
+        elif flux_biases:
+            if FLUX_BIAS_KWARG not in sampler.accepted_kwargs:
+                raise ValueError("Given child sampler does not accept flux_biases.")
+            # something provided, error check
+            if not isinstance(flux_biases, list):
+                flux_biases = list(flux_biases)  # cast to a list
+        else:
+            # disabled, empty or not available for this sampler so do nothing
+            flux_biases = None
+        self.flux_biases = flux_biases
 
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, apply_flux_bias_offsets=True, **kwargs):
@@ -92,8 +108,8 @@ class VirtualGraph(dimod.TemplateComposite):
         # solve the problem on the child system
         child = self._child
 
-        if apply_flux_bias_offsets and 'flux_biases' in child.accepted_kwargs:
-            kwargs['flux_biases'] = get_flux_biases(self.chain_biases, J_emb)
+        if apply_flux_bias_offsets and self.flux_biases is not None:
+            kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
         response = child.sample_ising(h_emb, J_emb, **kwargs)
 
@@ -106,11 +122,6 @@ class VirtualGraph(dimod.TemplateComposite):
                                          sample_data=(data for __, data in response.samples(data=True)),
                                          h=h, J=J)
         return source_response
-
-    @property
-    def chain_biases(self):
-        # to be replaced
-        return {v: 0. for v in itertools.chain(*self.embedding.values())}
 
 
 def _adjacency_to_edges(adjacency):

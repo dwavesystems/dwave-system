@@ -2,3 +2,6 @@ homebase
 minorminer
 dimod
 git+ssh://git@github.com/dwavesystems/dwave_system_tuning.git
+
+dwave_micro_client_dimod
+dwave_networkx

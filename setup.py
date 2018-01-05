@@ -15,7 +15,7 @@ install_requires = ['homebase',
                     'dimod',
                     'dwave_system_tuning']
 
-extras_require = {'tests': []}
+extras_require = {'tests': ['dwave_micro_client_dimod']}
 
 packages = ['dwave_virtual_graph',
             'dwave_virtual_graph.cache',
