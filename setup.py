@@ -17,7 +17,9 @@ install_requires = ['homebase',
 
 extras_require = {'tests': []}
 
-packages = ['dwave_virtual_graph']
+packages = ['dwave_virtual_graph',
+            'dwave_virtual_graph.cache',
+            'dwave_virtual_graph.composites']
 
 setup(
     name='dwave_virtual_graph',
