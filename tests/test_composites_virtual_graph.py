@@ -47,7 +47,7 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
         child_sampler = MockSampler()
         sampler = vg.VirtualGraph(child_sampler, {'a': [0]}, flux_bias_test_reads=10)
 
-        self.assertTrue(child_sampler.flux_biases_flag)  # true when some have been provided to sample_ising
+        # depending on how recenlty flux bias data was gathered, this may be true
         child_sampler.flux_biases_flag = False
 
         if sampler.flux_biases:

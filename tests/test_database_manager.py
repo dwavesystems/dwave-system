@@ -3,81 +3,90 @@ import time
 import homebase
 
 import dwave_virtual_graph as vg
+import dwave_virtual_graph.cache as vgcache
 
 tmp_database_name = 'tmp_test_database_manager_{}.db'.format(time.time())
 
 
-# class TestDatabaseManager(unittest.TestCase):
-#     def setUp(self):
-#         # new connection for just this test
-#         self.clean_connection = vg.cache_connect(':memory:')
+class TestCacheManager(unittest.TestCase):
+    def test_same_database(self):
+        """multiple calls to get_database_path"""
+        db1 = vgcache.cache_file()
+        db2 = vgcache.cache_file()
 
-#         # connection that persists for all tests run in this file
-#         self.test_connection = vg.cache_connect(vg.cache_file(filename=tmp_database_name))
+        self.assertEqual(db1, db2)
 
-#     def test_insert_chain(self):
-#         """insert and retrieve some chains"""
-#         conn = self.clean_connection
 
-#         chain = [0, 1, 3]
+class TestDatabaseManager(unittest.TestCase):
+    def setUp(self):
+        # new connection for just this test
+        self.clean_connection = vgcache.cache_connect(':memory:')
 
-#         # insert the chain twice, should only result in one net insert
-#         with conn as cur:
-#             vg.insert_chain(cur, chain)
-#             vg.insert_chain(cur, chain)
+        # test_database_path = vgcache.cache_file(filename=tmp_database_name)
+        # self.test_connection = vgcache.cache_connect(test_database_path)
 
-#         with conn as cur:
-#             all_chains = list(vg.iter_chain(cur))
-#         self.assertEqual(len(all_chains), 1)
-#         (chain_length, returned_chain, id_), = all_chains
-#         self.assertEqual(chain_length, len(chain))
-#         self.assertEqual(returned_chain, chain)
+    def tearDown(self):
+        # close the memory connection
+        self.clean_connection.close()
 
-#         # insert a new chain
-#         with conn as cur:
-#             vg.insert_chain(cur, [0, 2, 3])
-#         with conn as cur:
-#             all_chains = list(vg.iter_chain(cur))
-#         self.assertEqual(len(all_chains), 2)  # should now be two chains
+    def test_insert_retrieve_chain(self):
+        """insert and retrieve some chains"""
+        conn = self.clean_connection
 
-#     def test_insert_flux_bias(self):
-#         conn = self.clean_connection
+        chain = [0, 1, 3]
 
-#         with conn as cur:
-#             vg.insert_flux_bias(cur, [0, 1, 2], 'test_system', .1)
+        # insert the chain twice, should only result in one net insert
+        with conn as cur:
+            vgcache.insert_chain(cur, chain)
+            vgcache.insert_chain(cur, chain)
 
-#             # now try dumping the chain, should just be one
-#             all_chains = list(vg.iter_chain(cur))
-#             self.assertEqual(len(all_chains), 1)
-#             (chain_length, returned_chain, id_), = all_chains
-#             self.assertEqual(chain_length, len([0, 1, 2]))
-#             self.assertEqual(returned_chain, [0, 1, 2])
+        with conn as cur:
+            all_chains = list(vgcache.iter_chain(cur))
+        self.assertEqual(len(all_chains), 1)
+        returned_chain, = all_chains
+        self.assertEqual(len(returned_chain), len(chain))
+        self.assertEqual(returned_chain, chain)
 
-#         # now insert one with the same system but a different chain
-#         with conn as cur:
-#             vg.insert_flux_bias(cur, [0, 2, 3], 'test_system', .1)
-#             self.assertEqual(len(list(vg.iter_flux_bias(cur))), 2)
+        # insert a new chain
+        with conn as cur:
+            vgcache.insert_chain(cur, [0, 2, 3])
+        with conn as cur:
+            all_chains = list(vgcache.iter_chain(cur))
+        self.assertEqual(len(all_chains), 2)  # should now be two chains
 
-#         # now if we re-do an insert with a different flux bias, the newer
-#         # one should be the only one
-#         with conn as cur:
-#             vg.insert_flux_bias(cur, [0, 2, 3], 'test_system', .2)
-#             all_biases = list(vg.iter_flux_bias(cur))
-#             self.assertEqual(len(all_biases), 2)
+    def test_insert_flux_bias(self):
+        conn = self.clean_connection
 
-#             # now select over stuff inserted 10 seconds into the
-#             # future, should return nothing
-#             all_biases = list(vg.iter_flux_bias(cur, age=-10))
-#             self.assertEqual(len(all_biases), 0)
+        with conn as cur:
+            vgcache.insert_flux_bias(cur, [0, 1, 2], 'test_system', .1, 1)
+
+        with conn as cur:
+            # try dumping
+            flux_biases = list(vgcache.iter_flux_bias(cur))
+        self.assertEqual(len(flux_biases), 1)
+        self.assertEqual(flux_biases[0], ([0, 1, 2], 'test_system', .1, 1))
+
+        # retrieve by name
+        with conn as cur:
+            biases = vgcache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'test_system', 1)
+
+        for v, fbo in biases:
+            self.assertIn(v, [0, 1, 2])
+            self.assertEqual(fbo, .1)
+
+        # now get something wrong out
+        with self.assertRaises(vg.MissingFluxBias):
+            with conn as cur:
+                biases = vgcache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'another_system', 1)
 
 #     def test_insert_graph(self):
 #         conn = self.clean_connection
 
 #         # inserting the same twice should result in only one graph
 #         with conn as cur:
-#             vg.insert_graph(cur, [[0, 1], [1, 2], [0, 2]])
-#             vg.insert_graph(cur, [[0, 1], [1, 2], [0, 2]])
-#             self.assertEqual(len(list(vg.iter_graph(cur))), 1)
+#             vgcache.insert_graph(cur, [[0, 1], [1, 2], [0, 2]])
+#             vgcache.insert_graph(cur, [[0, 1], [1, 2], [0, 2]])
+#             self.assertEqual(len(list(vgcache.iter_graph(cur))), 1)
 
 #     def test_insert_embedding(self):
 #         conn = self.test_connection
@@ -88,8 +97,8 @@ tmp_database_name = 'tmp_test_database_manager_{}.db'.format(time.time())
 
 #         with conn as cur:
 #             # insert then dump everything
-#             vg.insert_embedding(cur, source_graph, target_graph, embedding)
-#             returned_embeddings = list(vg.iter_embedding(cur))
+#             vgcache.insert_embedding(cur, source_graph, target_graph, embedding)
+#             returned_embeddings = list(vgcache.iter_embedding(cur))
 
 #             # shoud only be one thing and it should be equal to inserted
 #             self.assertEqual(len(returned_embeddings), 1)
@@ -99,18 +108,18 @@ tmp_database_name = 'tmp_test_database_manager_{}.db'.format(time.time())
 #             self.assertEqual(emb, embedding)
 
 #         # now try to reinsert, should raise an error
-#         with self.assertRaises(vg.UniqueEmbeddingTagError):
+#         with self.assertRaises(vgcache.UniqueEmbeddingTagError):
 #             with conn as cur:
-#                 vg.insert_embedding(cur, source_graph, target_graph, embedding)
+#                 vgcache.insert_embedding(cur, source_graph, target_graph, embedding)
 
 #         # now let's add an embedding to a graph we already know
 #         source_graph = [[0, 1]]
 #         target_graph = [[0, 1], [0, 2], [1, 2]]
 #         embedding = {0: [0], 1: [1, 2]}
 #         with conn as cur:
-#             vg.insert_embedding(cur, source_graph, target_graph, embedding)
+#             vgcache.insert_embedding(cur, source_graph, target_graph, embedding)
 
-#             returned_embeddings = list(vg.iter_embedding(cur))
+#             returned_embeddings = list(vgcache.iter_embedding(cur))
 #             self.assertEqual(len(returned_embeddings), 2)
 
 #     def tearDown(self):

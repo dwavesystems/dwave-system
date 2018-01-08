@@ -1,3 +1,5 @@
+import collections
+
 import dimod
 import dwave_networkx as dnx
 
@@ -14,6 +16,9 @@ class MockSampler(dimod.TemplateSampler):
         self.structure = (sorted(G), sorted(sorted(edge) for edge in G.edges), {v: set(G[v]) for v in G})
 
         self.flux_biases_flag = False
+
+        Solver = collections.namedtuple('Solver', 'properties')
+        self.solver = Solver({'chip_id': 'mock_solver'})
 
     def sample_ising(self, h, J, num_reads=10, x_flux_bias=[]):
         # NB: need to change x_flux_bias later
