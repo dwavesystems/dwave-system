@@ -382,95 +382,209 @@ def iter_graph(cur):
         yield list(range_(num_nodes)), json.loads(edges)
 
 
-# def insert_embedding_tag(cur, source_edgelist, target_edgelist, embedding_tag=None):
-#     insert = \
-#         """
-#         INSERT INTO embedding(
-#             tag,
-#             source_id,
-#             target_id)
-#         SELECT
-#             ?,
-#             source_graph.id,
-#             target_graph.id
-#         FROM graph 'source_graph', graph 'target_graph'
-#         WHERE
-#             source_graph.edges = ? AND
-#             target_graph.edges = ?;
-#         """
+def insert_embedding(cur, source_nodelist, source_edgelist, target_nodelist, target_edgelist,
+                     embedding, embedding_tag):
+    """Insert an embedding into the cache.
 
-#     source_edges = json.dumps(source_edgelist, separators=(',', ':'))
-#     target_edges = json.dumps(target_edgelist, separators=(',', ':'))
+    Args:
+        cur (:class:`sqlite3.Cursor`):
+            An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
 
-#     cur.execute(insert, (embedding_tag, source_edges, target_edges))
+        source_nodelist (list):
+            The nodes in the source graph. Should be integer valued.
+
+        source_edgelist (list):
+            The edges in the source graph.
+
+        target_nodelist (list):
+            The nodes in the target graph. Should be integer valued.
+
+        target_edgelist (list):
+            The edges in the target graph.
+
+        embedding (dict):
+            The mapping from the source graph to the target graph.
+            Should be of the form {v: {s, ...}, ...} where v is a variable in the
+            source model and s is a variable in the target model.
+
+        embedding_tag (str):
+            A string tag to associate with the embedding.
+
+    """
+    encoded_data = {}
+
+    # first we need to encode the graphs and create the embedding id
+
+    source_data = {}
+    insert_graph(cur, source_nodelist, source_edgelist, source_data)
+    encoded_data['source_edges'] = source_data['edges']
+    encoded_data['source_num_nodes'] = source_data['num_nodes']
+    encoded_data['source_num_edges'] = source_data['num_edges']
+
+    target_data = {}
+    insert_graph(cur, target_nodelist, target_edgelist, target_data)
+    encoded_data['target_edges'] = target_data['edges']
+    encoded_data['target_num_nodes'] = target_data['num_nodes']
+    encoded_data['target_num_edges'] = target_data['num_edges']
+
+    encoded_data['tag'] = embedding_tag
+
+    insert_embedding = \
+        """
+        INSERT OR REPLACE INTO embedding(
+            source_id,
+            target_id,
+            tag)
+        SELECT
+            source_graph.id,
+            target_graph.id,
+            :tag
+        FROM
+            graph 'source_graph',
+            graph 'target_graph'
+        WHERE
+            source_graph.edges = :source_edges AND
+            source_graph.num_nodes = :source_num_nodes AND
+            source_graph.num_edges = :source_num_edges AND
+            target_graph.edges = :target_edges AND
+            target_graph.num_nodes = :target_num_nodes AND
+            target_graph.num_edges = :target_num_edges
+        """
+
+    cur.execute(insert_embedding, encoded_data)
+
+    # now each chain needs to be inserted
+
+    insert_embedding_component = \
+        """
+        INSERT OR REPLACE INTO embedding_component(
+            source_node,
+            chain_id,
+            embedding_id)
+        SELECT
+            :source_node,
+            chain.id,
+            embedding.id
+        FROM
+            graph 'source_graph',
+            graph 'target_graph',
+            chain,
+            embedding
+        WHERE
+            source_graph.edges = :source_edges AND
+            source_graph.num_nodes = :source_num_nodes AND
+            target_graph.edges = :target_edges AND
+            target_graph.num_nodes = :target_num_nodes AND
+            embedding.source_id = source_graph.id AND
+            embedding.target_id = target_graph.id AND
+            embedding.tag = :tag AND
+            chain.nodes = :nodes AND
+            chain.chain_length = :chain_length
+        """
+
+    for v, chain in iteritems(embedding):
+        chain_data = {'source_node': v}
+        insert_chain(cur, chain, chain_data)
+
+        encoded_data.update(chain_data)
+
+        cur.execute(insert_embedding_component, encoded_data)
 
 
-# def insert_embedding(cur, source_edgelist, target_edgelist, embedding):
-#     """todo"""
-#     insert_graph(cur, source_edgelist)
-#     insert_graph(cur, target_edgelist)
-#     insert_embedding_tag(cur, source_edgelist, target_edgelist)
+def select_embedding_from_tag(cur, embedding_tag, target_nodelist, target_edgelist):
+    """Select an embedding from the given tag and target graph.
 
-#     insert = \
-#         """
-#         INSERT INTO embedding_chains(
-#             source_node,
-#             chain_id,
-#             embedding_id)
-#         SELECT
-#             ?,
-#             chain.id,
-#             embedding.id
-#         FROM graph 'source_graph', graph 'target_graph', chain, embedding
-#         WHERE
-#             source_graph.edges = ? AND
-#             target_graph.edges = ? AND
-#             chain.nodes = ? AND
-#             embedding.source_id = source_graph.id AND
-#             embedding.target_id = target_graph.id;
-#         """
+    Args:
+        cur (:class:`sqlite3.Cursor`):
+            An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
 
-#     source_edges = json.dumps(source_edgelist, separators=(',', ':'))
-#     target_edges = json.dumps(target_edgelist, separators=(',', ':'))
-#     for v, chain in iteritems(embedding):
-#         insert_chain(cur, chain)
+        source_nodelist (list):
+            The nodes in the source graph. Should be integer valued.
 
-#         chain = json.dumps(chain, separators=(',', ':'))
-#         cur.execute(insert, (v, source_edges, target_edges, chain))
+        source_edgelist (list):
+            The edges in the source graph.
 
+        target_nodelist (list):
+            The nodes in the target graph. Should be integer valued.
 
-# def iter_embedding(cur):
-#     select = \
-#         """
-#         SELECT
-#             source_id,
-#             source_num_nodes,
-#             source_edges,
-#             target_id,
-#             target_num_nodes,
-#             target_edges,
-#             source_node,
-#             chain
-#         FROM embedding_view
-#         ORDER BY source_id, target_id;
-#         """
+        target_edgelist (list):
+            The edges in the target graph.
 
-#     graphs = {}
-#     embedding = None
-#     idx = (-1, -1)  # set to default
-#     for sid, source_num_nodes, source_edges, tid, target_num_nodes, target_edges, v, chain, in cur.execute(select):
-#         if idx == (sid, tid):
-#             # in this case we're still working on the same embedding
-#             embedding[v] = json.loads(chain)
-#         else:
-#             if embedding is not None:
-#                 yield json.loads(source_edges), json.loads(target_edges), embedding
+    Returns:
+        dict: The mapping from the source graph to the target graph.
+        In the form {v: {s, ...}, ...} where v is a variable in the
+        source model and s is a variable in the target model.
 
-#             # starting a new embedding
-#             embedding = {v: json.loads(chain)}
-#             idx = (sid, tid)
+    """
+    encoded_data = {'num_nodes': len(target_nodelist),
+                    'num_edges': len(target_edgelist),
+                    'edges': json.dumps(target_edgelist, separators=(',', ':')),
+                    'tag': embedding_tag}
 
-#     yield json.loads(source_edges), json.loads(target_edges), embedding
+    select = \
+        """
+        SELECT
+            source_node,
+            chain
+        FROM
+            embedding_component_view
+        WHERE
+            embedding_tag = :tag AND
+            target_edges = :edges AND
+            target_num_nodes = :num_nodes AND
+            target_num_edges = :num_edges
+        """
+
+    embedding = {v: json.loads(chain) for v, chain in cur.execute(select, encoded_data)}
+    return embedding
 
 
-# # def select_embedding
+def select_embedding_from_source(cur, source_nodelist, source_edgelist,
+                                 target_nodelist, target_edgelist):
+    """Select an embedding from the source graph and target graph.
+
+    Args:
+        cur (:class:`sqlite3.Cursor`):
+            An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
+
+        target_nodelist (list):
+            The nodes in the target graph. Should be integer valued.
+
+        target_edgelist (list):
+            The edges in the target graph.
+
+        embedding_tag (str):
+            A string tag to associate with the embedding.
+
+    Returns:
+        dict: The mapping from the source graph to the target graph.
+        In the form {v: {s, ...}, ...} where v is a variable in the
+        source model and s is a variable in the target model.
+
+    """
+    encoded_data = {'target_num_nodes': len(target_nodelist),
+                    'target_num_edges': len(target_edgelist),
+                    'target_edges': json.dumps(target_edgelist, separators=(',', ':')),
+                    'source_num_nodes': len(source_nodelist),
+                    'source_num_edges': len(source_edgelist),
+                    'source_edges': json.dumps(source_edgelist, separators=(',', ':'))}
+
+    select = \
+        """
+        SELECT
+            source_node,
+            chain
+        FROM
+            embedding_component_view
+        WHERE
+            source_num_edges = :source_num_edges AND
+            source_edges = :source_edges AND
+            source_num_nodes = :source_num_nodes AND
+
+            target_num_edges = :target_num_edges AND
+            target_edges = :target_edges AND
+            target_num_nodes = :target_num_nodes
+        """
+
+    embedding = {v: json.loads(chain) for v, chain in cur.execute(select, encoded_data)}
+    return embedding

@@ -123,40 +123,37 @@ class TestDatabaseManager(unittest.TestCase):
             graphs = list(vgcache.iter_graph(cur))
             self.assertEqual(len(graphs), 2)
 
-#     def test_insert_embedding(self):
-#         conn = self.test_connection
+    def test_insert_embedding(self):
+        test_database_path = vgcache.cache_file(filename=tmp_database_name)
+        conn = vgcache.cache_connect(test_database_path)
 
-#         source_graph = [[0, 1], [0, 2], [1, 2]]
-#         target_graph = [[0, 1], [0, 3], [1, 2], [2, 3]]
-#         embedding = {0: [0], 1: [1], 2: [2, 3]}
+        source_nodes = [0, 1, 2]
+        source_edges = [[0, 1], [0, 2], [1, 2]]
+        target_nodes = [0, 1, 2, 3]
+        target_edges = [[0, 1], [0, 3], [1, 2], [2, 3]]
 
-#         with conn as cur:
-#             # insert then dump everything
-#             vgcache.insert_embedding(cur, source_graph, target_graph, embedding)
-#             returned_embeddings = list(vgcache.iter_embedding(cur))
+        embedding = {0: [0], 1: [1], 2: [2, 3]}
 
-#             # shoud only be one thing and it should be equal to inserted
-#             self.assertEqual(len(returned_embeddings), 1)
-#             (source, target, emb), = returned_embeddings
-#             self.assertEqual(source, source_graph)
-#             self.assertEqual(target, target_graph)
-#             self.assertEqual(emb, embedding)
+        with conn as cur:
+            vgcache.insert_embedding(cur, source_nodes, source_edges, target_nodes, target_edges,
+                                     embedding, 'tag1')
 
-#         # now try to reinsert, should raise an error
-#         with self.assertRaises(vgcache.UniqueEmbeddingTagError):
-#             with conn as cur:
-#                 vgcache.insert_embedding(cur, source_graph, target_graph, embedding)
+            embedding_ = vgcache.select_embedding_from_tag(cur, 'tag1', target_nodes, target_edges)
 
-#         # now let's add an embedding to a graph we already know
-#         source_graph = [[0, 1]]
-#         target_graph = [[0, 1], [0, 2], [1, 2]]
-#         embedding = {0: [0], 1: [1, 2]}
-#         with conn as cur:
-#             vgcache.insert_embedding(cur, source_graph, target_graph, embedding)
+            self.assertEqual(embedding, embedding_)
 
-#             returned_embeddings = list(vgcache.iter_embedding(cur))
-#             self.assertEqual(len(returned_embeddings), 2)
+        # now reinsert but with a different embedding
+        embedding = {0: [0, 1], 1: [2], 2: [3]}
+        with conn as cur:
+            vgcache.insert_embedding(cur, source_nodes, source_edges, target_nodes, target_edges,
+                                     embedding, 'tag1')
 
-#     def tearDown(self):
-#         self.clean_connection.close()
-#         self.test_connection.close()
+            # get it back
+            embedding_ = vgcache.select_embedding_from_tag(cur, 'tag1', target_nodes, target_edges)
+
+            self.assertEqual(embedding, embedding_)
+
+            # get it back from source graph
+            embedding_ = vgcache.select_embedding_from_source(cur, source_nodes, source_edges,
+                                                              target_nodes, target_edges)
+            self.assertEqual(embedding, embedding_)
