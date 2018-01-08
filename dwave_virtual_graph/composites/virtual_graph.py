@@ -11,19 +11,35 @@ FLUX_BIAS_KWARG = 'x_flux_bias'
 
 class VirtualGraph(dimod.TemplateComposite):
     def __init__(self, sampler, embedding,
-                 flux_biases=None, flux_bias_test_reads=1000):
-        """
-        todo- update
-        Apply the VirtualGraph composite layer to the given solver.
+                 chain_strength=None,
+                 flux_biases=None, flux_bias_num_reads=1000, flux_bias_max_age=3600):
+        """Apply the VirtualGraph composite layer to the given solver.
 
         Args:
-            sampler (:class:`dimod.TemplateSampler`): A dimod sampler.
-            embedding_tag (str): A tag that can be used to access a
-                cached embedding.
-            embedding (dict[hashable, iterable]): A mapping from a source
-                graph to the given sampler's graph (the target graph).
+            sampler (:class:`dwave_micro_client_dimod.DWaveSampler`):
+                A dimod_ sampler. Normally :class:`dwave_micro_client_dimod.DWaveSampler`, or a
+                derived composite sampler. Other samplers in general will not work or will not make
+                sense with this composite layer.
 
-            flux_bias_offsets: If None, calc, if []/False don't use
+            embedding (dict[hashable, iterable]):
+                A mapping from a source graph to the given sampler's graph (the target graph).
+
+            chain_strength (float, optional, default=None):
+                The desired chain strength. If None, will use the maximum available from the
+                processor.
+
+            flux_biases (list/False/None, optional, default=None):
+                The per-qubit flux bias offsets. If given, should be a list of lists. Each sublist
+                should be of length 2 and is the variable and the flux bias
+                offset associated with the variable. If `flux_biases` evaluates False, then no
+                flux bias is applied or calculated. If None if given, the the flux biases are
+                pulled from the database or calculated empirically.
+
+            flux_bias_num_reads (int, optional, default=1000):
+                The number of samplers to collect per flux bias value.
+
+            flux_bias_max_age (int, optional, default=3600):
+                The maximum age (in seconds) allowed for a previously calculated flux bias offset.
 
         Returns:
             `dimod.TemplateComposite`
@@ -72,7 +88,8 @@ class VirtualGraph(dimod.TemplateComposite):
         #
         if flux_biases is None and FLUX_BIAS_KWARG in sampler.accepted_kwargs:
             # If nothing is provided, then we either get them from the cache or generate them
-            flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_test_reads)
+            flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_num_reads,
+                                          max_age=flux_bias_max_age)
         elif flux_biases:
             if FLUX_BIAS_KWARG not in sampler.accepted_kwargs:
                 raise ValueError("Given child sampler does not accept flux_biases.")
@@ -86,11 +103,16 @@ class VirtualGraph(dimod.TemplateComposite):
 
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, apply_flux_bias_offsets=True, **kwargs):
-        """todo
+        """Sample from the given Ising model.
 
-            apply_flux_bias_offsets (bool, optional): Whether to pass
-                the `flux_bias` parameter to child samplers if they
-                request it.
+            h (list/dict): Linear terms of the model.
+
+            J (dict of (int, int):float): Quadratic terms of the model.
+
+            apply_flux_bias_offsets (bool, optional):
+                If True, use the calculated flux_bias offsets (if available).
+
+            **kwargs: Parameters for the sampling method, specified by the child sampler.
 
         """
 

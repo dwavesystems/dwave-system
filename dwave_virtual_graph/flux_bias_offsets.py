@@ -5,7 +5,7 @@ from dwave_virtual_graph.cache.database_manager import get_flux_biases_from_cach
 from dwave_virtual_graph.exceptions import MissingFluxBias
 
 
-def get_flux_biases(sampler, embedding, num_reads, chain_strength=1):
+def get_flux_biases(sampler, embedding, num_reads, chain_strength=1, max_age=3600):
     system_name = sampler.solver.properties['chip_id']
 
     try:
