@@ -1,7 +1,8 @@
-"""todo
+"""Utilities for accessing the sqlite cache.
 
 Note:
     All methods assume that nodes are integer-labeled.
+
 """
 import sqlite3
 import json
@@ -13,10 +14,7 @@ import datetime
 from dwave_virtual_graph.cache.cache_manager import cache_file
 from dwave_virtual_graph.cache.schema import schema
 from dwave_virtual_graph.exceptions import MissingFluxBias
-
-
-def iteritems(d):
-    return d.items()
+from dwave_virtual_graph.compatibility23 import iteritems
 
 
 def cache_connect(database=None):
@@ -59,9 +57,8 @@ def insert_chain(cur, chain, encoded_data=None):
         cur (:class:`sqlite3.Cursor`):
             An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
 
-        nodelist (list): The nodes in the graph.
-
-        edgelist (list): The edges in the graph.
+        chain (iterable):
+            A collection of nodes. Chains in embedding act as one node.
 
         encoded_data (dict, optional):
             If a dictionary is provided, it will be populated with the serialized data. This is
@@ -92,13 +89,7 @@ def iter_chain(cur):
             An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
 
     Yields:
-        tuple: A 3-tuple containing:
-
-            int: The chain length.
-
-            list: The chain.
-
-            int: The id assigned by sql to the chain.
+        list: The chain.
 
     """
     select = "SELECT nodes FROM chain"
@@ -106,14 +97,14 @@ def iter_chain(cur):
         yield json.loads(nodes)
 
 
-def insert_system(cur, system, encoded_data=None):
+def insert_system(cur, system_name, encoded_data=None):
     """Insert a system name into the cache.
 
     Args:
         cur (:class:`sqlite3.Cursor`):
             An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
 
-        system (str):
+        system_name (str):
             The unique name of a system
 
         encoded_data (dict, optional):
@@ -125,7 +116,7 @@ def insert_system(cur, system, encoded_data=None):
         encoded_data = {}
 
     if 'system_name' not in encoded_data:
-        encoded_data['system_name'] = system
+        encoded_data['system_name'] = system_name
 
     insert = "INSERT OR IGNORE INTO system(system_name) VALUES (:system_name);"
     cur.execute(insert, encoded_data)
@@ -148,7 +139,30 @@ def iter_system(cur):
 
 
 def insert_flux_bias(cur, chain, system, flux_bias, chain_strength, encoded_data=None):
-    """todo"""
+    """Insert a flux bias offset into the cache.
+
+    Args:
+        cur (:class:`sqlite3.Cursor`):
+            An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
+
+        chain (iterable):
+            A collection of nodes. Chains in embedding act as one node.
+
+        system (str):
+            The unique name of a system.
+
+        flux_bias (float):
+            The flux bias offset associated with the given chain.
+
+        chain_strength (float):
+            The magnitude of the negative quadratic bias that induces the given chain in an Ising
+            problem.
+
+        encoded_data (dict, optional):
+            If a dictionary is provided, it will be populated with the serialized data. This is
+            useful for preventing encoding the same information many times.
+
+    """
     if encoded_data is None:
         encoded_data = {}
 
@@ -182,7 +196,24 @@ def insert_flux_bias(cur, chain, system, flux_bias, chain_strength, encoded_data
 
 
 def iter_flux_bias(cur):
-    """"""
+    """Iterate over all flux biases in the cache.
+
+    Args:
+        cur (:class:`sqlite3.Cursor`):
+            An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
+
+    Yields:
+        tuple: A 4-tuple:
+
+            list: The chain.
+
+            str: The system name.
+
+            float: The flux bias associated with the chain.
+
+            float: The chain strength associated with the chain.
+
+    """
     select = \
         """
         SELECT nodes, system_name, flux_bias, chain_strength FROM flux_bias_view;
@@ -193,16 +224,44 @@ def iter_flux_bias(cur):
 
 
 def _encode_real(v):
+    """Encode real numbers as base 64 encoded little endian 8 byte floats."""
     bytes_ = struct.pack('<d', v)
     return base64.b64encode(bytes_)
 
 
 def _decode_real(blob):
+    """Inverse of _encode_real."""
     bytes_ = base64.b64decode(blob)
     return struct.unpack('<d', bytes_)[0]
 
 
 def get_flux_biases_from_cache(cur, chains, system_name, chain_strength, max_age=3600):
+    """Determine the flux biases for all of the the given chains, system and chain strength.
+
+    Args:
+        cur (:class:`sqlite3.Cursor`):
+            An sqlite3 cursor. This function is meant to be run within a :obj:`with` statement.
+
+        chains (iterable):
+            An iterable of chains. Each chain is a collection of nodes. Chains in embedding act as
+            one node.
+
+        system_name (str):
+            The unique name of a system.
+
+        chain_strength (float):
+            The magnitude of the negative quadratic bias that induces the given chain in an Ising
+            problem.
+
+        max_age (int, optional, default=3600):
+            The maximum age (in seconds) for the flux_bias offsets.
+
+    Returns:
+        list[[v, fbo]]: A list of lists of length 2. Each 2-list is the variable and the flux bias
+        offset associated with the variable. This value can be passed to
+        :class:`dwave_micro_client_dimod.DWaveSampler`.
+
+    """
 
     select = \
         """
