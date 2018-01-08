@@ -1,4 +1,4 @@
-# name conventions from: https://launchbylunch.com/posts/2014/Feb/16/sql-naming-conventions/
+"""The schema used by the sqlite database for storing the penalty models."""
 
 schema = \
     """
