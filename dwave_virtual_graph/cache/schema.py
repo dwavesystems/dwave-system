@@ -33,11 +33,14 @@ schema = \
             flux_bias.system_id = system.id AND
             flux_bias.chain_id = chain.id;
 
-    -- CREATE TABLE IF NOT EXISTS graph(
-    --     num_nodes INTEGER NOT NULL,  -- for integer-labeled graphs, num_nodes encodes all of the nodes
-    --     num_edges INTEGER NOT NULL,  -- redundant, allows for faster selects
-    --     edges TEXT UNIQUE,  -- json list of lists, should be sorted (with each edge sorted)
-    --     id INTEGER PRIMARY KEY);
+    CREATE TABLE IF NOT EXISTS graph(
+        num_nodes INTEGER NOT NULL,  -- for integer-labeled graphs, num_nodes encodes all of the nodes
+        num_edges INTEGER NOT NULL,  -- redundant, allows for faster selects
+        edges TEXT NOT NULL,  -- json list of lists, should be sorted (with each edge sorted)
+        id INTEGER PRIMARY KEY,
+        CONSTRAINT graph UNIQUE (
+            num_nodes,
+            edges));
 
     -- CREATE TABLE IF NOT EXISTS embedding(
     --     source_id INTEGER REFERENCES graph(id),

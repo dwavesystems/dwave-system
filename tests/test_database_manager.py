@@ -2,10 +2,14 @@ import unittest
 import time
 import homebase
 
+import networkx as nx
+
 import dwave_virtual_graph as vg
 import dwave_virtual_graph.cache as vgcache
 
 tmp_database_name = 'tmp_test_database_manager_{}.db'.format(time.time())
+# test_database_path = vgcache.cache_file(filename=tmp_database_name)
+# conn = vgcache.cache_connect(test_database_path)
 
 
 class TestCacheManager(unittest.TestCase):
@@ -23,7 +27,7 @@ class TestDatabaseManager(unittest.TestCase):
         self.clean_connection = vgcache.cache_connect(':memory:')
 
         # test_database_path = vgcache.cache_file(filename=tmp_database_name)
-        # self.test_connection = vgcache.cache_connect(test_database_path)
+        # test_connection = vgcache.cache_connect(test_database_path)
 
     def tearDown(self):
         # close the memory connection
@@ -79,14 +83,45 @@ class TestDatabaseManager(unittest.TestCase):
             with conn as cur:
                 biases = vgcache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'another_system', 1)
 
-#     def test_insert_graph(self):
-#         conn = self.clean_connection
+    def test_graph_insert_retrieve(self):
+        conn = self.clean_connection
 
-#         # inserting the same twice should result in only one graph
-#         with conn as cur:
-#             vgcache.insert_graph(cur, [[0, 1], [1, 2], [0, 2]])
-#             vgcache.insert_graph(cur, [[0, 1], [1, 2], [0, 2]])
-#             self.assertEqual(len(list(vgcache.iter_graph(cur))), 1)
+        graph = nx.barbell_graph(8, 8)
+        nodelist = sorted(graph)
+        edgelist = sorted(sorted(edge) for edge in graph.edges)
+
+        with conn as cur:
+            vgcache.insert_graph(cur, nodelist, edgelist)
+
+            # should only be one graph
+            graphs = list(vgcache.iter_graph(cur))
+            self.assertEqual(len(graphs), 1)
+            (nodelist_, edgelist_), = graphs
+            self.assertEqual(nodelist, nodelist_)
+            self.assertEqual(edgelist, edgelist_)
+
+        # trying to reinsert should still result in only one graph
+        with conn as cur:
+            vgcache.insert_graph(cur, nodelist, edgelist)
+            graphs = list(vgcache.iter_graph(cur))
+            self.assertEqual(len(graphs), 1)
+
+        # inserting with an empty dict as encoded_data should populate it
+        encoded_data = {}
+        with conn as cur:
+            vgcache.insert_graph(cur, nodelist, edgelist, encoded_data)
+        self.assertIn('num_nodes', encoded_data)
+        self.assertIn('num_edges', encoded_data)
+        self.assertIn('edges', encoded_data)
+
+        # now adding another graph should result in two items
+        graph = nx.complete_graph(4)
+        nodelist = sorted(graph)
+        edgelist = sorted(sorted(edge) for edge in graph.edges)
+        with conn as cur:
+            vgcache.insert_graph(cur, nodelist, edgelist)
+            graphs = list(vgcache.iter_graph(cur))
+            self.assertEqual(len(graphs), 2)
 
 #     def test_insert_embedding(self):
 #         conn = self.test_connection

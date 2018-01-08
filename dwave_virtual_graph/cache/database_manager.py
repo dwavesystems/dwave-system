@@ -14,7 +14,7 @@ import datetime
 from dwave_virtual_graph.cache.cache_manager import cache_file
 from dwave_virtual_graph.cache.schema import schema
 from dwave_virtual_graph.exceptions import MissingFluxBias
-from dwave_virtual_graph.compatibility23 import iteritems
+from dwave_virtual_graph.compatibility23 import iteritems, range_
 
 
 def cache_connect(database=None):
@@ -294,24 +294,92 @@ def get_flux_biases_from_cache(cur, chains, system_name, chain_strength, max_age
     return flux_biases
 
 
-# def insert_graph(cur, edgelist, num_nodes=None):
-#     """todo"""
-#     assert isinstance(edgelist, list)
-#     # assert sorted
+def insert_graph(cur, nodelist, edgelist, encoded_data=None):
+    """Insert a graph into the cache.
 
-#     if num_nodes is None:
-#         num_nodes = len(set().union(*edgelist))
-#     num_edges = len(edgelist)
-#     edges = json.dumps(edgelist, separators=(',', ':'))
+    A graph is stored by number of nodes, number of edges and a
+    json-encoded list of edges.
 
-#     insert = "INSERT OR IGNORE INTO graph(num_nodes, num_edges, edges) VALUES (?, ?, ?);"
-#     cur.execute(insert, (num_nodes, num_edges, edges))
+    Args:
+        cur (:class:`sqlite3.Cursor`): An sqlite3 cursor. This function
+            is meant to be run within a :obj:`with` statement.
+        nodelist (list): The nodes in the graph.
+        edgelist (list): The edges in the graph.
+        encoded_data (dict, optional): If a dictionary is provided, it
+            will be populated with the serialized data. This is useful for
+            preventing encoding the same information many times.
+
+    Notes:
+        This function assumes that the nodes are index-labeled and range
+        from 0 to num_nodes - 1.
+
+        In order to minimize the total size of the cache, it is a good
+        idea to sort the nodelist and edgelist before inserting.
+
+    Examples:
+        >>> nodelist = [0, 1, 2]
+        >>> edgelist = [(0, 1), (1, 2)]
+        >>> with pmc.cache_connect(':memory:') as cur:
+        ...     pmc.insert_graph(cur, nodelist, edgelist)
+
+        >>> nodelist = [0, 1, 2]
+        >>> edgelist = [(0, 1), (1, 2)]
+        >>> encoded_data = {}
+        >>> with pmc.cache_connect(':memory:') as cur:
+        ...     pmc.insert_graph(cur, nodelist, edgelist, encoded_data)
+        >>> encoded_data['num_nodes']
+        3
+        >>> encoded_data['num_edges']
+        2
+        >>> encoded_data['edges']
+        '[[0,1],[1,2]]'
+
+    """
+    if encoded_data is None:
+        encoded_data = {}
+
+    if 'num_nodes' not in encoded_data:
+        encoded_data['num_nodes'] = len(nodelist)
+    if 'num_edges' not in encoded_data:
+        encoded_data['num_edges'] = len(edgelist)
+    if 'edges' not in encoded_data:
+        encoded_data['edges'] = json.dumps(edgelist, separators=(',', ':'))
+
+    insert = \
+        """
+        INSERT OR IGNORE INTO graph(num_nodes, num_edges, edges)
+        VALUES (:num_nodes, :num_edges, :edges);
+        """
+
+    cur.execute(insert, encoded_data)
 
 
-# def iter_graph(cur):
-#     select = """SELECT num_nodes, num_edges, edges from graph;"""
-#     for num_nodes, num_edges, edges in cur.execute(select):
-#         yield num_nodes, num_edges, json.loads(edges)
+def iter_graph(cur):
+    """Iterate over all graphs in the cache.
+
+    Args:
+        cur (:class:`sqlite3.Cursor`): An sqlite3 cursor. This function
+            is meant to be run within a :obj:`with` statement.
+
+    Yields:
+        tuple: A 2-tuple containing:
+
+            list: The nodelist for a graph in the cache.
+
+            list: the edgelist for a graph in the cache.
+
+    Examples:
+        >>> nodelist = [0, 1, 2]
+        >>> edgelist = [(0, 1), (1, 2)]
+        >>> with pmc.cache_connect(':memory:') as cur:
+        ...     pmc.insert_graph(cur, nodelist, edgelist)
+        ...     list(pmc.iter_graph(cur))
+        [([0, 1, 2], [[0, 1], [1, 2]])]
+
+    """
+    select = """SELECT num_nodes, num_edges, edges from graph;"""
+    for num_nodes, num_edges, edges in cur.execute(select):
+        yield list(range_(num_nodes)), json.loads(edges)
 
 
 # def insert_embedding_tag(cur, source_edgelist, target_edgelist, embedding_tag=None):
