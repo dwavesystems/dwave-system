@@ -40,9 +40,29 @@ To build from souce:
 Example Usage
 -------------
 
-todo
+# load a new embedding
+
+.. code_block:: python
+    
+    import dwave_micro_client_dimod as micro
+    import dwave_virtual_graph as vg
+
+    # get the D-Wave sampler (see configuration_ for setting up credentials)
+    dwave_sampler = micro.DWaveSampler()
+
+    # get the dwave_sampler's structure
+    nodelist, edgelist, adj = dwave_sampler.structure
+
+    # create and load an embedding
+    embedding = {0: [8, 12], 1: [9, 13], 2: [10, 14], 3: [11, 15]}
+    vg.load_embedding(nodelist, edgelist, embedding, 'K4')
+
+    # create virtual graph
+    sampler = vg.VirtualGraph(dwave_sampler, 'K4')
 
 License
 -------
 
 Released under the Apache License 2.0
+
+.. _configuration: http://dwave-micro-client.readthedocs.io/en/latest/#configuration

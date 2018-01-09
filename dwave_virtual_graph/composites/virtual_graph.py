@@ -5,6 +5,7 @@ import dimod
 import dwave_embedding_utilities as embutil
 
 from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
+from dwave_virtual_graph.embedding import get_embedding_from_tag
 
 FLUX_BIAS_KWARG = 'x_flux_bias'
 
@@ -64,7 +65,7 @@ class VirtualGraph(dimod.TemplateComposite):
         # to the child sampler.
         #
         if isinstance(embedding, str):
-            raise NotImplementedError
+            embedding = get_embedding_from_tag(embedding, target_nodelist, target_edgelist)
         elif not isinstance(embedding, dict):
             raise TypeError("expected input `embedding` to be a dict.")
         self.embedding = embedding

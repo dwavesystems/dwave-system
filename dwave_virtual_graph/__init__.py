@@ -7,3 +7,6 @@ import dwave_virtual_graph.cache
 
 from dwave_virtual_graph.exceptions import *
 import dwave_virtual_graph.exceptions
+
+from dwave_virtual_graph.embedding import *
+import dwave_virtual_graph.embedding
