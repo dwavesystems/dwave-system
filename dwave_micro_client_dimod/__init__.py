@@ -4,6 +4,9 @@ import dwave_micro_client_dimod.sampler
 from dwave_micro_client_dimod.composite import *
 import dwave_micro_client_dimod.composite
 
+from dwave_micro_client_dimod.tiling import *
+import dwave_micro_client_dimod.tiling
+
 from dwave_micro_client_dimod.response import *
 import dwave_micro_client_dimod.response
 
