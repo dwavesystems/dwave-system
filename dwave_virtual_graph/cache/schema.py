@@ -49,6 +49,7 @@ schema = \
         id INTEGER PRIMARY KEY,
         protected INTEGER DEFAULT 0,
         CONSTRAINT embedding_constraint UNIQUE (target_id, tag),
+        CONSTRAINT embedding_constraint UNIQUE (target_id, source_id),
         FOREIGN KEY (source_id) REFERENCES graph(id) ON DELETE CASCADE,
         FOREIGN KEY (target_id) REFERENCES graph(id) ON DELETE CASCADE);
 
