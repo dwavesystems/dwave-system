@@ -40,9 +40,7 @@ To build from souce:
 Example Usage
 -------------
 
-# load a new embedding
-
-.. code_block:: python
+.. code-block:: python
     
     import dwave_micro_client_dimod as micro
     import dwave_virtual_graph as vg
