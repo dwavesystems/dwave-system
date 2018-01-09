@@ -2,6 +2,7 @@
 TilingComposite
 ==================
 """
+from __future__ import division
 #import itertools
 from math import sqrt, ceil
 
@@ -28,12 +29,13 @@ class TilingComposite(dimod.TemplateComposite):
         tile = dnx.chimera_graph(sub_m, sub_n, t)
         self.structure = (sorted(tile.nodes), sorted(tile.edges), sorted(tile.adjacency()))
 
-        nodes_per_cell = t * 2.
-        edges_per_cell = nodes_per_cell * 4
+        nodes_per_cell = t * 2
+        edges_per_cell = t * t
         # CAN SQUARE SHAPE BE ASSUMED?
         size_m = size_n = int(ceil(sqrt(ceil(len(sampler.structure[0]) / nodes_per_cell))))
         system = dnx.chimera_graph(size_m, size_n, t, sampler.structure[0], sampler.structure[1])
         c2i = {chimera_index: linear_index for (linear_index, chimera_index) in system.nodes(data='chimera_index')}
+        sub_c2i = {chimera_index: linear_index for (linear_index, chimera_index) in tile.nodes(data='chimera_index')}
 
         # Count the connections between these qubits
         def _between(qubits1, qubits2):
@@ -41,45 +43,46 @@ class TilingComposite(dimod.TemplateComposite):
             return len(edges)
 
         # Get the list of qubits in a cell
-        def _cell_qubits(ii, jj):
-            return [c2i((ii, jj, uu, kk)) for uu in range(2) for kk in range(t)]
+        def _cell_qubits(i, j):
+            return [c2i[(i, j, u, k)] for u in range(2) for k in range(t)]
 
         # get a mask of complete cells
         cells = [[False for _ in range(size_n)] for _ in range(size_m)]
-        for ii in range(size_m):
-            for jj in range(size_n):
-                qubits = _cell_qubits(ii, jj)
+        for i in range(size_m):
+            for j in range(size_n):
+                qubits = _cell_qubits(i, j)
                 active_in_cell = sum(q in system.nodes for q in qubits)
-                cells[ii][jj] = active_in_cell == nodes_per_cell and _between(qubits, qubits) == edges_per_cell
+                cells[i][j] = active_in_cell == nodes_per_cell and _between(qubits, qubits) == edges_per_cell
 
         # List of 'embeddings'
         self.embeddings = []
 
         # For each possible chimera cell check if the next few cells are complete
-        for ii in range(size_m + 1 - sub_m):
-            for jj in range(size_n + 1 - sub_n):
+        for i in range(size_m + 1 - sub_m):
+            for j in range(size_n + 1 - sub_n):
 
                 # Check if the sub cells are matched
-                match = all(cells[ii + _i][jj + _j] for _i in range(sub_m) for _j in range(sub_n))
+                match = all(cells[i + sub_i][j + sub_j] for sub_i in range(sub_m) for sub_j in range(sub_n))
 
                 # Check if there are connections between the cells.
-                for _i in range(sub_m):
-                    for _j in range(sub_n):
-                        if sub_m > 1 and _i < sub_m - 1:
-                            match &= _between(_cell_qubits(ii + _i, jj + _j), _cell_qubits(ii + _i + 1, jj + _j)) == t
-                        if sub_n > 1 and _j < sub_n - 1:
-                            match &= _between(_cell_qubits(ii + _i, jj + _j), _cell_qubits(ii + _i, jj + _j + 1)) == t
+                for sub_i in range(sub_m):
+                    for sub_j in range(sub_n):
+                        if sub_m > 1 and sub_i < sub_m - 1:
+                            match &= _between(_cell_qubits(i + sub_i, j + sub_j),
+                                              _cell_qubits(i + sub_i + 1, j + sub_j)) == t
+                        if sub_n > 1 and sub_j < sub_n - 1:
+                            match &= _between(_cell_qubits(i + sub_i, j + sub_j),
+                                              _cell_qubits(i + sub_i, j + sub_j + 1)) == t
 
                 if match:
                     # Pull those cells out into an embedding.
-                    embedding = []  # BRAD REFORMAT AS PER ADTT CONVENTION
-                    for _i in range(sub_m):
-                        for _j in range(sub_n):
-                            cells[ii + _i][jj + _j] = False
-                            for uu in range(2):
-                                for kk in range(t):
-                                    # BRAD FLATTEN THIS OUT
-                                    embedding.append(c2i((ii + _i, jj + _j, uu, kk)))
+                    embedding = {}
+                    for sub_i in range(sub_m):
+                        for sub_j in range(sub_n):
+                            cells[i + sub_i][j + sub_j] = False  # Mark cell as matched
+                            for u in range(2):
+                                for k in range(t):
+                                    embedding[sub_c2i[sub_i, sub_j, u, k]] = {c2i[(i + sub_i, j + sub_j, u, k)]}
 
                     self.embeddings.append(embedding)
 
@@ -115,87 +118,3 @@ class TilingComposite(dimod.TemplateComposite):
                                              h=h, J=J)
 
         return source_response
-
-
-
-##
-# THIS SHOULD ALL HAPPEN IN __init__
-##
-import math
-
-
-def simple_find_subchimera(config, sub_size_m, sub_size_n):
-    """
-    Find a bunch of complete sub chimera graphs on the target solver.
-
-    :param config: Configuration file data.
-    :param sub_size_m: How big of a complete chimera graph do we need.
-    :param sub_size_n: How big of a complete chimera graph do we need.
-    """
-
-    # Load the adjacency/dwave_sapi components for each version
-    import dwave_sapi2.remote
-    import dwave_sapi2.util
-    connection = dwave_sapi2.remote.RemoteConnection(config['url'], config['token'])
-    solver = connection.get_solver(config['solver'])
-    adjacency = dwave_sapi2.util.get_hardware_adjacency(solver)  # BRAD FIND IN _child.structure
-    c2i = dwave_sapi2.util.chimera_to_linear_index  # BRAD USE DNX (NEEDS TO BE ADDED)
-    size = int(math.sqrt(solver.properties['num_qubits'] / 8))  # BRAD NO HARDCODED 8, CAN SQUARE SHAPE BE ASSUMED?
-
-    # Get active qubits
-    active_qubits = set()  # BRAD FIND IN _child.structure
-    for qubit1, qubit2 in adjacency:
-        active_qubits.add(qubit1)
-        active_qubits.add(qubit2)
-
-    # Count the connections between these qubits
-    def _between(qubits1, qubits2):
-        edges = [edge for edge in adjacency if edge[0] in qubits1 and edge[1] in qubits2]
-        return len(edges)
-
-    # Get the list of qubits in a cell
-    def _cell_qubits(ii, jj):
-        return [c2i([[ii, jj, uu, kk]], size, size, 4)[0] for uu in range(2) for kk in range(4)]  # BRAD NO HARDCODED 4
-
-    # get a mask of complete cells
-    cells = [[False for _ in range(size)] for _ in range(size)]
-    for ii in range(size):
-        for jj in range(size):
-            qubits = _cell_qubits(ii, jj)
-            active_in_cell = sum(q in active_qubits for q in qubits)
-            cells[ii][jj] = active_in_cell == 8 and _between(qubits, qubits) == 32  # BRAD NO HARDCODED 8
-
-    # List of 'embeddings'
-    embeddings = []
-
-    # For each possible chimera cell check if the next few cells are complete
-    for ii in range(size + 1 - sub_size_m):
-        for jj in range(size + 1 - sub_size_n):
-
-            # Check if the sub cells are matched
-            match = all(cells[ii + _i][jj + _j] for _i in range(sub_size_m) for _j in range(sub_size_n))
-
-            # Check if there are connections between the cells.
-            for _i in range(sub_size_m):
-                for _j in range(sub_size_n):
-                    if sub_size_m > 1 and _i < sub_size_m - 1:
-                         # BRAD NO HARDCODED 4
-                        match &= 4 == _between(_cell_qubits(ii + _i, jj + _j), _cell_qubits(ii + _i + 1, jj + _j))
-                    if sub_size_n > 1 and _j < sub_size_n - 1:
-                         # BRAD NO HARDCODED 4
-                        match &= 4 == _between(_cell_qubits(ii + _i, jj + _j), _cell_qubits(ii + _i, jj + _j + 1))
-
-            if match:
-                # Pull those cells out into an embedding.
-                embedding = []  # BRAD REFORMAT AS PER ADTT CONVENTION
-                for _i in range(sub_size_m):
-                    for _j in range(sub_size_n):
-                        cells[ii + _i][jj + _j] = False
-                        for uu in range(2):
-                            for kk in range(4):
-                                 # BRAD FLATTEN THIS OUT, NO HARDCODED 4
-                                embedding.append(c2i([[ii + _i, jj + _j, uu, kk]], size, size, 4))
-
-                embeddings.append(embedding)
-
-    return embeddings
