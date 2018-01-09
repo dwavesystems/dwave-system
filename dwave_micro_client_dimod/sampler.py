@@ -2,6 +2,8 @@
 DWaveSampler
 ============
 """
+import collections
+
 import dimod
 import dwave_micro_client as microclient
 
@@ -31,14 +33,14 @@ class DWaveSampler(dimod.TemplateSampler):
 
     Attributes:
         structure (tuple):
-            A 3-tuple:
+            A named 3-tuple with the following properties/values:
 
-                list: The nodes available to the sampler.
+                nodelist (list): The nodes available to the sampler.
 
-                list[(node, node)]: The edges available to the sampler.
+                edgelist (list[(node, node)]): The edges available to the sampler.
 
-                dict: Encodes the edges of the sampler in nested dicts. The keys of adj
-                are the nodes of the sampler and the values are neighbor-dicts.
+                adjacency (dict): Encodes the edges of the sampler in nested dicts. The keys of
+                adjacency are the nodes of the sampler and the values are neighbor-dicts.
 
         accepted_kwargs (dict[str, :class:`dimod.SamplerKeywordArg`]):
             The keyword arguments accepted by the `sample_ising` and `sample_qubo`
@@ -67,7 +69,7 @@ class DWaveSampler(dimod.TemplateSampler):
         # edgelist, make a new list (and remove doubled edges)
         edgelist = sorted((u, v) for u, v in solver.edges if u <= v)  # all index-labeled
 
-        self.structure = (nodelist, edgelist, adj)
+        self.structure = Structure(nodelist, edgelist, adj)
 
     def my_kwargs(self):
         """The keyword arguments accepted by DWaveSampler
@@ -121,3 +123,6 @@ class DWaveSampler(dimod.TemplateSampler):
         response.add_samples_future(future)
 
         return response
+
+
+Structure = collections.namedtuple("Structure", ['nodelist', 'edgelist', 'adjacency'])
