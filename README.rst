@@ -35,7 +35,8 @@ To build from souce:
 
 .. code-block:: bash
     
-    pip install .
+    pip install -r requirments.txt
+    python setup.py install
 
 Example Usage
 -------------
