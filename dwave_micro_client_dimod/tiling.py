@@ -27,13 +27,13 @@ class TilingComposite(dimod.TemplateComposite):
         dimod.TemplateComposite.__init__(self, sampler)
         self._child = sampler  # faster access than self.children[0]
         tile = dnx.chimera_graph(sub_m, sub_n, t)
-        self.structure = (sorted(tile.nodes), sorted(tile.edges), sorted(tile.adjacency()))
+        self.structure = (sorted(tile.nodes), sorted(tile.edges), tile.adj)
 
         nodes_per_cell = t * 2
         edges_per_cell = t * t
         # CAN SQUARE SHAPE BE ASSUMED?
-        size_m = size_n = int(ceil(sqrt(ceil(len(sampler.structure[0]) / nodes_per_cell))))
-        system = dnx.chimera_graph(size_m, size_n, t, sampler.structure[0], sampler.structure[1])
+        m = n = int(ceil(sqrt(ceil(len(sampler.structure[0]) / nodes_per_cell))))
+        system = dnx.chimera_graph(m, n, t, node_list=sampler.structure[0], edge_list=sampler.structure[1])
         c2i = {chimera_index: linear_index for (linear_index, chimera_index) in system.nodes(data='chimera_index')}
         sub_c2i = {chimera_index: linear_index for (linear_index, chimera_index) in tile.nodes(data='chimera_index')}
 
@@ -44,22 +44,21 @@ class TilingComposite(dimod.TemplateComposite):
 
         # Get the list of qubits in a cell
         def _cell_qubits(i, j):
-            return [c2i[(i, j, u, k)] for u in range(2) for k in range(t)]
+            return [c2i[(i, j, u, k)] for u in range(2) for k in range(t) if (i, j, u, k) in c2i]
 
         # get a mask of complete cells
-        cells = [[False for _ in range(size_n)] for _ in range(size_m)]
-        for i in range(size_m):
-            for j in range(size_n):
+        cells = [[False for _ in range(n)] for _ in range(m)]
+        for i in range(m):
+            for j in range(n):
                 qubits = _cell_qubits(i, j)
-                active_in_cell = sum(q in system.nodes for q in qubits)
-                cells[i][j] = active_in_cell == nodes_per_cell and _between(qubits, qubits) == edges_per_cell
+                cells[i][j] = len(qubits) == nodes_per_cell and _between(qubits, qubits) == edges_per_cell
 
         # List of 'embeddings'
         self.embeddings = []
 
         # For each possible chimera cell check if the next few cells are complete
-        for i in range(size_m + 1 - sub_m):
-            for j in range(size_n + 1 - sub_n):
+        for i in range(m + 1 - sub_m):
+            for j in range(n + 1 - sub_n):
 
                 # Check if the sub cells are matched
                 match = all(cells[i + sub_i][j + sub_j] for sub_i in range(sub_m) for sub_j in range(sub_n))
@@ -88,6 +87,17 @@ class TilingComposite(dimod.TemplateComposite):
 
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, **kwargs):
+        """Sample from the sub Chimera lattice.
+
+        Args:
+            h (list/dict): Linear terms of the model.
+            J (dict of (int, int):float): Quadratic terms of the model.
+            **kwargs: Parameters for the sampling method, specified per solver.
+
+        Returns:
+            :class:`dimod.SpinResponse`
+
+        """
         __, __, adjacency = self.structure
         if not all(v in adjacency for v in h):
             raise ValueError("nodes in linear bias do not map to the structure")
