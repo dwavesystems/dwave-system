@@ -22,7 +22,7 @@ class TilingComposite(dimod.TemplateComposite):
 
     """
 
-    def __init__(self, sampler, sub_m, sub_n, t):
+    def __init__(self, sampler, sub_m, sub_n, t = 4):
         # The composite __init__ adds the sampler into self.children
         dimod.TemplateComposite.__init__(self, sampler)
         self._child = sampler  # faster access than self.children[0]
@@ -31,8 +31,7 @@ class TilingComposite(dimod.TemplateComposite):
 
         nodes_per_cell = t * 2
         edges_per_cell = t * t
-        # CAN SQUARE SHAPE BE ASSUMED?
-        m = n = int(ceil(sqrt(ceil(len(sampler.structure[0]) / nodes_per_cell))))
+        m = n = int(ceil(sqrt(ceil(len(sampler.structure[0]) / nodes_per_cell)))) # assume square lattice shape
         system = dnx.chimera_graph(m, n, t, node_list=sampler.structure[0], edge_list=sampler.structure[1])
         c2i = {chimera_index: linear_index for (linear_index, chimera_index) in system.nodes(data='chimera_index')}
         sub_c2i = {chimera_index: linear_index for (linear_index, chimera_index) in tile.nodes(data='chimera_index')}
