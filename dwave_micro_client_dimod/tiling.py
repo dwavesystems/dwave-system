@@ -151,6 +151,7 @@ def draw_tiling(sampler, t = 4):
         t (int): The size of the shore within each Chimera cell.
 
     Uses `dwave_networkx.draw_chimera` (see draw_chimera_).
+    Linear biases are overloaded to color the graph according to which tile each Chimera cell belongs to.
 
     .. _draw_chimera: http://dwave-networkx.readthedocs.io/en/latest/reference/generated/dwave_networkx.drawing.chimera_layout.draw_chimera.html
 
