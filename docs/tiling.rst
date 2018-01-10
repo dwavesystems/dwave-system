@@ -1,5 +1,4 @@
 .. py:currentmodule:: dwave_micro_client_dimod
 
 .. automodule:: dwave_micro_client_dimod.tiling
-    :members:
-    :inherited-members:
+    :members: TilingComposite, draw_tiling
