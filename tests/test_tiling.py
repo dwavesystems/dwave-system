@@ -30,8 +30,8 @@ class TestTiling(unittest.TestCase):
     def test_sample_ising(self):
         sampler = micro.TilingComposite(micro.DWaveSampler(), 2, 2)
 
-        h = {node: random.uniform(-1, 1) for node in sampler.structure[0]}
-        J = {edge: random.uniform(-1, 1) for edge in sampler.structure[1]}
+        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
+        J = {edge: random.uniform(-1, 1) for edge in sampler.structure.edgelist}
 
         response = sampler.sample_ising(h, J)
 
@@ -48,8 +48,8 @@ class TestTiling(unittest.TestCase):
     def test_sample_qubo(self):
         sampler = micro.TilingComposite(micro.DWaveSampler(), 2, 2)
 
-        Q = {edge: random.uniform(-1, 1) for edge in sampler.structure[1]}
-        Q.update({(node, node) for node in sampler.structure[0]})
+        Q = {edge: random.uniform(-1, 1) for edge in sampler.structure.edgelist}
+        Q.update({(node, node) for node in sampler.structure.nodelist})
 
         response = sampler.sample_qubo(Q)
 
@@ -74,8 +74,8 @@ class TestTilingMock(unittest.TestCase):
 
         sampler = micro.TilingComposite(mock_sampler, 2, 2)
 
-        h = {node: random.uniform(-1, 1) for node in sampler.structure[0]}
-        J = {edge: random.uniform(-1, 1) for edge in sampler.structure[1]}
+        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
+        J = {edge: random.uniform(-1, 1) for edge in sampler.structure.edgelist}
 
         response = sampler.sample_ising(h, J)
 

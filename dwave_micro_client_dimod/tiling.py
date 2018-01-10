@@ -3,7 +3,6 @@ TilingComposite
 ==================
 """
 from __future__ import division
-#import itertools
 from math import sqrt, ceil
 
 import dimod
@@ -31,8 +30,8 @@ class TilingComposite(dimod.TemplateComposite):
 
         nodes_per_cell = t * 2
         edges_per_cell = t * t
-        m = n = int(ceil(sqrt(ceil(len(sampler.structure[0]) / nodes_per_cell)))) # assume square lattice shape
-        system = dnx.chimera_graph(m, n, t, node_list=sampler.structure[0], edge_list=sampler.structure[1])
+        m = n = int(ceil(sqrt(ceil(len(sampler.structure.nodelist) / nodes_per_cell)))) # assume square lattice shape
+        system = dnx.chimera_graph(m, n, t, node_list=sampler.structure.nodelist, edge_list=sampler.structure.edgelist)
         c2i = {chimera_index: linear_index for (linear_index, chimera_index) in system.nodes(data='chimera_index')}
         sub_c2i = {chimera_index: linear_index for (linear_index, chimera_index) in tile.nodes(data='chimera_index')}
 
