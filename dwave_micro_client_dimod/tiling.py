@@ -4,11 +4,13 @@ TilingComposite
 """
 from __future__ import division
 from math import sqrt, ceil
+from dwave_micro_client_dimod.sampler import Structure
 
 import dimod
 import dwave_networkx as dnx
 import dwave_embedding_utilities as embutil
 
+__all__ = ['TilingComposite']
 
 class TilingComposite(dimod.TemplateComposite):
     """Composite to tile a small problem across a structured sampler.
@@ -19,6 +21,20 @@ class TilingComposite(dimod.TemplateComposite):
         sub_n (int): The number of columns in the sub Chimera lattice.
         t (int): The size of the shore within each Chimera cell.
 
+    Attributes:
+        structure (tuple):
+            A named 3-tuple with the following properties/values:
+
+                nodelist (list): The nodes available to the sampler.
+
+                edgelist (list[(node, node)]): The edges available to the sampler.
+
+                adjacency (dict): Encodes the edges of the sampler in nested dicts. The keys of
+                adjacency are the nodes of the sampler and the values are neighbor-dicts.
+        embeddings (list):
+            A list of dictionaries mapping from the sub Chimera lattice to the structured sampler of the form
+            {v: {s, ...}, ...} where v is a variable in the sub Chimera lattice and s is a variable in the system.
+
     """
 
     def __init__(self, sampler, sub_m, sub_n, t = 4):
@@ -26,7 +42,7 @@ class TilingComposite(dimod.TemplateComposite):
         dimod.TemplateComposite.__init__(self, sampler)
         self._child = sampler  # faster access than self.children[0]
         tile = dnx.chimera_graph(sub_m, sub_n, t)
-        self.structure = (sorted(tile.nodes), sorted(tile.edges), tile.adj)
+        self.structure = Structure(sorted(tile.nodes), sorted(tile.edges), tile.adj)
 
         nodes_per_cell = t * 2
         edges_per_cell = t * t
@@ -126,3 +142,25 @@ class TilingComposite(dimod.TemplateComposite):
                                              h=h, J=J)
 
         return source_response
+
+def draw_tiling(sampler, t = 4):
+    """Draw Chimera graph of sampler with colored tiles.
+
+    Args:
+        sampler (:class:`dwave_micro_client_dimod.TilingComposite`): A tiled dimod sampler to be drawn.
+        t (int): The size of the shore within each Chimera cell.
+
+    Uses `dwave_networkx.draw_chimera` (see draw_chimera_).
+
+    .. _draw_chimera: http://dwave-networkx.readthedocs.io/en/latest/reference/generated/dwave_networkx.drawing.chimera_layout.draw_chimera.html
+
+    """
+
+    _child = sampler._child
+    nodes_per_cell = t * 2
+    m = n = int(ceil(sqrt(ceil(len(_child.structure.nodelist) / nodes_per_cell))))  # assume square lattice shape
+    system = dnx.chimera_graph(m, n, t, node_list=_child.structure.nodelist, edge_list=_child.structure.edgelist)
+
+    labels = {node: -len(sampler.embeddings) for node in system.nodes} # unused cells are blue
+    labels.update({node: i for i, embedding in enumerate(sampler.embeddings) for s in embedding.values() for node in s})
+    dnx.draw_chimera(system, linear_biases=labels)
