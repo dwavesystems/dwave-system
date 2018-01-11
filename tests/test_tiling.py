@@ -4,6 +4,7 @@ import random
 import dwave_micro_client as microclient
 import dimod
 import dwave_networkx as dnx
+from dwave_micro_client_dimod.sampler import Structure
 
 try:
     # py3
@@ -70,7 +71,7 @@ class TestTilingMock(unittest.TestCase):
     def test_sample_ising(self):
         mock_sampler = mock.MagicMock()
         hardware_graph = dnx.chimera_graph(4)
-        mock_sampler.structure = (hardware_graph.nodes, hardware_graph.edges, hardware_graph.adj)
+        mock_sampler.structure = Structure(hardware_graph.nodes, hardware_graph.edges, hardware_graph.adj)
 
         sampler = micro.TilingComposite(mock_sampler, 2, 2)
 
@@ -94,7 +95,7 @@ class TestTilingMock(unittest.TestCase):
         nodes.remove(nodes_per_cell * 3)
 
         hardware_graph = dnx.chimera_graph(size, node_list=nodes)
-        mock_sampler.structure = (hardware_graph.nodes, hardware_graph.edges, hardware_graph.adj)
+        mock_sampler.structure = Structure(hardware_graph.nodes, hardware_graph.edges, hardware_graph.adj)
 
         sampler = micro.TilingComposite(mock_sampler, 2, 2, 4)
         # Given the above chimera graph, check that the embeddings are as follows:
@@ -104,11 +105,11 @@ class TestTilingMock(unittest.TestCase):
         # 22XX
         # where 0,1,2: belongs to correspoding embedding, X: not used in any embedding
         self.assertSetEqual({v for s in sampler.embeddings[0].values() for v in s},
-                             {linear_index for (linear_index, (i, j, u, k)) in hardware_graph.nodes(data='chimera_index')
-                              if i in (0, 1) and j in (0, 1)})
+                            {linear_index for (linear_index, (i, j, u, k)) in hardware_graph.nodes(data='chimera_index')
+                             if i in (0, 1) and j in (0, 1)})
         self.assertSetEqual({v for s in sampler.embeddings[1].values() for v in s},
-                             {linear_index for (linear_index, (i, j, u, k)) in hardware_graph.nodes(data='chimera_index')
-                              if i in (1, 2) and j in (2, 3)})
+                            {linear_index for (linear_index, (i, j, u, k)) in hardware_graph.nodes(data='chimera_index')
+                             if i in (1, 2) and j in (2, 3)})
         self.assertSetEqual({v for s in sampler.embeddings[2].values() for v in s},
-                             {linear_index for (linear_index, (i, j, u, k)) in hardware_graph.nodes(data='chimera_index')
-                              if i in (2, 3) and j in (0, 1)})
+                            {linear_index for (linear_index, (i, j, u, k)) in hardware_graph.nodes(data='chimera_index')
+                             if i in (2, 3) and j in (0, 1)})
