@@ -102,6 +102,9 @@ class TilingComposite(dimod.TemplateComposite):
 
                     self.embeddings.append(embedding)
 
+        if len(self.embeddings) == 0:
+            raise ValueError("no tile embeddings found; is the sampler Chimera structured?")
+
     @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, **kwargs):
         """Sample from the sub Chimera lattice.
