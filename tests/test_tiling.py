@@ -91,7 +91,7 @@ class TestTilingMock(unittest.TestCase):
         # where O: complete cell, X: incomplete cell
         size = 4
         nodes_per_cell = 8
-        nodes = range(size * size * nodes_per_cell)
+        nodes = list(range(size * size * nodes_per_cell))
         nodes.remove(nodes_per_cell * 3)
 
         hardware_graph = dnx.chimera_graph(size, node_list=nodes)
