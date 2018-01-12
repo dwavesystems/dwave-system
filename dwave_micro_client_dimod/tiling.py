@@ -12,8 +12,11 @@ import dwave_embedding_utilities as embutil
 
 __all__ = ['TilingComposite']
 
+
 class TilingComposite(dimod.TemplateComposite):
-    """Composite to tile a small problem across a structured sampler.
+    """ Composite to tile a small problem across a Chimera-structured sampler. A problem that can fit on a small Chimera
+    graph can be replicated across a larger Chimera graph to get samples from multiple areas of the system in one call.
+    For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-WAVE 2000Q system (16x16).
 
     Args:
         sampler (:class:`dimod.TemplateSampler`): A structured dimod sampler to be wrapped.
@@ -37,7 +40,7 @@ class TilingComposite(dimod.TemplateComposite):
 
     """
 
-    def __init__(self, sampler, sub_m, sub_n, t = 4):
+    def __init__(self, sampler, sub_m, sub_n, t=4):
         # The composite __init__ adds the sampler into self.children
         dimod.TemplateComposite.__init__(self, sampler)
         self._child = sampler  # faster access than self.children[0]
@@ -46,7 +49,7 @@ class TilingComposite(dimod.TemplateComposite):
 
         nodes_per_cell = t * 2
         edges_per_cell = t * t
-        m = n = int(ceil(sqrt(ceil(len(sampler.structure.nodelist) / nodes_per_cell)))) # assume square lattice shape
+        m = n = int(ceil(sqrt(ceil(len(sampler.structure.nodelist) / nodes_per_cell))))  # assume square lattice shape
         system = dnx.chimera_graph(m, n, t, node_list=sampler.structure.nodelist, edge_list=sampler.structure.edgelist)
         c2i = {chimera_index: linear_index for (linear_index, chimera_index) in system.nodes(data='chimera_index')}
         sub_c2i = {chimera_index: linear_index for (linear_index, chimera_index) in tile.nodes(data='chimera_index')}
@@ -143,7 +146,8 @@ class TilingComposite(dimod.TemplateComposite):
 
         return source_response
 
-def draw_tiling(sampler, t = 4):
+
+def draw_tiling(sampler, t=4):
     """Draw Chimera graph of sampler with colored tiles.
 
     Args:
@@ -162,6 +166,6 @@ def draw_tiling(sampler, t = 4):
     m = n = int(ceil(sqrt(ceil(len(_child.structure.nodelist) / nodes_per_cell))))  # assume square lattice shape
     system = dnx.chimera_graph(m, n, t, node_list=_child.structure.nodelist, edge_list=_child.structure.edgelist)
 
-    labels = {node: -len(sampler.embeddings) for node in system.nodes} # unused cells are blue
+    labels = {node: -len(sampler.embeddings) for node in system.nodes}  # unused cells are blue
     labels.update({node: i for i, embedding in enumerate(sampler.embeddings) for s in embedding.values() for node in s})
     dnx.draw_chimera(system, linear_biases=labels)
