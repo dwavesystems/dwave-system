@@ -18,6 +18,7 @@ Documentation
 
    sampler
    composite
+   tiling
    response
    license
 
