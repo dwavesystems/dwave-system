@@ -61,6 +61,11 @@ class VirtualGraph(dimod.TemplateComposite):
             raise
 
         #
+        # Validate the chain strength, or obtain it from J-range if chain strength is not provided.
+        #
+        self.chain_strength = self._validate_chain_strength(chain_strength)
+
+        #
         # We want to track the persistent embedding so that we can map input problems
         # to the child sampler.
         #
@@ -125,7 +130,7 @@ class VirtualGraph(dimod.TemplateComposite):
 
         # apply the embedding to the given problem to map it to the child sampler
         __, __, target_adjacency = self._child.structure
-        h_emb, J_emb, J_chain = embutil.embed_ising(h, J, self.embedding, target_adjacency)
+        h_emb, J_emb, J_chain = embutil.embed_ising(h, J, self.embedding, target_adjacency, self.chain_strength)
         J_emb.update(J_chain)
 
         # solve the problem on the child system
@@ -145,6 +150,54 @@ class VirtualGraph(dimod.TemplateComposite):
                                          sample_data=(data for __, data in response.samples(data=True)),
                                          h=h, J=J)
         return source_response
+
+    def _validate_chain_strength(self, chain_strength):
+        """Validate the provided chain strength, checking J-ranges of the sampler's chilren.
+
+        Args:
+            chain_strength (float) The provided chain strength.  Use None to use J-range.
+
+        Returns (float):
+            A valid chain strength, either provided or based on available J-range.  Positive finite float.
+        """
+
+        j_range_minimum = None  # Minimum value allowed in J-range
+        for child in self.children:
+            try:
+                j_range_minimum = min(child.solver.properties['j_range'])
+                break
+            except (AttributeError, KeyError):
+                continue
+
+        if chain_strength is not None:
+            try:
+                chain_strength = float(chain_strength)
+            except TypeError:
+                raise ValueError("chain_strength could not be converted to float.")
+            if not 0. < chain_strength < float('Inf'):
+                raise ValueError("chain_strength is not a finite positive number.")
+
+        if j_range_minimum is not None:
+            try:
+                j_range_minimum = float(j_range_minimum)
+            except TypeError:
+                raise ValueError("j_range_minimum could not be converted to float.")
+            if not 0. < -j_range_minimum < float('Inf'):
+                raise ValueError("j_range_minimum is not a finite negative number.")
+
+        if j_range_minimum is None and chain_strength is None:
+            raise ValueError("Could not find valid j_range property.  chain_strength must be provided explicitly.")
+
+        if j_range_minimum is None:
+            return chain_strength
+
+        if chain_strength is None:
+            return -j_range_minimum
+
+        else:
+            if chain_strength > -j_range_minimum:
+                raise ValueError("chain_strength ({}) is too great (larger than -j_range_minimum ({})).".format(chain_strength, -j_range_minimum))
+            return chain_strength
 
 
 def _adjacency_to_edges(adjacency):
