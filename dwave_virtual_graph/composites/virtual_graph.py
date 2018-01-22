@@ -139,6 +139,9 @@ class VirtualGraph(dimod.TemplateComposite):
         if apply_flux_bias_offsets and self.flux_biases is not None:
             kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
+        # Embed arguments providing initial states for reverse annealing, if applicable.
+        kwargs = _embed_initial_state_kwargs(kwargs, self.embedding)
+
         response = child.sample_ising(h_emb, J_emb, **kwargs)
 
         # unembed the problem and save to a new response object
@@ -216,3 +219,58 @@ def _adjacency_to_edges(adjacency):
 
             edges.add(edge)
     return edges
+
+
+def _embed_initial_state(initial_state, embedding):
+    """Embed the states provided by the initial_state parameter used for reverse annealing.
+
+    Args:
+
+        initial_state (list of lists): Logical initial state as it would be passed to SAPI for reverse annealing.
+
+        embedding (dict): The embedding used to embed the initial state.  Maps logical indices to chains.
+
+    Returns (list of lists):
+
+        The initial_state, embedded according to the provided embedding.
+    """
+
+    embedded_state = dict()  # A dictionary to store the embedded initial state.
+    for logical_idx, logical_value in initial_state:  # Iterate through the logical qubit, state pairs.
+        for embedded_idx in embedding[logical_idx]:  # For each embedded qubit in the corresponding chain...
+            embedded_state[embedded_idx] = logical_value  # make the embedded state equal to the logical state.
+
+    # Convert dictionary to a list of lists.
+    embedded_state_list_of_lists = [[q_emb, embedded_state[q_emb]] for q_emb in sorted(embedded_state.keys())]
+
+    return embedded_state_list_of_lists
+
+
+def _embed_initial_state_kwargs(kwargs, embedding):
+
+    initial_state_kwargs = {k: v for k, v in kwargs.iteritems()
+                            if k.endswith('initial_state') or k.endswith('initial_states')}
+
+    if len(initial_state_kwargs) == 0:
+        return kwargs
+
+    if len(initial_state_kwargs) > 1:
+        raise ValueError("Multiple arguments providing initial states to sample_ising (only one allowed): "
+                         "{}.".format(initial_state_kwargs.keys()))
+
+    initial_state_kwarg_key, initial_state_kwarg_val = initial_state_kwargs.items()[0]
+
+    # If it is a single state, embed the single state.
+    if initial_state_kwarg_key.endswith('initial_state'):
+        kwargs[initial_state_kwarg_key] = _embed_initial_state(initial_state_kwarg_val, embedding)
+
+    # If it is multiple states, embed each one.
+    elif initial_state_kwarg_key.endswith('initial_states'):
+        kwargs[initial_state_kwarg_key] = \
+            [_embed_initial_state(initial_state, embedding) for initial_state in initial_state_kwarg_val]
+
+    else:
+        raise AssertionError("kwarg should end with 'initial_state' or 'initial_states' "
+                             "but it is {}.".format(initial_state_kwarg_key))
+
+    return kwargs
