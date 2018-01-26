@@ -149,6 +149,10 @@ class TilingComposite(dimod.TemplateComposite):
 
         return source_response
 
+    @property
+    def num_tiles(self):
+        return len(self.embeddings)
+
 
 def draw_tiling(sampler, t=4):
     """Draw Chimera graph of sampler with colored tiles.
