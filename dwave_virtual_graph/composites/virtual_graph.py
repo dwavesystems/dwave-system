@@ -140,7 +140,7 @@ class VirtualGraph(dimod.TemplateComposite):
             kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
         # Embed arguments providing initial states for reverse annealing, if applicable.
-        kwargs = _embed_initial_state_kwargs(kwargs, self.embedding)
+        kwargs = _embed_initial_state_kwargs(kwargs, self.embedding, self._child.structure[0])
 
         response = child.sample_ising(h_emb, J_emb, **kwargs)
 
@@ -223,7 +223,7 @@ def _adjacency_to_edges(adjacency):
     return edges
 
 
-def _embed_initial_state(initial_state, embedding):
+def _embed_initial_state(initial_state, embedding, qubits_HACK_VARIABLE):
     """Embed the states provided by the initial_state parameter used for reverse annealing.
 
     Args:
@@ -238,9 +238,12 @@ def _embed_initial_state(initial_state, embedding):
     """
 
     embedded_state = dict()  # A dictionary to store the embedded initial state.
+    embedded_state = {q: 1 for q in qubits_HACK_VARIABLE}  # THIS LINE IS A HACK NECESSARY BECAUSE THE ACTIVE
+    # QUBITS AREN'T BEING RECOGNIZED PROPERLY.
+
     for logical_idx, logical_value in initial_state:  # Iterate through the logical qubit, state pairs.
         for embedded_idx in embedding[logical_idx]:  # For each embedded qubit in the corresponding chain...
-            embedded_state[embedded_idx] = logical_value  # make the embedded state equal to the logical state.
+            embedded_state[embedded_idx] = int(logical_value)  # make the embedded state equal to the logical state.
 
     # Convert dictionary to a list of lists.
     embedded_state_list_of_lists = [[q_emb, embedded_state[q_emb]] for q_emb in sorted(embedded_state.keys())]
@@ -248,7 +251,7 @@ def _embed_initial_state(initial_state, embedding):
     return embedded_state_list_of_lists
 
 
-def _embed_initial_state_kwargs(kwargs, embedding):
+def _embed_initial_state_kwargs(kwargs, embedding, qubits_HACK_VARIABLE):
 
     initial_state_kwargs = {k: v for k, v in kwargs.iteritems()
                             if k.endswith('initial_state') or k.endswith('initial_states')}
@@ -264,12 +267,12 @@ def _embed_initial_state_kwargs(kwargs, embedding):
 
     # If it is a single state, embed the single state.
     if initial_state_kwarg_key.endswith('initial_state'):
-        kwargs[initial_state_kwarg_key] = _embed_initial_state(initial_state_kwarg_val, embedding)
+        kwargs[initial_state_kwarg_key] = _embed_initial_state(initial_state_kwarg_val, embedding, qubits_HACK_VARIABLE)
 
     # If it is multiple states, embed each one.
     elif initial_state_kwarg_key.endswith('initial_states'):
         kwargs[initial_state_kwarg_key] = \
-            [_embed_initial_state(initial_state, embedding) for initial_state in initial_state_kwarg_val]
+            [_embed_initial_state(initial_state, embedding, qubits_HACK_VARIABLE) for initial_state in initial_state_kwarg_val]
 
     else:
         raise AssertionError("kwarg should end with 'initial_state' or 'initial_states' "
