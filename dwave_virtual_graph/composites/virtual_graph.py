@@ -7,7 +7,7 @@ import dwave_embedding_utilities as embutil
 from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
 from dwave_virtual_graph.embedding import get_embedding_from_tag
 
-FLUX_BIAS_KWARG = 'x_flux_bias'
+FLUX_BIAS_KWARG = 'flux_bias'
 
 
 class VirtualGraph(dimod.TemplateComposite):
@@ -167,7 +167,9 @@ class VirtualGraph(dimod.TemplateComposite):
         j_range_minimum = None  # Minimum value allowed in J-range
         for child in self.children:
             try:
-                j_range_minimum = min(child.solver.properties['j_range'])
+                # Try to get extended_j_range, just use j_range if that doesn't exist.
+                j_range_minimum = min(child.solver.properties.get('extended_j_range',
+                                                                  child.solver.properties['j_range']))
                 break
             except (AttributeError, KeyError):
                 continue
