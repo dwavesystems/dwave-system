@@ -1,14 +1,17 @@
 from __future__ import absolute_import
 
 import sys
+import os
 from setuptools import setup
 
 # add __version__, __author__, __authoremail__, __description__ to this namespace
 _PY2 = sys.version_info.major == 2
+my_loc = os.path.dirname(os.path.abspath(__file__))
+os.chdir(my_loc)
 if _PY2:
-    execfile("./dwave_virtual_graph/package_info.py")
+    execfile(os.path.join(".", "dwave_virtual_graph", "package_info.py"))
 else:
-    exec(open("./dwave_virtual_graph/package_info.py").read())
+    exec(open(os.path.join(".", "dwave_virtual_graph", "package_info.py")).read())
 
 install_requires = ['homebase',
                     'minorminer',
