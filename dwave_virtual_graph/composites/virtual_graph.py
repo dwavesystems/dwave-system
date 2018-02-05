@@ -155,7 +155,7 @@ class VirtualGraph(dimod.TemplateComposite):
         return source_response
 
     def _validate_chain_strength(self, chain_strength):
-        """Validate the provided chain strength, checking J-ranges of the sampler's chilren.
+        """Validate the provided chain strength, checking J-ranges of the sampler's children.
 
         Args:
             chain_strength (float) The provided chain strength.  Use None to use J-range.
@@ -223,7 +223,7 @@ def _adjacency_to_edges(adjacency):
     return edges
 
 
-def _embed_initial_state(initial_state, embedding, qubits_HACK_VARIABLE):
+def _embed_initial_state(initial_state, embedding, qubits):
     """Embed the states provided by the initial_state parameter used for reverse annealing.
 
     Args:
@@ -232,14 +232,16 @@ def _embed_initial_state(initial_state, embedding, qubits_HACK_VARIABLE):
 
         embedding (dict): The embedding used to embed the initial state.  Maps logical indices to chains.
 
+        qubits (list): A list of qubits on the target topology.
+
+
     Returns (list of lists):
 
         The initial_state, embedded according to the provided embedding.
     """
 
-    embedded_state = dict()  # A dictionary to store the embedded initial state.
-    embedded_state = {q: 1 for q in qubits_HACK_VARIABLE}  # THIS LINE IS A HACK NECESSARY BECAUSE THE ACTIVE
-    # QUBITS AREN'T BEING RECOGNIZED PROPERLY.
+    # Initialize by setting all qubits to 1 (these will be overwritten for active qubits).
+    embedded_state = {q: 1 for q in qubits}
 
     for logical_idx, logical_value in initial_state:  # Iterate through the logical qubit, state pairs.
         for embedded_idx in embedding[logical_idx]:  # For each embedded qubit in the corresponding chain...
@@ -251,7 +253,23 @@ def _embed_initial_state(initial_state, embedding, qubits_HACK_VARIABLE):
     return embedded_state_list_of_lists
 
 
-def _embed_initial_state_kwargs(kwargs, embedding, qubits_HACK_VARIABLE):
+def _embed_initial_state_kwargs(kwargs, embedding, qubits):
+    """Embed the state(s) used for reverse annealing.
+
+    The keyword argument storing the state(s) will be detected by name and handled appropriately.
+
+    Args:
+
+        kwargs (dict): Dictionary of keyword arguments, one of which must end with "initial_state" or "initial_states".
+
+        embedding (dict): The embedding used to embed the initial state.  Maps logical indices to chains.
+
+        qubits (list): A list of qubits on the target topology.
+
+    Returns (list of lists):
+
+        The initial_state(s), embedded according to the provided embedding.
+    """
 
     initial_state_kwargs = {k: v for k, v in kwargs.iteritems()
                             if k.endswith('initial_state') or k.endswith('initial_states')}
@@ -267,12 +285,12 @@ def _embed_initial_state_kwargs(kwargs, embedding, qubits_HACK_VARIABLE):
 
     # If it is a single state, embed the single state.
     if initial_state_kwarg_key.endswith('initial_state'):
-        kwargs[initial_state_kwarg_key] = _embed_initial_state(initial_state_kwarg_val, embedding, qubits_HACK_VARIABLE)
+        kwargs[initial_state_kwarg_key] = _embed_initial_state(initial_state_kwarg_val, embedding, qubits)
 
     # If it is multiple states, embed each one.
     elif initial_state_kwarg_key.endswith('initial_states'):
         kwargs[initial_state_kwarg_key] = \
-            [_embed_initial_state(initial_state, embedding, qubits_HACK_VARIABLE) for initial_state in initial_state_kwarg_val]
+            [_embed_initial_state(initial_state, embedding, qubits) for initial_state in initial_state_kwarg_val]
 
     else:
         raise AssertionError("kwarg should end with 'initial_state' or 'initial_states' "
