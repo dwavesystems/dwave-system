@@ -37,10 +37,12 @@ class TestComposite(unittest.TestCase):
         self.assertGreaterEqual(len(response), 1)
 
         for sample in response.samples():
-            for v in h:
-                self.assertIn(v, sample)
+            self.assertIsInstance(sample, dict)
+            self.assertEqual(set(sample), set(h))
 
         for sample, energy in response.data(['sample', 'energy']):
+            self.assertIsInstance(sample, dict)
+            self.assertEqual(set(sample), set(h))
             self.assertAlmostEqual(dimod.ising_energy(sample, h, J),
                                    energy)
 
