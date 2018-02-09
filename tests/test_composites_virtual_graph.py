@@ -45,7 +45,7 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
 
     def test_smoke(self):
         child_sampler = MockSampler()
-        sampler = vg.VirtualGraph(child_sampler, {'a': [0]}, flux_bias_test_reads=10)
+        sampler = vg.VirtualGraph(child_sampler, {'a': [0]}, flux_bias_num_reads=10)
 
         # depending on how recenlty flux bias data was gathered, this may be true
         child_sampler.flux_biases_flag = False
