@@ -9,7 +9,7 @@ import dwave_embedding_utilities as embutil
 import minorminer
 
 
-class EmbeddingComposite(dimod.TemplateComposite):
+class EmbeddingComposite(dimod.Composite):
     """Composite to map unstructured problems to a structured sampler.
 
     Args:
@@ -19,10 +19,8 @@ class EmbeddingComposite(dimod.TemplateComposite):
     """
     def __init__(self, sampler):
         # The composite __init__ adds the sampler into self.children
-        dimod.TemplateComposite.__init__(self, sampler)
-        self._child = sampler  # faster access than self.children[0]
+        dimod.Composite.__init__(self, sampler)
 
-    @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, **kwargs):
         """Sample from the provided unstructured Ising model.
 
@@ -36,7 +34,7 @@ class EmbeddingComposite(dimod.TemplateComposite):
 
         """
         # solve the problem on the child system
-        child = self._child
+        child = self.child
 
         # apply the embedding to the given problem to map it to the child sampler
         __, target_edgelist, target_adjacency = child.structure
@@ -60,8 +58,12 @@ class EmbeddingComposite(dimod.TemplateComposite):
         samples = embutil.unembed_samples(response, embedding,
                                           chain_break_method=embutil.minimize_energy,
                                           linear=h, quadratic=J)  # needed by minimize_energy
-        source_response = dimod.SpinResponse()
-        source_response.add_samples_from(samples,
-                                         sample_data=(data for __, data in response.samples(data=True)),
-                                         h=h, J=J)
+        source_response = dimod.Response(dimod.SPIN)
+
+        for sample, (__, data) in zip(samples, response.df_data.iterrows()):
+
+            data['energy'] = dimod.ising_energy(sample, h, J)
+
+            source_response.add_sample(sample, **data.to_dict())
+
         return source_response

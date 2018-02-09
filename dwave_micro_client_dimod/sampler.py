@@ -7,12 +7,10 @@ import collections
 import dimod
 import dwave_micro_client as microclient
 
-from dwave_micro_client_dimod.response import FutureResponse
-
 __all__ = ['DWaveSampler']
 
 
-class DWaveSampler(dimod.TemplateSampler):
+class DWaveSampler(dimod.Sampler):
     """dimod wrapper for a D-Wave Micro Client.
 
     Args:
@@ -52,9 +50,13 @@ class DWaveSampler(dimod.TemplateSampler):
     """
 
     def __init__(self, solver_name=None, url=None, token=None, proxies=None, permissive_ssl=False):
-        self.connection = connection = microclient.Connection(url, token, proxies, permissive_ssl)
-        self.solver = solver = connection.get_solver(solver_name)
-        self.name = solver_name
+        dimod.Sampler.__init__(self)
+        properties = self.properties
+
+        connection = microclient.Connection(url, token, proxies, permissive_ssl)
+        self.connection = properties['connection'] = connection
+        self.solver = properties['solver'] = solver = connection.get_solver(solver_name)
+        self.name = properties['name'] = solver_name
 
         # initilize adj dict
         adj = {node: set() for node in solver.nodes}
@@ -69,25 +71,12 @@ class DWaveSampler(dimod.TemplateSampler):
         # edgelist, make a new list (and remove doubled edges)
         edgelist = sorted((u, v) for u, v in solver.edges if u <= v)  # all index-labeled
 
-        self.structure = Structure(nodelist, edgelist, adj)
+        self.structure = properties['structure'] = Structure(nodelist, edgelist, adj)
 
-    def my_kwargs(self):
-        """The keyword arguments accepted by DWaveSampler
+        properties.update(self.solver.properties)
 
-        Returns:
-            dict[str: :class:`.SamplerKeywordArg`]: The keyword arguments
-            accepted by the `sample_ising` and `sample_qubo` methods for this
-            sampler or the top-level composite layer. For all accepted keyword
-            arguments see `accepted_kwargs`.
+        self.sample_kwargs = dict(self.solver.parameters)
 
-        """
-        kwargs = dimod.TemplateSampler.my_kwargs(self)
-        for param in self.solver.parameters:
-            # this should be replaced by more complete info later
-            kwargs[param] = dimod.SamplerKeywordArg(str(param))
-        return kwargs
-
-    @dimod.decorators.ising(1, 2)
     def sample_ising(self, linear, quadratic, **kwargs):
         """Sample from the provided Ising model.
 
@@ -101,12 +90,11 @@ class DWaveSampler(dimod.TemplateSampler):
 
         """
         future = self.solver.sample_ising(linear, quadratic, **kwargs)
-        response = FutureResponse(vartype=dimod.Vartype.SPIN)
+        response = dimod.Response(dimod.SPIN)
         response.add_samples_future(future)
 
         return response
 
-    @dimod.decorators.qubo(1)
     def sample_qubo(self, Q, **kwargs):
         """Sample from the provided QUBO.
 
@@ -119,7 +107,7 @@ class DWaveSampler(dimod.TemplateSampler):
 
         """
         future = self.solver.sample_qubo(Q, **kwargs)
-        response = FutureResponse(vartype=dimod.Vartype.BINARY)
+        response = dimod.Response(dimod.BINARY)
         response.add_samples_future(future)
 
         return response

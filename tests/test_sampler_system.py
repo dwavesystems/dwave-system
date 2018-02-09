@@ -14,13 +14,15 @@ except (OSError, IOError):
 
 
 @unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
-class TestSampler(unittest.TestCase):
+class TestSampler(unittest.TestCase, dimod.test.SamplerAPITest):
     """These tests require a connection to the D-Wave sapi web services."""
+    def setUp(self):
+        self.sampler_factory = micro.DWaveSampler
+        self.sampler = micro.DWaveSampler()
 
-    def test_instantation_smoke_test(self):
-        # because credentials are stored on the path, we should not need to pass in any
-        # info to the sampler
-        sampler = micro.DWaveSampler()
+    def test_sample_response_form(self):
+        # overwrite
+        pass
 
     def test_instantiation_structure(self):
         """check that the correct structure was assigned to the dimod sampler"""
@@ -50,7 +52,7 @@ class TestSampler(unittest.TestCase):
             sampler = micro.DWaveSampler(solver_name=solver_name)
 
             for param in solver.parameters:
-                self.assertIn(param, sampler.accepted_kwargs)
+                self.assertIn(param, sampler.sample_kwargs)
 
     def test_sample_ising(self):
         sampler = micro.DWaveSampler()

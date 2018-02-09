@@ -50,7 +50,7 @@ class TestTiling(unittest.TestCase):
         sampler = micro.TilingComposite(micro.DWaveSampler(), 2, 2)
 
         Q = {edge: random.uniform(-1, 1) for edge in sampler.structure.edgelist}
-        Q.update({(node, node) for node in sampler.structure.nodelist})
+        Q.update({(node, node): random.uniform(-1, 1) for node in sampler.structure.nodelist})
 
         response = sampler.sample_qubo(Q)
 

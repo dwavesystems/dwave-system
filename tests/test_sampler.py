@@ -21,6 +21,8 @@ class TestDWaveMicroClientWithMock(unittest.TestCase):
         solver = mock.Mock()
         solver.nodes = set([0, 1, 2, 3])
         solver.edges = set([(0, 1), (1, 0), (2, 3), (3, 2)])
+        solver.properties = {}
+        solver.parameters = {}
         mock_connection.get_solver.return_value = solver
 
         sampler = micro.DWaveSampler('solvername', 'url', 'token')
