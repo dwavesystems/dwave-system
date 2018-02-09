@@ -9,7 +9,7 @@ import dwave_embedding_utilities as embutil
 import minorminer
 
 
-class EmbeddingComposite(dimod.Composite):
+class EmbeddingComposite(dimod.Sampler, dimod.Composite):
     """Composite to map unstructured problems to a structured sampler.
 
     Args:
@@ -19,6 +19,7 @@ class EmbeddingComposite(dimod.Composite):
     """
     def __init__(self, sampler):
         # The composite __init__ adds the sampler into self.children
+        dimod.Sampler.__init__(self)
         dimod.Composite.__init__(self, sampler)
 
     def sample_ising(self, h, J, **kwargs):

@@ -13,7 +13,7 @@ import dwave_embedding_utilities as embutil
 __all__ = ['TilingComposite']
 
 
-class TilingComposite(dimod.Composite):
+class TilingComposite(dimod.Sampler, dimod.Composite):
     """ Composite to tile a small problem across a Chimera-structured sampler. A problem that can fit on a small Chimera
     graph can be replicated across a larger Chimera graph to get samples from multiple areas of the system in one call.
     For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-WAVE 2000Q system (16x16).
@@ -42,6 +42,7 @@ class TilingComposite(dimod.Composite):
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
         # The composite __init__ adds the sampler into self.children
+        dimod.Sampler.__init__(self)
         dimod.Composite.__init__(self, sampler)
         tile = dnx.chimera_graph(sub_m, sub_n, t)
         self.structure = Structure(sorted(tile.nodes), sorted(tile.edges), tile.adj)
