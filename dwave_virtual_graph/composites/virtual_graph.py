@@ -4,13 +4,15 @@ import dimod
 
 import dwave_embedding_utilities as embutil
 
-from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
+from dwave_virtual_graph.compatibility23 import iteritems
 from dwave_virtual_graph.embedding import get_embedding_from_tag
+from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
+
 
 FLUX_BIAS_KWARG = 'flux_bias'
 
 
-class VirtualGraph(dimod.TemplateComposite):
+class VirtualGraph(dimod.Composite):
     def __init__(self, sampler, embedding,
                  chain_strength=None,
                  flux_biases=None, flux_bias_num_reads=1000, flux_bias_max_age=3600):
@@ -46,10 +48,7 @@ class VirtualGraph(dimod.TemplateComposite):
             `dimod.TemplateComposite`
 
         """
-
-        # The composite __init__ adds the sampler into self.children
-        dimod.TemplateComposite.__init__(self, sampler)
-        self._child = sampler  # faster access than self.children[0]
+        dimod.Composite.__init__(self, sampler)
 
         #
         # Get the adjacency of the child sampler (this is the target for our embedding)
@@ -92,7 +91,7 @@ class VirtualGraph(dimod.TemplateComposite):
         #
         # If the sampler accepts flux bias offsets, we'll want to set them
         #
-        if flux_biases is None and FLUX_BIAS_KWARG in sampler.accepted_kwargs:
+        if flux_biases is None and FLUX_BIAS_KWARG in sampler.sample_kwargs:
             # If nothing is provided, then we either get them from the cache or generate them
             flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_num_reads,
                                           max_age=flux_bias_max_age)
@@ -107,7 +106,6 @@ class VirtualGraph(dimod.TemplateComposite):
             flux_biases = None
         self.flux_biases = flux_biases
 
-    @dimod.decorators.ising(1, 2)
     def sample_ising(self, h, J, apply_flux_bias_offsets=True, **kwargs):
         """Sample from the given Ising model.
 
@@ -129,18 +127,18 @@ class VirtualGraph(dimod.TemplateComposite):
             raise ValueError("edges in linear bias do not map to the structure")
 
         # apply the embedding to the given problem to map it to the child sampler
-        __, __, target_adjacency = self._child.structure
+        __, __, target_adjacency = self.child.structure
         h_emb, J_emb, J_chain = embutil.embed_ising(h, J, self.embedding, target_adjacency, self.chain_strength)
         J_emb.update(J_chain)
 
         # solve the problem on the child system
-        child = self._child
+        child = self.child
 
         if apply_flux_bias_offsets and self.flux_biases is not None:
             kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
         # Embed arguments providing initial states for reverse annealing, if applicable.
-        kwargs = _embed_initial_state_kwargs(kwargs, self.embedding, self._child.structure[0])
+        kwargs = _embed_initial_state_kwargs(kwargs, self.embedding, self.child.structure[0])
 
         response = child.sample_ising(h_emb, J_emb, **kwargs)
 
@@ -148,10 +146,13 @@ class VirtualGraph(dimod.TemplateComposite):
         samples = embutil.unembed_samples(response, self.embedding,
                                           chain_break_method=embutil.minimize_energy,
                                           linear=h, quadratic=J)  # needed by minimize_energy
-        source_response = dimod.SpinResponse()
-        source_response.add_samples_from(samples,
-                                         sample_data=(data for __, data in response.samples(data=True)),
-                                         h=h, J=J)
+
+        source_response = dimod.Response(dimod.SPIN)
+
+        for sample, (__, data) in zip(samples, response.df_data.iterrows()):
+            data['energy'] = dimod.ising_energy(sample, h, J)
+            source_response.add_sample(sample, **data.to_dict())
+
         return source_response
 
     def _validate_chain_strength(self, chain_strength):
@@ -163,16 +164,15 @@ class VirtualGraph(dimod.TemplateComposite):
         Returns (float):
             A valid chain strength, either provided or based on available J-range.  Positive finite float.
         """
+        child = self.child
 
         j_range_minimum = None  # Minimum value allowed in J-range
-        for child in self.children:
-            try:
-                # Try to get extended_j_range, just use j_range if that doesn't exist.
-                j_range_minimum = min(child.solver.properties.get('extended_j_range',
-                                                                  child.solver.properties['j_range']))
-                break
-            except (AttributeError, KeyError):
-                continue
+        try:
+            # Try to get extended_j_range, just use j_range if that doesn't exist.
+            j_range_minimum = min(child.solver.properties.get('extended_j_range',
+                                                              child.solver.properties['j_range']))
+        except (AttributeError, KeyError):
+            pass
 
         if chain_strength is not None:
             try:
@@ -271,7 +271,7 @@ def _embed_initial_state_kwargs(kwargs, embedding, qubits):
         The initial_state(s), embedded according to the provided embedding.
     """
 
-    initial_state_kwargs = {k: v for k, v in kwargs.iteritems()
+    initial_state_kwargs = {k: v for k, v in iteritems(kwargs)
                             if k.endswith('initial_state') or k.endswith('initial_states')}
 
     if len(initial_state_kwargs) == 0:
@@ -281,7 +281,7 @@ def _embed_initial_state_kwargs(kwargs, embedding, qubits):
         raise ValueError("Multiple arguments providing initial states to sample_ising (only one allowed): "
                          "{}.".format(initial_state_kwargs.keys()))
 
-    initial_state_kwarg_key, initial_state_kwarg_val = initial_state_kwargs.items()[0]
+    initial_state_kwarg_key, initial_state_kwarg_val = next(iteritems(kwargs))
 
     # If it is a single state, embed the single state.
     if initial_state_kwarg_key.endswith('initial_state'):
