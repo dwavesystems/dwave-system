@@ -9,7 +9,7 @@ from dwave_virtual_graph.embedding import get_embedding_from_tag
 from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
 
 
-FLUX_BIAS_KWARG = 'flux_bias'
+FLUX_BIAS_KWARG = 'flux_biases'
 
 
 class VirtualGraph(dimod.Composite):
@@ -135,7 +135,15 @@ class VirtualGraph(dimod.Composite):
         child = self.child
 
         if apply_flux_bias_offsets and self.flux_biases is not None:
-            kwargs[FLUX_BIAS_KWARG] = self.flux_biases
+            # If self.flux_biases is in the old format (list of lists) convert it to the new format (flat list).
+            if isinstance(self.flux_biases[0], list):
+                flux_bias_dict = dict(self.flux_biases)
+                kwargs[FLUX_BIAS_KWARG] = [flux_bias_dict.get(v, 0.) for v in range(child.properties['num_qubits'])]
+            else:
+                kwargs[FLUX_BIAS_KWARG] = self.flux_biases
+            assert len(kwargs[FLUX_BIAS_KWARG]) == child.properties['num_qubits'], \
+                "{} must have length {}, the solver's num_qubits."\
+                .format(FLUX_BIAS_KWARG, child.properties['num_qubits'])
 
         # Embed arguments providing initial states for reverse annealing, if applicable.
         kwargs = _embed_initial_state_kwargs(kwargs, self.embedding, self.child.structure[0])
