@@ -13,7 +13,7 @@ else:
     exec(open("./dwave_micro_client_dimod/package_info.py").read())
 
 install_requires = ['dimod>=0.5.0',
-                    'dwave_micro_client>=0.2.0',
+                    'dwave_micro_client>=0.2.2',
                     'minorminer',
                     'dwave_embedding_utilities',
                     'dwave_networkx']
