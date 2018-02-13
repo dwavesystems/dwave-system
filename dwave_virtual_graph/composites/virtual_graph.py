@@ -289,7 +289,7 @@ def _embed_initial_state_kwargs(kwargs, embedding, qubits):
         raise ValueError("Multiple arguments providing initial states to sample_ising (only one allowed): "
                          "{}.".format(initial_state_kwargs.keys()))
 
-    initial_state_kwarg_key, initial_state_kwarg_val = next(iteritems(kwargs))
+    initial_state_kwarg_key, initial_state_kwarg_val = next(iteritems(initial_state_kwargs))
 
     # If it is a single state, embed the single state.
     if initial_state_kwarg_key.endswith('initial_state'):
