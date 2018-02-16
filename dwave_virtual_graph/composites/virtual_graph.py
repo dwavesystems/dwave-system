@@ -151,7 +151,7 @@ class VirtualGraph(dimod.Composite):
         response = child.sample_ising(h_emb, J_emb, **kwargs)
 
         # unembed the problem and save to a new response object
-        samples = embutil.unembed_samples(response, self.embedding,
+        samples = embutil.unembed_samples(response.samples(sorted_by_energy=False), self.embedding,
                                           chain_break_method=embutil.minimize_energy,
                                           linear=h, quadratic=J)  # needed by minimize_energy
 
