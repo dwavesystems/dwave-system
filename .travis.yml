@@ -1,0 +1,51 @@
+language: python
+
+matrix:
+    include:
+        - os: linux
+          sudo: required
+          python: "2.7"
+          env: TOXENV=py27
+        - os: linux
+          sudo: required
+          python: "3.6"
+          env: TOXENV=py36
+        # - os: linux
+        #   sudo: required
+        #   python: "nightly"
+        #   env: TOXENV=pynightly
+        - os: osx
+          language: generic
+          env: TOXENV=py27
+          before_install:
+            - brew update
+            - virtualenv env -p python2
+            - source env/bin/activate
+        - os: osx
+          language: generic
+          env: TOXENV=py36
+          before_install:
+            - brew update
+            - brew install python3
+            - virtualenv env -p python3
+            - source env/bin/activate
+
+install:
+    - pip install .[tests]
+    - pip install coveralls
+    
+script:
+- coverage run -m unittest discover
+
+after_success:
+  - coveralls
+
+deploy:
+  provider: pypi
+  user: "dwtools"
+  password:
+    secure: "CzgI/PZBNEnDEPu3wmdIy0D5JZVKsM50Zrkca6hJqUmCYk7lWStiXeS4I5aGTX8BgxfbGqNo5p2bKuUdBasg+xwhXAD6wTKg/sxgh5sBjBP4ZkXyI2i9Xux1qpIT+rja4SpfRNVpmad1oC71JwtoF+8GPw0aRJ7jz/CwBZnGoYzt7SSfMTUcFISZ8FKzPnWq7MSB7HJSWdkx1cOH1Aov+pLtkbmSiYnkYtZjEaAJEw6QndflTy+MqmXJ4f1ILdK4n1KCbsr0vJ9Dya2KI8D05BOqJ3CrI1teThBvWRn1/Sy/b/aG3/8caPeiIC84dbUZogH3u6ASSlK0jxipfqti7g4g/C4hFe8ejObnP19KzfjODG+vLKdUDidmfoEq26NPZnOBfvP5KaTTH2447Cd76ZTROt/bY9V1xM+s50JX/aPtmT9XvgWgTvj8nHAwBfhpNGjyKO5WWXfWXsKtFCNd6bKwGnZGTFzxrPD69rrXUifG2Yc9j3lY/CUWsy/ieBxP0oIwQg0a5lQbSl6LvbhQNnsNo1IcwxUa7Dzthps1KO56NeyImUW5nKsb+q+snylvjOjCn7MJHw3psAs+71yQrFTNh4zRygoXZfU3uqiEURMWQPchIeqGUr0CO9Ku8FV7bSVkNpgtrlMz8pAK+wAncLeMJOuaj1+i82bArClIYK4="
+  distributions: "sdist bdist_wheel"
+  skip_cleanup: true
+  on:
+    tags: true

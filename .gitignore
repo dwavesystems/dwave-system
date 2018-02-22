@@ -84,8 +84,7 @@ celerybeat-schedule
 
 # virtualenv
 .venv
-venv/
-ENV/
+venv*/
 
 # Spyder project settings
 .spyderproject
@@ -99,3 +98,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+scratch*.py
+
+*.sublime-workspace
+*.sublime-project
