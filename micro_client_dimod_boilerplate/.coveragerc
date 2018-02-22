@@ -1,7 +1,0 @@
-[run]
-omit = venv/*, */tests/*
-source = dwave_micro_client_dimod
-
-[report]
-exclude_lines:
-    pragma: no cover
