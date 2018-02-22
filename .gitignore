@@ -102,3 +102,6 @@ ENV/
 
 # pycharm
 .idea/
+
+*.sublime-project
+*.sublime-workspace
