@@ -1,6 +1,6 @@
 import unittest
 
-import dwave_micro_client_dimod as micro
+import dwave.system as micro
 
 
 ####################################################################################################
@@ -17,7 +17,7 @@ except Exception as e:
 
 class TestREADME(unittest.TestCase):
     def test_readme(self):
-        import dwave_micro_client_dimod as micro
+        import dwave.system as micro
         import dwave_virtual_graph as vg
 
         # get the D-Wave sampler (see configuration_ for setting up credentials)

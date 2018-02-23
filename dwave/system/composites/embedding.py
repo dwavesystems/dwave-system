@@ -1,6 +1,5 @@
 """
-EmbeddingComposite
-==================
+todo
 """
 import itertools
 

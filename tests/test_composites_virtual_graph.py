@@ -1,7 +1,7 @@
 import unittest
 
 import dimod
-import dwave_micro_client_dimod as micro
+import dwave.system as micro
 
 import dwave_virtual_graph as vg
 from tests.mock_sampler import MockSampler
