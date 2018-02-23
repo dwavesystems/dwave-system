@@ -1,8 +1,8 @@
 import dwave_system_tuning as dst
 
-from dwave_virtual_graph.compatibility23 import itervalues
-from dwave_virtual_graph.cache.database_manager import get_flux_biases_from_cache, cache_connect, insert_flux_bias
-from dwave_virtual_graph.exceptions import MissingFluxBias
+from dwave.system.compatibility23 import itervalues
+from dwave.system.cache.database_manager import get_flux_biases_from_cache, cache_connect, insert_flux_bias
+from dwave.system.exceptions import MissingFluxBias
 
 
 def get_flux_biases(sampler, embedding, num_reads, chain_strength=1, max_age=3600):

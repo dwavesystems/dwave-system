@@ -2,7 +2,7 @@ import os
 
 import homebase
 
-from dwave_virtual_graph.package_info import __version__
+from dwave.system.package_info import __version__
 
 __all__ = ['cache_file']
 
