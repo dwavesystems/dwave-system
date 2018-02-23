@@ -4,7 +4,7 @@ import random
 import dwave_micro_client as microclient
 import dimod
 import dwave_networkx as dnx
-from dwave_micro_client_dimod.sampler import Structure
+from dwave.system.samplers.dwave_sampler import Structure
 
 try:
     # py3
@@ -13,7 +13,7 @@ except ImportError:
     # py2
     import mock
 
-import dwave_micro_client_dimod as micro
+import dwave.system as micro
 
 try:
     microclient.Connection()

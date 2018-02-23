@@ -3,8 +3,6 @@ import collections
 import dimod
 import dwave_networkx as dnx
 
-import dwave_virtual_graph as vg
-
 
 class MockSampler(dimod.Sampler):
     """Create a mock sampler that can be used for tests."""

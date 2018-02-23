@@ -1,6 +1,5 @@
 """
-DWaveSampler
-============
+todo
 """
 import collections
 

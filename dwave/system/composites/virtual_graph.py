@@ -4,9 +4,9 @@ import dimod
 
 import dwave_embedding_utilities as embutil
 
-from dwave_virtual_graph.compatibility23 import iteritems
-from dwave_virtual_graph.embedding import get_embedding_from_tag
-from dwave_virtual_graph.flux_bias_offsets import get_flux_biases
+from dwave.system.compatibility23 import iteritems
+from dwave.system.embedding import get_embedding_from_tag
+from dwave.system.flux_bias_offsets import get_flux_biases
 
 
 FLUX_BIAS_KWARG = 'flux_biases'

@@ -4,19 +4,19 @@ import homebase
 
 import networkx as nx
 
-import dwave_virtual_graph as vg
-import dwave_virtual_graph.cache as vgcache
+import dwave.system as system
+import dwave.system.cache as cache
 
 tmp_database_name = 'tmp_test_database_manager_{}.db'.format(time.time())
-# test_database_path = vgcache.cache_file(filename=tmp_database_name)
-# conn = vgcache.cache_connect(test_database_path)
+# test_database_path = cache.cache_file(filename=tmp_database_name)
+# conn = cache.cache_connect(test_database_path)
 
 
 class TestCacheManager(unittest.TestCase):
     def test_same_database(self):
         """multiple calls to get_database_path"""
-        db1 = vgcache.cache_file()
-        db2 = vgcache.cache_file()
+        db1 = cache.cache_file()
+        db2 = cache.cache_file()
 
         self.assertEqual(db1, db2)
 
@@ -24,10 +24,10 @@ class TestCacheManager(unittest.TestCase):
 class TestDatabaseManager(unittest.TestCase):
     def setUp(self):
         # new connection for just this test
-        self.clean_connection = vgcache.cache_connect(':memory:')
+        self.clean_connection = cache.cache_connect(':memory:')
 
-        # test_database_path = vgcache.cache_file(filename=tmp_database_name)
-        # test_connection = vgcache.cache_connect(test_database_path)
+        # test_database_path = cache.cache_file(filename=tmp_database_name)
+        # test_connection = cache.cache_connect(test_database_path)
 
     def tearDown(self):
         # close the memory connection
@@ -41,11 +41,11 @@ class TestDatabaseManager(unittest.TestCase):
 
         # insert the chain twice, should only result in one net insert
         with conn as cur:
-            vgcache.insert_chain(cur, chain)
-            vgcache.insert_chain(cur, chain)
+            cache.insert_chain(cur, chain)
+            cache.insert_chain(cur, chain)
 
         with conn as cur:
-            all_chains = list(vgcache.iter_chain(cur))
+            all_chains = list(cache.iter_chain(cur))
         self.assertEqual(len(all_chains), 1)
         returned_chain, = all_chains
         self.assertEqual(len(returned_chain), len(chain))
@@ -53,35 +53,35 @@ class TestDatabaseManager(unittest.TestCase):
 
         # insert a new chain
         with conn as cur:
-            vgcache.insert_chain(cur, [0, 2, 3])
+            cache.insert_chain(cur, [0, 2, 3])
         with conn as cur:
-            all_chains = list(vgcache.iter_chain(cur))
+            all_chains = list(cache.iter_chain(cur))
         self.assertEqual(len(all_chains), 2)  # should now be two chains
 
     def test_insert_flux_bias(self):
         conn = self.clean_connection
 
         with conn as cur:
-            vgcache.insert_flux_bias(cur, [0, 1, 2], 'test_system', .1, 1)
+            cache.insert_flux_bias(cur, [0, 1, 2], 'test_system', .1, 1)
 
         with conn as cur:
             # try dumping
-            flux_biases = list(vgcache.iter_flux_bias(cur))
+            flux_biases = list(cache.iter_flux_bias(cur))
         self.assertEqual(len(flux_biases), 1)
         self.assertEqual(flux_biases[0], ([0, 1, 2], 'test_system', .1, 1))
 
         # retrieve by name
         with conn as cur:
-            biases = vgcache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'test_system', 1)
+            biases = cache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'test_system', 1)
 
         for v, fbo in biases:
             self.assertIn(v, [0, 1, 2])
             self.assertEqual(fbo, .1)
 
         # now get something wrong out
-        with self.assertRaises(vg.MissingFluxBias):
+        with self.assertRaises(system.MissingFluxBias):
             with conn as cur:
-                biases = vgcache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'another_system', 1)
+                biases = cache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'another_system', 1)
 
     def test_graph_insert_retrieve(self):
         conn = self.clean_connection
@@ -91,10 +91,10 @@ class TestDatabaseManager(unittest.TestCase):
         edgelist = sorted(sorted(edge) for edge in graph.edges)
 
         with conn as cur:
-            vgcache.insert_graph(cur, nodelist, edgelist)
+            cache.insert_graph(cur, nodelist, edgelist)
 
             # should only be one graph
-            graphs = list(vgcache.iter_graph(cur))
+            graphs = list(cache.iter_graph(cur))
             self.assertEqual(len(graphs), 1)
             (nodelist_, edgelist_), = graphs
             self.assertEqual(nodelist, nodelist_)
@@ -102,14 +102,14 @@ class TestDatabaseManager(unittest.TestCase):
 
         # trying to reinsert should still result in only one graph
         with conn as cur:
-            vgcache.insert_graph(cur, nodelist, edgelist)
-            graphs = list(vgcache.iter_graph(cur))
+            cache.insert_graph(cur, nodelist, edgelist)
+            graphs = list(cache.iter_graph(cur))
             self.assertEqual(len(graphs), 1)
 
         # inserting with an empty dict as encoded_data should populate it
         encoded_data = {}
         with conn as cur:
-            vgcache.insert_graph(cur, nodelist, edgelist, encoded_data)
+            cache.insert_graph(cur, nodelist, edgelist, encoded_data)
         self.assertIn('num_nodes', encoded_data)
         self.assertIn('num_edges', encoded_data)
         self.assertIn('edges', encoded_data)
@@ -119,13 +119,13 @@ class TestDatabaseManager(unittest.TestCase):
         nodelist = sorted(graph)
         edgelist = sorted(sorted(edge) for edge in graph.edges)
         with conn as cur:
-            vgcache.insert_graph(cur, nodelist, edgelist)
-            graphs = list(vgcache.iter_graph(cur))
+            cache.insert_graph(cur, nodelist, edgelist)
+            graphs = list(cache.iter_graph(cur))
             self.assertEqual(len(graphs), 2)
 
     def test_insert_embedding(self):
-        test_database_path = vgcache.cache_file(filename=tmp_database_name)
-        conn = vgcache.cache_connect(test_database_path)
+        test_database_path = cache.cache_file(filename=tmp_database_name)
+        conn = cache.cache_connect(test_database_path)
 
         source_nodes = [0, 1, 2]
         source_edges = [[0, 1], [0, 2], [1, 2]]
@@ -135,25 +135,25 @@ class TestDatabaseManager(unittest.TestCase):
         embedding = {0: [0], 1: [1], 2: [2, 3]}
 
         with conn as cur:
-            vgcache.insert_embedding(cur, source_nodes, source_edges, target_nodes, target_edges,
+            cache.insert_embedding(cur, source_nodes, source_edges, target_nodes, target_edges,
                                      embedding, 'tag1')
 
-            embedding_ = vgcache.select_embedding_from_tag(cur, 'tag1', target_nodes, target_edges)
+            embedding_ = cache.select_embedding_from_tag(cur, 'tag1', target_nodes, target_edges)
 
             self.assertEqual(embedding, embedding_)
 
         # now reinsert but with a different embedding
         embedding = {0: [0, 1], 1: [2], 2: [3]}
         with conn as cur:
-            vgcache.insert_embedding(cur, source_nodes, source_edges, target_nodes, target_edges,
+            cache.insert_embedding(cur, source_nodes, source_edges, target_nodes, target_edges,
                                      embedding, 'tag1')
 
             # get it back
-            embedding_ = vgcache.select_embedding_from_tag(cur, 'tag1', target_nodes, target_edges)
+            embedding_ = cache.select_embedding_from_tag(cur, 'tag1', target_nodes, target_edges)
 
             self.assertEqual(embedding, embedding_)
 
             # get it back from source graph
-            embedding_ = vgcache.select_embedding_from_source(cur, source_nodes, source_edges,
+            embedding_ = cache.select_embedding_from_source(cur, source_nodes, source_edges,
                                                               target_nodes, target_edges)
             self.assertEqual(embedding, embedding_)

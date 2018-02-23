@@ -10,7 +10,7 @@ except ImportError:
     # py2
     import mock
 
-import dwave_micro_client_dimod as micro
+import dwave.system as micro
 
 try:
     microclient.Connection()

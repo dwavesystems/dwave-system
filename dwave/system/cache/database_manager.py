@@ -11,10 +11,10 @@ import struct
 import base64
 import datetime
 
-from dwave_virtual_graph.cache.cache_manager import cache_file
-from dwave_virtual_graph.cache.schema import schema
-from dwave_virtual_graph.exceptions import MissingFluxBias
-from dwave_virtual_graph.compatibility23 import iteritems, range_
+from dwave.system.cache.cache_manager import cache_file
+from dwave.system.cache.schema import schema
+from dwave.system.exceptions import MissingFluxBias
+from dwave.system.compatibility23 import iteritems, range_
 
 
 def cache_connect(database=None):
