@@ -1,32 +1,21 @@
 import unittest
 
+from collections import Mapping
+
 import dwave_micro_client as microclient
 import dimod
 
-try:
-    # py3
-    import unittest.mock as mock
-except ImportError:
-    # py2
-    import mock
+import dwave.system as system
 
-import dwave.system as micro
-
-try:
-    microclient.Connection()
-    _sapi_connection = True
-except (IOError, OSError):
-    # no sapi credentials are stored on the path
-    _sapi_connection = False
+from tests.mock_sampler import MockSampler
 
 
-@unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
-class TestComposite(unittest.TestCase):
+class TestEmbeddingComposite(unittest.TestCase):
     def test_instantiation_smoketest(self):
-        sampler = micro.EmbeddingComposite(micro.DWaveSampler())
+        sampler = system.EmbeddingComposite(MockSampler())
 
     def test_sample_ising(self):
-        sampler = micro.EmbeddingComposite(micro.DWaveSampler())
+        sampler = system.EmbeddingComposite(MockSampler())
 
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
@@ -37,17 +26,17 @@ class TestComposite(unittest.TestCase):
         self.assertGreaterEqual(len(response), 1)
 
         for sample in response.samples():
-            self.assertIsInstance(sample, dict)
+            self.assertIsInstance(sample, Mapping)
             self.assertEqual(set(sample), set(h))
 
         for sample, energy in response.data(['sample', 'energy']):
-            self.assertIsInstance(sample, dict)
+            self.assertIsInstance(sample, Mapping)
             self.assertEqual(set(sample), set(h))
             self.assertAlmostEqual(dimod.ising_energy(sample, h, J),
                                    energy)
 
     def test_sample_ising_unstructured_not_integer_labelled(self):
-        sampler = micro.EmbeddingComposite(micro.DWaveSampler())
+        sampler = system.EmbeddingComposite(MockSampler())
 
         h = {'a': -1., 'b': 2}
         J = {('a', 'b'): 1.5}
@@ -66,7 +55,7 @@ class TestComposite(unittest.TestCase):
                                    energy)
 
     def test_sample_qubo(self):
-        sampler = micro.EmbeddingComposite(micro.DWaveSampler())
+        sampler = system.EmbeddingComposite(MockSampler())
 
         Q = {(0, 0): .1, (0, 4): -.8, (4, 4): 1}
 
@@ -85,7 +74,7 @@ class TestComposite(unittest.TestCase):
                                    energy)
 
     def test_max_cut(self):
-        sampler = micro.EmbeddingComposite(micro.DWaveSampler())
+        sampler = system.EmbeddingComposite(MockSampler())
 
         m = 2
         n = 2
@@ -117,20 +106,5 @@ class TestComposite(unittest.TestCase):
 
         J = {edge: 1 for edge in edges}
         h = {v: 0 for v in set().union(*J)}
-
-        response = sampler.sample_ising(h, J)
-
-
-# @mock.patch('dwave_micro_client_dimod.sampler.microclient')
-class TestCompositeMock(unittest.TestCase):
-    def test_sample_ising(self):
-
-        mock_sampler = mock.MagicMock()
-        mock_sampler.structure = (range(3), [(0, 1), (1, 2), (0, 2)], {0: {1, 2}, 1: {2, 0}, 2: {0, 1}})
-
-        sampler = micro.EmbeddingComposite(mock_sampler)
-
-        h = {'a': -1., 'b': 2}
-        J = {('a', 'b'): 1.5}
 
         response = sampler.sample_ising(h, J)

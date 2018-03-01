@@ -16,12 +16,25 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
             A structured dimod sampler to be wrapped.
 
     """
-    def __init__(self, sampler):
-        # The composite __init__ adds the sampler into self.children
-        dimod.Sampler.__init__(self)
-        dimod.Composite.__init__(self, sampler)
+    def __init__(self, child_sampler):
+        if not isinstance(child_sampler, dimod.Structured):
+            raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
+        self._children = [child_sampler]
 
-    def sample_ising(self, h, J, **kwargs):
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def parameters(self):
+        # does not add or remove any parameters
+        return self.child.parameters.copy()
+
+    @property
+    def properties(self):
+        return {'child_properties': self.child.properties.copy()}
+
+    def sample_ising(self, h, J, **parameters):
         """Sample from the provided unstructured Ising model.
 
         Args:
@@ -52,18 +65,15 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         h_emb, J_emb, J_chain = embutil.embed_ising(h, J, embedding, target_adjacency)
         J_emb.update(J_chain)
 
-        response = child.sample_ising(h_emb, J_emb, **kwargs)
+        response = child.sample_ising(h_emb, J_emb, **parameters)
 
         # unembed the problem and save to a new response object
         samples = embutil.unembed_samples(response, embedding,
                                           chain_break_method=embutil.minimize_energy,
                                           linear=h, quadratic=J)  # needed by minimize_energy
-        source_response = dimod.Response(dimod.SPIN)
 
-        for sample, (__, data) in zip(samples, response.df_data.iterrows()):
+        # source_response = dimod.Response(dimod.SPIN)
+        data_vectors = response.data_vectors
+        data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
 
-            data['energy'] = dimod.ising_energy(sample, h, J)
-
-            source_response.add_sample(sample, **data.to_dict())
-
-        return source_response
+        return dimod.Response.from_dicts(samples, data_vectors, info=response.info)
