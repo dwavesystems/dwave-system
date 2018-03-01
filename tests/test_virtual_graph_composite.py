@@ -6,7 +6,7 @@ import dwave.system as system
 from tests.mock_sampler import MockSampler
 
 
-class TestVirtualGraphWithMockSampler(unittest.TestCasez):
+class TestVirtualGraphWithMockSampler(unittest.TestCase):
     def setUp(self):
         self.sampler = MockSampler()
 

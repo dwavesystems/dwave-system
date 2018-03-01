@@ -14,9 +14,14 @@ class MockSampler(dimod.Sampler, dimod.Structured):
     properties = None
     parameters = None
 
-    def __init__(self):
-        self.nodelist = sorted(C4.nodes)
-        self.edgelist = sorted(sorted(edge) for edge in C4.edges)
+    def __init__(self, broken_nodes=None):
+        if broken_nodes is None:
+            self.nodelist = sorted(C4.nodes)
+            self.edgelist = sorted(sorted(edge) for edge in C4.edges)
+        else:
+            self.nodelist = sorted(v for v in C4.nodes if v not in broken_nodes)
+            self.edgelist = sorted(sorted((u, v)) for u, v in C4.edges
+                                   if u not in broken_nodes and v not in broken_nodes)
 
         # mark the sample kwargs
         self.parameters = parameters = {}

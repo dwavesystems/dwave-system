@@ -12,7 +12,7 @@ import dwave_embedding_utilities as embutil
 __all__ = ['TilingComposite']
 
 
-class TilingComposite(dimod.Sampler, dimod.Composite):
+class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """ Composite to tile a small problem across a Chimera-structured sampler. A problem that can fit on a small Chimera
     graph can be replicated across a larger Chimera graph to get samples from multiple areas of the system in one call.
     For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-WAVE 2000Q system (16x16).
@@ -38,13 +38,30 @@ class TilingComposite(dimod.Sampler, dimod.Composite):
             {v: {s, ...}, ...} where v is a variable in the sub Chimera lattice and s is a variable in the system.
 
     """
+    nodelist = None
+    edgelist = None
+
+    parameters = None
+    properties = None
+
+    children = None
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
-        # The composite __init__ adds the sampler into self.children
-        dimod.Sampler.__init__(self)
-        dimod.Composite.__init__(self, sampler)
+
+        self.parameters = sampler.parameters.copy()
+        self.properties = properties = {'child_properties': sampler.properties}
+
         tile = dnx.chimera_graph(sub_m, sub_n, t)
-        self.structure = Structure(sorted(tile.nodes), sorted(tile.edges), tile.adj)
+        self.nodelist = sorted(tile.nodes)
+        self.edgelist = sorted(sorted(edge) for edge in tile.edges)
+        # dimod.Structured abstract base class automatically populates adjacency and structure as
+        # mixins based on nodelist and edgelist
+
+        if not isinstance(sampler, dimod.Structured):
+            # we could also just tile onto the unstructured sampler but in that case we would need
+            # to know how many tiles to use
+            raise ValueError("given child sampler should be structured")
+        self.children = [sampler]
 
         nodes_per_cell = t * 2
         edges_per_cell = t * t
@@ -70,7 +87,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite):
                 cells[i][j] = len(qubits) == nodes_per_cell and _between(qubits, qubits) == edges_per_cell
 
         # List of 'embeddings'
-        self.embeddings = []
+        self.embeddings = properties['embeddings'] = embeddings = []
 
         # For each possible chimera cell check if the next few cells are complete
         for i in range(m + 1 - sub_m):
@@ -99,9 +116,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite):
                                 for k in range(t):
                                     embedding[sub_c2i[sub_i, sub_j, u, k]] = {c2i[(i + sub_i, j + sub_j, u, k)]}
 
-                    self.embeddings.append(embedding)
+                    embeddings.append(embedding)
 
-        if len(self.embeddings) == 0:
+        if len(embeddings) == 0:
             raise ValueError("no tile embeddings found; is the sampler Chimera structured?")
 
     def sample_ising(self, h, J, **kwargs):
@@ -135,15 +152,25 @@ class TilingComposite(dimod.Sampler, dimod.Composite):
         # solve the problem on the child system
         response = self.child.sample_ising(h_embs, J_embs, **kwargs)
 
-        # unembed the tiled problem and combine results into one response object
-        source_response = dimod.Response(dimod.SPIN)
+        data_vectors = response.data_vectors.copy()
+
+        source_response = None
+
         for embedding in self.embeddings:
             samples = embutil.unembed_samples(response, embedding,
                                               chain_break_method=embutil.minimize_energy,
                                               linear=h, quadratic=J)  # needed by minimize_energy
-            for sample, (__, data) in zip(samples, response.df_data.iterrows()):
-                data['energy'] = dimod.ising_energy(sample, h, J)
-                source_response.add_sample(sample, **data.to_dict())
+
+            # override the energy because it might have changed
+            data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
+
+            tile_response = dimod.Response.from_dicts(samples, data_vectors)
+
+            if source_response is None:
+                source_response = tile_response
+                source_response.info.update(response.info)  # overwrite the info
+            else:
+                source_response.update(tile_response)
 
         return source_response
 
