@@ -12,7 +12,16 @@ from dwave.system.flux_bias_offsets import get_flux_biases
 FLUX_BIAS_KWARG = 'flux_biases'
 
 
-class VirtualGraph(dimod.Composite):
+class VirtualGraph(dimod.ComposedSampler, dimod.Structured):
+
+    # override the abstract properties
+    nodelist = None
+    edgelist = None
+    adjacency = None
+    children = None
+    parameters = None
+    properties = None
+
     def __init__(self, sampler, embedding,
                  chain_strength=None,
                  flux_biases=None, flux_bias_num_reads=1000, flux_bias_max_age=3600):
@@ -48,7 +57,12 @@ class VirtualGraph(dimod.Composite):
             `dimod.TemplateComposite`
 
         """
-        dimod.Composite.__init__(self, sampler)
+        self.children = [sampler]
+
+        self.parameters = parameters = {'apply_flux_bias_offsets': []}
+        parameters.update(sampler.parameters)
+
+        self.properties = {'child_properties': sampler.properties.copy()}
 
         #
         # Get the adjacency of the child sampler (this is the target for our embedding)
@@ -86,12 +100,14 @@ class VirtualGraph(dimod.Composite):
             # different type names just choose an arbitrary order
             nodelist = list(source_adjacency)
             edgelist = list(_adjacency_to_edges(source_adjacency))
-        self.structure = (nodelist, edgelist, source_adjacency)
+        self.nodelist = nodelist
+        self.edgelist = edgelist
+        self.adjacency = source_adjacency
 
         #
         # If the sampler accepts flux bias offsets, we'll want to set them
         #
-        if flux_biases is None and FLUX_BIAS_KWARG in sampler.sample_kwargs:
+        if flux_biases is None and FLUX_BIAS_KWARG in sampler.parameters:
             # If nothing is provided, then we either get them from the cache or generate them
             flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_num_reads,
                                           max_age=flux_bias_max_age)
@@ -151,17 +167,15 @@ class VirtualGraph(dimod.Composite):
         response = child.sample_ising(h_emb, J_emb, **kwargs)
 
         # unembed the problem and save to a new response object
-        samples = embutil.unembed_samples(response.samples(sorted_by_energy=False), self.embedding,
+        samples = embutil.unembed_samples(response.samples(sorted_by=None), self.embedding,
                                           chain_break_method=embutil.minimize_energy,
                                           linear=h, quadratic=J)  # needed by minimize_energy
 
-        source_response = dimod.Response(dimod.SPIN)
+        # source_response = dimod.Response(dimod.SPIN)
+        data_vectors = response.data_vectors
+        data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
 
-        for sample, (__, data) in zip(samples, response.df_data.iterrows()):
-            data['energy'] = dimod.ising_energy(sample, h, J)
-            source_response.add_sample(sample, **data.to_dict())
-
-        return source_response
+        return dimod.Response.from_dicts(samples, data_vectors, info=response.info)
 
     def _validate_chain_strength(self, chain_strength):
         """Validate the provided chain strength, checking J-ranges of the sampler's children.
@@ -177,8 +191,7 @@ class VirtualGraph(dimod.Composite):
         j_range_minimum = None  # Minimum value allowed in J-range
         try:
             # Try to get extended_j_range, just use j_range if that doesn't exist.
-            j_range_minimum = min(child.solver.properties.get('extended_j_range',
-                                                              child.solver.properties['j_range']))
+            j_range_minimum = min(child.properties.get('extended_j_range', child.properties['j_range']))
         except (AttributeError, KeyError):
             pass
 
@@ -207,10 +220,9 @@ class VirtualGraph(dimod.Composite):
         if chain_strength is None:
             return -j_range_minimum
 
-        else:
-            if chain_strength > -j_range_minimum:
-                raise ValueError("chain_strength ({}) is too great (larger than -j_range_minimum ({})).".format(chain_strength, -j_range_minimum))
-            return chain_strength
+        if chain_strength > -j_range_minimum:
+            raise ValueError("chain_strength ({}) is too great (larger than -j_range_minimum ({})).".format(chain_strength, -j_range_minimum))
+        return chain_strength
 
 
 def _adjacency_to_edges(adjacency):
