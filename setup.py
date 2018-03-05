@@ -17,11 +17,21 @@ else:
     exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 install_requires = ['dimod==0.6.0.dev2',
+                    'dwave_cloud_client==0.3.0.dev1',
+                    'dwave-embedding-utilities>=0.2.0,<0.3.0',
+                    'dwave-networkx>=0.6.0,<0.7.0',
+                    'dwave-system-tuning>=0.1.0,<0.2.0',
+                    'homebase>=1.0.0,<2.0.0',
+                    'minorminer>=0.1.3,<0.2.0',
                     'six>=1.11.0,<2.0.0']
 
 extras_require = {}
 
-packages = ['dwave.system', 'dwave.system.samplers', 'dwave.system.composites', 'dwave.system.cache']
+packages = ['dwave',
+            'dwave.system',
+            'dwave.system.samplers',
+            'dwave.system.composites',
+            'dwave.system.cache']
 
 setup(
     name='dwave_system',
@@ -34,5 +44,5 @@ setup(
     packages=packages,
     install_requires=install_requires,
     extras_require=extras_require,
-    namespace_packages=['dwave']
+    zip_safe=False
 )
