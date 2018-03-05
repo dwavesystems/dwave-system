@@ -1,27 +1,19 @@
 import unittest
 import random
 
-import dwave_micro_client as microclient
 import dimod
 import dwave_networkx as dnx
 
 from tests.mock_sampler import MockSampler
 
-try:
-    # py3
-    import unittest.mock as mock
-except ImportError:
-    # py2
-    import mock
-
-import dwave.system as system
+from dwave.system.composites import TilingComposite
 
 
 class TestTiling(unittest.TestCase):
     def test_sample_ising(self):
         mock_sampler = MockSampler()  # C4 structured sampler
 
-        sampler = system.TilingComposite(mock_sampler, 2, 2)
+        sampler = TilingComposite(mock_sampler, 2, 2)
 
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
@@ -39,7 +31,7 @@ class TestTiling(unittest.TestCase):
         mock_sampler = MockSampler(broken_nodes=[8 * 3])  # C4 structured sampler with a node missing
         hardware_graph = dnx.chimera_graph(4)  # C4
 
-        sampler = system.TilingComposite(mock_sampler, 2, 2, 4)
+        sampler = TilingComposite(mock_sampler, 2, 2, 4)
         # Given the above chimera graph, check that the embeddings are as follows:
         # 00XX
         # 0011
@@ -60,7 +52,7 @@ class TestTiling(unittest.TestCase):
                              if i in (2, 3) and j in (0, 1)})
 
     def test_sample_ising(self):
-        sampler = system.TilingComposite(MockSampler(), 2, 2)
+        sampler = TilingComposite(MockSampler(), 2, 2)
 
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
@@ -78,7 +70,7 @@ class TestTiling(unittest.TestCase):
             self.assertAlmostEqual(dimod.ising_energy(sample, h, J), energy)
 
     def test_sample_qubo(self):
-        sampler = system.TilingComposite(MockSampler(), 2, 2)
+        sampler = TilingComposite(MockSampler(), 2, 2)
 
         Q = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
         Q.update({(node, node): random.uniform(-1, 1) for node in sampler.structure.nodelist})

@@ -2,20 +2,19 @@ import unittest
 
 from collections import Mapping
 
-import dwave_micro_client as microclient
 import dimod
 
-import dwave.system as system
+from dwave.system.composites import EmbeddingComposite
 
 from tests.mock_sampler import MockSampler
 
 
 class TestEmbeddingComposite(unittest.TestCase):
     def test_instantiation_smoketest(self):
-        sampler = system.EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockSampler())
 
     def test_sample_ising(self):
-        sampler = system.EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockSampler())
 
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
@@ -36,7 +35,7 @@ class TestEmbeddingComposite(unittest.TestCase):
                                    energy)
 
     def test_sample_ising_unstructured_not_integer_labelled(self):
-        sampler = system.EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockSampler())
 
         h = {'a': -1., 'b': 2}
         J = {('a', 'b'): 1.5}
@@ -55,7 +54,7 @@ class TestEmbeddingComposite(unittest.TestCase):
                                    energy)
 
     def test_sample_qubo(self):
-        sampler = system.EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockSampler())
 
         Q = {(0, 0): .1, (0, 4): -.8, (4, 4): 1}
 
@@ -74,7 +73,7 @@ class TestEmbeddingComposite(unittest.TestCase):
                                    energy)
 
     def test_max_cut(self):
-        sampler = system.EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockSampler())
 
         m = 2
         n = 2
