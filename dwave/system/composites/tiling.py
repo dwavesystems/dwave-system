@@ -3,7 +3,6 @@ todo
 """
 from __future__ import division
 from math import sqrt, ceil
-from dwave.system.samplers.dwave_sampler import Structure
 
 import dimod
 import dwave_networkx as dnx
