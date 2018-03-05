@@ -16,7 +16,8 @@ if _PY2:
 else:
     exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
-install_requires = ['dimod==0.6.0.dev0']
+install_requires = ['dimod==0.6.0.dev2',
+                    'six>=1.11.0,<2.0.0']
 
 extras_require = {}
 

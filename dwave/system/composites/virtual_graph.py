@@ -1,10 +1,11 @@
 import itertools
 
+from six import iteritems
+
 import dimod
 
 import dwave_embedding_utilities as embutil
 
-from dwave.system.compatibility23 import iteritems
 from dwave.system.embedding import get_embedding_from_tag
 from dwave.system.flux_bias_offsets import get_flux_biases
 

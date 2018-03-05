@@ -1,4 +1,3 @@
-from dwave.system.compatibility23 import itervalues
 from dwave.system.cache.database_manager import get_flux_biases_from_cache, cache_connect, insert_flux_bias
 from dwave.system.exceptions import MissingFluxBias
 
