@@ -1,0 +1,65 @@
+language: python
+
+matrix:
+    include:
+        # - os: linux
+        #   sudo: required
+        #   python: "nightly"
+        #   env: TOXENV=pynightly
+        #   deploy:
+        - os: linux
+          sudo: required
+          python: "3.6"
+          env: TOXENV=py36
+        - os: linux
+          sudo: required
+          python: "3.5"
+          env: TOXENV=py35
+          deploy:
+        - os: linux
+          sudo: required
+          python: "3.4"
+          env: TOXENV=py34
+          deploy:
+        - os: linux
+          sudo: required
+          python: "2.7"
+          env: TOXENV=py27
+          deploy:
+        - os: osx
+          language: generic
+          env: TOXENV=py36
+          before_install:
+            - brew update
+            - brew upgrade python
+            - pip install virtualenv
+            - virtualenv env -p python
+            - source env/bin/activate
+          deploy:
+        - os: osx
+          language: generic
+          env: TOXENV=py27
+          before_install:
+            - brew update
+            - virtualenv env -p python2
+            - source env/bin/activate
+          deploy:
+
+install:
+    - pip install -r tests/requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
+    - pip install .
+
+script:
+- coverage run -m unittest discover
+
+after_success:
+  - coveralls
+
+deploy:
+  provider: pypi
+  user: "dwtools"
+  password:
+    secure: 
+  distributions: "sdist bdist_wheel"
+  on:
+    tags: true
