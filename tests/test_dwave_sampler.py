@@ -1,9 +1,14 @@
 import unittest
+import random
+
+from concurrent.futures import Future
 
 import dimod
-import dwave_micro_client as microclient
+import dwave_networkx as dnx
 
-import dwave.system as system
+import dwave.cloud.qpu as qpuclient
+
+from dwave.system.samplers import DWaveSampler
 
 try:
     # py3
@@ -12,120 +17,89 @@ except ImportError:
     # py2
     import mock
 
-try:
-    microclient.Connection()
-    _sapi_connection = True
-except (OSError, IOError):
-    # no sapi credentials are stored on the path
-    _sapi_connection = False
+
+C16 = dnx.chimera_graph(16)
 
 
-class TestDWaveMicroClientWithMock(unittest.TestCase):
-    @mock.patch("dwave.system.samplers.dwave_sampler.microclient.Connection")
-    def test_instantation(self, mock_Connection):
-        # set up a mock connection and a mock solver to be returned to make
-        # sure the args are propgating properly
+class MockSolver():
+    nodes = set(range(2048))
+    edges = set(tuple(edge) for edge in C16.edges)
+    properties = {'readout_thermalization_range': [0, 10000],
+                  'annealing_time_range': [1, 2000],
+                  'default_readout_thermalization': 0,
+                  'parameters': {'num_spin_reversal_transforms': '',
+                                 'programming_thermalization': '',
+                                 'anneal_offsets': '',
+                                 'num_reads': '',
+                                 'max_answers': '',
+                                 'readout_thermalization': '',
+                                 'beta': "",
+                                 'answer_mode': '',
+                                 'auto_scale': '',
+                                 'postprocess': "",
+                                 'anneal_schedule': '',
+                                 'chains': ""},
+                  'chip_id': 'MockSolver'}
 
-        mock_connection = mock.Mock(name='instantiated connection')
-        mock_Connection.return_value = mock_connection
-        solver = mock.Mock()
-        solver.nodes = set([0, 1, 2, 3])
-        solver.edges = set([(0, 1), (1, 0), (2, 3), (3, 2)])
-        solver.properties = {}
-        solver.parameters = {}
-        mock_connection.get_solver.return_value = solver
+    def sample_ising(self, h, J, **kwargs):
+        for key in kwargs:
+            if key not in self.properties['parameters']:
+                raise ValueError
+        result = {'num_variables': 2048,
+                  'format': 'qp',
+                  'num_occurrences': [1],
+                  'active_variables': list(range(2048)),
+                  'solutions': [[random.choice((-1, +1)) for __ in range(2048)]],
+                  'timing': {'total_real_time': 11511, 'anneal_time_per_run': 20,
+                             'post_processing_overhead_time': 2042, 'qpu_sampling_time': 164,
+                             'readout_time_per_run': 123,
+                             'qpu_delay_time_per_sample': 21,
+                             'qpu_anneal_time_per_sample': 20,
+                             'total_post_processing_time': 2042,
+                             'qpu_programming_time': 8740,
+                             'run_time_chip': 164,
+                             'qpu_access_time': 11511,
+                             'qpu_readout_time_per_sample': 123},
+                  'occurrences': [1]}
+        result['samples'] = result['solutions']
+        result['energies'] = [dimod.ising_energy(sample, h, J) for sample in result['samples']]
+        future = Future()
+        future.set_result(result)
+        return future
 
-        sampler = system.DWaveSampler('solvername', 'url', 'token')
+    def sample_qubo(self, Q, **kwargs):
+        for key in kwargs:
+            if key not in self.properties['parameters']:
+                raise ValueError
+        result = {'num_variables': 2048,
+                  'format': 'qp',
+                  'num_occurrences': [1],
+                  'active_variables': list(range(2048)),
+                  'solutions': [[random.choice((0, 1)) for __ in range(2048)]],
+                  'timing': {'total_real_time': 11511, 'anneal_time_per_run': 20,
+                             'post_processing_overhead_time': 2042, 'qpu_sampling_time': 164,
+                             'readout_time_per_run': 123,
+                             'qpu_delay_time_per_sample': 21,
+                             'qpu_anneal_time_per_sample': 20,
+                             'total_post_processing_time': 2042,
+                             'qpu_programming_time': 8740,
+                             'run_time_chip': 164,
+                             'qpu_access_time': 11511,
+                             'qpu_readout_time_per_sample': 123},
+                  'occurrences': [1]}
+        result['samples'] = result['solutions']
+        result['energies'] = [dimod.qubo_energy(sample, Q) for sample in result['samples']]
+        future = Future()
+        future.set_result(result)
+        return future
 
-        # check that all of the args properly propogated
-        mock_Connection.assert_called_with('url', 'token', None, False)
 
-        mock_connection.get_solver.assert_called_with('solvername')
+class TestDwaveSampler(unittest.TestCase):
+    @mock.patch('dwave.cloud.qpu.Client')
+    def test_thingy(self, MockClient):
+        instance = MockClient.return_value
+        instance.get_solver.return_value = MockSolver()
 
-        self.assertEqual(sampler.structure[0], [0, 1, 2, 3])
-        self.assertEqual(sampler.structure[1], [(0, 1), (2, 3)])
-        self.assertDictEqual(sampler.structure[2], {0: {1}, 1: {0}, 2: {3}, 3: {2}})
+        sampler = DWaveSampler()
 
-        self.assertEqual(sampler.structure.nodelist, [0, 1, 2, 3])
-        self.assertEqual(sampler.structure.edgelist, [(0, 1), (2, 3)])
-        self.assertDictEqual(sampler.structure.adjacency, {0: {1}, 1: {0}, 2: {3}, 3: {2}})
-
-
-@unittest.skipUnless(_sapi_connection, "no connection to sapi web services")
-class TestSampler(unittest.TestCase, dimod.test.SamplerAPITest):
-    """These tests require a connection to the D-Wave sapi web services."""
-    def setUp(self):
-        self.sampler_factory = system.DWaveSampler
-        self.sampler = system.DWaveSampler()
-
-    def test_sample_response_form(self):
-        # overwrite
-        pass
-
-    def test_instantiation_structure(self):
-        """check that the correct structure was assigned to the dimod sampler"""
-
-        # these should refer to the same thing
-        sampler = system.DWaveSampler()
-        solver = microclient.Connection().get_solver()  # the solver the is wrapped by dimod
-
-        nodelist, edgelist, adj = sampler.structure
-        nodes = set(nodelist)
-        edges = set(edgelist)
-
-        for u, v in solver.edges:
-            self.assertTrue((u, v) in edges or (v, u) in edges)
-            self.assertIn(u, nodes)
-            self.assertIn(v, nodes)
-            self.assertIn(v, adj)
-            self.assertIn(v, adj[u])
-            self.assertIn(u, adj)
-            self.assertIn(u, adj[v])
-
-    def test_instantiation_keyword_arguments(self):
-        conn = microclient.Connection()
-
-        for solver_name in conn.solver_names():
-            solver = microclient.Connection().get_solver(solver_name)  # the solver the is wrapped by dimod
-            sampler = system.DWaveSampler(solver_name=solver_name)
-
-            for param in solver.parameters:
-                self.assertIn(param, sampler.sample_kwargs)
-
-    def test_sample_ising(self):
-        sampler = system.DWaveSampler()
-
-        h = {0: -1., 4: 2}
-        J = {(0, 4): 1.5}
-
-        response = sampler.sample_ising(h, J)
-
-        # nothing failed and we got at least one response back
-        self.assertGreaterEqual(len(response), 1)
-
-        for sample in response.samples():
-            for v in h:
-                self.assertIn(v, sample)
-
-        for sample, energy in response.data(['sample', 'energy']):
-            self.assertAlmostEqual(dimod.ising_energy(sample, h, J),
-                                   energy)
-
-    def test_sample_qubo(self):
-        sampler = system.DWaveSampler()
-
-        Q = {(0, 0): .1, (0, 4): -.8, (4, 4): 1}
-
-        response = sampler.sample_qubo(Q)
-
-        # nothing failed and we got at least one response back
-        self.assertGreaterEqual(len(response), 1)
-
-        for sample in response.samples():
-            for u, v in Q:
-                self.assertIn(v, sample)
-                self.assertIn(u, sample)
-
-        for sample, energy in response.data(['sample', 'energy']):
-            self.assertAlmostEqual(dimod.qubo_energy(sample, Q),
-                                   energy)
+        response = sampler.sample_ising({0: -1, 1: 1}, {})

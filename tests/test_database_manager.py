@@ -4,7 +4,7 @@ import homebase
 
 import networkx as nx
 
-import dwave.system as system
+from dwave.system.exceptions import MissingFluxBias
 import dwave.system.cache as cache
 
 tmp_database_name = 'tmp_test_database_manager_{}.db'.format(time.time())
@@ -79,7 +79,7 @@ class TestDatabaseManager(unittest.TestCase):
             self.assertEqual(fbo, .1)
 
         # now get something wrong out
-        with self.assertRaises(system.MissingFluxBias):
+        with self.assertRaises(MissingFluxBias):
             with conn as cur:
                 biases = cache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'another_system', 1)
 

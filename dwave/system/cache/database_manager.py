@@ -11,10 +11,13 @@ import struct
 import base64
 import datetime
 
+from six import iteritems
+from six.moves import range
+
 from dwave.system.cache.cache_manager import cache_file
 from dwave.system.cache.schema import schema
 from dwave.system.exceptions import MissingFluxBias
-from dwave.system.compatibility23 import iteritems, range_
+
 
 
 def cache_connect(database=None):
@@ -379,7 +382,7 @@ def iter_graph(cur):
     """
     select = """SELECT num_nodes, num_edges, edges from graph;"""
     for num_nodes, num_edges, edges in cur.execute(select):
-        yield list(range_(num_nodes)), json.loads(edges)
+        yield list(range(num_nodes)), json.loads(edges)
 
 
 def insert_embedding(cur, source_nodelist, source_edgelist, target_nodelist, target_edgelist,
