@@ -4,12 +4,12 @@ todo
 import collections
 
 import dimod
-import dwave_micro_client as microclient
+import dwave.cloud.qpu as qpuclient
 
 __all__ = ['DWaveSampler']
 
 
-class DWaveSampler(dimod.Sampler):
+class DWaveSampler(dimod.Sampler, dimod.Structured):
     """dimod wrapper for a D-Wave Micro Client.
 
     Args:
@@ -29,54 +29,40 @@ class DWaveSampler(dimod.Sampler):
             Disables SSL verification.
 
     Attributes:
-        structure (tuple):
-            A named 3-tuple with the following properties/values:
-
-                nodelist (list): The nodes available to the sampler.
-
-                edgelist (list[(node, node)]): The edges available to the sampler.
-
-                adjacency (dict): Encodes the edges of the sampler in nested dicts. The keys of
-                adjacency are the nodes of the sampler and the values are neighbor-dicts.
-
-        accepted_kwargs (dict[str, :class:`dimod.SamplerKeywordArg`]):
-            The keyword arguments accepted by the `sample_ising` and `sample_qubo`
-            methods for this sampler.
-
+        todo
 
     .. _configuration: http://dwave-micro-client.readthedocs.io/en/latest/#configuration
 
     """
-
     def __init__(self, solver_name=None, url=None, token=None, proxies=None, permissive_ssl=False):
-        dimod.Sampler.__init__(self)
-        properties = self.properties
 
-        connection = microclient.Connection(url, token, proxies, permissive_ssl)
-        self.connection = properties['connection'] = connection
-        self.solver = properties['solver'] = solver = connection.get_solver(solver_name)
-        self.name = properties['name'] = solver_name
+        self.client = client = qpuclient.Client(url=url, token=token, proxies=proxies,
+                                                permissive_ssl=permissive_ssl)
+        self.solver = solver = client.get_solver(solver_name)
 
-        # initilize adj dict
-        adj = {node: set() for node in solver.nodes}
+        # need to set up the nodelist and edgelist, properties, parameters
+        self._nodelist = sorted(solver.nodes)
+        self._edgelist = sorted(sorted(edge) for edge in solver.edges)
+        self._properties = solver.properties.copy()  # shallow copy
+        self._parameters = {param: ['parameters'] for param in solver.properties['parameters']}
 
-        # add neighbors. edges is bi-directional so don't need to add it twice here.
-        for u, v in solver.edges:
-            adj[u].add(v)
+    @property
+    def properties(self):
+        return self._properties
 
-        # nodelist, make a new list and ensure that it's sorted
-        nodelist = sorted(solver.nodes)
+    @property
+    def parameters(self):
+        return self._parameters
 
-        # edgelist, make a new list (and remove doubled edges)
-        edgelist = sorted((u, v) for u, v in solver.edges if u <= v)  # all index-labeled
+    @property
+    def edgelist(self):
+        return self._edgelist
 
-        self.structure = properties['structure'] = Structure(nodelist, edgelist, adj)
+    @property
+    def nodelist(self):
+        return self._nodelist
 
-        properties.update(self.solver.properties)
-
-        self.sample_kwargs = dict(self.solver.parameters)
-
-    def sample_ising(self, linear, quadratic, **kwargs):
+    def sample_ising(self, h, J, **kwargs):
         """Sample from the provided Ising model.
 
         Args:
@@ -88,11 +74,18 @@ class DWaveSampler(dimod.Sampler):
             :class:`.FutureResponse`
 
         """
-        future = self.solver.sample_ising(linear, quadratic, **kwargs)
-        response = dimod.Response(dimod.SPIN)
-        response.add_samples_future(future)
+        num_variables = len(h)
+        data_vector_keys = {'energies': 'energy'}
+        if isinstance(h, list):
+            active_variables = list(range(num_variables))
+        else:
+            active_variables = list(h)
 
-        return response
+        future = self.solver.sample_ising(h, J, **kwargs)
+        return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
+                                           num_variables=num_variables,
+                                           data_vector_keys=data_vector_keys,
+                                           active_variables=active_variables)
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the provided QUBO.
@@ -105,11 +98,14 @@ class DWaveSampler(dimod.Sampler):
             :class:`.FutureResponse`
 
         """
+        active_variables = list(set().union(*Q))
+
+        num_variables = len(active_variables)
+        data_vector_keys = {'energies': 'energy'}
+        active_variables = list(variables)
+
         future = self.solver.sample_qubo(Q, **kwargs)
-        response = dimod.Response(dimod.BINARY)
-        response.add_samples_future(future)
-
-        return response
-
-
-Structure = collections.namedtuple("Structure", ['nodelist', 'edgelist', 'adjacency'])
+        return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
+                                           num_variables=num_variables,
+                                           data_vector_keys=data_vector_keys,
+                                           active_variables=active_variables)
