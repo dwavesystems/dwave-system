@@ -12,8 +12,10 @@ from dwave.system.flux_bias_offsets import get_flux_biases
 
 FLUX_BIAS_KWARG = 'flux_biases'
 
+__all__ = ['VirtualGraphComposite']
 
-class VirtualGraph(dimod.ComposedSampler, dimod.Structured):
+
+class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     # override the abstract properties
     nodelist = None
