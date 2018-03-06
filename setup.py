@@ -30,7 +30,11 @@ packages = ['dwave',
             'dwave.system',
             'dwave.system.samplers',
             'dwave.system.composites',
-            'dwave.system.cache']
+            'dwave.system.cache',
+            'dwave.system.embedding',
+            'dwave.system.exceptions',
+            'dwave.system.flux_bias_offsets',
+            'dwave.system.package_info']
 
 setup(
     name='dwave_system',
