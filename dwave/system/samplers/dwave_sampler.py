@@ -1,5 +1,5 @@
 """
-todo
+The dimod wrapper for the D-Wave System.
 """
 import collections
 
@@ -16,20 +16,21 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         solver_name (str, optional):
             Id of the requested solver. None will return the default
             solver (see configuration_).
+
         url (str, optional):
             URL of the SAPI server. None will return the default url
             (see configuration_).
+
         token (str, optional):
             Authentication token from the SAPI server. None will return
             the default token (see configuration_).
+
         proxies (dict, optional):
             Mapping from the connection scheme (http[s]) to the proxy server
             address.
+
         permissive_ssl (boolean, optional, default=False):
             Disables SSL verification.
-
-    Attributes:
-        todo
 
     .. _configuration: http://dwave-micro-client.readthedocs.io/en/latest/#configuration
 
@@ -48,32 +49,48 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     @property
     def properties(self):
+        """dict: The properties as exposed by the sapi web service."""
         return self._properties
 
     @property
     def parameters(self):
+        """dict[str, list]: The keys are the keyword parameters accepted by sapi web service. The
+        values are lists properties in :attr:`.DWaveSampler.properties` that are relevent to the
+        keyword.
+        """
         return self._parameters
 
     @property
     def edgelist(self):
+        """list: The list of active couplers."""
         return self._edgelist
 
     @property
     def nodelist(self):
+        """list: The list of active qubits."""
         return self._nodelist
 
     def sample_ising(self, h, J, **kwargs):
         """Sample from the provided Ising model.
 
         Args:
-            linear (list/dict): Linear terms of the model.
-            quadratic (dict of (int, int):float): Quadratic terms of the model.
-            **kwargs: Parameters for the sampling method, specified per solver.
+            h (list/dict):
+                The linear biases of the model.
+
+            quadratic (dict[(int, int): float]):
+                The quadratic biases of the model.
+
+            **kwargs:
+                Optional keyword arguments for the sampling method, specified per solver in
+                :attr:`.DWaveSampler.parameters`
 
         Returns:
-            :class:`.FutureResponse`
+            :class:`dimod.Response`
 
         """
+        if isinstance(h, list):
+            h = dict(enumerate(h))
+
         variables = set(h).union(*J)
         try:
             active_variables = sorted(variables)
@@ -93,11 +110,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Sample from the provided QUBO.
 
         Args:
-            Q (dict): The coefficients of the QUBO.
-            **kwargs: Parameters for the sampling method, specified per solver.
+            Q (dict):
+                The QUBO coefficients.
+
+            **kwargs:
+                Optional keyword arguments for the sampling method, specified per solver in
+                :attr:`.DWaveSampler.parameters`
 
         Returns:
-            :class:`.FutureResponse`
+            :class:`dimod.Response`
 
         """
         variables = set().union(*Q)
