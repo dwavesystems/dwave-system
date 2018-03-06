@@ -2,7 +2,7 @@ import unittest
 
 import dimod
 
-from dwave.system.composites import VirtualGraph
+from dwave.system.composites import VirtualGraphComposite
 
 from tests.mock_sampler import MockSampler
 
@@ -13,7 +13,7 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
 
     def test_smoke(self):
         child_sampler = MockSampler()
-        sampler = VirtualGraph(child_sampler, {'a': [0]}, flux_bias_num_reads=10)
+        sampler = VirtualGraphComposite(child_sampler, {'a': [0]}, flux_bias_num_reads=10)
 
         # depending on how recenlty flux bias data was gathered, this may be true
         child_sampler.flux_biases_flag = False
@@ -23,7 +23,7 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
             self.assertTrue(child_sampler.flux_biases_flag)  # true when some have been provided to sample_ising
 
     def test_structure_keyword_setting(self):
-        sampler = VirtualGraph(self.sampler, embedding={'a': set(range(8)),
+        sampler = VirtualGraphComposite(self.sampler, embedding={'a': set(range(8)),
                                                         'b': set(range(8, 16)),
                                                         'c': set(range(16, 24))},
                                flux_biases=False)
@@ -34,7 +34,7 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
         self.assertEqual(adj, {'a': {'b'}, 'b': {'a', 'c'}, 'c': {'b'}})
 
         # unlike variable names
-        sampler = VirtualGraph(self.sampler, embedding={'a': set(range(8)),
+        sampler = VirtualGraphComposite(self.sampler, embedding={'a': set(range(8)),
                                                            1: set(range(8, 16)),
                                                            'c': set(range(16, 24))},
                                   flux_biases=False)
@@ -60,14 +60,14 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
         __, __, adj = sampler.structure
         embedding = {v: {v} for v in adj}
 
-        sampler = VirtualGraph(sampler, embedding=embedding, flux_biases=False)
+        sampler = VirtualGraphComposite(sampler, embedding=embedding, flux_biases=False)
 
         self.assertEqual(sampler.embedding, embedding)
 
     def test_simple_complete_graph_sample_ising(self):
         """sample_ising on a K4."""
 
-        K4 = VirtualGraph(self.sampler, embedding={0: {0, 4},
+        K4 = VirtualGraphComposite(self.sampler, embedding={0: {0, 4},
                                                       1: {1, 5},
                                                       2: {2, 6},
                                                       3: {3, 7}},
