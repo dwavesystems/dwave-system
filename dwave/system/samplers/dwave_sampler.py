@@ -42,7 +42,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         # need to set up the nodelist and edgelist, properties, parameters
         self._nodelist = sorted(solver.nodes)
-        self._edgelist = sorted(sorted(edge) for edge in solver.edges)
+        self._edgelist = sorted(set(tuple(sorted(edge)) for edge in solver.edges))
         self._properties = solver.properties.copy()  # shallow copy
         self._parameters = {param: ['parameters'] for param in solver.properties['parameters']}
 

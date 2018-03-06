@@ -20,10 +20,13 @@ except ImportError:
 
 C16 = dnx.chimera_graph(16)
 
+edges = set(tuple(edge) for edge in C16.edges)
+edges.update([(v, u) for u, v in edges])  # solver has bi-directional
+
 
 class MockSolver():
     nodes = set(range(2048))
-    edges = set(tuple(edge) for edge in C16.edges)
+    edges = edges
     properties = {'readout_thermalization_range': [0, 10000],
                   'annealing_time_range': [1, 2000],
                   'default_readout_thermalization': 0,
