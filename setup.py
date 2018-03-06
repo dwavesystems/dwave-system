@@ -31,7 +31,8 @@ packages = ['dwave',
             'dwave.system.samplers',
             'dwave.system.composites',
             'dwave.system.cache',
-            'dwave.system.embedding']
+            'dwave.system.embedding',
+            'dwave.system.exceptions']
 
 setup(
     name='dwave_system',
