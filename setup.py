@@ -32,7 +32,8 @@ packages = ['dwave',
             'dwave.system.composites',
             'dwave.system.cache',
             'dwave.system.embedding',
-            'dwave.system.exceptions']
+            'dwave.system.exceptions',
+            'dwave.system.flux_bias_offsets']
 
 setup(
     name='dwave_system',
