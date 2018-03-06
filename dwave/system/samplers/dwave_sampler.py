@@ -74,12 +74,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`.FutureResponse`
 
         """
-        num_variables = len(h)
+        variables = set(h).union(*J)
+        try:
+            active_variables = sorted(variables)
+        except TypeError:
+            active_variables = list(variables)
+        num_variables = len(active_variables)
+
         data_vector_keys = {'energies': 'energy'}
-        if isinstance(h, list):
-            active_variables = list(range(num_variables))
-        else:
-            active_variables = list(h)
 
         future = self.solver.sample_ising(h, J, **kwargs)
         return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
@@ -98,11 +100,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`.FutureResponse`
 
         """
-        active_variables = list(set().union(*Q))
-
+        variables = set().union(*Q)
+        try:
+            active_variables = sorted(variables)
+        except TypeError:
+            active_variables = list(variables)
         num_variables = len(active_variables)
+
         data_vector_keys = {'energies': 'energy'}
-        active_variables = list(variables)
 
         future = self.solver.sample_qubo(Q, **kwargs)
         return dimod.Response.from_futures((future,), vartype=dimod.SPIN,

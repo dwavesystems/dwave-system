@@ -20,6 +20,9 @@ except ImportError:
 
 C16 = dnx.chimera_graph(16)
 
+# remove one node from C16 to simulate a not-fully-yielded system
+C16.remove_node(42)
+
 edges = set(tuple(edge) for edge in C16.edges)
 edges.update([(v, u) for u, v in edges])  # solver has bi-directional
 
@@ -99,10 +102,25 @@ class MockSolver():
 
 class TestDwaveSampler(unittest.TestCase):
     @mock.patch('dwave.cloud.qpu.Client')
-    def test_thingy(self, MockClient):
+    def setUp(self, MockClient):
         instance = MockClient.return_value
         instance.get_solver.return_value = MockSolver()
 
-        sampler = DWaveSampler()
+        # using the mock
+        self.sampler = DWaveSampler()
+
+    def test_sample_ising_variables(self):
+
+        sampler = self.sampler
 
         response = sampler.sample_ising({0: -1, 1: 1}, {})
+
+        rows, cols = response.samples_matrix.shape
+
+        self.assertEqual(cols, 2)
+
+        response = sampler.sample_ising({}, {(0, 1): 1})
+
+        rows, cols = response.samples_matrix.shape
+
+        self.assertEqual(cols, 2)
