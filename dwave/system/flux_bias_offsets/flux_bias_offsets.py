@@ -23,7 +23,6 @@ def get_flux_biases(sampler, embedding, num_reads, chain_strength=1, max_age=360
 
         # store them in the cache
         fbo_dict = dict(fbo)
-        print(fbo_dict)
         with cache_connect() as cur:
             for chain in embedding.values():
                 flux_bias = fbo_dict[next(iter(chain))]
