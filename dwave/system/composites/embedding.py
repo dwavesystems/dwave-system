@@ -76,4 +76,4 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         data_vectors = response.data_vectors
         data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
 
-        return dimod.Response.from_dicts(samples, data_vectors, info=response.info)
+        return dimod.Response.from_dicts(samples, data_vectors, info=response.info, vartype=dimod.SPIN)

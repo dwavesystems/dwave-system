@@ -176,7 +176,7 @@ class VirtualGraph(dimod.ComposedSampler, dimod.Structured):
         data_vectors = response.data_vectors
         data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
 
-        return dimod.Response.from_dicts(samples, data_vectors, info=response.info)
+        return dimod.Response.from_dicts(samples, data_vectors, info=response.info, vartype=dimod.SPIN)
 
     def _validate_chain_strength(self, chain_strength):
         """Validate the provided chain strength, checking J-ranges of the sampler's children.

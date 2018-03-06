@@ -24,9 +24,9 @@ class TestVirtualGraphWithMockSampler(unittest.TestCase):
 
     def test_structure_keyword_setting(self):
         sampler = VirtualGraph(self.sampler, embedding={'a': set(range(8)),
-                                                           'b': set(range(8, 16)),
-                                                           'c': set(range(16, 24))},
-                                  flux_biases=False)
+                                                        'b': set(range(8, 16)),
+                                                        'c': set(range(16, 24))},
+                               flux_biases=False)
 
         nodelist, edgelist, adj = sampler.structure
         self.assertEqual(nodelist, ['a', 'b', 'c'])

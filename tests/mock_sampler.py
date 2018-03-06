@@ -33,17 +33,19 @@ class MockSampler(dimod.Sampler, dimod.Structured):
         properties['j_range'] = [-2.0, 1.0]
         properties['h_range'] = [-2.0, 2.0]
         properties['num_reads_range'] = [1, 10000]
+        properties['num_qubits'] = len(C4)
 
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[]):
         # we are altering the bqm
         new_bqm = bqm.copy()
 
-        for v, fbo in flux_biases:
+        for v, fbo in enumerate(flux_biases):
+            self.flux_biases_flag = True
             new_bqm.add_variable(v, 1000. * fbo)  # add the bias
 
         response = dimod.SimulatedAnnealingSampler().sample(new_bqm, num_reads=num_reads)
 
         energies = [bqm.energy(sample) for sample in response.samples(sorted_by=None)]
 
-        return dimod.Response.from_dicts(response.samples(sorted_by=None), {'energy': energies})
+        return dimod.Response.from_dicts(response.samples(sorted_by=None), {'energy': energies}, vartype=bqm.vartype)
