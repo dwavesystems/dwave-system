@@ -63,7 +63,7 @@ author = u'D-Wave Systems Inc'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-import dwave.system
+import dwave.system.package_info
 # The short X.Y version.
 version = dwave.system.package_info.__version__
 # The full version, including alpha/beta/rc tags.

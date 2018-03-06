@@ -19,9 +19,7 @@ Documentation
 
   reference/index
   installation
-  .. examples [Placeholder: not used in this project]
   license
-  .. bibliography [Placeholder: not used in this project]
 
 .. toctree::
   :caption: D-Wave's Ocean Software

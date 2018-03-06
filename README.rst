@@ -2,10 +2,6 @@
     :target: https://travis-ci.org/dwavesystems/dwave-system
     :alt: Travis Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/dwave-system/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system/branch/master)
-    :alt: Appveyor Status
-
 .. image:: https://coveralls.io/repos/github/dwavesystems/dwave-system/badge.svg?branch=master
     :target: https://coveralls.io/github/dwavesystems/dwave-system?branch=master
     :alt: Coveralls Status
