@@ -1,5 +1,5 @@
 """
-todo
+Tiles many smaller problems accross a larger chimera-structured sampler.
 """
 from __future__ import division
 from math import sqrt, ceil
@@ -17,33 +17,26 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-WAVE 2000Q system (16x16).
 
     Args:
-        sampler (:class:`dimod.TemplateSampler`): A structured dimod sampler to be wrapped.
+        sampler (:class:`dimod.Sampler`): A structured dimod sampler to be wrapped.
         sub_m (int): The number of rows in the sub Chimera lattice.
         sub_n (int): The number of columns in the sub Chimera lattice.
         t (int): The size of the shore within each Chimera cell.
 
-    Attributes:
-        structure (tuple):
-            A named 3-tuple with the following properties/values:
-
-                nodelist (list): The nodes available to the sampler.
-
-                edgelist (list[(node, node)]): The edges available to the sampler.
-
-                adjacency (dict): Encodes the edges of the sampler in nested dicts. The keys of
-                adjacency are the nodes of the sampler and the values are neighbor-dicts.
-        embeddings (list):
-            A list of dictionaries mapping from the sub Chimera lattice to the structured sampler of the form
-            {v: {s, ...}, ...} where v is a variable in the sub Chimera lattice and s is a variable in the system.
-
     """
     nodelist = None
+    """list: The nodes available to the sampler."""
+
     edgelist = None
+    """list: The edges available to the sampler."""
 
     parameters = None
+    """dict[str, list]: The keys are the keyword parameters accepted by the child sampler."""
+
     properties = None
+    """dict: Contains one key 'child_properties' which has a copy of the child sampler's properties."""
 
     children = None
+    """list: Contains the single wrapped structured sampler."""
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
 
@@ -129,7 +122,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             **kwargs: Parameters for the sampling method, specified per solver.
 
         Returns:
-            :class:`dimod.SpinResponse`
+            :class:`dimod.Response`
 
         """
         __, __, adjacency = self.structure

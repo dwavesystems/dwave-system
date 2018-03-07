@@ -10,3 +10,4 @@ Reference Documentation
    :maxdepth: 2
 
    samplers/index
+   composites/index
