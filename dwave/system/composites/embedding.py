@@ -1,5 +1,5 @@
 """
-todo
+A composite to create unstructured samplers from structured.
 """
 import itertools
 
@@ -12,8 +12,8 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
     """Composite to map unstructured problems to a structured sampler.
 
     Args:
-        sampler (:class:`dimod.TemplateSampler`):
-            A structured dimod sampler to be wrapped.
+        sampler (:class:`dimod.Sampler`):
+            A structured dimod sampler.
 
     """
     def __init__(self, child_sampler):
@@ -23,15 +23,18 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
 
     @property
     def children(self):
+        """list: Contains the single wrapped structured sampler."""
         return self._children
 
     @property
     def parameters(self):
+        """dict[str, list]: The keys are the keyword parameters accepted by the child sampler."""
         # does not add or remove any parameters
         return self.child.parameters.copy()
 
     @property
     def properties(self):
+        """dict: Contains one key 'child_properties' which has a copy of the child sampler's properties."""
         return {'child_properties': self.child.properties.copy()}
 
     def sample_ising(self, h, J, **parameters):
@@ -40,12 +43,15 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         Args:
             h (list/dict): Linear terms of the model.
             J (dict of (int, int):float): Quadratic terms of the model.
-            **kwargs: Parameters for the sampling method, specified per solver.
+            **parameters: Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :class:`dimod.SpinResponse`
+            :class:`dimod.Response`
 
         """
+        if isinstance(h, list):
+            h = dict(enumerate(h))
+
         # solve the problem on the child system
         child = self.child
 

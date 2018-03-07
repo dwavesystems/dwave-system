@@ -16,50 +16,77 @@ __all__ = ['VirtualGraphComposite']
 
 
 class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
+    """Apply the VirtualGraph composite layer to the given solver.
+
+    Args:
+        sampler (:class:`.DWaveSampler`):
+            A dimod_ sampler. Normally :obj:`.DWaveSampler`, or a
+            derived composite sampler. Other samplers in general will not work or will not make
+            sense with this composite layer.
+
+        embedding (dict[hashable, iterable]):
+            A mapping from a source graph to the given sampler's graph (the target graph).
+
+        chain_strength (float, optional, default=None):
+            The desired chain strength. If None, will use the maximum available from the
+            processor.
+
+        flux_biases (list/False/None, optional, default=None):
+            The per-qubit flux bias offsets. If given, should be a list of lists. Each sublist
+            should be of length 2 and is the variable and the flux bias
+            offset associated with the variable. If `flux_biases` evaluates False, then no
+            flux bias is applied or calculated. If None if given, the the flux biases are
+            pulled from the database or calculated empirically.
+
+        flux_bias_num_reads (int, optional, default=1000):
+            The number of samplers to collect per flux bias value.
+
+        flux_bias_max_age (int, optional, default=3600):
+            The maximum age (in seconds) allowed for a previously calculated flux bias offset.
+
+    """
 
     # override the abstract properties
     nodelist = None
+    """list: The nodes available to the sampler."""
+
     edgelist = None
+    """list: The edges available to the sampler."""
+
     adjacency = None
+    """dict[variable, set] – The adjacency structure.
+
+    Examples:
+
+        >>> class StructuredObject(dimod.Structured):
+        ...     @property
+        ...      def nodelist(self):
+        ...         return [0, 1, 2]
+        ...
+        ...     @property
+        ...     def edgelist(self):
+        ...         return [(0, 1), (1, 2)]
+        >>> test_obj = StructuredObject()
+        >>> for u, v in test_obj.edgelist:
+        ...     assert u in test_obj.adjacency[v]
+        ...     assert v in test_obj.adjacency[u]
+
+    """
+
     children = None
+    """list: A list containig the wrapped sampler."""
+
     parameters = None
+    """The same parameters as are accepted by the child sampler with an additional parameter
+    'apply_flux_bias_offsets'.
+    """
+
     properties = None
+    """dict: Contains one key 'child_properties' which has a copy of the child sampler's properties."""
 
     def __init__(self, sampler, embedding,
                  chain_strength=None,
                  flux_biases=None, flux_bias_num_reads=1000, flux_bias_max_age=3600):
-        """Apply the VirtualGraph composite layer to the given solver.
-
-        Args:
-            sampler (:class:`dwave_micro_client_dimod.DWaveSampler`):
-                A dimod_ sampler. Normally :class:`dwave_micro_client_dimod.DWaveSampler`, or a
-                derived composite sampler. Other samplers in general will not work or will not make
-                sense with this composite layer.
-
-            embedding (dict[hashable, iterable]):
-                A mapping from a source graph to the given sampler's graph (the target graph).
-
-            chain_strength (float, optional, default=None):
-                The desired chain strength. If None, will use the maximum available from the
-                processor.
-
-            flux_biases (list/False/None, optional, default=None):
-                The per-qubit flux bias offsets. If given, should be a list of lists. Each sublist
-                should be of length 2 and is the variable and the flux bias
-                offset associated with the variable. If `flux_biases` evaluates False, then no
-                flux bias is applied or calculated. If None if given, the the flux biases are
-                pulled from the database or calculated empirically.
-
-            flux_bias_num_reads (int, optional, default=1000):
-                The number of samplers to collect per flux bias value.
-
-            flux_bias_max_age (int, optional, default=3600):
-                The maximum age (in seconds) allowed for a previously calculated flux bias offset.
-
-        Returns:
-            `dimod.TemplateComposite`
-
-        """
         self.children = [sampler]
 
         self.parameters = parameters = {'apply_flux_bias_offsets': []}
@@ -127,6 +154,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     def sample_ising(self, h, J, apply_flux_bias_offsets=True, **kwargs):
         """Sample from the given Ising model.
+
+        Args:
 
             h (list/dict): Linear terms of the model.
 
