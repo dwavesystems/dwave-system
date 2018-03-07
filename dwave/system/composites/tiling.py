@@ -1,5 +1,5 @@
 """
-Tiles many smaller problems accross a larger chimera-structured sampler.
+Tiles many smaller problems across a larger Chimera-structured sampler.
 """
 from __future__ import division
 from math import sqrt, ceil
@@ -14,12 +14,12 @@ __all__ = ['TilingComposite']
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """ Composite to tile a small problem across a Chimera-structured sampler. A problem that can fit on a small Chimera
     graph can be replicated across a larger Chimera graph to get samples from multiple areas of the system in one call.
-    For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-WAVE 2000Q system (16x16).
+    For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-Wave 2000Q system (16x16).
 
     Args:
         sampler (:class:`dimod.Sampler`): A structured dimod sampler to be wrapped.
-        sub_m (int): The number of rows in the sub Chimera lattice.
-        sub_n (int): The number of columns in the sub Chimera lattice.
+        sub_m (int): The number of rows in the sub-Chimera lattice.
+        sub_n (int): The number of columns in the sub-Chimera lattice.
         t (int): The size of the shore within each Chimera cell.
 
     """
@@ -33,7 +33,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """dict[str, list]: The keys are the keyword parameters accepted by the child sampler."""
 
     properties = None
-    """dict: Contains one key 'child_properties' which has a copy of the child sampler's properties."""
+    """dict: Contains one key :code:`'child_properties'` which has a copy of the child sampler's properties."""
 
     children = None
     """list: Contains the single wrapped structured sampler."""
@@ -114,7 +114,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             raise ValueError("no tile embeddings found; is the sampler Chimera structured?")
 
     def sample_ising(self, h, J, **kwargs):
-        """Sample from the sub Chimera lattice.
+        """Sample from the sub-Chimera lattice.
 
         Args:
             h (list/dict): Linear terms of the model.

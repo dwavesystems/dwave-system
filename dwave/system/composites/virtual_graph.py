@@ -1,4 +1,10 @@
-import itertools
+"""
+The D-Wave virtual graph tools simplify the process of minor-embedding by enabling you to more
+easily create, optimize, use, and reuse an embedding for a given working graph. When you submit an
+embedding and specify a chain strength using these tools, they automatically calibrate the qubits
+in a chain to compensate for the effects of biases that may be introduced as a result of strong
+couplings.
+"""
 
 from six import iteritems
 
@@ -20,7 +26,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     Args:
         sampler (:class:`.DWaveSampler`):
-            A dimod_ sampler. Normally :obj:`.DWaveSampler`, or a
+            A dimod :class:`dimod.Sampler`. Normally :obj:`.DWaveSampler`, or a
             derived composite sampler. Other samplers in general will not work or will not make
             sense with this composite layer.
 
@@ -35,11 +41,11 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
             The per-qubit flux bias offsets. If given, should be a list of lists. Each sublist
             should be of length 2 and is the variable and the flux bias
             offset associated with the variable. If `flux_biases` evaluates False, then no
-            flux bias is applied or calculated. If None if given, the the flux biases are
+            flux bias is applied or calculated. If None if given, the flux biases are
             pulled from the database or calculated empirically.
 
         flux_bias_num_reads (int, optional, default=1000):
-            The number of samplers to collect per flux bias value.
+            The number of samples to collect per flux bias value.
 
         flux_bias_max_age (int, optional, default=3600):
             The maximum age (in seconds) allowed for a previously calculated flux bias offset.
@@ -82,7 +88,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     """
 
     properties = None
-    """dict: Contains one key 'child_properties' which has a copy of the child sampler's properties."""
+    """dict: Contains one key :code:`'child_properties'` which has a copy of the child sampler's properties."""
 
     def __init__(self, sampler, embedding,
                  chain_strength=None,

@@ -1,8 +1,8 @@
 """
-The dimod wrapper for the D-Wave System.
-"""
-import collections
+Creates a dimod Sampler_ for the D-Wave System.
 
+.. _Sampler: http://dimod.readthedocs.io/en/latest/reference/samplers.html#samplers-and-composites
+"""
 import dimod
 import dwave.cloud.qpu as qpuclient
 
@@ -10,19 +10,23 @@ __all__ = ['DWaveSampler']
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
-    """dimod wrapper for a D-Wave Micro Client.
+    """dimod Sampler for a D-Wave System.
+
+    A :class:`dimod.Sampler` that allows the D-Wave System to be used with the Ocean tools.
+
+    Also inherits from :class:`dimod.Structured`.
 
     Args:
         solver_name (str, optional):
-            Id of the requested solver. None will return the default
+            ID of the requested solver. If unspecificed, will return the default
             solver (see configuration_).
 
         url (str, optional):
-            URL of the SAPI server. None will return the default url
+            URL of the SAPI server. If unspecificed, will return the default URL
             (see configuration_).
 
         token (str, optional):
-            Authentication token from the SAPI server. None will return
+            Authentication token from the SAPI server. If unspecificed, will return
             the default token (see configuration_).
 
         proxies (dict, optional):
@@ -49,12 +53,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     @property
     def properties(self):
-        """dict: The properties as exposed by the sapi web service."""
+        """dict: The properties as exposed by the SAPI web service."""
         return self._properties
 
     @property
     def parameters(self):
-        """dict[str, list]: The keys are the keyword parameters accepted by sapi web service. The
+        """dict[str, list]: The keys are the keyword parameters accepted by SAPI web service. The
         values are lists properties in :attr:`.DWaveSampler.properties` that are relevent to the
         keyword.
         """
