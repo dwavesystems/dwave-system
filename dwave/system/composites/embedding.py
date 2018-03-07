@@ -1,7 +1,16 @@
 """
-A composite to create unstructured samplers from structured.
+Because the D-Wave System is Chimera-structured but most problems of application interest are not,
+it is convenient to be able to map from a structured sampler to an unstructured one.
+
+A structured sampler is one that can only solver problems that map to a specific graph (see structured_)
+
+The :class:`.EmbeddingComposite` uses the minorminer_ library to map unstructured problems to a
+structured sampler.
+
+.. _minorminer: https://github.com/dwavesystems/minorminer
+.. _structured: http://dimod.readthedocs.io/en/latest/reference/samplers.html#module-dimod.core.structured
+
 """
-import itertools
 
 import dimod
 import dwave_embedding_utilities as embutil
@@ -34,7 +43,7 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
 
     @property
     def properties(self):
-        """dict: Contains one key 'child_properties' which has a copy of the child sampler's properties."""
+        """dict: Contains one key :code:`'child_properties'` which has a copy of the child sampler's properties."""
         return {'child_properties': self.child.properties.copy()}
 
     def sample_ising(self, h, J, **parameters):

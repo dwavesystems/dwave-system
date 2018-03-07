@@ -27,13 +27,13 @@ Installation
 
 .. installation-start-marker
 
-**Installation from PyPi:**
+**Installation from PyPI:**
 
 .. code-block:: bash
 
     pip install dwave-system --extra-index-url https://pypi.dwavesys.com/simple
 
-**Installation from PyPi:**
+**Installation from PyPI:**
 
 .. code-block:: bash
 
@@ -46,8 +46,8 @@ Installation
     pip install -r requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
     python setup.py
 
-Please note that this package depends on a package dwave-system-tuning which has a proprietary
-license. To view the license details:
+Downloaded with this package is a dependency called dwave-system-tuning that has a restricted license.
+To view the license details:
 
 .. code-block:: python
 
