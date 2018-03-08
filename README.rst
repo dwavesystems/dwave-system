@@ -33,12 +33,6 @@ Installation
 
     pip install dwave-system --extra-index-url https://pypi.dwavesys.com/simple
 
-**Installation from PyPI:**
-
-.. code-block:: bash
-
-    pip install dwave-system
-
 **Installation from source:**
 
 .. code-block:: bash
