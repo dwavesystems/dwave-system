@@ -60,7 +60,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     """list: The edges available to the sampler."""
 
     adjacency = None
-    """dict[variable, set] – The adjacency structure.
+    """dict[variable, set]: The adjacency structure.
 
     Examples:
 
