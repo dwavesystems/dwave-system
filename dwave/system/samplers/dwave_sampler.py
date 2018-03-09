@@ -17,33 +17,32 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     Also inherits from :class:`dimod.Structured`.
 
     Args:
-        solver_name (str, optional):
-            ID of the requested solver. If unspecificed, will return the default
-            solver (see configuration_).
+        config_file (str, optional):
+            Path to the configuration file.
 
-        url (str, optional):
-            URL of the SAPI server. If unspecificed, will return the default URL
-            (see configuration_).
+        profile (str, optional):
+            ID of the config profile.
+
+        endpoint (str, optional):
+            D-Wave API endpoint URL.
 
         token (str, optional):
-            Authentication token from the SAPI server. If unspecificed, will return
-            the default token (see configuration_).
+            Authentication token for the D-Wave API.
 
-        proxies (dict, optional):
-            Mapping from the connection scheme (http[s]) to the proxy server
-            address.
+        solver (str, optional):
+            Default solver.
 
-        permissive_ssl (boolean, optional, default=False):
-            Disables SSL verification.
+        proxy (str, optional):
+            Proxy URL to be used for accessing the D-Wave API.
 
     .. _configuration: http://dwave-micro-client.readthedocs.io/en/latest/#configuration
 
     """
-    def __init__(self, solver_name=None, url=None, token=None, proxies=None, permissive_ssl=False):
+    def __init__(self, config_file=None, profile=None, endpoint=None, token=None, solver=None, proxy=None):
 
-        self.client = client = qpuclient.Client(url=url, token=token, proxies=proxies,
-                                                permissive_ssl=permissive_ssl)
-        self.solver = solver = client.get_solver(solver_name)
+        self.client = client = qpuclient.Client.from_config(config_file=config_file, profile=profile,
+                                                            endpoint=endpoint, token=token, proxy=proxy)
+        self.solver = solver = client.get_solver(name=solver)
 
         # need to set up the nodelist and edgelist, properties, parameters
         self._nodelist = sorted(solver.nodes)
