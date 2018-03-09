@@ -1,12 +1,13 @@
 """who watches the watchmen?"""
 import unittest
 
-from dimod.test import SamplerAPITestCaseMixin
-
 from tests.mock_sampler import MockSampler
 
+import dimod.testing as dit
 
-class TestMockSampler(unittest.TestCase, SamplerAPITestCaseMixin):
+
+class TestMockSampler(unittest.TestCase):
     def setUp(self):
-        self.sampler = MockSampler()
-        self.sampler_factory = MockSampler
+        sampler = MockSampler()
+        dit.assert_sampler_api(sampler)
+        dit.assert_structured_api(sampler)
