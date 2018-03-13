@@ -101,13 +101,16 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             active_variables = list(variables)
         num_variables = len(active_variables)
 
-        data_vector_keys = {'energies': 'energy'}
+        data_vector_keys = {'energies': 'energy',
+                            'num_occurrences': 'num_occurrences'}
+        info_keys = {'timing'}
 
         future = self.solver.sample_ising(h, J, **kwargs)
         return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
                                            num_variables=num_variables,
                                            data_vector_keys=data_vector_keys,
-                                           active_variables=active_variables)
+                                           active_variables=active_variables,
+                                           info_keys=info_keys)
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the provided QUBO.
@@ -131,10 +134,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             active_variables = list(variables)
         num_variables = len(active_variables)
 
-        data_vector_keys = {'energies': 'energy'}
+        data_vector_keys = {'energies': 'energy',
+                            'num_occurrences': 'num_occurrences'}
+        info_keys = {'timing'}
 
         future = self.solver.sample_qubo(Q, **kwargs)
         return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
                                            num_variables=num_variables,
                                            data_vector_keys=data_vector_keys,
-                                           active_variables=active_variables)
+                                           active_variables=active_variables,
+                                           info_keys=info_keys)
