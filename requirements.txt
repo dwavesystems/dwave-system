@@ -1,4 +1,4 @@
-dimod==0.6.0
+dimod==0.6.1
 dwave-cloud-client==0.3.1
 dwave-embedding-utilities==0.2.0
 dwave-networkx==0.6.0

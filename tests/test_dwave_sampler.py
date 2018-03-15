@@ -103,7 +103,7 @@ class MockSolver():
 class TestDwaveSampler(unittest.TestCase):
     @mock.patch('dwave.cloud.qpu.Client')
     def setUp(self, MockClient):
-        instance = MockClient.return_value
+        instance = MockClient.from_config.return_value
         instance.get_solver.return_value = MockSolver()
 
         # using the mock
@@ -124,3 +124,25 @@ class TestDwaveSampler(unittest.TestCase):
         rows, cols = response.samples_matrix.shape
 
         self.assertEqual(cols, 2)
+
+        self.assertIn('num_occurrences', response.data_vectors)
+        self.assertIn('timing', response.info)
+
+    def test_sample_qubo_variables(self):
+
+        sampler = self.sampler
+
+        response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
+
+        rows, cols = response.samples_matrix.shape
+
+        self.assertEqual(cols, 2)
+
+        response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
+
+        rows, cols = response.samples_matrix.shape
+
+        self.assertEqual(cols, 2)
+
+        self.assertIn('num_occurrences', response.data_vectors)
+        self.assertIn('timing', response.info)
