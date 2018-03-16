@@ -32,8 +32,8 @@ matrix:
           before_install:
             - brew update
             - brew upgrade python
-            - pip install virtualenv
-            - virtualenv env -p python
+            - pip3 install virtualenv
+            - virtualenv env -p python3
             - source env/bin/activate
           deploy:
         - os: osx
