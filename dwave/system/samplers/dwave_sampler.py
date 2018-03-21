@@ -38,10 +38,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     .. _configuration: http://dwave-micro-client.readthedocs.io/en/latest/#configuration
 
     """
-    def __init__(self, config_file=None, profile=None, endpoint=None, token=None, solver=None, proxy=None):
+    def __init__(self, config_file=None, profile=None, endpoint=None, token=None, solver=None,
+                 proxy=None, permissive_ssl=False):
 
         self.client = client = qpuclient.Client.from_config(config_file=config_file, profile=profile,
-                                                            endpoint=endpoint, token=token, proxy=proxy)
+                                                            endpoint=endpoint, token=token, proxy=proxy,
+                                                            permissive_ssl=permissive_ssl)
         self.solver = solver = client.get_solver(name=solver)
 
         # need to set up the nodelist and edgelist, properties, parameters
