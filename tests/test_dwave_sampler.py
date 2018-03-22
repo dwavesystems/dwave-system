@@ -3,6 +3,8 @@ import random
 
 from concurrent.futures import Future
 
+import numpy as np
+
 import dimod
 import dwave_networkx as dnx
 
@@ -125,6 +127,9 @@ class TestDwaveSampler(unittest.TestCase):
 
         self.assertEqual(cols, 2)
 
+        self.assertFalse(np.any(response.samples_matrix == 0))
+        self.assertIs(response.vartype, dimod.SPIN)
+
         self.assertIn('num_occurrences', response.data_vectors)
         self.assertIn('timing', response.info)
 
@@ -143,6 +148,9 @@ class TestDwaveSampler(unittest.TestCase):
         rows, cols = response.samples_matrix.shape
 
         self.assertEqual(cols, 2)
+
+        self.assertTrue(np.all(response.samples_matrix >= 0))
+        self.assertIs(response.vartype, dimod.BINARY)
 
         self.assertIn('num_occurrences', response.data_vectors)
         self.assertIn('timing', response.info)
