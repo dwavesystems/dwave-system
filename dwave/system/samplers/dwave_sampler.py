@@ -141,7 +141,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         info_keys = {'timing'}
 
         future = self.solver.sample_qubo(Q, **kwargs)
-        return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
+        return dimod.Response.from_futures((future,), vartype=dimod.BINARY,
                                            num_variables=num_variables,
                                            data_vector_keys=data_vector_keys,
                                            active_variables=active_variables,
