@@ -3,47 +3,60 @@ language: python
 matrix:
     include:
         # - os: linux
-        #   sudo: required
-        #   python: "nightly"
-        #   env: TOXENV=pynightly
+        #   python: "3.6"
+        # - os: linux
+        #   python: "3.5"
+        #   deploy:
+        # - os: linux
+        #   python: "3.4"
+        #   deploy:
+        # - os: linux
+        #   python: "2.7"
         #   deploy:
         - os: linux
+          langage: generic
           sudo: required
-          python: "3.6"
-          env: TOXENV=py36
-        - os: linux
-          sudo: required
-          python: "3.5"
-          env: TOXENV=py35
-          deploy:
-        - os: linux
-          sudo: required
-          python: "3.4"
-          env: TOXENV=py34
-          deploy:
-        - os: linux
-          sudo: required
-          python: "2.7"
-          env: TOXENV=py27
-          deploy:
-        - os: osx
-          language: generic
-          env: TOXENV=py36
           before_install:
-            - brew update
-            - brew upgrade python
-            - pip3 install virtualenv
-            - virtualenv env -p python3
-            - source env/bin/activate
+            - mkdir python-build; cd python-build
+            - sudo apt-get install build-essential libffi-dev libssl-dev
+            # install python 2.7.5
+            - wget http://python.org/ftp/python/2.7.5/Python-2.7.5.tgz
+            - tar -xvf Python-2.7.5.tgz
+            - cd Python-2.7.5
+            - ./configure --prefix=$HOME/python2.7.5 --quiet
+            - make --quiet
+            - sudo make --quiet install
+            - export PATH=$HOME/python2.7.5/bin:$PATH
+            - cd ../..
+            # install pip for 2.7.5
+            - sudo $HOME/python2.7.5/bin/python ci/get_pip.py
+            # check the versions
+            - python --version
+            - pip --version
+            # install some dependencies
+            - sudo pip install virtualenv
+            - sudo pip install cryptography --no-binary cryptography
+            - sudo pip install urllib3[secure] pyopenssl ndg-httpsclient pyasn1
+            # - virtualenv env -p $HOME/python2.7.5/bin/python
+            # - source env/bin/activate
+            # - pip install urllib3[secure] pyopenssl ndg-httpsclient pyasn1
           deploy:
-        - os: osx
-          language: generic
-          env: TOXENV=py27
-          before_install:
-            - brew update
-            - virtualenv env -p python2
-            - source env/bin/activate
-          deploy:
+        # - os: osx
+        #   language: generic
+        #   before_install:
+        #     - brew update
+        #     - brew upgrade python
+        #     - pip3 install virtualenv
+        #     - virtualenv env -p python3
+        #     - source env/bin/activate
+        #   deploy:
+        # - os: osx
+        #   language: generic
+        #   before_install:
+        #     - brew update
+        #     - virtualenv env -p python2
+        #     - source env/bin/activate
+        #   deploy:
 
 install:
     - pip install -r tests/requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
