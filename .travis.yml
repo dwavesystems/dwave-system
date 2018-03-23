@@ -1,65 +1,42 @@
-language: python
+language: generic
 
 matrix:
     include:
-        # - os: linux
-        #   sudo: required
-        #   python: "nightly"
-        #   env: TOXENV=pynightly
-        #   deploy:
         - os: linux
           sudo: required
-          python: "3.6"
-          env: TOXENV=py36
-        - os: linux
-          sudo: required
-          python: "3.5"
-          env: TOXENV=py35
-          deploy:
-        - os: linux
-          sudo: required
-          python: "3.4"
-          env: TOXENV=py34
-          deploy:
-        - os: linux
-          sudo: required
-          python: "2.7"
-          env: TOXENV=py27
-          deploy:
-        - os: osx
-          language: generic
-          env: TOXENV=py36
           before_install:
-            - brew update
-            - brew upgrade python
-            - pip3 install virtualenv
-            - virtualenv env -p python3
-            - source env/bin/activate
-          deploy:
-        - os: osx
-          language: generic
-          env: TOXENV=py27
-          before_install:
-            - brew update
-            - virtualenv env -p python2
-            - source env/bin/activate
-          deploy:
+              - sudo apt-get install build-essential
+              - sudo apt-get build-dep python2.7
+              - sudo apt-get install libffi-dev libssl-dev libncurses5-dev
+              - cwd=$(pwd)
+              # install python 2.7.5 from source
+              - cd
+              - wget http://python.org/ftp/python/2.7.5/Python-2.7.5.tgz
+              - tar -xf Python-2.7.5.tgz
+              - cd Python-2.7.5
+              - ./configure --prefix=$HOME/python2.7.5
+              - make
+              - make install
+              - export PATH="$HOME/python2.7.5/bin:$PATH"
+              # install pip
+              - cd
+              - wget https://bootstrap.pypa.io/get-pip.py
+              - python get-pip.py
+              - cd "$cwd"
+              # fix InsecurePlatformWarning (possible only in pip 8.x)
+              - pip install 'pip<9.0'
+              - pip install pyopenssl ndg-httpsclient pyasn1
+              # verify
+              - python -V
+              - pip --version
 
 install:
     - pip install -r tests/requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
     - pip install .
 
 script:
-- coverage run -m unittest discover
+    - coverage run -m unittest discover
 
 after_success:
-  - coveralls
+    - coveralls
 
-deploy:
-  provider: pypi
-  user: "dwtools"
-  password:
-    secure: "bM7qmp10z3alnRGDY8dBzwC+OwBB5ikCJV9p+FRnupNBiN02e3zNOeWj1WIJUlbzGbl8XcY0EPMb3kXJTehwCnm6QvDqimfeNwc5A5zwPIZqD0+LUxUSMnLXapq8V8pZZRMrUCjjaAXESt0MkCSB0pA+MTHSF1gsFvKx6BaNzhdSNnHuHBeDGL4pcoSBO3oHJzjI7mN7RSP7F81tY242voQhGM5PmB8tCRdOH3klUY6Llnh9O0193O1MGjc8BQ/8sTQiB0kkPEf87dwda4LaoG8WT3/6a0uP0a5+Sygg7KHwUzKu7geMTpi/0a/WnzAA99JJkWUyup95Y04zYUdS2nymTVg7A0eEenh77jcwuc5pzIRx+BcCs7u40JDCf+YTgOLLoomF+24SVreXLmDFY2YanaLix8RMsuuDXUFuVEQUdcl4AaWnwSrmPAukRoql/E9frTbYnDZhHh3rUMSa4crM0XdNVS2iY/1KwfJPLrfu2twl9sHZuT2z6UdgQRSJSWesq6a7UFG/nOob9eVJeAvn2viaGrIAbwgQ0gQGSCV/QdLsYeAE39/3s5hx3/YWR3uyyrRXkHG89CyWWYWWe5j+DUymwEBKeSud/lTPTaLk6Cc0i715uu2/hbJK515pRd1oay49RUnAD1F0JOR1h9f6kMDjTHbj7yxq6umZf94="
-  distributions: "sdist bdist_wheel"
-  on:
-    tags: true
