@@ -1,34 +1,17 @@
-language: generic
+language: python
 
 matrix:
     include:
         - os: linux
           sudo: required
+          python: "2.7"
           before_install:
-              - sudo apt-get install build-essential
-              - sudo apt-get build-dep python2.7
-              - sudo apt-get install libffi-dev libssl-dev libncurses5-dev
-              - cwd=$(pwd)
-              # install python 2.7.5 from source
-              - cd
-              - wget http://python.org/ftp/python/2.7.5/Python-2.7.5.tgz
-              - tar -xf Python-2.7.5.tgz
-              - cd Python-2.7.5
-              - ./configure --prefix=$HOME/python2.7.5
-              - make
-              - make install
-              - export PATH="$HOME/python2.7.5/bin:$PATH"
-              # install pip
-              - cd
-              - wget https://bootstrap.pypa.io/get-pip.py
-              - python get-pip.py
-              - cd "$cwd"
+              # install Python 2.7.6
+              - wget https://s3.amazonaws.com/travis-python-archives/binaries/ubuntu/14.04/x86_64/python-2.7.6.tar.bz2
+              - sudo tar xjf python-2.7.6.tar.bz2 --directory /
               # fix InsecurePlatformWarning (possible only in pip 8.x)
-              - pip install 'pip<9.0'
-              - pip install pyopenssl ndg-httpsclient pyasn1
-              # verify
-              - python -V
-              - pip --version
+              - sudo pip install 'pip<9.0'
+              - sudo pip install pyopenssl ndg-httpsclient pyasn1
 
 install:
     - pip install -r tests/requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
