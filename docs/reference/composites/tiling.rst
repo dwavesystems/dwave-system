@@ -2,7 +2,7 @@
 TilingComposite
 ===============
 
-Overview
+Class
 ========
 
 .. automodule:: dwave.system.composites.tiling

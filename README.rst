@@ -17,8 +17,11 @@ Note: This is an alpha release of this package.
 dwave-system
 ============
 
-dwave-system contains all of the logic needed to use the D-Wave System as part of the
-`D-Wave Ocean <todo>`_ software stack.
+dwave-system is a basic API for easily incorporating the D-Wave system as a sampler in
+the `D-Wave Ocean <todo>`_ software stack. It includes the DWaveSampler, a :class:`dimod.Sampler`
+that accepts and passes system parameters such as system identification and authentication
+down the stack, and several useful composites--layers of pre- and post-processing--that
+can be used with the DWaveSampler to manage minor-embedding, optimize chain strength, etc.    
 
 .. index-end-marker
 

@@ -2,8 +2,8 @@
 VirtualGraphComposite
 =====================
 
-Overview
-========
+Class
+=====
 
 .. automodule:: dwave.system.composites.virtual_graph
 

@@ -4,8 +4,8 @@
 D-Wave Sampler
 ==============
 
-Overview
-========
+Class
+=====
 
 .. automodule:: dwave.system.samplers.dwave_sampler
 
