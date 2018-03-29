@@ -4,12 +4,19 @@
 D-Wave Sampler
 ==============
 
+<<<<<<< HEAD
 Class
 =====
 
+=======
+>>>>>>> Update sampler
 .. automodule:: dwave.system.samplers.dwave_sampler
 
 .. currentmodule:: dwave.system.samplers
+
+Overview
+========
+
 .. autoclass:: DWaveSampler
 
 Sampler Properties
@@ -21,8 +28,8 @@ Sampler Properties
    DWaveSampler.properties
    DWaveSampler.parameters
 
-Structure Properties
-====================
+Structured Solver Properties
+============================
 
 .. autosummary::
    :toctree: generated/
