@@ -201,7 +201,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Args:
             h (list/dict):
-                Linear biases of the Ising model. If a list, the list’s indices are
+                Linear biases of the Ising model. If a list, the list's indices are
                 used as variable labels.
 
             J (dict[(int, int): float]):
@@ -273,7 +273,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             user's default D-Wave Cloud Client configuration_ file and submits a simple
             QUBO problem of just two variables that map to coupled qubits 0 and 4 on the
             example system. (The simplicity of this example obviates the need for an embedding
-            composite---the presence of qubits 0 and 4, and their coupling, on the selected 
+            composite---the presence of qubits 0 and 4, and their coupling, on the selected
             D-Wave system can be verified manually.)
 
             >>> from dwave.system.samplers import DWaveSampler
