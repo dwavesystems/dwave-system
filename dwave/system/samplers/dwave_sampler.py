@@ -16,8 +16,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Enables quick incorporation of the D-Wave system as a sampler in
     the D-Wave Ocean software stack. Also enables optional customizing of input
-    parameters to the stack's communication-manager package,
-    `D-Wave Cloud Client <http://http://dwave-cloud-client.readthedocs.io/en/latest/`_.
+    parameters to `D-Wave Cloud Client <http://dwave-cloud-client.readthedocs.io/en/latest/`_
+    (the stack's communication-manager package).
 
     Args:
         config_file (str, optional):
@@ -46,22 +46,20 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             any selected value from a D-Wave Cloud Client configuration_ file.
 
     Examples:
-        This example creates a DWaveSampler based on the example D-Wave Cloud Client
+        This example creates a :class:`DWaveSampler` based on the example D-Wave Cloud Client
         configuration_ file below and submits a simple Ising problem of just two variables
         that map to qubits 0 and 1 on the example system. (The simplicity of this example
         obviates the need for an embedding composite---the presence of qubits 0 and 1 on
         the selected D-Wave system can be verified manually.)
 
-        /home/susan/.config/dwave/dwave.conf:
-
-        [defaults]
-        endpoint = https://url.of.some.dwavesystem.com/sapi
-        client = qpu
-
-        [dw2000]
-        solver = EXAMPLE_2000Q_SYSTEM
-        token = ABC-123456789123456789123456789
-
+        >>> # Given configuration file /home/susan/.config/dwave/dwave.conf:
+        >>> #    [defaults]
+        >>> #    endpoint = https://url.of.some.dwavesystem.com/sapi
+        >>> #    client = qpu
+        >>> #
+        >>> #    [dw2000]
+        >>> #    solver = EXAMPLE_2000Q_SYSTEM
+        >>> #    token = ABC-123456789123456789123456789
         >>> from dwave.system.samplers import DWaveSampler
         >>> sampler = DWaveSampler('/home/susan/.config/dwave/dwave.conf')
         >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
@@ -70,7 +68,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         ...
         {0: 1, 1: -1}
 
-    .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
     """
     def __init__(self, config_file=None, profile=None, endpoint=None, token=None, solver=None,
@@ -91,11 +89,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def properties(self):
         """dict: D-Wave solver properties as returned by a SAPI query.
 
-        Solver properties are dependent on the selected D-Wave solver and may change;
+        Solver properties are dependent on the selected D-Wave solver and subject to change;
         for example, new released features may add properties.
 
         Examples:
-            This example creates a DWaveSampler and prints the properties retrieved
+            This example creates a :class:`DWaveSampler` and prints the properties retrieved
             from a D-Wave solver selected by the user's default D-Wave Cloud Client
             configuration_ file.
 
@@ -107,7 +105,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
               [-0.20860153999435985, 0.05511969218508182],
             # Snipped above response for brevity
 
-        .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
         """
         return self._properties
@@ -118,11 +116,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         keyword parameters accepted by a SAPI query and values are lists are properties in
         :attr:`.DWaveSampler.properties` for each key.
 
-        Solver parameters are dependent on the selected D-Wave solver and may change;
+        Solver parameters are dependent on the selected D-Wave solver and subject to change;
         for example, new released features may add parameters.
 
         Examples:
-            This example creates a DWaveSampler and prints the parameters retrieved
+            This example creates a :class:`DWaveSampler` and prints the parameters retrieved
             from a D-Wave solver selected by the user's default D-Wave Cloud Client
             configuration_ file.
 
@@ -136,7 +134,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             u'auto_scale': ['parameters'],
             # Snipped above response for brevity
 
-        .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
         """
         return self._parameters
@@ -166,7 +164,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
              (2, 4),
             # Snipped above response for brevity
 
-        .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
         """
         return self._edgelist
@@ -191,7 +189,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
              5,
             # Snipped above response for brevity
 
-        .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
         """
         return self._nodelist
@@ -215,7 +213,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`dimod.Response`
 
         Examples:
-            This example creates a DWaveSampler based on a D-Wave solver selected by the
+            This example creates a :class:`DWaveSampler` based on a D-Wave solver selected by the
             user's default D-Wave Cloud Client configuration_ file and submits a simple
             Ising problem of just two variables that map to qubits 0 and 1 on the example
             system. (The simplicity of this example obviates the need for an embedding
@@ -230,7 +228,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...
             {0: 1, 1: -1}
 
-        .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
         """
         if isinstance(h, list):
@@ -269,7 +267,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`dimod.Response`
 
         Examples:
-            This example creates a DWaveSampler based on a D-Wave solver selected by the
+            This example creates a :class:`DWaveSampler` based on a D-Wave solver selected by the
             user's default D-Wave Cloud Client configuration_ file and submits a simple
             QUBO problem of just two variables that map to coupled qubits 0 and 4 on the
             example system. (The simplicity of this example obviates the need for an embedding
@@ -285,7 +283,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...
             {0: 0, 4: 1}
 
-        .. _configuration: http://http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
         """
         variables = set().union(*Q)

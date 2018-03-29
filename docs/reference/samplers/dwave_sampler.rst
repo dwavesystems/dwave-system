@@ -28,8 +28,8 @@ Sampler Properties
    DWaveSampler.properties
    DWaveSampler.parameters
 
-Structured Solver Properties
-============================
+Structured Sampler Properties
+=============================
 
 .. autosummary::
    :toctree: generated/
