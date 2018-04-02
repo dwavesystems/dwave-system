@@ -4,18 +4,12 @@
 D-Wave Sampler
 ==============
 
-<<<<<<< HEAD
-Class
-=====
-
-=======
->>>>>>> Update sampler
 .. automodule:: dwave.system.samplers.dwave_sampler
 
 .. currentmodule:: dwave.system.samplers
 
-Overview
-========
+Class
+=====
 
 .. autoclass:: DWaveSampler
 
