@@ -2,11 +2,6 @@ language: python
 
 matrix:
     include:
-        # - os: linux
-        #   sudo: required
-        #   python: "nightly"
-        #   env: TOXENV=pynightly
-        #   deploy:
         - os: linux
           sudo: required
           python: "3.6"
@@ -26,6 +21,37 @@ matrix:
           python: "2.7"
           env: TOXENV=py27
           deploy:
+        - os: linux
+          sudo: required
+          language: generic   # python 2.7.5
+          before_install:
+              # install python build deps
+              - sudo apt-get install build-essential
+              - sudo apt-get build-dep python2.7
+              - sudo apt-get install libffi-dev libssl-dev libncurses5-dev libreadline-dev
+              - cwd=$(pwd)
+              # install python 2.7.5 from source
+              - cd
+              - wget http://python.org/ftp/python/2.7.5/Python-2.7.5.tgz
+              - tar -xf Python-2.7.5.tgz
+              - cd Python-2.7.5
+              - ./configure --prefix=$HOME/python2.7.5
+              - make
+              - make install
+              - export PATH="$HOME/python2.7.5/bin:$PATH"
+              # install pip
+              - cd
+              - wget https://bootstrap.pypa.io/get-pip.py
+              - python get-pip.py
+              - cd "$cwd"
+              # fix InsecurePlatformWarning (possible only in pip 8.x)
+              - pip install 'pip<9.0'
+              - pip install pyopenssl ndg-httpsclient pyasn1
+              # verify
+              - python -V
+              - pip --version
+              # fix readline install (libreadline-dev version 6.3-8ubuntu2 needed not available on trusty/Travis)
+              - pip install readline
         - os: osx
           language: generic
           env: TOXENV=py36
