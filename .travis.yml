@@ -71,6 +71,10 @@ matrix:
             - source env/bin/activate
           deploy:
 
+before_install:
+    # Travis py3.4 env fix (https://github.com/pypa/setuptools/issues/951)
+    - pip install -U setuptools
+
 install:
     - pip install -r tests/requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
     - pip install .
