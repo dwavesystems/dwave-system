@@ -16,7 +16,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Enables quick incorporation of the D-Wave system as a sampler in
     the D-Wave Ocean software stack. Also enables optional customizing of input
-    parameters to `D-Wave Cloud Client <http://dwave-cloud-client.readthedocs.io/en/latest/`_
+    parameters to `D-Wave Cloud Client <http://dwave-cloud-client.readthedocs.io/en/latest/>`_
     (the stack's communication-manager package).
 
     Args:
@@ -28,31 +28,31 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Profile to select from a D-Wave Cloud Client configuration_ file.
 
         endpoint (str, optional):
-            D-Wave API endpoint URL. If specified, overrides any selected value from
+            D-Wave API endpoint URL. If specified, used instead of retrieving a value from
             a D-Wave Cloud Client configuration_ file.
 
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
-            If specified, overrides any selected value from a D-Wave Cloud Client
+            If specified, used instead of retrieving a value from a D-Wave Cloud Client
             configuration_ file.
 
         solver (str, optional):
-            Default solver (a D-Wave system on which to run submitted problems).
-            If specified, overrides any selected value from a D-Wave Cloud Client
+            Solver (a D-Wave system on which to run submitted problems).
+            If specified, used instead of retrieving a value from a D-Wave Cloud Client
             configuration_ file.
 
         proxy (str, optional):
-            Proxy URL to be used for accessing the D-Wave API. If specified, overrides
-            any selected value from a D-Wave Cloud Client configuration_ file.
+            Proxy URL to be used for accessing the D-Wave API. If specified, used instead of
+            retrieving a value from a D-Wave Cloud Client configuration_ file.
 
     Examples:
-        This example creates a :class:`DWaveSampler` based on the example D-Wave Cloud Client
-        configuration_ file below and submits a simple Ising problem of just two variables
+        This example creates a :class:`DWaveSampler` based on a fictive user's D-Wave Cloud Client
+        configuration_ file and submits a simple Ising problem of just two variables
         that map to qubits 0 and 1 on the example system. (The simplicity of this example
         obviates the need for an embedding composite---the presence of qubits 0 and 1 on
         the selected D-Wave system can be verified manually.)
 
-        >>> # Given configuration file /home/susan/.config/dwave/dwave.conf:
+        >>> # Example configuration file /home/susan/.config/dwave/dwave.conf:
         >>> #    [defaults]
         >>> #    endpoint = https://url.of.some.dwavesystem.com/sapi
         >>> #    client = qpu
@@ -113,7 +113,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     @property
     def parameters(self):
         """dict[str, list]: D-Wave solver parameters in the form of a dict, where keys are
-        keyword parameters accepted by a SAPI query and values are lists are properties in
+        keyword parameters accepted by a SAPI query and values are lists of properties in
         :attr:`.DWaveSampler.properties` for each key.
 
         Solver parameters are dependent on the selected D-Wave solver and subject to change;
@@ -144,7 +144,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active couplers for the D-Wave solver.
 
         Examples:
-            This example creates a DWaveSampler and prints the active couplers retrieved
+            This example creates a :class:`DWaveSampler` and prints the active couplers retrieved
             from a D-Wave solver selected by the user's default D-Wave Cloud Client
             configuration_ file.
 
@@ -174,7 +174,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active qubits for the D-Wave solver.
 
         Examples:
-            This example creates a DWaveSampler and prints the active qubits retrieved
+            This example creates a :class:`DWaveSampler` and prints the active qubits retrieved
             from a D-Wave solver selected by the user's default D-Wave Cloud Client
             configuration_ file.
 
