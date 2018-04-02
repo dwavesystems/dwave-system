@@ -1,12 +1,14 @@
 """
-Because the D-Wave System is Chimera-structured but most problems of application interest are not,
-it is convenient to be able to map from a structured sampler to an unstructured one.
+A dimod composite_ for the D-Wave system.
 
-A structured sampler is one that can only solver problems that map to a specific graph (see structured_)
+The :class:`.EmbeddingComposite` maps unstructured problems to a structured sampler
+(using the minorminer_ library).
 
-The :class:`.EmbeddingComposite` uses the minorminer_ library to map unstructured problems to a
-structured sampler.
+A structured_ sampler can only solve problems that map to a specific graph: the
+D-Wave System is Chimera-structured (a particular architecture of sparsely
+connected qubits).
 
+.. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
 .. _minorminer: https://github.com/dwavesystems/minorminer
 .. _structured: http://dimod.readthedocs.io/en/latest/reference/samplers.html#module-dimod.core.structured
 
@@ -20,9 +22,35 @@ import minorminer
 class EmbeddingComposite(dimod.Sampler, dimod.Composite):
     """Composite to map unstructured problems to a structured sampler.
 
+       Inherits from :class:`dimod.Sampler` and :class:`dimod.Composite`.
+
+       Enables quick incorporation of the D-Wave system as a sampler in the D-Wave Ocean
+       software stack by handling the minor-embedding of the problem into the D-Wave
+       system's Chimera graph.
+
     Args:
-        sampler (:class:`dimod.Sampler`):
-            A structured dimod sampler.
+       sampler (:class:`dimod.Sampler`):
+            Structured dimod sampler.
+
+    Examples:
+       This example uses :class:`.EmbeddingComposite` to instantiate a composed sampler
+       that submits a simple Ising problem to a D-Wave solver selected by the user's
+       default D-Wave Cloud Client configuration_ file. The composed sampler handles
+       minor-embedding of the problem's two generic variables, a and b, to physical
+       qubits on the solver.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import EmbeddingComposite
+       >>> sampler = EmbeddingComposite(DWaveSampler())
+       >>> h = {'a': -1., 'b': 2}
+       >>> J = {('a', 'b'): 1.5}
+       >>> response = sampler.sample_ising(h, J)
+       >>> for sample in response.samples():    # doctest: +SKIP
+       ...     print(sample)
+       ...
+       {'a': 1, 'b': -1}
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
     """
     def __init__(self, child_sampler):
@@ -32,18 +60,79 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
 
     @property
     def children(self):
-        """list: Contains the single wrapped structured sampler."""
+        """list: Children property inherited from :class:`dimod.Composite` class.
+
+        For an instantiated composed sampler, contains the single wrapped structured sampler.
+
+        Examples:
+           This example instantiates a composed sampler using a D-Wave solver selected by
+           the user's default D-Wave Cloud Client configuration_ file and views the
+           solver's parameters.
+
+           >>> from dwave.system.samplers import DWaveSampler
+           >>> from dwave.system.composites import EmbeddingComposite
+           >>> sampler = EmbeddingComposite(DWaveSampler())
+           >>> sampler.children   # doctest: +SKIP
+           [<dwave.system.samplers.dwave_sampler.DWaveSampler at 0x7f45b20a8d50>]
+
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+        """
         return self._children
 
     @property
     def parameters(self):
-        """dict[str, list]: The keys are the keyword parameters accepted by the child sampler."""
+        """dict[str, list]: Parameters in the form of a dict.
+
+        For an instantiated composed sampler, keys are the keyword parameters accepted by the child sampler.
+
+        Examples:
+           This example instantiates a composed sampler using a D-Wave solver selected by
+           the user's default D-Wave Cloud Client configuration_ file and views the
+           solver's parameters.
+
+           >>> from dwave.system.samplers import DWaveSampler
+           >>> from dwave.system.composites import EmbeddingComposite
+           >>> sampler = EmbeddingComposite(DWaveSampler())
+           >>> sampler.parameters   # doctest: +SKIP
+           {u'anneal_offsets': ['parameters'],
+            u'anneal_schedule': ['parameters'],
+            u'annealing_time': ['parameters'],
+            u'answer_mode': ['parameters'],
+            u'auto_scale': ['parameters'],
+           >>> # Snipped above response for brevity
+
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+        """
         # does not add or remove any parameters
         return self.child.parameters.copy()
 
     @property
     def properties(self):
-        """dict: Contains one key :code:`'child_properties'` which has a copy of the child sampler's properties."""
+        """dict: Properties in the form of a dict.
+
+        For an instantiated composed sampler, contains one key :code:`'child_properties'` that
+        has a copy of the child sampler's properties.
+
+        Examples:
+           This example instantiates a composed sampler using a D-Wave solver selected by
+           the user's default D-Wave Cloud Client configuration_ file and views the
+           solver's properties.
+
+           >>> from dwave.system.samplers import DWaveSampler
+           >>> from dwave.system.composites import EmbeddingComposite
+           >>> sampler = EmbeddingComposite(DWaveSampler())
+           >>> sampler.properties   # doctest: +SKIP
+           {'child_properties': {u'anneal_offset_ranges': [[-0.2197463755538704,
+               0.03821687759418928],
+              [-0.2242514597680286, 0.01718456460967399],
+              [-0.20860153999435985, 0.05511969218508182],
+           >>> # Snipped above response for brevity
+
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+        """
         return {'child_properties': self.child.properties.copy()}
 
     def sample_ising(self, h, J, **parameters):
@@ -56,6 +145,25 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
 
         Returns:
             :class:`dimod.Response`
+
+        Examples:
+            This example uses :class:`.EmbeddingComposite` to instantiate a composed sampler
+            that submits an unstructured Ising problem to a D-Wave solver, selected by the user's
+            default D-Wave Cloud Client configuration_ file, while minor-embedding the problem's
+            variables to physical qubits on the solver.
+
+            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system.composites import EmbeddingComposite
+            >>> sampler = EmbeddingComposite(DWaveSampler())
+            >>> h = {1: 1, 2: 2, 3: 3, 4: 4}
+            >>> J = {(1, 2): 12, (1, 3): 13, (1, 4): 14,
+            ...      (2, 3): 23, (2, 4): 24,
+            ...      (3, 4): 34}
+            >>> response = sampler.sample_ising(h, J)
+            >>> for sample in response.samples():    # doctest: +SKIP
+            ...     print(sample)
+            ...
+            {1: -1, 2: 1, 3: 1, 4: -1}
 
         """
         if isinstance(h, list):
