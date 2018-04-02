@@ -4,8 +4,8 @@
 EmbeddingComposite
 ==================
 
-Overview
-========
+Class
+=====
 
 .. automodule:: dwave.system.composites.embedding
 
