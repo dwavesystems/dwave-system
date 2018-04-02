@@ -63,7 +63,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         >>> from dwave.system.samplers import DWaveSampler
         >>> sampler = DWaveSampler('/home/susan/.config/dwave/dwave.conf')
         >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
-        >>> for sample in response.samples():
+        >>> for sample in response.samples():  # doctest: +SKIP
         ...    print(sample)
         ...
         {0: 1, 1: -1}
@@ -223,7 +223,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
-            >>> for sample in response.samples():
+            >>> for sample in response.samples():    # doctest: +SKIP
             ...    print(sample)
             ...
             {0: 1, 1: -1}
@@ -278,7 +278,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> sampler = DWaveSampler()
             >>> Q = {(0, 0): -1, (4, 4): -1, (0, 4): 2}
             >>> response = sampler.sample_qubo(Q)
-            >>> for sample in response.samples():
+            >>> for sample in response.samples():    # doctest: +SKIP
             ...    print(sample)
             ...
             {0: 0, 4: 1}
