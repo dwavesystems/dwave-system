@@ -159,7 +159,6 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
             >>> J = {(1, 2): 12, (1, 3): 13, (1, 4): 14,
             ...      (2, 3): 23, (2, 4): 24,
             ...      (3, 4): 34}
-
             >>> response = sampler.sample_ising(h, J)
             >>> for sample in response.samples():    # doctest: +SKIP
             ...     print(sample)
