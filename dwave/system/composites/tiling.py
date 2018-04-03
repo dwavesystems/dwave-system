@@ -159,8 +159,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
        Examples:
           This example instantiates a :class:`.TilingComposite` sampler using a D-Wave solver
-          selected by the user’s default D-Wave Cloud Client configuration_ file and views the
-          solver’s parameters.
+          selected by the user's default D-Wave Cloud Client configuration_ file and views the
+          solver's parameters.
 
           >>> from dwave.system.samplers import DWaveSampler
           >>> from dwave.system.composites import TilingComposite
@@ -185,8 +185,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
        Examples:
           This example instantiates a :class:`.TilingComposite` sampler using a D-Wave solver
-          selected by the user’s default D-Wave Cloud Client configuration_ file and views the
-          solver’s properties.
+          selected by the user's default D-Wave Cloud Client configuration_ file and views the
+          solver's properties.
 
           >>> from dwave.system.samplers import DWaveSampler
           >>> from dwave.system.composites import TilingComposite
@@ -288,7 +288,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
         Args:
             h (list/dict):
-                Linear biases of the Ising model. If a list, the list’s indices
+                Linear biases of the Ising model. If a list, the list's indices
                 are used as variable labels.
             J (dict of (int, int):float):
                 Quadratic biases of the Ising model.
