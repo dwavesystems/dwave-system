@@ -1,11 +1,11 @@
 """
-A dimod composite_ for the D-Wave system.
-
-The :class:`.EmbeddingComposite` maps unstructured problems to a structured sampler
-(using the minorminer_ library).
+A dimod composite_ that maps unstructured problems to a structured_ sampler.
 
 A structured_ sampler can only solve problems that map to a specific graph: the
 D-Wave system's architecture is represented by a Chimera_ graph.
+
+The :class:`.EmbeddingComposite` uses the minorminer_ library to map unstructured
+problems to a structured sampler such as a D-Wave system.
 
 .. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
 .. _minorminer: https://github.com/dwavesystems/minorminer

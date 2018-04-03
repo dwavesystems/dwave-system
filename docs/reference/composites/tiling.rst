@@ -28,8 +28,8 @@ Composite Properties
    TilingComposite.children
    TilingComposite.child
 
-Structure Properties
-====================
+Structured Sampler Properties
+=============================
 
 .. autosummary::
    :toctree: generated/
