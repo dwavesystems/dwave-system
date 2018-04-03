@@ -5,12 +5,12 @@ The :class:`.EmbeddingComposite` maps unstructured problems to a structured samp
 (using the minorminer_ library).
 
 A structured_ sampler can only solve problems that map to a specific graph: the
-D-Wave System is Chimera-structured (a particular architecture of sparsely
-connected qubits).
+D-Wave system's architecture is represented by a Chimera_ graph.
 
 .. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
 .. _minorminer: https://github.com/dwavesystems/minorminer
 .. _structured: http://dimod.readthedocs.io/en/latest/reference/samplers.html#module-dimod.core.structured
+.. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
 """
 
