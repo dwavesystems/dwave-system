@@ -22,11 +22,11 @@ import minorminer
 class EmbeddingComposite(dimod.Sampler, dimod.Composite):
     """Composite to map unstructured problems to a structured sampler.
 
-       Inherits from :class:`dimod.Sampler` and :class:`dimod.Composite`.
+    Inherits from :class:`dimod.Sampler` and :class:`dimod.Composite`.
 
-       Enables quick incorporation of the D-Wave system as a sampler in the D-Wave Ocean
-       software stack by handling the minor-embedding of the problem into the D-Wave
-       system's Chimera graph.
+    Enables quick incorporation of the D-Wave system as a sampler in the D-Wave Ocean
+    software stack by handling the minor-embedding of the problem into the D-Wave
+    system's Chimera graph.
 
     Args:
        sampler (:class:`dimod.Sampler`):
