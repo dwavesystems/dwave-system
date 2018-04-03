@@ -131,6 +131,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         if not all(u in adjacency[v] for u, v in J):
             raise ValueError("edges in quadratic bias do not map to the structure")
 
+        # get the active variables
+        variables = set(h).union(*J)
+
         # apply the embeddings to the given problem to tile it across the child sampler
         h_embs = {}
         J_embs = {}
@@ -149,6 +152,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         source_response = None
 
         for embedding in self.embeddings:
+
+            embedding = {v: chain for v, chain in embedding.items() if v in variables}
+
             samples = embutil.unembed_samples(response, embedding,
                                               chain_break_method=embutil.minimize_energy,
                                               linear=h, quadratic=J)  # needed by minimize_energy
@@ -156,7 +162,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             # override the energy because it might have changed
             data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
 
-            tile_response = dimod.Response.from_dicts(samples, data_vectors)
+            tile_response = dimod.Response.from_dicts(samples, data_vectors, vartype=dimod.SPIN)
 
             if source_response is None:
                 source_response = tile_response
