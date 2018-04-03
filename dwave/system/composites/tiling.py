@@ -298,6 +298,34 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         Returns:
             :class:`dimod.Response`
 
+        Examples:
+            This example uses :class:`.TilingComposite` to instantiate a composed sampler
+            that submits a simple Ising problem of just two variables that map to qubits 0 and 1
+            on the D-Wave solver selected by the user's default D-Wave Cloud Client
+            configuration_ file. (The simplicity of this example obviates the need for an embedding
+            composite.) Because the problem fits in a single Chimera_ unit cell, it is tiled 
+            across the solver's entire Chimera graph, resulting in multiple samples.
+
+            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system.composites import EmbeddingComposite
+            >>> samplertile = TilingComposite(DWaveSampler(), 1, 1, 4)
+            >>> response = sampler_tile.sample_ising({0: -1, 1: 1}, {})
+            >>> for sample in response.samples():    # doctest: +SKIP
+            ...     print(sample)
+            ...
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            >>> # Snipped above response for brevity
+
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+
         """
         __, __, adjacency = self.structure
         if not all(v in adjacency for v in h):
