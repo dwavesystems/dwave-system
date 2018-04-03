@@ -87,3 +87,17 @@ class TestTiling(unittest.TestCase):
 
         for sample, energy in response.data(['sample', 'energy']):
             self.assertAlmostEqual(dimod.qubo_energy(sample, Q), energy)
+
+    def test_too_many_nodes(self):
+        mock_sampler = MockSampler()  # C4 structured sampler
+
+        sampler = TilingComposite(mock_sampler, 2, 2)
+
+        h = {0: -1, 1: 1}
+        J = {}
+
+        response = sampler.sample_ising(h, J)
+
+        __, num_columns = response.samples_matrix.shape
+
+        self.assertEqual(num_columns, 2)
