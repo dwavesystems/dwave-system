@@ -1,9 +1,14 @@
 """
-The D-Wave virtual graph tools simplify the process of minor-embedding by enabling you to more
+A dimod composite_ that uses the D-Wave virtual graph feature for improved minor-embedding_.
+
+D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you to more
 easily create, optimize, use, and reuse an embedding for a given working graph. When you submit an
 embedding and specify a chain strength using these tools, they automatically calibrate the qubits
 in a chain to compensate for the effects of biases that may be introduced as a result of strong
 couplings.
+
+.. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
+.. _minor-embedding: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#minorEmbedding
 """
 
 from six import iteritems
@@ -22,33 +27,78 @@ __all__ = ['VirtualGraphComposite']
 
 
 class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
-    """Apply the VirtualGraph composite layer to the given solver.
+    """Composite to use the D-Wave virtual graph feature for minor-embedding.
+
+    Inherits from :class:`dimod.ComposedSampler` and :class:`dimod.Structured`.
+
+    Calibrates qubits in chains to compensate for the effects of biases and enables easy
+    creation, optimization, use, and reuse of an embedding for a given working graph.
 
     Args:
         sampler (:class:`.DWaveSampler`):
-            A dimod :class:`dimod.Sampler`. Normally :obj:`.DWaveSampler`, or a
-            derived composite sampler. Other samplers in general will not work or will not make
-            sense with this composite layer.
+            A dimod :class:`dimod.Sampler`. Typically a :obj:`.DWaveSampler` or
+            derived composite sampler; other samplers may not work or make sense with
+            this composite layer.
 
         embedding (dict[hashable, iterable]):
-            A mapping from a source graph to the given sampler's graph (the target graph).
+            Mapping from a source graph to the specified sampler's graph (the target graph).
 
         chain_strength (float, optional, default=None):
-            The desired chain strength. If None, will use the maximum available from the
-            processor.
+            Desired chain coupling strength. This is the magnitude of couplings between qubits
+            in a chain. If None, uses the maximum available as returned by a SAPI query
+            to the D-Wave solver.
 
         flux_biases (list/False/None, optional, default=None):
-            The per-qubit flux bias offsets. If given, should be a list of lists. Each sublist
-            should be of length 2 and is the variable and the flux bias
-            offset associated with the variable. If `flux_biases` evaluates False, then no
-            flux bias is applied or calculated. If None if given, the flux biases are
-            pulled from the database or calculated empirically.
+            Per-qubit flux bias offsets in the form of a list of lists, where each sublist
+            is of length 2 and specifies a variable and the flux bias offset associated with
+            that variable. Qubits in a chain with strong negative J values experience a
+            J-induced bias; this parameter compensates by recalibrating to remove that bias.
+            If `flux_biases` evaluates False, no flux bias is applied or calculated.
+            If None, flux biases are pulled from the database or calculated empirically.
 
         flux_bias_num_reads (int, optional, default=1000):
-            The number of samples to collect per flux bias value.
+            Number of samples to collect per flux bias value.
 
         flux_bias_max_age (int, optional, default=3600):
-            The maximum age (in seconds) allowed for a previously calculated flux bias offset.
+            Maximum age (in seconds) allowed for a previously calculated flux bias offset to
+            be considered valid.
+
+    Examples:
+       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+       that submits a QUBO problem to a D-Wave solver selected by the user's
+       default D-Wave Cloud Client configuration_ file. The problem represents a logical
+       AND gate using penalty function :math:`P = xy - 2(x+y)z +3z`, where variables x and y
+       are the gate's inputs and z the output. This simple three-variable problem is manually
+       minor-embedded to a single Chimera_ unit cell: variables x and y are represented by
+       qubits 1 and 5, respectively, and z by a two-qubit chain consisting of qubits 0 and 4.
+       The chain strength is set to the maximum allowed found from querying the solver's extended
+       J range. In this example, the ten returned samples all represent valid states of
+       the AND gate.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
+       >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
+       [-2.0, 1.0]
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength = 2)
+       >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
+       >>> response = sampler.sample_ising(Q, num_reads=10)
+       >>> for sample in response.samples():    # doctest: +SKIP
+       ...     print(sample)
+       ...
+       {'y': 0, 'x': 1, 'z': 0}
+       {'y': 1, 'x': 0, 'z': 0}
+       {'y': 1, 'x': 0, 'z': 0}
+       {'y': 1, 'x': 1, 'z': 1}
+       {'y': 0, 'x': 1, 'z': 0}
+       {'y': 1, 'x': 0, 'z': 0}
+       {'y': 0, 'x': 1, 'z': 0}
+       {'y': 0, 'x': 1, 'z': 0}
+       {'y': 0, 'x': 0, 'z': 0}
+       {'y': 1, 'x': 0, 'z': 0}
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
     """
 
@@ -80,7 +130,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     """
 
     children = None
-    """list: A list containig the wrapped sampler."""
+    """list: A list containing the wrapped sampler."""
 
     parameters = None
     """The same parameters as are accepted by the child sampler with an additional parameter
@@ -163,14 +213,18 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
         Args:
 
-            h (list/dict): Linear terms of the model.
+            h (list/dict):
+                Linear biases of the Ising model. If a list, the list's indices
+                are used as variable labels.
 
-            J (dict of (int, int):float): Quadratic terms of the model.
+            J (dict of (int, int):float):
+                Quadratic biases of the Ising model.
 
             apply_flux_bias_offsets (bool, optional):
                 If True, use the calculated flux_bias offsets (if available).
 
-            **kwargs: Parameters for the sampling method, specified by the child sampler.
+            **kwargs:
+                Optional keyword arguments for the sampling method, specified per solver.
 
         """
 
