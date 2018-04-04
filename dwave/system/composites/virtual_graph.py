@@ -80,9 +80,9 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
        >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
        >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
        [-2.0, 1.0]
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength = 2)
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=2) # doctest: +SKIP
        >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
-       >>> response = sampler.sample_ising(Q, num_reads=10)
+       >>> response = sampler.sample_ising(Q, num_reads=10) # doctest: +SKIP
        >>> for sample in response.samples():    # doctest: +SKIP
        ...     print(sample)
        ...
@@ -104,37 +104,100 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     # override the abstract properties
     nodelist = None
-    """list: The nodes available to the sampler."""
-
-    edgelist = None
-    """list: The edges available to the sampler."""
-
-    adjacency = None
-    """dict[variable, set]: The adjacency structure.
+    """list:
+           Nodes available to the composed sampler.
 
     Examples:
+       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file.
+       Because qubits 0, 1, 4, 5 are active on the selected D-Wave solver, the three nodes, x, y, and z,
+       specified by the embedding, are all available to problems using this composed sampler.
 
-        >>> class StructuredObject(dimod.Structured):
-        ...     @property
-        ...      def nodelist(self):
-        ...         return [0, 1, 2]
-        ...
-        ...     @property
-        ...     def edgelist(self):
-        ...         return [(0, 1), (1, 2)]
-        >>> test_obj = StructuredObject()
-        >>> for u, v in test_obj.edgelist:
-        ...     assert u in test_obj.adjacency[v]
-        ...     assert v in test_obj.adjacency[u]
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
+       >>> sampler.nodelist  # doctest: +SKIP
+       ['x', 'y', 'z']
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+    """
+
+    edgelist = None
+    """list:
+           Edges available to the composed sampler.
+
+    Examples:
+       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file.
+       Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
+       between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
+       composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
+       connected to the other four qubits, so node `a` does not share an edge with any other nodes.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}, 'a': {8}}
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
+       >>> sampler.edgelist  # doctest: +SKIP
+       [('x', 'y'), ('x', 'z'), ('y', 'z')]
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+    """
+
+    adjacency = None
+    """dict[variable, set]:
+           Adjacency structure for the composed sampler.
+
+    Examples:
+       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file.
+       Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
+       between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
+       composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
+       connected to the other four qubits, so node `a` does not share an edge with any other nodes.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}, 'a': {8}}
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
+       >>> sampler.adjacency  # doctest: +SKIP
+       {'a': set(), 'x': {'y', 'z'}, 'y': {'x', 'z'}, 'z': {'x', 'y'}}
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
     """
 
     children = None
-    """list: A list containing the wrapped sampler."""
+    """list: List containing the wrapped sampler."""
 
     parameters = None
-    """The same parameters as are accepted by the child sampler with an additional parameter
-    'apply_flux_bias_offsets'.
+    """dict[str, list]:
+           Parameters in the form of a dict. These are same parameters that are accepted
+           by the child sampler with an additional parameter 'apply_flux_bias_offsets'.
+
+    Examples:
+       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file
+       and views the composed sampler's parameters.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
+       >>> sampler.parameters  # doctest: +SKIP
+       {u'anneal_offsets': ['parameters'],
+        u'anneal_schedule': ['parameters'],
+        u'annealing_time': ['parameters'],
+        u'answer_mode': ['parameters'],
+        'apply_flux_bias_offsets': [],
+        u'auto_scale': ['parameters'],
+       >>>  # Snipped above response for brevity
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
     """
 
     properties = None
