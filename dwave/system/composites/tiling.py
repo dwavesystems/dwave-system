@@ -1,5 +1,14 @@
 """
-Tiles many smaller problems across a larger Chimera-structured sampler.
+A dimod composite_ that tiles small problems multiple times to a Chimera-structured sampler.
+
+The :class:`.TilingComposite` takes a problem that can fit on a small Chimera_ graph
+and replicates it across a larger Chimera graph to obtain samples from multiple areas
+of the solver in one call. For example, a 2x2 Chimera lattice could be tiled 64 times
+(8x8) on a fully-yielded D-Wave 2000Q system (16x16).
+
+.. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
+.. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+
 """
 from __future__ import division
 from math import sqrt, ceil
@@ -12,31 +21,192 @@ __all__ = ['TilingComposite']
 
 
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
-    """ Composite to tile a small problem across a Chimera-structured sampler. A problem that can fit on a small Chimera
-    graph can be replicated across a larger Chimera graph to get samples from multiple areas of the system in one call.
-    For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded D-Wave 2000Q system (16x16).
+    """Composite to tile a small problem across a Chimera-structured sampler.
+
+    Inherits from :class:`dimod.Sampler`, :class:`dimod.Composite`, and :class:`dimod.Structured`.
+
+    Enables parallel sampling for small problems (problems that are minor-embeddable in
+    a small part of a D-Wave solver's Chimera_ graph).
+
+    The notation *CN* refers to a Chimera graph consisting of an NxN grid of unit cells.
+    Each Chimera unit cell is itself a bipartite graph with shores of size t. The D-Wave 2000Q QPU
+    supports a C16 Chimera graph: its 2048 qubits are logically mapped into a 16x16 matrix of
+    unit cell of 8 qubits (t=4).
+
+    A problem that can be minor-embedded in a single unit cell, for example, can therefore
+    be tiled across the unit cells of a D-Wave 2000Q as 16x16 duplicates. This enables
+    sampling 256 solutions in a single call.
+
+    .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
     Args:
-        sampler (:class:`dimod.Sampler`): A structured dimod sampler to be wrapped.
-        sub_m (int): The number of rows in the sub-Chimera lattice.
-        sub_n (int): The number of columns in the sub-Chimera lattice.
-        t (int): The size of the shore within each Chimera cell.
+       sampler (:class:`dimod.Sampler`): Structured dimod sampler to be wrapped.
+       sub_m (int): Number of rows of Chimera unit cells for minor-embedding the problem once.
+       sub_n (int): Number of columns of Chimera unit cells for minor-embedding the problem once.
+       t (int, optional, default=4): Size of the shore within each Chimera unit cell.
+
+    Examples:
+       This example instantiates a composed sampler using composite :class:`.TilingComposite`
+       to tile a QUBO problem on a D-Wave solver, embedding it with composite
+       :class:`.EmbeddingComposite` and selecting the D-Wave solver with the user's
+       default D-Wave Cloud Client configuration_ file. The two-variable QUBO represents a
+       logical NOT gate (two nodes with biases of -1 that are coupled with strength 2) and is
+       easily minor-embedded in a single Chimera cell (it needs only any two coupled qubits) and
+       so can be tiled multiple times across a D-Wave solver for parallel solution (the two
+       nodes should typically have opposite values).
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import EmbeddingComposite
+       >>> from dwave.system.composites import TilingComposite
+       >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
+       >>> Q = {(1, 1): -1, (1, 2): 2, (2, 1): 0, (2, 2): -1}
+       >>> response = sampler.sample_qubo(Q)
+       >>> for sample in response.samples():    # doctest: +SKIP
+       ...     print(sample)
+       ...
+       {1: 0, 2: 1}
+       {1: 1, 2: 0}
+       {1: 1, 2: 0}
+       {1: 1, 2: 0}
+       {1: 0, 2: 1}
+       {1: 0, 2: 1}
+       {1: 1, 2: 0}
+       {1: 0, 2: 1}
+       {1: 1, 2: 0}
+       >>> # Snipped above response for brevity
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
     """
     nodelist = None
-    """list: The nodes available to the sampler."""
+    """list: List of active qubits for the structured solver.
+
+    Examples:
+       This example creates a :class:`.TilingComposite` for a problem that requires
+       a 2x1 Chimera lattice to solve with a :class:`DWaveSampler` as the sampler.
+       It prints the active qubits retrieved from a D-Wave solver selected by
+       the user's default D-Wave Cloud Client configuration_ file.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import TilingComposite
+       >>> sampler_tile = TilingComposite(DWaveSampler(), 2, 1, 4)
+       >>> sampler_tile.nodelist   # doctest: +SKIP
+       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+    """
 
     edgelist = None
-    """list: The edges available to the sampler."""
+    """list: List of active couplers for the D-Wave solver.
+
+    Examples:
+       This example creates a :class:`.TilingComposite` for a problem that requires
+       a 1x2 Chimera lattice to solve with a :class:`DWaveSampler` as the sampler.
+       It prints the active couplers retrieved from a D-Wave solver selected by
+       the user's default D-Wave Cloud Client configuration_ file.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import TilingComposite
+       >>> sampler_tile = TilingComposite(DWaveSampler(), 1, 2, 4)
+       >>> sampler_tile.edgelist   # doctest: +SKIP
+       [[0, 4],
+       [0, 5],
+       [0, 6],
+       [0, 7],
+       [1, 4],
+       [1, 5],
+       [1, 6],
+       [1, 7],
+       [2, 4],
+       [2, 5],
+       [2, 6],
+       [2, 7],
+       [3, 4],
+       [3, 5],
+       [3, 6],
+       [3, 7],
+       [4, 12],
+       [5, 13],
+       [6, 14],
+       [7, 15],
+       [8, 12],
+       [8, 13],
+       [8, 14],
+       [8, 15],
+       [9, 12],
+       [9, 13],
+       [9, 14],
+       [9, 15],
+       [10, 12],
+       [10, 13],
+       [10, 14],
+       [10, 15],
+       [11, 12],
+       [11, 13],
+       [11, 14],
+       [11, 15]]
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+    """
 
     parameters = None
-    """dict[str, list]: The keys are the keyword parameters accepted by the child sampler."""
+    """dict[str, list]: Parameters in the form of a dict.
+
+    For an instantiated composed sampler, keys are the keyword parameters accepted by the
+    child sampler.
+
+    Examples:
+       This example instantiates a :class:`.TilingComposite` sampler using a D-Wave solver
+       selected by the user's default D-Wave Cloud Client configuration_ file and views the
+       solver's parameters.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import TilingComposite
+       >>> sampler_tile = TilingComposite(DWaveSampler(), 1, 1, 4)
+       >>> sampler_tile.parameters   # doctest: +SKIP
+       {u'anneal_offsets': ['parameters'],
+        u'anneal_schedule': ['parameters'],
+        u'annealing_time': ['parameters'],
+        u'answer_mode': ['parameters'],
+        u'auto_scale': ['parameters'],
+       >>> # Snipped above response for brevity
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+       """
 
     properties = None
-    """dict: Contains one key :code:`'child_properties'` which has a copy of the child sampler's properties."""
+    """dict: Properties in the form of a dict.
+
+    For an instantiated composed sampler, contains one key :code:`'child_properties'` that
+    has a copy of the child sampler's properties.
+
+    Examples:
+       This example instantiates a :class:`.TilingComposite` sampler using a D-Wave solver
+       selected by the user's default D-Wave Cloud Client configuration_ file and views the
+       solver's properties.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import TilingComposite
+       >>> sampler_tile = TilingComposite(DWaveSampler(), 1, 1, 4)
+       >>> sampler_tile.properties   # doctest: +SKIP
+       {'child_properties': {u'anneal_offset_ranges': [[-0.2197463755538704,
+           0.03821687759418928],
+          [-0.2242514597680286, 0.01718456460967399],
+          [-0.20860153999435985, 0.05511969218508182],
+          [-0.2108920134230625, 0.056392603743884134],
+          [-0.21788292874621265, 0.03360435584845211],
+          [-0.21700680373359477, 0.005297355417068621],
+       >>> # Snipped above response for brevity
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+       """
 
     children = None
-    """list: Contains the single wrapped structured sampler."""
+    """list: The single wrapped structured sampler."""
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
 
@@ -114,15 +284,47 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             raise ValueError("no tile embeddings found; is the sampler Chimera structured?")
 
     def sample_ising(self, h, J, **kwargs):
-        """Sample from the sub-Chimera lattice.
+        """Sample from the provided Ising model.
 
         Args:
-            h (list/dict): Linear terms of the model.
-            J (dict of (int, int):float): Quadratic terms of the model.
-            **kwargs: Parameters for the sampling method, specified per solver.
+            h (list/dict):
+                Linear biases of the Ising model. If a list, the list's indices
+                are used as variable labels.
+            J (dict of (int, int):float):
+                Quadratic biases of the Ising model.
+            **kwargs:
+                Optional keyword arguments for the sampling method, specified per solver.
 
         Returns:
             :class:`dimod.Response`
+
+        Examples:
+            This example uses :class:`.TilingComposite` to instantiate a composed sampler
+            that submits a simple Ising problem of just two variables that map to qubits 0 and 1
+            on the D-Wave solver selected by the user's default D-Wave Cloud Client
+            configuration_ file. (The simplicity of this example obviates the need for an embedding
+            composite.) Because the problem fits in a single Chimera_ unit cell, it is tiled 
+            across the solver's entire Chimera graph, resulting in multiple samples.
+
+            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system.composites import EmbeddingComposite
+            >>> samplertile = TilingComposite(DWaveSampler(), 1, 1, 4)
+            >>> response = sampler_tile.sample_ising({0: -1, 1: 1}, {})
+            >>> for sample in response.samples():    # doctest: +SKIP
+            ...     print(sample)
+            ...
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            {0: 1, 1: -1}
+            >>> # Snipped above response for brevity
+
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
         """
         __, __, adjacency = self.structure
