@@ -53,7 +53,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
             is of length 2 and specifies a variable and the flux bias offset associated with
             that variable. Qubits in a chain with strong negative J values experience a
             J-induced bias; this parameter compensates by recalibrating to remove that bias.
-            If `flux_biases` evaluates False, no flux bias is applied or calculated.
+            If False, no flux bias is applied or calculated.
             If None, flux biases are pulled from the database or calculated empirically.
 
         flux_bias_num_reads (int, optional, default=1000):
@@ -174,9 +174,10 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     """list: List containing the wrapped sampler."""
 
     parameters = None
-    """dict[str, list]:
-           Parameters in the form of a dict. These are same parameters that are accepted
-           by the child sampler with an additional parameter 'apply_flux_bias_offsets'.
+    """dict[str, list]: Parameters in the form of a dict.
+
+    For an instantiated composed sampler, keys are the keyword parameters accepted by the child
+    sampler with an additional parameter, 'apply_flux_bias_offsets'.
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
@@ -201,7 +202,31 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     """
 
     properties = None
-    """dict: Contains one key :code:`'child_properties'` which has a copy of the child sampler's properties."""
+    """dict: Properties in the form of a dict.
+
+    For an instantiated composed sampler, contains one key :code:`'child_properties'` that
+    has a copy of the child sampler's properties.
+
+    Examples:
+       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file
+       and views the composed sampler's properties.
+
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
+       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
+       >>> sampler.properties  # doctest: +SKIP
+       {'child_properties': {u'anneal_offset_ranges': [[-0.2197463755538704,
+           0.03821687759418928],
+          [-0.2242514597680286, 0.01718456460967399],
+          [-0.20860153999435985, 0.05511969218508182],
+          [-0.2108920134230625, 0.056392603743884134],
+       >>>  # Snipped above response for brevity
+
+    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+
+    """
 
     def __init__(self, sampler, embedding,
                  chain_strength=None,
@@ -288,6 +313,44 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
+
+        Examples:
+           This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
+           that submits an Ising problem to a D-Wave solver selected by the user's
+           default D-Wave Cloud Client configuration_ file. The problem represents a logical
+           NOT gate using penalty function :math:`P = xy`, where variable x is the gate's input
+           and y the output. This simple two-variable problem is manually
+           minor-embedded to a single Chimera_ unit cell: each variable is represented by a
+           chain of half the cell's qubits, x as qubits 0, 1, 4, 5, and y as qubits 2, 3, 6, 7.
+           The chain strength is set to half the maximum allowed found from querying the solver's extended
+           J range. In this example, the ten returned samples all represent valid states of
+           the NOT gate.
+
+           >>> from dwave.system.samplers import DWaveSampler
+           >>> from dwave.system.composites import VirtualGraphComposite
+           >>> embedding = {'x': {0, 4, 1, 5}, 'y': {2, 6, 3, 7}}
+           >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
+           [-2.0, 1.0]
+           >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=1) # doctest: +SKIP
+           >>> h = {}
+           >>> J = {('x', 'y'): 1}
+           >>> response = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
+           >>> for sample in response.samples():    # doctest: +SKIP
+           ...     print(sample)
+           ...
+           {'y': -1, 'x': 1}
+           {'y': 1, 'x': -1}
+           {'y': -1, 'x': 1}
+           {'y': -1, 'x': 1}
+           {'y': -1, 'x': 1}
+           {'y': 1, 'x': -1}
+           {'y': 1, 'x': -1}
+           {'y': 1, 'x': -1}
+           {'y': -1, 'x': 1}
+           {'y': 1, 'x': -1}
+
+        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
         """
 
