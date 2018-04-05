@@ -28,8 +28,8 @@ Composite Properties
    VirtualGraphComposite.children
    VirtualGraphComposite.child
 
-Structure Properties
-====================
+Structured Sampler Properties
+=============================
 
 .. autosummary::
    :toctree: generated/
