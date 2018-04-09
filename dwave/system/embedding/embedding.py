@@ -1,6 +1,6 @@
 import minorminer
 
-import dwave_embedding_utilities as embutil
+# import dwave_embedding_utilities as embutil
 
 from dwave.system.cache.database_manager \
     import select_embedding_from_source, select_embedding_from_tag, insert_embedding, cache_connect

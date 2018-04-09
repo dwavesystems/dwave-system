@@ -15,7 +15,6 @@ from math import sqrt, ceil
 
 import dimod
 import dwave_networkx as dnx
-import dwave_embedding_utilities as embutil
 
 __all__ = ['TilingComposite']
 
@@ -283,15 +282,14 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         if len(embeddings) == 0:
             raise ValueError("no tile embeddings found; is the sampler Chimera structured?")
 
-    def sample_ising(self, h, J, **kwargs):
-        """Sample from the provided Ising model.
+    @dimod.bqm_structured
+    def sample(self, bqm, **kwargs):
+        """Sample from the provided binary quadratic model
 
         Args:
-            h (list/dict):
-                Linear biases of the Ising model. If a list, the list's indices
-                are used as variable labels.
-            J (dict of (int, int):float):
-                Quadratic biases of the Ising model.
+            bqm (:obj:`dimod.BinaryQuadraticModel`):
+                Binary quadratic model to be sampled from.
+
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
 
@@ -327,27 +325,15 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
         """
-        __, __, adjacency = self.structure
-        if not all(v in adjacency for v in h):
-            raise ValueError("nodes in linear bias do not map to the structure")
-        if not all(u in adjacency[v] for u, v in J):
-            raise ValueError("edges in quadratic bias do not map to the structure")
-
-        # get the active variables
-        variables = set(h).union(*J)
 
         # apply the embeddings to the given problem to tile it across the child sampler
-        h_embs = {}
-        J_embs = {}
+        embedded_bqm = dimod.BinaryQuadraticModel.empty(bqm.vartype)
+        __, __, target_adjacency = self.child.structure
         for embedding in self.embeddings:
-            __, __, target_adjacency = self.child.structure
-            h_emb, J_emb, J_chain = embutil.embed_ising(h, J, embedding, target_adjacency)
-            assert(not J_chain)
-            h_embs.update(h_emb)
-            J_embs.update(J_emb)
+            embedded_bqm.update(dimod.embed_bqm(bqm, embedding, target_adjacency))
 
         # solve the problem on the child system
-        response = self.child.sample_ising(h_embs, J_embs, **kwargs)
+        response = self.child.sample(embedded_bqm, **kwargs)
 
         data_vectors = response.data_vectors.copy()
 
@@ -355,16 +341,10 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
         for embedding in self.embeddings:
 
-            embedding = {v: chain for v, chain in embedding.items() if v in variables}
+            # filter for problem variables
+            embedding = {v: chain for v, chain in embedding.items() if v in bqm.linear}
 
-            samples = embutil.unembed_samples(response, embedding,
-                                              chain_break_method=embutil.minimize_energy,
-                                              linear=h, quadratic=J)  # needed by minimize_energy
-
-            # override the energy because it might have changed
-            data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
-
-            tile_response = dimod.Response.from_dicts(samples, data_vectors, vartype=dimod.SPIN)
+            tile_response = dimod.unembed_response(response, embedding, source_bqm=bqm)
 
             if source_response is None:
                 source_response = tile_response
