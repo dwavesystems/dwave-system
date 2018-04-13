@@ -82,7 +82,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
        [-2.0, 1.0]
        >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=2) # doctest: +SKIP
        >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
-       >>> response = sampler.sample_ising(Q, num_reads=10) # doctest: +SKIP
+       >>> response = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
        >>> for sample in response.samples():    # doctest: +SKIP
        ...     print(sample)
        ...
