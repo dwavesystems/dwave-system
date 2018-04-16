@@ -15,8 +15,6 @@ from six import iteritems
 
 import dimod
 
-import dwave_embedding_utilities as embutil
-
 from dwave.system.embedding import get_embedding_from_tag
 from dwave.system.flux_bias_offsets import get_flux_biases
 
@@ -265,7 +263,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         #
         # Derive the structure of our composed from the target graph and the embedding
         #
-        source_adjacency = embutil.target_to_source(target_adjacency, embedding)
+        source_adjacency = dimod.embedding.target_to_source(target_adjacency, embedding)
         try:
             nodelist = sorted(source_adjacency)
             edgelist = sorted(_adjacency_to_edges(source_adjacency))
@@ -296,7 +294,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
             flux_biases = None
         self.flux_biases = flux_biases
 
-    def sample_ising(self, h, J, apply_flux_bias_offsets=True, **kwargs):
+    @dimod.bqm_structured
+    def sample(self, bqm, apply_flux_bias_offsets=True, **kwargs):
         """Sample from the given Ising model.
 
         Args:
@@ -354,16 +353,10 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
         """
 
-        __, __, adjacency = self.structure
-        if not all(v in adjacency for v in h):
-            raise ValueError("nodes in linear bias do not map to the structure")
-        if not all(u in adjacency[v] for u, v in J):
-            raise ValueError("edges in linear bias do not map to the structure")
-
         # apply the embedding to the given problem to map it to the child sampler
         __, __, target_adjacency = self.child.structure
-        h_emb, J_emb, J_chain = embutil.embed_ising(h, J, self.embedding, target_adjacency, self.chain_strength)
-        J_emb.update(J_chain)
+        embedding = self.embedding
+        embedded_bqm = dimod.embed_bqm(bqm, self.embedding, target_adjacency, self.chain_strength)
 
         # solve the problem on the child system
         child = self.child
@@ -382,18 +375,9 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         # Embed arguments providing initial states for reverse annealing, if applicable.
         kwargs = _embed_initial_state_kwargs(kwargs, self.embedding, self.child.structure[0])
 
-        response = child.sample_ising(h_emb, J_emb, **kwargs)
+        response = child.sample(embedded_bqm, **kwargs)
 
-        # unembed the problem and save to a new response object
-        samples = embutil.unembed_samples(response.samples(sorted_by=None), self.embedding,
-                                          chain_break_method=embutil.minimize_energy,
-                                          linear=h, quadratic=J)  # needed by minimize_energy
-
-        # source_response = dimod.Response(dimod.SPIN)
-        data_vectors = response.data_vectors
-        data_vectors['energy'] = [dimod.ising_energy(sample, h, J) for sample in samples]
-
-        return dimod.Response.from_dicts(samples, data_vectors, info=response.info, vartype=dimod.SPIN)
+        return dimod.unembed_response(response, embedding, source_bqm=bqm)
 
     def _validate_chain_strength(self, chain_strength):
         """Validate the provided chain strength, checking J-ranges of the sampler's children.

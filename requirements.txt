@@ -1,6 +1,5 @@
-dimod==0.6.1
+dimod==0.6.7
 dwave-cloud-client==0.3.3
-dwave-embedding-utilities==0.2.0
 dwave-networkx==0.6.0
 dwave-system-tuning==0.1.1
 homebase==1.0.0
