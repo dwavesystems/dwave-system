@@ -177,7 +177,7 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         __, target_edgelist, target_adjacency = child.structure
 
         # get the embedding
-        embedding = minorminer.find_embedding(bqm.quadratic, target_edgelist)
+        embedding = minorminer.find_embedding(bqm.to_qubo()[0], target_edgelist)
 
         if bqm and not embedding:
             raise ValueError("no embedding found")
