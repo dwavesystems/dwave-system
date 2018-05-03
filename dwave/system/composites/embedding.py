@@ -182,10 +182,6 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        # this should change in later versions
-        if isinstance(embedding, list):
-            embedding = dict(enumerate(embedding))
-
         bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency)
 
         response = child.sample(bqm_embedded, **parameters)
