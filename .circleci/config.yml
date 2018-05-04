@@ -159,8 +159,9 @@ jobs:
       - run:
           name: verify version matches tag
           command: |
-            . env/bin/activate
-            python ci_utils/verify_version.py
+            pip install .
+            ver = $(pip show dwave-system 2>/dev/null | grep Version)
+            [[ $ver == $CIRCLE_TAG ]]
 
       - run:
           name: init .pypirc
