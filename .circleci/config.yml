@@ -49,6 +49,7 @@ jobs:
           name: doctest
           command: |
             . env/bin/activate
+            export DWAVE_CONFIG_FILE=$(readlink -f dwave.conf)
             make -C docs/ doctest
 
   test-3.5:
