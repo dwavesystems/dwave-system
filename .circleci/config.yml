@@ -159,6 +159,7 @@ jobs:
       - run:
           name: verify version matches tag
           command: |
+            . env/bin/activate
             pip install .
             ver = $(pip show dwave-system 2>/dev/null | grep Version)
             [[ $ver == $CIRCLE_TAG ]]
