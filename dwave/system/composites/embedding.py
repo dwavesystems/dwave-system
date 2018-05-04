@@ -176,15 +176,14 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         # apply the embedding to the given problem to map it to the child sampler
         __, target_edgelist, target_adjacency = child.structure
 
+        # add self-loops to edgelist to handle singleton variables
+        source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]
+
         # get the embedding
-        embedding = minorminer.find_embedding(bqm.quadratic, target_edgelist)
+        embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
         if bqm and not embedding:
             raise ValueError("no embedding found")
-
-        # this should change in later versions
-        if isinstance(embedding, list):
-            embedding = dict(enumerate(embedding))
 
         bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency)
 

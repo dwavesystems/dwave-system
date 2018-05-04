@@ -107,3 +107,14 @@ class TestEmbeddingComposite(unittest.TestCase):
         h = {v: 0 for v in set().union(*J)}
 
         response = sampler.sample_ising(h, J)
+
+    def test_singleton_variables(self):
+        sampler = EmbeddingComposite(MockSampler())
+
+        h = {0: -1., 4: 2}
+        J = {}
+
+        response = sampler.sample_ising(h, J)
+
+        # nothing failed and we got at least one response back
+        self.assertGreaterEqual(len(response), 1)
