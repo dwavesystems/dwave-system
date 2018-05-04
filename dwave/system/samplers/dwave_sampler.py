@@ -61,7 +61,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         >>> #    solver = EXAMPLE_2000Q_SYSTEM
         >>> #    token = ABC-123456789123456789123456789
         >>> from dwave.system.samplers import DWaveSampler
-        >>> sampler = DWaveSampler('/home/susan/.config/dwave/dwave.conf')
+        >>> sampler = DWaveSampler()
         >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
         >>> for sample in response.samples():  # doctest: +SKIP
         ...    print(sample)
