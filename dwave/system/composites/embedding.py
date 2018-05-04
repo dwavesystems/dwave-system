@@ -177,7 +177,7 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         __, target_edgelist, target_adjacency = child.structure
 
         # add self-loops to edgelist to handle singleton variables
-        source_edgelist = bqm.quadratic.keys() + [(v, v) for v in bqm.linear]
+        source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]
 
         # get the embedding
         embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
