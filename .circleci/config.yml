@@ -161,7 +161,7 @@ jobs:
           command: |
             . env/bin/activate
             pip install .
-            ver = $(pip show dwave-system 2>/dev/null | grep Version)
+            export ver = $(pip show dwave-system 2>/dev/null | grep Version)
             [[ $ver == $CIRCLE_TAG ]]
 
       - run:
@@ -187,21 +187,36 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-3.6
-      - test-2.7
-      - test-3.5
-      - test-3.4
+      - test-3.6:
+          # filters:
+          #   tags:
+          #     only: /.*/
+      - test-2.7:
+          # filters:
+          #   tags:
+          #     only: /.*/
+      - test-3.5:
+          # filters:
+          #   tags:
+          #     only: /.*/
+      - test-3.4:
+          # filters:
+          #   tags:
+          #     only: /.*/
       - test-osx:
           requires:
             - test-3.6
             - test-2.7
             - test-3.5
             - test-3.4
-      - deploy:
-          requires:
-            - test-osx
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+          # filters:
+          #   tags:
+          #     only: /.*/
+      # - deploy:
+      #     requires:
+      #       - test-osx
+      #     filters:
+      #       tags:
+      #         only: /^[0-9]+(\.[0-9]+)*/
+      #       branches:
+      #         ignore: /.*/
