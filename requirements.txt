@@ -1,3 +1,5 @@
+--extra-index-url https://pypi.dwavesys.com/simple
+
 dimod==0.6.7
 dwave-cloud-client==0.3.3
 dwave-networkx==0.6.0
