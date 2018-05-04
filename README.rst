@@ -1,14 +1,14 @@
-.. image:: https://travis-ci.org/dwavesystems/dwave-system.svg?branch=master
-    :target: https://travis-ci.org/dwavesystems/dwave-system
-    :alt: Travis Status
+.. image:: https://img.shields.io/pypi/v/dwave-system.svg
+    :target: https://pypi.python.org/pypi/dwave-system
+
+.. image:: https://readthedocs.org/projects/dwave-system/badge/?version=latest
+    :target: http://dwave-system.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://coveralls.io/repos/github/dwavesystems/dwave-system/badge.svg?branch=master
     :target: https://coveralls.io/github/dwavesystems/dwave-system?branch=master
-    :alt: Coveralls Status
 
-.. image:: http://readthedocs.org/projects/dwave-system/badge/?version=latest
-    :target: http://dwave-system.readthedocs.io/en/latest/?badge=latest
-    :alt: Read the Docs Status
+.. image:: https://circleci.com/gh/dwavesystems/dwave-system.svg?style=svg
+    :target: https://circleci.com/gh/dwavesystems/dwave-system
 
 .. index-start-marker
 
