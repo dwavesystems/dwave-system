@@ -3,6 +3,7 @@ import unittest
 from collections import Mapping
 
 import dimod
+import dimod.testing as dtest
 
 from dwave.system.composites import EmbeddingComposite
 
@@ -12,6 +13,8 @@ from tests.mock_sampler import MockSampler
 class TestEmbeddingComposite(unittest.TestCase):
     def test_instantiation_smoketest(self):
         sampler = EmbeddingComposite(MockSampler())
+
+        dtest.assert_sampler_api(sampler)
 
     def test_sample_ising(self):
         sampler = EmbeddingComposite(MockSampler())
