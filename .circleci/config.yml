@@ -188,35 +188,16 @@ workflows:
   test:
     jobs:
       - test-3.6
-          # filters:
-          #   tags:
-          #     only: /.*/
       - test-2.7
-          # filters:
-          #   tags:
-          #     only: /.*/
       - test-3.5
-          # filters:
-          #   tags:
-          #     only: /.*/
       - test-3.4
-          # filters:
-          #   tags:
-          #     only: /.*/
       - test-osx:
           requires:
             - test-3.6
             - test-2.7
             - test-3.5
             - test-3.4
-          # filters:
-          #   tags:
-          #     only: /.*/
-  build-and-deploy:
-    jobs:
       - deploy:
-      #     requires:
-      #       - test-osx
           filters:
             tags:
               only: /^[0-9]+(\.[0-9]+)*/
