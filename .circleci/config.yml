@@ -157,6 +157,11 @@ jobs:
       - run: *install-dependencies-template
 
       - run:
+          name: install twine
+          command: |
+            pip install twine
+
+      - run:
           name: verify version matches tag
           command: |
             . env/bin/activate
