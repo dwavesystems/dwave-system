@@ -5,6 +5,8 @@ import itertools
 import dimod
 import dwave_networkx as dnx
 
+import dimod.testing as dtest
+
 from dwave.system.composites import EmbeddingComposite
 
 
