@@ -161,7 +161,8 @@ jobs:
           command: |
             . env/bin/activate
             pip install .
-            [[ $(pip show dwave-system 2>/dev/null | grep Version) == $CIRCLE_TAG ]]
+            echo $CIRCLE_TAG
+            [[ "$(pip show dwave-system 2>/dev/null | grep Version)" == "Version: $CIRCLE_TAG" ]]
 
       - run:
           name: init .pypirc
