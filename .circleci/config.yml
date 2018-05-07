@@ -161,8 +161,7 @@ jobs:
           command: |
             . env/bin/activate
             pip install .
-            export ver = $(pip show dwave-system 2>/dev/null | grep Version)
-            [[ $ver == $CIRCLE_TAG ]]
+            [[ $(pip show dwave-system 2>/dev/null | grep Version) == $CIRCLE_TAG ]]
 
       - run:
           name: init .pypirc
