@@ -159,6 +159,7 @@ jobs:
       - run:
           name: install twine
           command: |
+            . env/bin/activate
             pip install twine
 
       - run:
@@ -186,6 +187,7 @@ jobs:
       - run:
           name: upload
           command: |
+            . env/bin/activate
             twine upload dist/*
 
 workflows:
