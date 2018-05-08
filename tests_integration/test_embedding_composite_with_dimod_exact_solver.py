@@ -5,6 +5,8 @@ import itertools
 import dimod
 import dwave_networkx as dnx
 
+import dimod.testing as dtest
+
 from dwave.system.composites import EmbeddingComposite
 
 
@@ -30,6 +32,8 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
             sampler_structured = dimod.StructureComposite(sampler_exact, nodelist=nodelist, edgelist=edgelist)
 
             sampler_embedding = EmbeddingComposite(sampler_structured)
+
+            dtest.assert_sampler_api(sampler_embedding)
 
             resp_exact = sampler_exact.sample(bqm)
             resp_emb = sampler_embedding.sample(bqm)

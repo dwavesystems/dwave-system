@@ -105,7 +105,9 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
 
         """
         # does not add or remove any parameters
-        return self.child.parameters.copy()
+        param = self.child.parameters.copy()
+        param['chain_strength'] = []
+        return param
 
     @property
     def properties(self):
@@ -134,12 +136,16 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         """
         return {'child_properties': self.child.properties.copy()}
 
-    def sample(self, bqm, **parameters):
+    def sample(self, bqm, chain_strength=1.0, **parameters):
         """Sample from the provided binary quadratic model.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
+
+            chain_strength (float, optional, default=1.0):
+                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
+                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -185,7 +191,7 @@ class EmbeddingComposite(dimod.Sampler, dimod.Composite):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency)
+        bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
 
         response = child.sample(bqm_embedded, **parameters)
 
