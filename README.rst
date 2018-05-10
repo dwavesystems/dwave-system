@@ -34,24 +34,29 @@ Installation
 
 .. code-block:: bash
 
-    pip install dwave-system --extra-index-url https://pypi.dwavesys.com/simple
+    pip install dwave-system
 
-**Installation from source:**
+**Installation from PyPI with drivers:**
 
 .. code-block:: bash
 
-    pip install -r requirements.txt --extra-index-url https://pypi.dwavesys.com/simple
-    python setup.py
+    pip install dwave-system[drivers] --extra-index-url https://pypi.dwavesys.com/simple
 
-Downloaded with this package is a dependency called dwave-system-tuning that has a restricted license.
-To view the license details:
+Downloading this package with drivers installs a dependency called dwave-system-tuning that has a restricted license. To view the license details:
 
 .. code-block:: python
 
     from dwave.system.tuning import __license__
     print(__license__)
 
-To uninstall the proprietary components:
+**Installation from source:**
+
+.. code-block:: bash
+
+    pip install -r requirements.txt
+    python setup.py
+
+Note that installing from source installs dwave-system-tuning. To uninstall the proprietary components:
 
 .. code-block:: bash
 
