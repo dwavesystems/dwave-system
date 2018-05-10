@@ -5,7 +5,7 @@ from collections import Mapping
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite
+from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite
 
 from tests.mock_sampler import MockSampler
 
@@ -121,3 +121,27 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         # nothing failed and we got at least one response back
         self.assertGreaterEqual(len(response), 1)
+
+
+class TestFixedEmbeddingComposite(unittest.TestCase):
+    def test_instantiation_empty(self):
+        sampler = FixedEmbeddingComposite(MockSampler(), {})
+
+        dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
+
+        self.assertEqual(sampler.edgelist, [])
+
+    def test_instantiation_triangle(self):
+        sampler = FixedEmbeddingComposite(MockSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+
+        dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
+
+        self.assertEqual(sampler.nodelist, ['a', 'b', 'c'])
+        self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
+
+    def test_sample_bqm_triangle(self):
+        sampler = FixedEmbeddingComposite(MockSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+
+        resp = sampler.sample_ising({'a': 1, 'b': 1, 'c': 0}, {})
+
+        self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
