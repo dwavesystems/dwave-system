@@ -15,5 +15,6 @@ for using the D-Wave system.
    :maxdepth: 2
 
    embedding
+   fixed_embedding
    tiling
    virtual_graph
