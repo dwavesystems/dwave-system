@@ -42,12 +42,14 @@ Installation
 
     pip install dwave-system[drivers] --extra-index-url https://pypi.dwavesys.com/simple
 
-Downloading this package with drivers installs a dependency called dwave-system-tuning that has a restricted license. To view the license details:
+.. note::
+    The installation steps have changed since v0.3.0. The D-Wave drivers are now an optional but recommanded dependency. 
+    Downloading this package with drivers installs a dependency called dwave-system-tuning that has a restricted license. To view the license details:
 
-.. code-block:: python
+    .. code-block:: python
 
-    from dwave.system.tuning import __license__
-    print(__license__)
+        from dwave.system.tuning import __license__
+        print(__license__)
 
 **Installation from source:**
 
