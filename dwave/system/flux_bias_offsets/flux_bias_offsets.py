@@ -16,6 +16,8 @@ def get_flux_biases(sampler, embedding, num_reads, chain_strength=1, max_age=360
         try:
             import dwave.system.tuning as dst
         except ImportError:
+            import warnings
+            warnings.warn("Package dwave-system-tuning not found.  Flux biases will not be used.")
             return []
 
         fbo = dst.oneshot_flux_bias(sampler, embedding.values(),

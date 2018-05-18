@@ -282,7 +282,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         if flux_biases is None and FLUX_BIAS_KWARG in sampler.parameters:
             # If nothing is provided, then we either get them from the cache or generate them
             flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_num_reads,
-                                          max_age=flux_bias_max_age)
+                                          chain_strength=self.chain_strength, max_age=flux_bias_max_age)
         elif flux_biases:
             if FLUX_BIAS_KWARG not in sampler.accepted_kwargs:
                 raise ValueError("Given child sampler does not accept flux_biases.")
@@ -363,7 +363,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
         if apply_flux_bias_offsets and self.flux_biases is not None:
             # If self.flux_biases is in the old format (list of lists) convert it to the new format (flat list).
-            if isinstance(self.flux_biases[0], list):
+            if len(self.flux_biases) == 0 or isinstance(self.flux_biases[0], list):
                 flux_bias_dict = dict(self.flux_biases)
                 kwargs[FLUX_BIAS_KWARG] = [flux_bias_dict.get(v, 0.) for v in range(child.properties['num_qubits'])]
             else:
