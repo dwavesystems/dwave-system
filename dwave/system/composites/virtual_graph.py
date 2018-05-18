@@ -282,7 +282,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         if flux_biases is None and FLUX_BIAS_KWARG in sampler.parameters:
             # If nothing is provided, then we either get them from the cache or generate them
             flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_num_reads,
-                                          max_age=flux_bias_max_age)
+                                          chain_strength=self.chain_strength, max_age=flux_bias_max_age)
         elif flux_biases:
             if FLUX_BIAS_KWARG not in sampler.accepted_kwargs:
                 raise ValueError("Given child sampler does not accept flux_biases.")
