@@ -363,7 +363,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
         if apply_flux_bias_offsets and self.flux_biases is not None:
             # If self.flux_biases is in the old format (list of lists) convert it to the new format (flat list).
-            if isinstance(self.flux_biases[0], list):
+            if len(self.flux_biases) == 0 or isinstance(self.flux_biases[0], list):
                 flux_bias_dict = dict(self.flux_biases)
                 kwargs[FLUX_BIAS_KWARG] = [flux_bias_dict.get(v, 0.) for v in range(child.properties['num_qubits'])]
             else:
