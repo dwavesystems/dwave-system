@@ -45,3 +45,22 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
             ground_embed = dict(next(iter(resp_emb)))
 
             self.assertEqual(ground_embed, ground_exact)
+
+
+class TestFixedEmbeddingComposite(unittest.TestCase):
+    def test_keyerror(self):
+        C16 = dnx.chimera_graph(16)
+        child_sampler = dimod.RandomSampler()
+        nodelist = sorted(C16.nodes)
+        edgelist = sorted(sorted(edge) for edge in C16.edges)
+        struc_sampler = dimod.StructureComposite(child_sampler, nodelist, edgelist)
+
+        embedding = {0: [391, 386], 1: [390], 2: [385]}
+
+        sampler = FixedEmbeddingComposite(struc_sampler, embedding)
+
+        with self.assertRaises(ValueError):
+            sampler.sample_qubo({(1, 4): 1})
+
+        sampler.sample_qubo({(1, 2): 1})
+        sampler.sample_qubo({(1, 1): 1})
