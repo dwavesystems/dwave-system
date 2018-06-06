@@ -7,7 +7,7 @@ import dimod.testing as dtest
 
 from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite
 
-from tests.mock_sampler import MockSampler
+from tests.unit.mock_sampler import MockSampler
 
 
 class TestEmbeddingComposite(unittest.TestCase):
