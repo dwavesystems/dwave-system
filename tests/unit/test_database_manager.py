@@ -74,7 +74,7 @@ class TestDatabaseManager(unittest.TestCase):
         with conn as cur:
             biases = cache.get_flux_biases_from_cache(cur, [[0, 1, 2]], 'test_system', 1)
 
-        for v, fbo in biases:
+        for v, fbo in biases.items():
             self.assertIn(v, [0, 1, 2])
             self.assertEqual(fbo, .1)
 
