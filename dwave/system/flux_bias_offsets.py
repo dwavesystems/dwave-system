@@ -1,5 +1,7 @@
 import warnings
 
+import dimod
+
 from dwave.system.cache.database_manager import get_flux_biases_from_cache, cache_connect, insert_flux_bias
 from dwave.system.exceptions import MissingFluxBias
 from dwave.system.samplers.dwave_sampler import DWaveSampler
@@ -32,12 +34,8 @@ def get_flux_biases(sampler, embedding, chain_strength, num_reads=1000, max_age=
 
     """
 
-    if not isinstance(sampler, DWaveSampler):
-        msg = "input sampler should be DWaveSampler"
-        if not isinstance(sampler, dimod.Sampler):
-            raise TypeError(msg)
-        else:
-            raise ValueError(msg)
+    if not isinstance(sampler, dimod.Sampler):
+        raise TypeError("input sampler should be DWaveSampler")
 
     # try to read the chip_id, otherwise get the name
     system_name = sampler.properties.get('chip_id', str(sampler.__class__))

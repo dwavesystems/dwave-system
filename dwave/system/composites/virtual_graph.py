@@ -15,7 +15,7 @@ from six import iteritems
 
 import dimod
 
-from dwave.system.embedding import get_embedding_from_tag
+from dwave.system.composites.embedding import FixedEmbeddingComposite
 from dwave.system.flux_bias_offsets import get_flux_biases
 
 
@@ -100,6 +100,42 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     """
 
+    def __init__(self, sampler, embedding,
+                 chain_strength=None,
+                 flux_biases=None,
+                 flux_bias_num_reads=1000,
+                 flux_bias_max_age=3600):
+
+        child, = self.children = [FixedEmbeddingComposite(sampler, embedding)]
+        self.nodelist, self.edgelist, self.adjacency = child.structure
+        self.embedding = child.embedding
+
+        self.parameters = parameters = {'apply_flux_bias_offsets': []}
+        parameters.update(child.parameters)
+
+        self.properties = child.properties.copy()  # shallow copy
+
+        # Validate the chain strength, or obtain it from J-range if chain strength is not provided.
+        self.chain_strength = _validate_chain_strength(sampler, chain_strength)
+
+        if flux_biases is False:  # use 'is' because bool(None) is False
+            # in this case we are done
+            self.flux_biases = None
+            return
+
+        if FLUX_BIAS_KWARG not in sampler.parameters:
+            raise ValueError("Given child sampler does not accept flux_biases.")
+
+        # come back as a dict
+        flux_biases = get_flux_biases(sampler, embedding,
+                                      num_reads=flux_bias_num_reads,
+                                      chain_strength=self.chain_strength,
+                                      max_age=flux_bias_max_age)
+
+        self.flux_biases = [flux_biases.get(v, 0.0) for v in range(sampler.properties['num_qubits'])]
+
+        return
+
     # override the abstract properties
     nodelist = None
     """list:
@@ -169,7 +205,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     """
 
     children = None
-    """list: List containing the wrapped sampler."""
+    """list: List containing the FixedEmbeddingComposite-wrapped sampler."""
 
     parameters = None
     """dict[str, list]: Parameters in the form of a dict.
@@ -225,74 +261,6 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
 
     """
-
-    def __init__(self, sampler, embedding,
-                 chain_strength=None,
-                 flux_biases=None, flux_bias_num_reads=1000, flux_bias_max_age=3600):
-        self.children = [sampler]
-
-        self.parameters = parameters = {'apply_flux_bias_offsets': []}
-        parameters.update(sampler.parameters)
-
-        self.properties = {'child_properties': sampler.properties.copy()}
-
-        #
-        # Get the adjacency of the child sampler (this is the target for our embedding)
-        #
-        try:
-            target_nodelist, target_edgelist, target_adjacency = sampler.structure
-        except:
-            # todo, better exception catching
-            raise
-
-        #
-        # Validate the chain strength, or obtain it from J-range if chain strength is not provided.
-        #
-        self.chain_strength = self._validate_chain_strength(chain_strength)
-
-        #
-        # We want to track the persistent embedding so that we can map input problems
-        # to the child sampler.
-        #
-        if isinstance(embedding, str):
-            embedding = get_embedding_from_tag(embedding, target_nodelist, target_edgelist)
-        elif not isinstance(embedding, dict):
-            raise TypeError("expected input `embedding` to be a dict.")
-        self.embedding = embedding
-
-        #
-        # Derive the structure of our composed from the target graph and the embedding
-        #
-        source_adjacency = dimod.embedding.target_to_source(target_adjacency, embedding)
-        try:
-            nodelist = sorted(source_adjacency)
-            edgelist = sorted(_adjacency_to_edges(source_adjacency))
-        except TypeError:
-            # python3 does not allow sorting of unlike types, so if nodes have
-            # different type names just choose an arbitrary order
-            nodelist = list(source_adjacency)
-            edgelist = list(_adjacency_to_edges(source_adjacency))
-        self.nodelist = nodelist
-        self.edgelist = edgelist
-        self.adjacency = source_adjacency
-
-        #
-        # If the sampler accepts flux bias offsets, we'll want to set them
-        #
-        if flux_biases is None and FLUX_BIAS_KWARG in sampler.parameters:
-            # If nothing is provided, then we either get them from the cache or generate them
-            flux_biases = get_flux_biases(sampler, embedding, num_reads=flux_bias_num_reads,
-                                          chain_strength=self.chain_strength, max_age=flux_bias_max_age)
-        elif flux_biases:
-            if FLUX_BIAS_KWARG not in sampler.accepted_kwargs:
-                raise ValueError("Given child sampler does not accept flux_biases.")
-            # something provided, error check
-            if not isinstance(flux_biases, list):
-                flux_biases = list(flux_biases)  # cast to a list
-        else:
-            # disabled, empty or not available for this sampler so do nothing
-            flux_biases = None
-        self.flux_biases = flux_biases
 
     @dimod.bqm_structured
     def sample(self, bqm, apply_flux_bias_offsets=True, **kwargs):
@@ -352,97 +320,43 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
         """
-
-        # apply the embedding to the given problem to map it to the child sampler
-        __, __, target_adjacency = self.child.structure
-        embedding = self.embedding
-        embedded_bqm = dimod.embed_bqm(bqm, self.embedding, target_adjacency, self.chain_strength)
-
-        # solve the problem on the child system
         child = self.child
 
-        if apply_flux_bias_offsets and self.flux_biases is not None:
-            # If self.flux_biases is in the old format (list of lists) convert it to the new format (flat list).
-            if len(self.flux_biases) == 0 or isinstance(self.flux_biases[0], list):
-                flux_bias_dict = dict(self.flux_biases)
-                kwargs[FLUX_BIAS_KWARG] = [flux_bias_dict.get(v, 0.) for v in range(child.properties['num_qubits'])]
-            else:
+        if apply_flux_bias_offsets:
+            if self.flux_biases is not None:
                 kwargs[FLUX_BIAS_KWARG] = self.flux_biases
-            assert len(kwargs[FLUX_BIAS_KWARG]) == child.properties['num_qubits'], \
-                "{} must have length {}, the solver's num_qubits."\
-                .format(FLUX_BIAS_KWARG, child.properties['num_qubits'])
 
         # Embed arguments providing initial states for reverse annealing, if applicable.
-        kwargs = _embed_initial_state_kwargs(kwargs, self.embedding, self.child.structure[0])
+        kwargs = _embed_initial_state_kwargs(kwargs, self.child.embedding, child.child.structure[0])
 
-        response = child.sample(embedded_bqm, **kwargs)
-
-        return dimod.unembed_response(response, embedding, source_bqm=bqm)
-
-    def _validate_chain_strength(self, chain_strength):
-        """Validate the provided chain strength, checking J-ranges of the sampler's children.
-
-        Args:
-            chain_strength (float) The provided chain strength.  Use None to use J-range.
-
-        Returns (float):
-            A valid chain strength, either provided or based on available J-range.  Positive finite float.
-        """
-        child = self.child
-
-        j_range_minimum = None  # Minimum value allowed in J-range
-        try:
-            # Try to get extended_j_range, just use j_range if that doesn't exist.
-            j_range_minimum = min(child.properties.get('extended_j_range', child.properties['j_range']))
-        except (AttributeError, KeyError):
-            pass
-
-        if chain_strength is not None:
-            try:
-                chain_strength = float(chain_strength)
-            except TypeError:
-                raise ValueError("chain_strength could not be converted to float.")
-            if not 0. < chain_strength < float('Inf'):
-                raise ValueError("chain_strength is not a finite positive number.")
-
-        if j_range_minimum is not None:
-            try:
-                j_range_minimum = float(j_range_minimum)
-            except TypeError:
-                raise ValueError("j_range_minimum could not be converted to float.")
-            if not 0. < -j_range_minimum < float('Inf'):
-                raise ValueError("j_range_minimum is not a finite negative number.")
-
-        if j_range_minimum is None and chain_strength is None:
-            raise ValueError("Could not find valid j_range property.  chain_strength must be provided explicitly.")
-
-        if j_range_minimum is None:
-            return chain_strength
-
-        if chain_strength is None:
-            return -j_range_minimum
-
-        if chain_strength > -j_range_minimum:
-            raise ValueError("chain_strength ({}) is too great (larger than -j_range_minimum ({})).".format(chain_strength, -j_range_minimum))
-        return chain_strength
+        return child.sample(bqm, **kwargs)
 
 
-def _adjacency_to_edges(adjacency):
-    """determine from an adjacency the list of edges
-    if (u, v) in edges, then (v, u) should not be"""
-    edges = set()
-    for u in adjacency:
-        for v in adjacency[u]:
-            try:
-                edge = (u, v) if u <= v else (v, u)
-            except TypeError:
-                # Py3 does not allow sorting of unlike types
-                if (v, u) in edges:
-                    continue
-                edge = (u, v)
+def _validate_chain_strength(sampler, chain_strength):
+    """Validate the provided chain strength, checking J-ranges of the sampler's children.
 
-            edges.add(edge)
-    return edges
+    Args:
+        chain_strength (float) The provided chain strength.  Use None to use J-range.
+
+    Returns (float):
+        A valid chain strength, either provided or based on available J-range.  Positive finite float.
+
+    """
+    properties = sampler.properties
+
+    if 'extended_j_range' in properties:
+        max_chain_strength = - min(properties['extended_j_range'])
+    elif 'j_range' in properties:
+        max_chain_strength = - min(properties['j_range'])
+    else:
+        raise ValueError("input sampler should have 'j_range' and/or 'extended_j_range' property.")
+
+    if chain_strength is None:
+        chain_strength = max_chain_strength
+    elif chain_strength > max_chain_strength:
+        raise ValueError("Provided chain strength exceedds the allowed range.")
+
+    return chain_strength
 
 
 def _embed_initial_state(initial_state, embedding, qubits):
