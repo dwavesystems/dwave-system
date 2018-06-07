@@ -131,8 +131,13 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
         self.assertEqual(sampler.edgelist, [])
 
+        self.assertTrue(hasattr(sampler, 'embedding'))
+        self.assertIn('embedding', sampler.properties)
+
     def test_instantiation_triangle(self):
-        sampler = FixedEmbeddingComposite(MockSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+        embedding = {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]}
+        sampler = FixedEmbeddingComposite(MockSampler(), embedding)
+        self.assertEqual(embedding, sampler.embedding)
 
         dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
 
