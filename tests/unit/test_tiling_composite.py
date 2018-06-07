@@ -4,7 +4,7 @@ import random
 import dimod
 import dwave_networkx as dnx
 
-from tests.mock_sampler import MockSampler
+from tests.unit.mock_sampler import MockSampler
 
 from dwave.system.composites import TilingComposite
 

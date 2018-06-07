@@ -1,7 +1,7 @@
 """who watches the watchmen?"""
 import unittest
 
-from tests.mock_sampler import MockSampler
+from tests.unit.mock_sampler import MockSampler
 
 import dimod.testing as dit
 

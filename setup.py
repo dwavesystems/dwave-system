@@ -24,7 +24,7 @@ install_requires = ['dimod>=0.6.10,<0.7.0',
                     'minorminer>=0.1.3,<0.2.0',
                     'six>=1.11.0,<2.0.0']
 
-extras_require = {'drivers': ['dwave-system-tuning>=0.1.1,<0.2.0']}
+extras_require = {'drivers': ['dwave-drivers>=0.3.1,<0.4.0']}
 
 packages = ['dwave',
             'dwave.system',

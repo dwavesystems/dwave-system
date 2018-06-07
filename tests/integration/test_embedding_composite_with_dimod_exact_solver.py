@@ -7,7 +7,7 @@ import dwave_networkx as dnx
 
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite
+from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite
 
 
 class TestEmbeddingCompositeExactSolver(unittest.TestCase):

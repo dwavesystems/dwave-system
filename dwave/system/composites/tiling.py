@@ -301,13 +301,13 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             that submits a simple Ising problem of just two variables that map to qubits 0 and 1
             on the D-Wave solver selected by the user's default D-Wave Cloud Client
             configuration_ file. (The simplicity of this example obviates the need for an embedding
-            composite.) Because the problem fits in a single Chimera_ unit cell, it is tiled 
+            composite.) Because the problem fits in a single Chimera_ unit cell, it is tiled
             across the solver's entire Chimera graph, resulting in multiple samples.
 
             >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
-            >>> samplertile = TilingComposite(DWaveSampler(), 1, 1, 4)
-            >>> response = sampler_tile.sample_ising({0: -1, 1: 1}, {})
+            >>> from dwave.system.composites import EmbeddingComposite, TilingComposite
+            >>> sampler = TilingComposite(DWaveSampler(), 1, 1, 4)
+            >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
             >>> for sample in response.samples():    # doctest: +SKIP
             ...     print(sample)
             ...

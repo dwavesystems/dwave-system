@@ -19,7 +19,6 @@ from dwave.system.cache.schema import schema
 from dwave.system.exceptions import MissingFluxBias
 
 
-
 def cache_connect(database=None):
     """Returns a connection object to a sqlite database.
 
@@ -260,9 +259,7 @@ def get_flux_biases_from_cache(cur, chains, system_name, chain_strength, max_age
             The maximum age (in seconds) for the flux_bias offsets.
 
     Returns:
-        list[[v, fbo]]: A list of lists of length 2. Each 2-list is the variable and the flux bias
-        offset associated with the variable. This value can be passed to
-        :class:`dwave_micro_client_dimod.DWaveSampler`.
+        dict: A dict where the keys are the nodes in the chains and the values are the flux biases.
 
     """
 
@@ -282,7 +279,7 @@ def get_flux_biases_from_cache(cur, chains, system_name, chain_strength, max_age
                     'system_name': system_name,
                     'time_limit': datetime.datetime.now() + datetime.timedelta(seconds=-max_age)}
 
-    flux_biases = []
+    flux_biases = {}
     for chain in chains:
         encoded_data['chain_length'] = len(chain)
         encoded_data['nodes'] = json.dumps(sorted(chain), separators=(',', ':'))
@@ -292,7 +289,10 @@ def get_flux_biases_from_cache(cur, chains, system_name, chain_strength, max_age
             raise MissingFluxBias
         flux_bias = _decode_real(*row)
 
-        flux_biases.extend([v, flux_bias] for v in chain)
+        if flux_bias == 0:
+            continue
+
+        flux_biases.update({v: flux_bias for v in chain})
 
     return flux_biases
 

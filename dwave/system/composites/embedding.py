@@ -252,7 +252,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         self.properties = {'child_properties': child_sampler.properties.copy()}
 
-        self._embedding = embedding
+        self.embedding = self.properties['embedding'] = embedding
 
     nodelist = None
     """list:
@@ -282,8 +282,8 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
     properties = None
     """dict: Properties in the form of a dict.
 
-    For an instantiated composed sampler, contains one key :code:`'child_properties'` that
-    has a copy of the child sampler's properties.
+    For an instantiated composed sampler, :code:`'child_properties'` has a copy of the child
+    sampler's properties and :code:`'embedding'` contains the fixed embedding.
 
     """
 
@@ -326,7 +326,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         __, __, target_adjacency = child.structure
 
         # get the embedding
-        embedding = self._embedding
+        embedding = self.embedding
 
         bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
 
