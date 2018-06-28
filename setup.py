@@ -40,6 +40,7 @@ setup(
     author=__author__,
     author_email=__authoremail__,
     description=__description__,
+    long_description=open('README.rst').read(),
     url='https://github.com/dwavesystems/dwave-system',
     license='Apache 2.0',
     packages=packages,
