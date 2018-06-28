@@ -12,9 +12,9 @@ setup_folder_loc = os.path.dirname(os.path.abspath(__file__))
 os.chdir(setup_folder_loc)
 
 if _PY2:
-    execfile(os.path.join(".", "dwave", "system", "package_info", "package_info.py"))
+    execfile(os.path.join(".", "dwave", "system", "package_info.py"))
 else:
-    exec(open(os.path.join(".", "dwave", "system", "package_info", "package_info.py")).read())
+    exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
 install_requires = ['dimod>=0.6.10,<0.7.0',
