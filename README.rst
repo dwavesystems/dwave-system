@@ -18,7 +18,8 @@ dwave-system
 ============
 
 `dwave-system` is a basic API for easily incorporating the D-Wave system as a sampler in
-the `D-Wave Ocean <todo>`_ software stack. It includes DWaveSampler, a :class:`dimod.Sampler`
+the `D-Wave Ocean <http://dw-docs.readthedocs.io/en/latest/overview/stack.html#stack>`_ software
+stack. It includes DWaveSampler, a :class:`dimod.Sampler`
 that accepts and passes system parameters such as system identification and authentication
 down the stack. It also includes several useful composites---layers of pre- and post-processing---that
 can be used with DWaveSampler to handle minor-embedding, optimize chain strength, etc.
@@ -39,7 +40,7 @@ Installation
 **Installation from PyPI with drivers:**
 
 .. note::
-    Prior to v0.3.0, running :code:`pip install dwave-system` installed a driver dependency called :code:`dwave-system-tuning`. This dependency has a restricted license and has been made optional as of v0.3.0, 
+    Prior to v0.3.0, running :code:`pip install dwave-system` installed a driver dependency called :code:`dwave-system-tuning`. This dependency has a restricted license and has been made optional as of v0.3.0,
     but is highly recommanded. To view the license details:
 
     .. code-block:: python
