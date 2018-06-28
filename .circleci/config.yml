@@ -52,6 +52,12 @@ jobs:
             export DWAVE_CONFIG_FILE=$(readlink -f dwave.conf)
             make -C docs/ doctest
 
+      - run:
+          name: test sdist
+          command: |
+            . env/bin/activate
+            python setup.py sdist
+
   test-3.5:
     <<: *full-test-template
     docker:
