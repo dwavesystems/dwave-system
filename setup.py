@@ -22,27 +22,25 @@ install_requires = ['dimod>=0.6.10,<0.7.0',
                     'dwave-networkx>=0.6.0,<0.7.0',
                     'homebase>=1.0.0,<2.0.0',
                     'minorminer>=0.1.3,<0.2.0',
-                    'six>=1.11.0,<2.0.0']
+                    'six>=1.11.0,<2.0.0'
+                    ]
 
 extras_require = {'drivers': ['dwave-drivers>=0.3.1,<0.4.0']}
 
 packages = ['dwave',
             'dwave.system',
-            'dwave.system.samplers',
-            'dwave.system.composites',
             'dwave.system.cache',
-            'dwave.system.embedding',
-            'dwave.system.exceptions',
-            'dwave.system.flux_bias_offsets',
-            'dwave.system.package_info']
+            'dwave.system.composites',
+            'dwave.system.samplers',
+            ]
 
 setup(
-    name='dwave_system',
+    name='dwave-system',
     version=__version__,
     author=__author__,
     author_email=__authoremail__,
     description=__description__,
-    url='https://github.com/dwavesystems/dwave_system',
+    url='https://github.com/dwavesystems/dwave-system',
     license='Apache 2.0',
     packages=packages,
     install_requires=install_requires,
