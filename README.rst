@@ -40,12 +40,12 @@ Installation
 **Installation from PyPI with drivers:**
 
 .. note::
-    Prior to v0.3.0, running :code:`pip install dwave-system` installed a driver dependency called :code:`dwave-system-tuning`. This dependency has a restricted license and has been made optional as of v0.3.0,
+    Prior to v0.3.0, running :code:`pip install dwave-system` installed a driver dependency called :code:`dwave-drivers`. This dependency has a restricted license and has been made optional as of v0.3.0,
     but is highly recommanded. To view the license details:
 
     .. code-block:: python
 
-        from dwave.system.tuning import __license__
+        from dwave.drivers import __license__
         print(__license__)
 
 To install with optional dependencies:
