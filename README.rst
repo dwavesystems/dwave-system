@@ -40,8 +40,9 @@ Installation
 **Installation from PyPI with drivers:**
 
 .. note::
-    Prior to v0.3.0, running :code:`pip install dwave-system` installed a driver dependency called :code:`dwave-drivers`. This dependency has a restricted license and has been made optional as of v0.3.0,
-    but is highly recommanded. To view the license details:
+    Prior to v0.3.0, running ``pip install dwave-system`` installed a driver dependency called ``dwave-drivers``
+    (previously also called ``dwave-system-tuning``). This dependency has a restricted license and has been made optional
+    as of v0.3.0, but is highly recommended. To view the license details:
 
     .. code-block:: python
 
@@ -61,11 +62,11 @@ To install with optional dependencies:
     pip install -r requirements.txt
     python setup.py
 
-Note that installing from source installs dwave-system-tuning. To uninstall the proprietary components:
+Note that installing from source installs ``dwave-drivers``. To uninstall the proprietary components:
 
 .. code-block:: bash
 
-    pip uninstall dwave-system-tuning
+    pip uninstall dwave-drivers
 
 .. installation-end-marker
 
