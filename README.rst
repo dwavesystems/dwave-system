@@ -4,18 +4,16 @@
 .. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
     :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
 
+.. image:: https://codecov.io/gh/dwavesystems/dwave-system/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/dwavesystems/dwave-system
+
 .. image:: https://readthedocs.org/projects/dwave-system/badge/?version=latest
     :target: http://dwave-system.readthedocs.io/en/latest/?badge=latest
-
-.. image:: https://coveralls.io/repos/github/dwavesystems/dwave-system/badge.svg?branch=master
-    :target: https://coveralls.io/github/dwavesystems/dwave-system?branch=master
 
 .. image:: https://circleci.com/gh/dwavesystems/dwave-system.svg?style=svg
     :target: https://circleci.com/gh/dwavesystems/dwave-system
 
 .. index-start-marker
-
-Note: This is an alpha release of this package.
 
 dwave-system
 ============
