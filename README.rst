@@ -1,6 +1,9 @@
 .. image:: https://img.shields.io/pypi/v/dwave-system.svg
     :target: https://pypi.python.org/pypi/dwave-system
 
+.. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
+    :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
+
 .. image:: https://readthedocs.org/projects/dwave-system/badge/?version=latest
     :target: http://dwave-system.readthedocs.io/en/latest/?badge=latest
 
