@@ -39,12 +39,12 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
             resp_emb = sampler_embedding.sample(bqm)
 
             for sample, energy in resp_emb.data(['sample', 'energy']):
-                self.assertEqual(bqm.energy(sample), energy)
+                self.assertAlmostEqual(bqm.energy(sample), energy)
 
             ground_exact = dict(next(iter(resp_exact)))
             ground_embed = dict(next(iter(resp_emb)))
 
-            self.assertEqual(ground_embed, ground_exact)
+            self.assertAlmostEqual(ground_embed, ground_exact)
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):

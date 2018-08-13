@@ -3,6 +3,11 @@ import collections
 import dimod
 import dwave_networkx as dnx
 
+try:
+    from neal import SimulatedAnnealingSampler
+except ImportError:
+    from dimod import SimulatedAnnealingSampler
+
 C4 = dnx.chimera_graph(4, 4, 4)
 
 
@@ -44,8 +49,8 @@ class MockSampler(dimod.Sampler, dimod.Structured):
             self.flux_biases_flag = True
             new_bqm.add_variable(v, 1000. * fbo)  # add the bias
 
-        response = dimod.SimulatedAnnealingSampler().sample(new_bqm, num_reads=num_reads)
+        response = SimulatedAnnealingSampler().sample(new_bqm, num_reads=num_reads)
 
         energies = [bqm.energy(sample) for sample in response.samples(sorted_by=None)]
 
-        return dimod.Response.from_dicts(response.samples(sorted_by=None), {'energy': energies}, vartype=bqm.vartype)
+        return dimod.Response.from_samples(response.samples(sorted_by=None), {'energy': energies}, {}, bqm.vartype)

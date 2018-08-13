@@ -17,15 +17,16 @@ else:
     exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.6.10,<0.7.0',
+install_requires = ['dimod>=0.7.0,<0.8.0',
                     'dwave-cloud-client>=0.4.0,<0.5.0',
                     'dwave-networkx>=0.6.0,<0.7.0',
                     'homebase>=1.0.0,<2.0.0',
                     'minorminer>=0.1.3,<0.2.0',
-                    'six>=1.11.0,<2.0.0'
+                    'six>=1.11.0,<2.0.0',
+                    'numpy>=1.14.0,<2.0.0',
                     ]
 
-extras_require = {'drivers': ['dwave-drivers>=0.3.1,<0.4.0']}
+extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0']}
 
 packages = ['dwave',
             'dwave.system',

@@ -98,6 +98,6 @@ class TestTiling(unittest.TestCase):
 
         response = sampler.sample_ising(h, J)
 
-        __, num_columns = response.samples_matrix.shape
+        __, num_columns = response.record.sample.shape
 
         self.assertEqual(num_columns, 2)

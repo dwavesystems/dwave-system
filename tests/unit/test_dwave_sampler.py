@@ -117,20 +117,20 @@ class TestDwaveSampler(unittest.TestCase):
 
         response = sampler.sample_ising({0: -1, 1: 1}, {})
 
-        rows, cols = response.samples_matrix.shape
+        rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 2)
 
         response = sampler.sample_ising({}, {(0, 1): 1})
 
-        rows, cols = response.samples_matrix.shape
+        rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 2)
 
-        self.assertFalse(np.any(response.samples_matrix == 0))
+        self.assertFalse(np.any(response.record.sample == 0))
         self.assertIs(response.vartype, dimod.SPIN)
 
-        self.assertIn('num_occurrences', response.data_vectors)
+        self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
 
     def test_sample_qubo_variables(self):
@@ -139,18 +139,18 @@ class TestDwaveSampler(unittest.TestCase):
 
         response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
 
-        rows, cols = response.samples_matrix.shape
+        rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 2)
 
         response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
 
-        rows, cols = response.samples_matrix.shape
+        rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 2)
 
-        self.assertTrue(np.all(response.samples_matrix >= 0))
+        self.assertTrue(np.all(response.record.sample >= 0))
         self.assertIs(response.vartype, dimod.BINARY)
 
-        self.assertIn('num_occurrences', response.data_vectors)
+        self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
