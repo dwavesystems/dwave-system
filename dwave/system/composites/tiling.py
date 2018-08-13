@@ -16,6 +16,8 @@ from math import sqrt, ceil
 import dimod
 import dwave_networkx as dnx
 
+import numpy as np
+
 __all__ = ['TilingComposite']
 
 
@@ -333,26 +335,30 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             embedded_bqm.update(dimod.embed_bqm(bqm, embedding, target_adjacency))
 
         # solve the problem on the child system
-        response = self.child.sample(embedded_bqm, **kwargs)
+        tiled_response = self.child.sample(embedded_bqm, **kwargs)
 
-        data_vectors = response.data_vectors.copy()
-
-        source_response = None
+        responses = []
 
         for embedding in self.embeddings:
-
-            # filter for problem variables
             embedding = {v: chain for v, chain in embedding.items() if v in bqm.linear}
 
-            tile_response = dimod.unembed_response(response, embedding, source_bqm=bqm)
+            responses.append(dimod.unembed_response(tiled_response, embedding, bqm))
 
-            if source_response is None:
-                source_response = tile_response
-                source_response.info.update(response.info)  # overwrite the info
-            else:
-                source_response.update(tile_response)
+        # stack the records
+        record = np.rec.array(np.hstack((resp.record for resp in responses)))
 
-        return source_response
+        vartypes = set(resp.vartype for resp in responses)
+        if len(vartypes) > 1:
+            raise RuntimeError("inconsistent vartypes returned")
+        vartype = vartypes.pop()
+
+        info = {}
+        for resp in responses:
+            info.update(resp.info)
+
+        labels = responses[0].variable_labels
+
+        return dimod.Response(record, labels, info, vartype)
 
     @property
     def num_tiles(self):

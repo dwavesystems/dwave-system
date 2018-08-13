@@ -241,16 +241,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             active_variables = list(variables)
         num_variables = len(active_variables)
 
-        data_vector_keys = {'energies': 'energy',
-                            'num_occurrences': 'num_occurrences'}
-        info_keys = {'timing'}
-
         future = self.solver.sample_ising(h, J, **kwargs)
-        return dimod.Response.from_futures((future,), vartype=dimod.SPIN,
-                                           num_variables=num_variables,
-                                           data_vector_keys=data_vector_keys,
-                                           active_variables=active_variables,
-                                           info_keys=info_keys)
+
+        return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the provided QUBO.
@@ -293,13 +286,31 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             active_variables = list(variables)
         num_variables = len(active_variables)
 
-        data_vector_keys = {'energies': 'energy',
-                            'num_occurrences': 'num_occurrences'}
-        info_keys = {'timing'}
-
         future = self.solver.sample_qubo(Q, **kwargs)
-        return dimod.Response.from_futures((future,), vartype=dimod.BINARY,
-                                           num_variables=num_variables,
-                                           data_vector_keys=data_vector_keys,
-                                           active_variables=active_variables,
-                                           info_keys=info_keys)
+
+        return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
+
+
+def _result_to_response_hook(variables, vartype):
+    def _hook(computation):
+        result = computation.result()
+
+        # get the samples. The future will return all spins so filter for the ones in variables
+        samples = [[sample[v] for v in variables] for sample in result.get('solutions')]
+
+        # the only two data vectors we're interested in are energies and num_occurrences
+        vectors = {'energy': result['energies']}
+
+        if 'num_occurrences' in result:
+            vectors['num_occurrences'] = result['num_occurrences']
+
+        # finally put the timing information (if present) into the misc info. We ignore everything
+        # else
+        if 'timing' in result:
+            info = {'timing': result['timing']}
+        else:
+            info = {}
+
+        return dimod.Response.from_samples(samples, vectors, info, vartype, variable_labels=variables)
+
+    return _hook
