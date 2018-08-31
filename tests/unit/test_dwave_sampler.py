@@ -1,6 +1,7 @@
 import unittest
 import random
 
+from collections import namedtuple
 from concurrent.futures import Future
 
 import numpy as np
@@ -154,3 +155,13 @@ class TestDwaveSampler(unittest.TestCase):
 
         self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
+
+
+class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
+    def test_typical(self):
+        Sampler = namedtuple('Sampler', ['parameters', 'properties'])
+        obj = Sampler({'anneal_schedule': ''},
+                      {'max_anneal_schedule_points': 4,
+                       'annealing_time_range': [1, 2000]})
+
+        DWaveSampler.validate_anneal_schedule(obj, [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])

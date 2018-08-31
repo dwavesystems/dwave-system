@@ -33,8 +33,8 @@ Structured Sampler Properties
    DWaveSampler.adjacency
    DWaveSampler.structure
 
-Methods
-=======
+Sample Methods
+==============
 
 .. autosummary::
    :toctree: generated/
@@ -42,3 +42,11 @@ Methods
    DWaveSampler.sample
    DWaveSampler.sample_ising
    DWaveSampler.sample_qubo
+
+Methods
+=======
+
+.. autosummary::
+   :toctree: generated/
+
+   DWaveSampler.validate_anneal_schedule
