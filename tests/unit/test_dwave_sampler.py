@@ -159,9 +159,12 @@ class TestDwaveSampler(unittest.TestCase):
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
     def test_typical(self):
-        Sampler = namedtuple('Sampler', ['parameters', 'properties'])
-        obj = Sampler({'anneal_schedule': ''},
-                      {'max_anneal_schedule_points': 4,
-                       'annealing_time_range': [1, 2000]})
+        class MockScheduleSampler(DWaveSampler):
+            parameters = {'anneal_schedule': ''}
+            properties = {'max_anneal_schedule_points': 4,
+                          'annealing_time_range': [1, 2000]}
 
-        DWaveSampler.validate_anneal_schedule(obj, [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])
+            def __init__(self):
+                pass
+
+        DWaveSampler.validate_anneal_schedule(MockScheduleSampler(), [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])
