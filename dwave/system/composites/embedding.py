@@ -195,6 +195,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
 
+        if 'initial_state' in parameters:
+            parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
+
         response = child.sample(bqm_embedded, **parameters)
 
         return dimod.unembed_response(response, embedding, source_bqm=bqm)
@@ -330,6 +333,9 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
 
+        if 'initial_state' in parameters:
+            parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
+
         response = child.sample(bqm_embedded, **parameters)
 
         return dimod.unembed_response(response, embedding, source_bqm=bqm)
@@ -351,3 +357,8 @@ def _adjacency_to_edges(adjacency):
 
             edges.add(edge)
     return edges
+
+
+def _embed_state(embedding, state):
+    """Embed a single state/sample by spreading it's values over the chains in the embedding"""
+    return {u: state[v] for v, chain in embedding.items() for u in chain}

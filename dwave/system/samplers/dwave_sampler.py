@@ -3,6 +3,8 @@ A dimod sampler_ for the D-Wave system.
 
 .. _sampler: http://dimod.readthedocs.io/en/latest/reference/samplers.html#samplers-and-composites
 """
+from __future__ import division
+
 import dimod
 import dwave.cloud.qpu as qpuclient
 
@@ -289,6 +291,90 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         future = self.solver.sample_qubo(Q, **kwargs)
 
         return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
+
+    def validate_anneal_schedule(self, anneal_schedule):
+        """Raise an exception of the given schedule is not valid for the sampler.
+
+        Args:
+            anneal_schedule (list):
+                An anneal schedule variation is defined by a series of pairs of floating-point
+                numbers identifying points in the schedule at which to change slope. The first
+                element in the pair is time t in microseconds; the second, normalized persistent
+                current s in the range [0,1]. The resulting schedule is the piecewise-linear curve
+                that connects the provided points.
+
+        An anneal schedule must satisfy the following conditions:
+            * Time t must increase for all points in the schedule.
+            * For forward annealing, the first point must be (0,0) and the anneal fraction s must
+            increase monotonically.
+            * For reverse annealing, the anneal fraction s must start and end at s=1.
+            * In the final point, anneal fraction s must equal 1 and time t must not exceed the maximum
+            value in the annealing_time_range property.
+            * The number of points must be >=2.
+            * The upper bound is system-dependent; check the max_anneal_schedule_points property. For
+            reverse annealing, the maximum number of points allowed is one more than the number given by
+            this property.
+
+        Raises:
+            ValueError: If any of the above conditions are not satisfied.
+
+            RuntimeError: If the sampler does not accept the anneal_schedule parameter or if it does
+            not have annealing_time_range or max_anneal_schedule_points properties.
+
+        """
+        if 'anneal_schedule' not in self.parameters:
+            raise RuntimeError("anneal_schedule is not an accepted parameter for this sampler")
+
+        properties = self.properties
+
+        try:
+            min_anneal_time, max_anneal_time = properties['annealing_time_range']
+            max_anneal_schedule_points = properties['max_anneal_schedule_points']
+        except KeyError:
+            raise RuntimeError("annealing_time_range and max_anneal_schedule_points are not properties of this solver")
+
+        # The number of points must be >= 2.
+        # The upper bound is system-dependent; check the max_anneal_schedule_points property
+        if not isinstance(anneal_schedule, list):
+            raise TypeError("anneal_schedule should be a list")
+        elif len(anneal_schedule) < 2 or len(anneal_schedule) > max_anneal_schedule_points:
+            msg = ("anneal_schedule must contain between 2 and {} points (contains {})"
+                   ).format(max_anneal_schedule_points, len(anneal_schedule))
+            raise ValueError(msg)
+
+        try:
+            t_list, s_list = zip(*anneal_schedule)
+        except ValueError:
+            raise ValueError("anneal_schedule should be a list of 2-tuples")
+
+        # Time t must increase for all points in the schedule.
+        if not all(tail_t < lead_t for tail_t, lead_t in zip(t_list, t_list[1:])):
+            raise ValueError("Time t must increase for all points in the schedule")
+
+        # max t cannot exceed max_anneal_time
+        if t_list[-1] > max_anneal_time:
+            raise ValueError("schedule cannot be longer than the maximum anneal time of {}".format(max_anneal_time))
+
+        start_s, end_s = s_list[0], s_list[-1]
+        if end_s != 1:
+            raise ValueError("In the final point, anneal fraction s must equal 1.")
+        if start_s == 1:
+            # reverse annealing
+            pass
+        elif start_s == 0:
+            # forward annealing, s must monotonically increase.
+            if not all(tail_s < lead_s for tail_s, lead_s in zip(s_list, s_list[1:])):
+                raise ValueError("For forward anneals, anneal fraction s must monotonically increase")
+        else:
+            msg = ("In the first point, anneal fraction s must equal 0 for forward annealing or "
+                   "1 for reverse annealing")
+            raise ValueError(msg)
+
+        # finally check the slope abs(slope) < 1/min_anneal_time
+        max_slope = 1.0 / min_anneal_time
+        for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
+            if abs((s0 - s1) / (t0 - t1)) > max_slope:
+                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
 
 def _result_to_response_hook(variables, vartype):
