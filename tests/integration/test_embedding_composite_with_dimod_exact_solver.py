@@ -10,6 +10,12 @@ import dimod.testing as dtest
 from dwave.system.samplers import DWaveSampler
 from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite
 
+try:
+    DWaveSampler()
+    _config_found = True
+except ValueError:
+    _config_found = False
+
 
 class TestEmbeddingCompositeExactSolver(unittest.TestCase):
 
@@ -45,6 +51,7 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
         sampler.sample(bqm, **kwargs).record  # sample and resolve future
 
 
+@unittest.skipUnless(_config_found, "no configuration found to connect to a system")
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_keyerror(self):
         C16 = dnx.chimera_graph(16)
