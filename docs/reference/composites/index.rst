@@ -5,8 +5,10 @@ Composites
 ==========
 
 `dwave-system` provides
-`dimod composites <http://dimod.readthedocs.io/en/latest/reference/samplers.html#samplers-and-composites>`_
-for using the D-Wave system.
+:std:doc:`dimod composites <dimod:reference/samplers>` for using the D-Wave system.
+
+
+
 
    :Release: |release|
    :Date: |today|

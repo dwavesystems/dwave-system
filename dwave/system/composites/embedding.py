@@ -1,17 +1,16 @@
 # coding: utf-8
 """
-A dimod composite_ that maps unstructured problems to a structured_ sampler.
+A :std:doc:`dimod composite <dimod:reference/samplers>` that maps unstructured problems
+to a structured sampler.
 
-A structured_ sampler can only solve problems that map to a specific graph: the
-D-Wave system's architecture is represented by a Chimera_ graph.
+A structured sampler can only solve problems that map to a specific graph: the
+D-Wave system's architecture is represented by a :std:doc:`Chimera <system:reference/intro>` graph.
 
-The :class:`.EmbeddingComposite` uses the minorminer_ library to map unstructured
-problems to a structured sampler such as a D-Wave system.
+The :class:`.EmbeddingComposite` uses the :std:doc:`minorminer <minorminer:index>` library
+to map unstructured problems to a structured sampler such as a D-Wave system.
 
-.. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
-.. _minorminer: https://github.com/dwavesystems/minorminer
-.. _structured: http://dimod.readthedocs.io/en/latest/reference/samplers.html#module-dimod.core.structured
-.. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
+of technical terms in descriptions of Ocean tools.
 
 """
 import dimod
@@ -36,7 +35,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
     Examples:
        This example uses :class:`.EmbeddingComposite` to instantiate a composed sampler
        that submits a simple Ising problem to a D-Wave solver selected by the user's
-       default D-Wave Cloud Client configuration_ file. The composed sampler handles
+       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       The composed sampler handles
        minor-embedding of the problem's two generic variables, a and b, to physical
        qubits on the solver.
 
@@ -51,7 +51,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
        ...
        {'a': 1, 'b': -1}
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
+    of technical terms in descriptions of Ocean tools.
 
     """
     def __init__(self, child_sampler):
@@ -67,8 +68,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         Examples:
             This example instantiates a composed sampler using a D-Wave solver selected by
-            the user's default D-Wave Cloud Client configuration_ file and views the
-            solver's parameters.
+            the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            and views the solver's parameters.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
@@ -76,7 +78,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
             >>> sampler.children   # doctest: +SKIP
             [<dwave.system.samplers.dwave_sampler.DWaveSampler at 0x7f45b20a8d50>]
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
 
         """
         return self._children
@@ -89,8 +91,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         Examples:
             This example instantiates a composed sampler using a D-Wave solver selected by
-            the user's default D-Wave Cloud Client configuration_ file and views the
-            solver's parameters.
+            the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            and views the solver's parameters.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
@@ -103,7 +106,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
              'auto_scale': ['parameters'],
             >>> # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
 
         """
         # does not add or remove any parameters
@@ -120,8 +123,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         Examples:
             This example instantiates a composed sampler using a D-Wave solver selected by
-            the user's default D-Wave Cloud Client configuration_ file and views the
-            solver's properties.
+            the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            and views the solver's properties.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
@@ -133,7 +137,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                [-0.20860153999435985, 0.05511969218508182],
             >>> # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
 
         """
         return {'child_properties': self.child.properties.copy()}
@@ -158,8 +162,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
         Examples:
             This example uses :class:`.EmbeddingComposite` to instantiate a composed sampler
             that submits an unstructured Ising problem to a D-Wave solver, selected by the user's
-            default D-Wave Cloud Client configuration_ file, while minor-embedding the problem's
-            variables to physical qubits on the solver.
+            default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+            while minor-embedding the problem's variables to physical qubits on the solver.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite

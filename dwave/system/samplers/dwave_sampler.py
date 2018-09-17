@@ -1,7 +1,8 @@
 """
-A dimod sampler_ for the D-Wave system.
+A :std:doc:`dimod sampler <dimod:reference/samplers>` for the D-Wave system.
 
-.. _sampler: http://dimod.readthedocs.io/en/latest/reference/samplers.html#samplers-and-composites
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
 
@@ -18,7 +19,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Enables quick incorporation of the D-Wave system as a sampler in
     the D-Wave Ocean software stack. Also enables optional customizing of input
-    parameters to `D-Wave Cloud Client <http://dwave-cloud-client.readthedocs.io/en/latest/>`_
+    parameters to :std:doc:`D-Wave Cloud Client <cloud-client:index>`
     (the stack's communication-manager package).
 
     Args:
@@ -70,7 +71,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         ...
         {0: 1, 1: -1}
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
     def __init__(self, config_file=None, profile=None, endpoint=None, token=None, solver=None,
@@ -96,8 +98,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example creates a :class:`DWaveSampler` and prints the properties retrieved
-            from a D-Wave solver selected by the user's default D-Wave Cloud Client
-            configuration_ file.
+            from a D-Wave solver selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -107,7 +109,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
               [-0.20860153999435985, 0.05511969218508182],
             # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         return self._properties
@@ -123,8 +126,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example creates a :class:`DWaveSampler` and prints the parameters retrieved
-            from a D-Wave solver selected by the user's default D-Wave Cloud Client
-            configuration_ file.
+            from a D-Wave solver selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -136,7 +139,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             u'auto_scale': ['parameters'],
             # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         return self._parameters
@@ -147,8 +151,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example creates a :class:`DWaveSampler` and prints the active couplers retrieved
-            from a D-Wave solver selected by the user's default D-Wave Cloud Client
-            configuration_ file.
+            from a D-Wave solver selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -166,7 +170,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
              (2, 4),
             # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         return self._edgelist
@@ -177,8 +182,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example creates a :class:`DWaveSampler` and prints the active qubits retrieved
-            from a D-Wave solver selected by the user's default D-Wave Cloud Client
-            configuration_ file.
+            from a D-Wave solver selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -191,7 +196,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
              5,
             # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         return self._nodelist
@@ -216,11 +222,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example creates a :class:`DWaveSampler` based on a D-Wave solver selected by the
-            user's default D-Wave Cloud Client configuration_ file and submits a simple
-            Ising problem of just two variables that map to qubits 0 and 1 on the example
-            system. (The simplicity of this example obviates the need for an embedding
-            composite---the presence of qubits 0 and 1 on the selected D-Wave system can
-            be verified manually.)
+            user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            and submits a simple Ising problem of just two variables that map to qubits
+            0 and 1 on the example system. (The simplicity of this example obviates
+            the need for an embedding composite---the presence of qubits 0 and 1 on
+            the selected D-Wave system can be verified manually.)
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -230,7 +237,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...
             {0: 1, 1: -1}
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         if isinstance(h, list):
@@ -263,11 +271,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example creates a :class:`DWaveSampler` based on a D-Wave solver selected by the
-            user's default D-Wave Cloud Client configuration_ file and submits a simple
-            QUBO problem of just two variables that map to coupled qubits 0 and 4 on the
-            example system. (The simplicity of this example obviates the need for an embedding
-            composite---the presence of qubits 0 and 4, and their coupling, on the selected
-            D-Wave system can be verified manually.)
+            user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            and submits a simple QUBO problem of just two variables that map to coupled
+            qubits 0 and 4 on the example system. (The simplicity of this example obviates
+            the need for an embedding composite---the presence of qubits 0 and 4, and
+            their coupling, on the selected D-Wave system can be verified manually.)
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -278,7 +287,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...
             {0: 0, 4: 1}
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         variables = set().union(*Q)
