@@ -49,3 +49,11 @@ Methods
    TilingComposite.sample
    TilingComposite.sample_ising
    TilingComposite.sample_qubo
+
+Related Functions
+=================
+
+.. autosummary::
+   :toctree: generated/
+
+   tiling.draw_tiling

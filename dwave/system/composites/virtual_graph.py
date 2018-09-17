@@ -1,5 +1,6 @@
 """
-A dimod composite_ that uses the D-Wave virtual graph feature for improved minor-embedding_.
+A :std:doc:`dimod composite <dimod:reference/samplers>` that uses the D-Wave virtual
+graph feature for improved :std:doc:`minor-embedding <system:reference/intro>`.
 
 D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you to more
 easily create, optimize, use, and reuse an embedding for a given working graph. When you submit an
@@ -7,8 +8,8 @@ embedding and specify a chain strength using these tools, they automatically cal
 in a chain to compensate for the effects of biases that may be introduced as a result of strong
 couplings.
 
-.. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
-.. _minor-embedding: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#minorEmbedding
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+for explanations of technical terms in descriptions of Ocean tools.
 """
 
 from six import iteritems
@@ -64,11 +65,13 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that submits a QUBO problem to a D-Wave solver selected by the user's
-       default D-Wave Cloud Client configuration_ file. The problem represents a logical
+       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       The problem represents a logical
        AND gate using penalty function :math:`P = xy - 2(x+y)z +3z`, where variables x and y
        are the gate's inputs and z the output. This simple three-variable problem is manually
-       minor-embedded to a single Chimera_ unit cell: variables x and y are represented by
-       qubits 1 and 5, respectively, and z by a two-qubit chain consisting of qubits 0 and 4.
+       minor-embedded to a single :std:doc:`Chimera <system:reference/intro>` unit cell:
+       variables x and y are represented by qubits 1 and 5, respectively, and z by a
+       two-qubit chain consisting of qubits 0 and 4.
        The chain strength is set to the maximum allowed found from querying the solver's extended
        J range. In this example, the ten returned samples all represent valid states of
        the AND gate.
@@ -95,8 +98,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
        {'y': 0, 'x': 0, 'z': 0}
        {'y': 1, 'x': 0, 'z': 0}
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
-    .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -143,7 +146,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file.
+       that uses a D-Wave solver selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
        Because qubits 0, 1, 4, 5 are active on the selected D-Wave solver, the three nodes, x, y, and z,
        specified by the embedding, are all available to problems using this composed sampler.
 
@@ -154,7 +158,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
        >>> sampler.nodelist  # doctest: +SKIP
        ['x', 'y', 'z']
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -164,7 +169,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file.
+       that uses a D-Wave solver selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
        Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
        between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
        composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
@@ -177,7 +183,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
        >>> sampler.edgelist  # doctest: +SKIP
        [('x', 'y'), ('x', 'z'), ('y', 'z')]
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -187,7 +194,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file.
+       that uses a D-Wave solver selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
        Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
        between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
        composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
@@ -200,7 +208,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
        >>> sampler.adjacency  # doctest: +SKIP
        {'a': set(), 'x': {'y', 'z'}, 'y': {'x', 'z'}, 'z': {'x', 'y'}}
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -215,7 +224,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file
+       that uses a D-Wave solver selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
        and views the composed sampler's parameters.
 
        >>> from dwave.system.samplers import DWaveSampler
@@ -231,7 +241,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         u'auto_scale': ['parameters'],
        >>>  # Snipped above response for brevity
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -243,7 +254,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default D-Wave Cloud Client configuration_ file
+       that uses a D-Wave solver selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
        and views the composed sampler's properties.
 
        >>> from dwave.system.samplers import DWaveSampler
@@ -258,7 +270,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
           [-0.2108920134230625, 0.056392603743884134],
        >>>  # Snipped above response for brevity
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -284,11 +297,14 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         Examples:
            This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
            that submits an Ising problem to a D-Wave solver selected by the user's
-           default D-Wave Cloud Client configuration_ file. The problem represents a logical
+           default
+           :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+           The problem represents a logical
            NOT gate using penalty function :math:`P = xy`, where variable x is the gate's input
-           and y the output. This simple two-variable problem is manually
-           minor-embedded to a single Chimera_ unit cell: each variable is represented by a
-           chain of half the cell's qubits, x as qubits 0, 1, 4, 5, and y as qubits 2, 3, 6, 7.
+           and y the output. This simple two-variable problem is manually minor-embedded
+           to a single :std:doc:`Chimera <system:reference/intro>` unit cell: each variable
+           is represented by a chain of half the cell's qubits, x as qubits 0, 1, 4, 5,
+           and y as qubits 2, 3, 6, 7.
            The chain strength is set to half the maximum allowed found from querying the solver's extended
            J range. In this example, the ten returned samples all represent valid states of
            the NOT gate.
@@ -316,8 +332,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
            {'y': -1, 'x': 1}
            {'y': 1, 'x': -1}
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
-        .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
         child = self.child
