@@ -28,7 +28,7 @@ to change the underlying sampler implementation.
 We refer to these layers as `composites`. A composed sampler includes at least one sampler
 and possibly many composites.
 
-.. _chimera:
+.. _chimeraTopology:
 
 D-Wave System Architecture: Chimera
 ===================================

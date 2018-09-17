@@ -24,33 +24,37 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Args:
         config_file (str, optional):
-            Path to a D-Wave Cloud Client configuration_ file that identifies a
-            D-Wave system and provides connection information.
+            Path to a
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            that identifies a D-Wave system and provides connection information.
 
         profile (str, optional):
-            Profile to select from a D-Wave Cloud Client configuration_ file.
+            Profile to select from a
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
         endpoint (str, optional):
             D-Wave API endpoint URL. If specified, used instead of retrieving a value from
-            a D-Wave Cloud Client configuration_ file.
+            a :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
-            If specified, used instead of retrieving a value from a D-Wave Cloud Client
-            configuration_ file.
+            If specified, used instead of retrieving a value from a
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
         solver (str, optional):
             Solver (a D-Wave system on which to run submitted problems).
-            If specified, used instead of retrieving a value from a D-Wave Cloud Client
-            configuration_ file.
+            If specified, used instead of retrieving a value from a
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API. If specified, used instead of
-            retrieving a value from a D-Wave Cloud Client configuration_ file.
+            retrieving a value from a
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
     Examples:
-        This example creates a :class:`DWaveSampler` based on a fictive user's D-Wave Cloud Client
-        configuration_ file and submits a simple Ising problem of just two variables
+        This example creates a :class:`DWaveSampler` based on a fictive user's
+        :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+        and submits a simple Ising problem of just two variables
         that map to qubits 0 and 1 on the example system. (The simplicity of this example
         obviates the need for an embedding composite---the presence of qubits 0 and 1 on
         the selected D-Wave system can be verified manually.)
@@ -313,23 +317,24 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 current s in the range [0,1]. The resulting schedule is the piecewise-linear curve
                 that connects the provided points.
 
-        An anneal schedule must satisfy the following conditions:
-            * Time t must increase for all points in the schedule.
-            * For forward annealing, the first point must be (0,0) and the anneal fraction s must
-            increase monotonically.
-            * For reverse annealing, the anneal fraction s must start and end at s=1.
-            * In the final point, anneal fraction s must equal 1 and time t must not exceed the maximum
-            value in the annealing_time_range property.
-            * The number of points must be >=2.
-            * The upper bound is system-dependent; check the max_anneal_schedule_points property. For
-            reverse annealing, the maximum number of points allowed is one more than the number given by
-            this property.
-
         Raises:
             ValueError: If any of the above conditions are not satisfied.
 
-            RuntimeError: If the sampler does not accept the anneal_schedule parameter or if it does
-            not have annealing_time_range or max_anneal_schedule_points properties.
+            RuntimeError: If the sampler does not accept the anneal_schedule parameter or
+                if it does not have annealing_time_range or max_anneal_schedule_points properties.
+
+        An anneal schedule must satisfy the following conditions:
+
+            * Time t must increase for all points in the schedule.
+            * For forward annealing, the first point must be (0,0) and the anneal fraction s must
+              increase monotonically.
+            * For reverse annealing, the anneal fraction s must start and end at s=1.
+            * In the final point, anneal fraction s must equal 1 and time t must not exceed the
+              maximum  value in the annealing_time_range property.
+            * The number of points must be >=2.
+            * The upper bound is system-dependent; check the max_anneal_schedule_points property.
+              For reverse annealing, the maximum number of points allowed is one more than the
+              number given by this property.
 
         """
         if 'anneal_schedule' not in self.parameters:

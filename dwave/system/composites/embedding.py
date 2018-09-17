@@ -181,6 +181,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             ...
             {1: -1, 2: 1, 3: 1, 4: -1}
 
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
         """
 
         # solve the problem on the child system
@@ -316,14 +318,18 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         Examples:
             This example uses :class:`.FixedEmbeddingComposite` to instantiate a composed sampler
             that submits an unstructured Ising problem to a D-Wave solver, selected by the user's
-            default D-Wave Cloud Client configuration_ file, while minor-embedding the problem's
-            variables to physical qubits on the solver.
+            default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+            while minor-embedding the problem's variables to physical qubits on the solver.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import FixedEmbeddingComposite
             >>> import dimod
             >>> sampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
             >>> resp = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
+
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
 
