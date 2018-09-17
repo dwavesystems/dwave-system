@@ -1,13 +1,15 @@
 """
-A dimod composite_ that tiles small problems multiple times to a Chimera-structured sampler.
+A :std:doc:`dimod composite <dimod:reference/samplers>` that tiles small problems
+multiple times to a Chimera-structured sampler.
 
-The :class:`.TilingComposite` takes a problem that can fit on a small Chimera_ graph
-and replicates it across a larger Chimera graph to obtain samples from multiple areas
-of the solver in one call. For example, a 2x2 Chimera lattice could be tiled 64 times
-(8x8) on a fully-yielded D-Wave 2000Q system (16x16).
+The :class:`.TilingComposite` takes a problem that can fit on a small
+:std:doc:`Chimera <system:reference/intro>` graph and replicates it across a larger
+Chimera graph to obtain samples from multiple areas of the solver in one call.
+For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded
+D-Wave 2000Q system (16x16).
 
-.. _composite: http://dimod.readthedocs.io/en/latest/reference/samplers.html
-.. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
+of technical terms in descriptions of Ocean tools.
 
 """
 from __future__ import division
@@ -18,7 +20,7 @@ import dwave_networkx as dnx
 
 import numpy as np
 
-__all__ = ['TilingComposite']
+__all__ = ['TilingComposite', 'draw_tiling']
 
 
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
@@ -27,7 +29,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     Inherits from :class:`dimod.Sampler`, :class:`dimod.Composite`, and :class:`dimod.Structured`.
 
     Enables parallel sampling for small problems (problems that are minor-embeddable in
-    a small part of a D-Wave solver's Chimera_ graph).
+    a small part of a D-Wave solver's :std:doc:`Chimera <system:reference/intro>` graph).
 
     The notation *CN* refers to a Chimera graph consisting of an NxN grid of unit cells.
     Each Chimera unit cell is itself a bipartite graph with shores of size t. The D-Wave 2000Q QPU
@@ -37,8 +39,6 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     A problem that can be minor-embedded in a single unit cell, for example, can therefore
     be tiled across the unit cells of a D-Wave 2000Q as 16x16 duplicates. This enables
     sampling 256 solutions in a single call.
-
-    .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
 
     Args:
        sampler (:class:`dimod.Sampler`): Structured dimod sampler to be wrapped.
@@ -50,7 +50,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        This example instantiates a composed sampler using composite :class:`.TilingComposite`
        to tile a QUBO problem on a D-Wave solver, embedding it with composite
        :class:`.EmbeddingComposite` and selecting the D-Wave solver with the user's
-       default D-Wave Cloud Client configuration_ file. The two-variable QUBO represents a
+       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       The two-variable QUBO represents a
        logical NOT gate (two nodes with biases of -1 that are coupled with strength 2) and is
        easily minor-embedded in a single Chimera cell (it needs only any two coupled qubits) and
        so can be tiled multiple times across a D-Wave solver for parallel solution (the two
@@ -76,7 +77,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        {1: 1, 2: 0}
        >>> # Snipped above response for brevity
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
     nodelist = None
@@ -86,7 +88,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        This example creates a :class:`.TilingComposite` for a problem that requires
        a 2x1 Chimera lattice to solve with a :class:`DWaveSampler` as the sampler.
        It prints the active qubits retrieved from a D-Wave solver selected by
-       the user's default D-Wave Cloud Client configuration_ file.
+       the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
        >>> from dwave.system.samplers import DWaveSampler
        >>> from dwave.system.composites import TilingComposite
@@ -94,7 +97,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        >>> sampler_tile.nodelist   # doctest: +SKIP
        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -105,7 +109,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        This example creates a :class:`.TilingComposite` for a problem that requires
        a 1x2 Chimera lattice to solve with a :class:`DWaveSampler` as the sampler.
        It prints the active couplers retrieved from a D-Wave solver selected by
-       the user's default D-Wave Cloud Client configuration_ file.
+       the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
        >>> from dwave.system.samplers import DWaveSampler
        >>> from dwave.system.composites import TilingComposite
@@ -148,7 +153,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        [11, 14],
        [11, 15]]
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
@@ -160,8 +166,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
     Examples:
        This example instantiates a :class:`.TilingComposite` sampler using a D-Wave solver
-       selected by the user's default D-Wave Cloud Client configuration_ file and views the
-       solver's parameters.
+       selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+       and views the solver's parameters.
 
        >>> from dwave.system.samplers import DWaveSampler
        >>> from dwave.system.composites import TilingComposite
@@ -174,7 +181,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         u'auto_scale': ['parameters'],
        >>> # Snipped above response for brevity
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
        """
 
@@ -186,8 +194,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
     Examples:
        This example instantiates a :class:`.TilingComposite` sampler using a D-Wave solver
-       selected by the user's default D-Wave Cloud Client configuration_ file and views the
-       solver's properties.
+       selected by the user's default
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+       and views the solver's properties.
 
        >>> from dwave.system.samplers import DWaveSampler
        >>> from dwave.system.composites import TilingComposite
@@ -202,7 +211,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
           [-0.21700680373359477, 0.005297355417068621],
        >>> # Snipped above response for brevity
 
-    .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
        """
 
@@ -301,9 +311,11 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         Examples:
             This example uses :class:`.TilingComposite` to instantiate a composed sampler
             that submits a simple Ising problem of just two variables that map to qubits 0 and 1
-            on the D-Wave solver selected by the user's default D-Wave Cloud Client
-            configuration_ file. (The simplicity of this example obviates the need for an embedding
-            composite.) Because the problem fits in a single Chimera_ unit cell, it is tiled
+            on the D-Wave solver selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            (The simplicity of this example obviates the need for an embedding
+            composite.) Because the problem fits in a single
+            :std:doc:`Chimera <system:reference/intro>` unit cell, it is tiled
             across the solver's entire Chimera graph, resulting in multiple samples.
 
             >>> from dwave.system.samplers import DWaveSampler
@@ -323,8 +335,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             {0: 1, 1: -1}
             >>> # Snipped above response for brevity
 
-        .. _configuration: http://dwave-cloud-client.readthedocs.io/en/latest/#module-dwave.cloud.config
-        .. _Chimera: http://dwave-system.readthedocs.io/en/latest/reference/intro.html#chimera
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        for explanations of technical terms in descriptions of Ocean tools.
 
         """
 
@@ -369,13 +381,17 @@ def draw_tiling(sampler, t=4):
     """Draw Chimera graph of sampler with colored tiles.
 
     Args:
-        sampler (:class:`dwave_micro_client_dimod.TilingComposite`): A tiled dimod sampler to be drawn.
-        t (int): The size of the shore within each Chimera cell.
+        sampler (:class:`dwave_micro_client_dimod.TilingComposite`): A tiled dimod
+            sampler to be drawn.
+        t (int): The size of the shore within each
+            :std:doc:`Chimera <system:reference/intro>` cell.
 
-    Uses `dwave_networkx.draw_chimera` (see draw_chimera_).
+    Uses :std:doc:`dwave_networkx.draw_chimera <networkx:index>`.
+
     Linear biases are overloaded to color the graph according to which tile each Chimera cell belongs to.
 
-    .. _draw_chimera: http://dwave-networkx.readthedocs.io/en/latest/reference/generated/dwave_networkx.drawing.chimera_layout.draw_chimera.html
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    for explanations of technical terms in descriptions of Ocean tools.
 
     """
 
