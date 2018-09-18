@@ -46,6 +46,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             If specified, used instead of retrieving a value from a
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
+        solver_features (dict, optional):
+            Set of features the used solver has to have. Name-based selection via `solver`
+            argument overrides the feature-based selection. For available features (and values),
+            see: :meth:`~dwave.cloud.client.Client.solvers`.
+
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API. If specified, used instead of
             retrieving a value from a
@@ -79,19 +84,21 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
-    def __init__(self, config_file=None, profile=None, endpoint=None, token=None, solver=None,
-                 proxy=None, permissive_ssl=False):
+    def __init__(self, config_file=None, profile=None, endpoint=None, token=None,
+                 solver=None, solver_features=None, proxy=None, permissive_ssl=False):
 
-        self.client = client = qpuclient.Client.from_config(config_file=config_file, profile=profile,
-                                                            endpoint=endpoint, token=token, proxy=proxy,
-                                                            permissive_ssl=permissive_ssl)
-        self.solver = solver = client.get_solver(name=solver)
+        self.client = qpuclient.Client.from_config(config_file=config_file, profile=profile,
+                                                   endpoint=endpoint, token=token, proxy=proxy,
+                                                   permissive_ssl=permissive_ssl)
+
+        # TODO: deprecate `solver`` name in favor of name regex in `solver_features`
+        self.solver = self.client.get_solver(name=solver, features=solver_features)
 
         # need to set up the nodelist and edgelist, properties, parameters
-        self._nodelist = sorted(solver.nodes)
-        self._edgelist = sorted(set(tuple(sorted(edge)) for edge in solver.edges))
-        self._properties = solver.properties.copy()  # shallow copy
-        self._parameters = {param: ['parameters'] for param in solver.properties['parameters']}
+        self._nodelist = sorted(self.solver.nodes)
+        self._edgelist = sorted(set(tuple(sorted(edge)) for edge in self.solver.edges))
+        self._properties = self.solver.properties.copy()  # shallow copy
+        self._parameters = {param: ['parameters'] for param in self.solver.properties['parameters']}
 
     @property
     def properties(self):
