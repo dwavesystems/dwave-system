@@ -17,15 +17,18 @@ import unittest
 
 import minorminer
 
+from dwave.cloud.exceptions import ConfigFileError
+
 import dwave.system.flux_bias_offsets as fb
+
 
 from dwave.system.samplers import DWaveSampler
 from dwave.system.composites import EmbeddingComposite
 
 try:
-    DWaveSampler(profile='QPU')
+    DWaveSampler()
     _config_found = True
-except ValueError:
+except (ValueError, ConfigFileError):
     _config_found = False
 
 

@@ -19,13 +19,15 @@ import unittest
 import minorminer
 import dimod.testing as dtest
 
+from dwave.cloud.exceptions import ConfigFileError
+
 from dwave.system.composites import VirtualGraphComposite
 from dwave.system.samplers import DWaveSampler
 
 try:
     DWaveSampler()
     _config_found = True
-except ValueError:
+except (ValueError, ConfigFileError):
     _config_found = False
 
 

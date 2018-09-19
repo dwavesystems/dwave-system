@@ -99,7 +99,6 @@ jobs:
           name: doctest
           command: |
             . env/bin/activate
-            export DWAVE_CONFIG_FILE=$(readlink -f dwave.conf)
             make -C docs/ doctest
 
   test-osx-3.7: &osx-tests-template
