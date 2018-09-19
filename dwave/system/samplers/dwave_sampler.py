@@ -22,7 +22,8 @@ for explanations of technical terms in descriptions of Ocean tools.
 from __future__ import division
 
 import dimod
-import dwave.cloud.qpu as qpuclient
+
+from dwave.cloud import Client
 
 __all__ = ['DWaveSampler']
 
@@ -102,9 +103,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def __init__(self, config_file=None, profile=None, endpoint=None, token=None,
                  solver=None, solver_features=None, proxy=None, permissive_ssl=False):
 
-        self.client = qpuclient.Client.from_config(config_file=config_file, profile=profile,
-                                                   endpoint=endpoint, token=token, proxy=proxy,
-                                                   permissive_ssl=permissive_ssl)
+        self.client = Client.from_config(config_file=config_file, profile=profile,
+                                         endpoint=endpoint, token=token, proxy=proxy,
+                                         permissive_ssl=permissive_ssl)
+
+        if solver_features is None:
+            # default to getting a QPU rather than a software solver
+            solver_features = {'qpu': True}
 
         # TODO: deprecate `solver`` name in favor of name regex in `solver_features`
         self.solver = self.client.get_solver(name=solver, features=solver_features)

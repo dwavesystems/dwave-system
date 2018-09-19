@@ -39,7 +39,7 @@ class TestDWaveSamplerSystem(unittest.TestCase):
         J = {(0, 4): 1}
         bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
 
-        response = DWaveSampler(profile='QPU').sample(bqm)
+        response = DWaveSampler(solver_features={'qpu': True}).sample(bqm)
 
         self.assertFalse(np.any(response.samples_matrix == 0))
         self.assertIs(response.vartype, dimod.SPIN)
@@ -50,7 +50,7 @@ class TestDWaveSamplerSystem(unittest.TestCase):
 
     def test_with_software_exact_solver(self):
 
-        sampler = DWaveSampler(profile='software-optimize')
+        sampler = DWaveSampler(solver_features={'qpu': False})
 
         bqm = dimod.BinaryQuadraticModel.empty(dimod.SPIN)
 
