@@ -13,7 +13,7 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 #
-"""This file implements a polynomial-time algorithm to find a maximum-sized 
+"""This file implements a polynomial-time algorithm to find a maximum-sized
 native clique embedding in an induced Chimera subgraph.  It also provides
 functionality to find maximum-sized native embeddings of complete bipartite
 graphs (bicliques).  Additionally, we wrap the polynomial-time algorithm to
@@ -38,14 +38,13 @@ The :class:`processor` class is suitable for end-users.  It can be used to eithe
 produce optimal native embeddings, or approximately-optimal native embeddings.
 
 
-.. [BKR] Tomas Boothby, Andrew D. King, Aidan Roy.  Fast clique minor 
+.. [BKR] Tomas Boothby, Andrew D. King, Aidan Roy.  Fast clique minor
     generation in Chimera qubit connectivity graphs. Quantum Information
     Processing, (2015).  http://arxiv.org/abs/1507.04774
 """
-
 from random import shuffle, randint, choice, sample
 from collections import defaultdict
-from itertools import izip, islice, imap, product, ifilter
+from itertools import product
 
 
 def _accumulate_random(count, found, oldthing, newthing):
@@ -647,7 +646,7 @@ class eden_processor(object):
             return min(k), max(k)
 
         feasible_sizes = {mn for mn, S in Siz2Len.iteritems()
-                          if any(imap(acceptable_chains, S))}
+                          if any(map(acceptable_chains, S))}
         m, n = max(feasible_sizes, key=sortedpair)
         best_r = None
         best_ab = overkill, overkill
@@ -672,7 +671,7 @@ class eden_processor(object):
         INPUTS:
             n (int): target size for one side of the bipartition
 
-            m (int): target size for the other side of the bipartition, or 
+            m (int): target size for the other side of the bipartition, or
             None for the special case :math:`m=n` (default: ``None``)
 
             chain_imbalance (int): how big of a difference to allow between the
@@ -724,7 +723,7 @@ class eden_processor(object):
             return (m0 >= m and n0 >= n) or (m0 >= n and n0 >= m)
 
         feasible_sizes = {mn for mn, S in Siz2Len.iteritems()
-                          if acceptable_size(mn) and any(imap(acceptable_chains, S))}
+                          if acceptable_size(mn) and any(map(acceptable_chains, S))}
 
         best_r = None
         best_ab = overkill, overkill
@@ -909,7 +908,7 @@ class processor:
             old (tuple): a tuple (score, embedding)
 
             new (tuple): a tuple (score, embedding)
-        
+
         """
         (oldscore, oldthing) = old
         (newscore, newthing) = new
@@ -929,12 +928,12 @@ class processor:
             old (tuple): a tuple (score, embedding)
 
             new (tuple): a tuple (score, embedding)
-        
+
         """
         (oldscore, oldthing) = old
         (newscore, newthing) = new
         def measure(chains):
-            return sum(imap(len,chains))
+            return sum(map(len,chains))
 
         if oldscore is None:
             return True
@@ -944,10 +943,10 @@ class processor:
             if not len(oldthing):
                 return True
             elif isinstance(newthing,tuple):
-                newlengths = sum(imap(measure,newthing))
-                oldlengths = sum(imap(measure,oldthing))
+                newlengths = sum(map(measure,newthing))
+                oldlengths = sum(map(measure,oldthing))
                 return newlengths < oldlengths
-            else:            
+            else:
                 return measure(newthing) < measure(oldthing)
         else:
             return False
@@ -1097,7 +1096,7 @@ class processor:
         INPUTS:
             n (int): target size for one side of the bipartition
 
-            m (int): target size for the other side of the bipartition, or 
+            m (int): target size for the other side of the bipartition, or
             None for the special case ``m=n`` (default: ``None``)
 
             chain_imbalance (int): how big of a difference to allow between the
