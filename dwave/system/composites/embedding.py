@@ -222,7 +222,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return dimod.unembed_response(response, embedding, source_bqm=bqm)
+        return dimod.unembed_response(response, embedding, source_bqm=bqm, chain_break_fraction=True)
 
 
 class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
@@ -364,7 +364,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return dimod.unembed_response(response, embedding, source_bqm=bqm)
+        return dimod.unembed_response(response, embedding, source_bqm=bqm, chain_break_fraction=True)
 
 
 def _adjacency_to_edges(adjacency):
