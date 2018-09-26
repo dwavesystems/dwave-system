@@ -1199,11 +1199,17 @@ def random_processor(M, N, L, qubit_yield, num_evil=0):
         proc (:class:`processor`): a :class:`processor` instance with a random
             collection of qubits and couplers as specified
     """
+    # replacement for lambda in edge filter below that works with bot h
+    def edge_filter(pq):
+        # we have to unpack the (p,q) edge
+        p,q = pq
+        return q in qubits and p < q
+
     qubits = [(x, y, u, k) for x in range(M) for y in range(N) for u in [0, 1] for k in range(L)]
     nqubits = len(qubits)
     qubits = set(sample(qubits, int(nqubits * qubit_yield)))
     edges = ((p, q) for p in qubits for q in _chimera_neighbors(M, N, L, p))
-    edges = filter(lambda (p,q): q in qubits and p < q, edges)
+    edges = filter(edge_filter, edges)
     possibly_evil_edges = [(p, q) for p, q in edges if p[:2] == q[:2]]
     num_evil = min(num_evil, len(possibly_evil_edges))
     evil_edges = sample(possibly_evil_edges, num_evil)
