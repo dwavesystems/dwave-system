@@ -127,6 +127,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         # does not add or remove any parameters
         param = self.child.parameters.copy()
         param['chain_strength'] = []
+        param['chain_break_fraction'] = []
         return param
 
     @property
@@ -157,7 +158,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         """
         return {'child_properties': self.child.properties.copy()}
 
-    def sample(self, bqm, chain_strength=1.0, **parameters):
+    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
         """Sample from the provided binary quadratic model.
 
         Args:
@@ -167,6 +168,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
                 chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_fraction (bool, optional, default=True):
+                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
+                what fraction of the chains were broken before unembedding.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -222,7 +227,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return dimod.unembed_response(response, embedding, source_bqm=bqm, chain_break_fraction=True)
+        return dimod.unembed_response(response, embedding, source_bqm=bqm,
+                                      chain_break_fraction=chain_break_fraction)
 
 
 class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
@@ -274,6 +280,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         self.parameters = parameters = child_sampler.parameters.copy()
         parameters['chain_strength'] = []
+        parameters['chain_break_fraction'] = []
 
         self.properties = {'child_properties': child_sampler.properties.copy()}
 
@@ -313,7 +320,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
     """
 
     @dimod.bqm_structured
-    def sample(self, bqm, chain_strength=1.0, **parameters):
+    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
         """Sample from the provided binary quadratic model.
 
         Args:
@@ -323,6 +330,10 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
                 chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_fraction (bool, optional, default=True):
+                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
+                what fraction of the chains were broken before unembedding.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -364,7 +375,8 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return dimod.unembed_response(response, embedding, source_bqm=bqm, chain_break_fraction=True)
+        return dimod.unembed_response(response, embedding, source_bqm=bqm,
+                                      chain_break_fraction=chain_break_fraction)
 
 
 def _adjacency_to_edges(adjacency):
