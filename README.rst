@@ -1,17 +1,17 @@
 .. image:: https://img.shields.io/pypi/v/dwave-system.svg
-    :target: https://pypi.python.org/pypi/dwave-system
+   :target: https://pypi.python.org/pypi/dwave-system
 
 .. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
-    :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
+   :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
 
 .. image:: https://codecov.io/gh/dwavesystems/dwave-system/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/dwavesystems/dwave-system
+   :target: https://codecov.io/gh/dwavesystems/dwave-system
 
-.. image:: https://readthedocs.org/projects/dwave-system/badge/?version=latest
-    :target: http://dwave-system.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.com/projects/d-wave-systems-dwave-system/badge/?version=latest
+   :target: https://docs.ocean.dwavesys.com/projects/system/en/latest/?badge=latest
 
 .. image:: https://circleci.com/gh/dwavesystems/dwave-system.svg?style=svg
-    :target: https://circleci.com/gh/dwavesystems/dwave-system
+   :target: https://circleci.com/gh/dwavesystems/dwave-system
 
 .. index-start-marker
 
