@@ -50,7 +50,7 @@ class TestDWaveSamplerSystem(unittest.TestCase):
 
     def test_with_software_exact_solver(self):
 
-        sampler = DWaveSampler(solver_features={'qpu': False})
+        sampler = DWaveSampler(solver_features={'software': True})
 
         bqm = dimod.BinaryQuadraticModel.empty(dimod.SPIN)
 

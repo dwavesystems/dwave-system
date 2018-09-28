@@ -119,13 +119,13 @@ class MockSolver():
 
 
 class TestDwaveSampler(unittest.TestCase):
-    @mock.patch('dwave.cloud.qpu.Client')
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def setUp(self, MockClient):
-        instance = MockClient.from_config.return_value
-        instance.get_solver.return_value = MockSolver()
 
         # using the mock
         self.sampler = DWaveSampler()
+
+        self.sampler.solver = MockSolver()
 
     def test_sample_ising_variables(self):
 
