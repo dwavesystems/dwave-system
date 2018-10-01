@@ -357,9 +357,6 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
             if self.flux_biases is not None:
                 kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
-        # Embed arguments providing initial states for reverse annealing, if applicable.
-        kwargs = _embed_initial_state_kwargs(kwargs, self.child.embedding, child.child.structure[0])
-
         return child.sample(bqm, **kwargs)
 
 
@@ -388,79 +385,3 @@ def _validate_chain_strength(sampler, chain_strength):
         raise ValueError("Provided chain strength exceedds the allowed range.")
 
     return chain_strength
-
-
-def _embed_initial_state(initial_state, embedding, qubits):
-    """Embed the states provided by the initial_state parameter used for reverse annealing.
-
-    Args:
-
-        initial_state (list of lists): Logical initial state as it would be passed to SAPI for reverse annealing.
-
-        embedding (dict): The embedding used to embed the initial state.  Maps logical indices to chains.
-
-        qubits (list): A list of qubits on the target topology.
-
-
-    Returns (list of lists):
-
-        The initial_state, embedded according to the provided embedding.
-    """
-
-    # Initialize by setting all qubits to 1 (these will be overwritten for active qubits).
-    embedded_state = {q: 1 for q in qubits}
-
-    for logical_idx, logical_value in initial_state:  # Iterate through the logical qubit, state pairs.
-        for embedded_idx in embedding[logical_idx]:  # For each embedded qubit in the corresponding chain...
-            embedded_state[embedded_idx] = int(logical_value)  # make the embedded state equal to the logical state.
-
-    # Convert dictionary to a list of lists.
-    embedded_state_list_of_lists = [[q_emb, embedded_state[q_emb]] for q_emb in sorted(embedded_state.keys())]
-
-    return embedded_state_list_of_lists
-
-
-def _embed_initial_state_kwargs(kwargs, embedding, qubits):
-    """Embed the state(s) used for reverse annealing.
-
-    The keyword argument storing the state(s) will be detected by name and handled appropriately.
-
-    Args:
-
-        kwargs (dict): Dictionary of keyword arguments, one of which must end with "initial_state" or "initial_states".
-
-        embedding (dict): The embedding used to embed the initial state.  Maps logical indices to chains.
-
-        qubits (list): A list of qubits on the target topology.
-
-    Returns (list of lists):
-
-        The initial_state(s), embedded according to the provided embedding.
-    """
-
-    initial_state_kwargs = {k: v for k, v in iteritems(kwargs)
-                            if k.endswith('initial_state') or k.endswith('initial_states')}
-
-    if len(initial_state_kwargs) == 0:
-        return kwargs
-
-    if len(initial_state_kwargs) > 1:
-        raise ValueError("Multiple arguments providing initial states to sample_ising (only one allowed): "
-                         "{}.".format(initial_state_kwargs.keys()))
-
-    initial_state_kwarg_key, initial_state_kwarg_val = next(iteritems(initial_state_kwargs))
-
-    # If it is a single state, embed the single state.
-    if initial_state_kwarg_key.endswith('initial_state'):
-        kwargs[initial_state_kwarg_key] = _embed_initial_state(initial_state_kwarg_val, embedding, qubits)
-
-    # If it is multiple states, embed each one.
-    elif initial_state_kwarg_key.endswith('initial_states'):
-        kwargs[initial_state_kwarg_key] = \
-            [_embed_initial_state(initial_state, embedding, qubits) for initial_state in initial_state_kwarg_val]
-
-    else:
-        raise AssertionError("kwarg should end with 'initial_state' or 'initial_states' "
-                             "but it is {}.".format(initial_state_kwarg_key))
-
-    return kwargs
