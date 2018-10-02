@@ -41,7 +41,7 @@ connectivity). Unit cells are tiled vertically and horizontally with adjacent
 qubits connected, creating a lattice of sparsely connected qubits. A unit cell
 is typically rendered as either a cross or a column.
 
-.. figure:: ../_static/ChimeraUnitCell.png
+.. figure:: _static/ChimeraUnitCell.png
 	:align: center
 	:name: ChimeraUnitCell
 	:scale: 40 %
@@ -49,7 +49,7 @@ is typically rendered as either a cross or a column.
 
 	Chimera unit cell.
 
-.. figure:: ../_static/chimera.png
+.. figure:: _static/chimera.png
   :name: chimera
   :scale: 70 %
   :alt: Chimera graph.  qubits are arranged in unit cells that form bipartite connections.
