@@ -31,7 +31,7 @@ of technical terms in descriptions of Ocean tools.
 import dimod
 import minorminer
 
-__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite']
+__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyEmbeddingComposite']
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
@@ -400,3 +400,30 @@ def _adjacency_to_edges(adjacency):
 def _embed_state(embedding, state):
     """Embed a single state/sample by spreading it's values over the chains in the embedding"""
     return {u: state[v] for v, chain in embedding.items() for u in chain}
+
+
+class LazyEmbeddingComposite(FixedEmbeddingComposite):
+
+    def __init__(self, child_sampler):
+        if not isinstance(child_sampler, dimod.Structured):
+            raise dimod.InvalidComposition("LazyEmbeddingComposite should only be applied to a Structured sampler")
+        self.children = [child_sampler]
+        self.embedding = None
+
+    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
+        if self.embedding is None:
+            # solve the problem on the child system
+            child = self.child
+
+            # apply the embedding to the given problem to map it to the child sampler
+            __, target_edgelist, target_adjacency = child.structure
+
+            # add self-loops to edgelist to handle singleton variables
+            source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]
+
+            # get the embedding
+            embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
+
+            super().__init__(self.children[0], embedding)
+
+        return super().sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
