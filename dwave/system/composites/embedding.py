@@ -263,7 +263,10 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
             raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
 
         self.children = [child_sampler]
+        self._set_embedding_init(embedding)
 
+    def _set_embedding_init(self, embedding):
+        child_sampler = self.children[0]
         # Derive the structure of our composed sampler from the target graph and the embedding
         source_adjacency = dimod.embedding.target_to_source(child_sampler.adjacency, embedding)
         try:
@@ -407,6 +410,7 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
     def __init__(self, child_sampler):
         if not isinstance(child_sampler, dimod.Structured):
             raise dimod.InvalidComposition("LazyEmbeddingComposite should only be applied to a Structured sampler")
+        #self.child_sampler = child_sampler
         self.children = [child_sampler]
         self.embedding = None
 
@@ -424,6 +428,7 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
             # get the embedding
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
-            super().__init__(self.children[0], embedding)
+            #super().__init__(self.child_sampler, embedding)
+            super()._set_embedding_init(embedding)
 
         return super().sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
