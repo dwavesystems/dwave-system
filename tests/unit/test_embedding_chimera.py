@@ -14,83 +14,12 @@
 #
 # ================================================================================================
 
-from dwave.embedding.chimera_embedding import processor, _bulk_to_linear, _to_linear, _bulk_to_chimera, _to_chimera, _chimera_neighbors, random_processor
+import unittest
+
 from collections import defaultdict
-from nose import with_setup
 
-
-def setup_eden_tests():
-    global eden_proc
-
-    M = 12
-    N = 7
-    L = 4
-
-    eden_qubits = [(x, y, u, k) for x in xrange(M)
-                   for y in xrange(N) for u in (0, 1) for k in xrange(L)]
-
-    # one K_12, contains K_{8,8}
-    Cliq1 = {(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (0, 2)}
-
-    # another K_12
-    Cliq2 = {(1, 4), (0, 5), (0, 6), (1, 5), (1, 6), (2, 5)}
-
-    # K_{12,16} after deleting all horizontal qubits in alternating rows
-    Rect1 = {(x, y) for x in range(4, 7) for y in range(7)}
-    kill1 = {}
-
-    # deleting those alternating rows
-    Rect2 = {(x, y) for x in range(4, 7) for y in range(1, 7, 2)}
-    kill2 = {(0, 0), (0, 1), (0, 2), (0, 3)}
-
-    # K_{12,12} after deleting all u=1,k=3
-    Rect3 = {(x, y) for x in range(8, 12) for y in range(3)}
-    kill3 = {(1, 3)}
-
-    # K_{8,16}
-    Rect4 = {(x, y) for x in range(8, 12) for y in range(4, 6)}
-    kill4 = {}
-
-    XYFilter = Cliq1 | Cliq2 | Rect1 | Rect2 | Rect3 | Rect4
-    def f(x, y, u, k): return (x, y)
-    eden_qubits = filter(f in XYFilter, eden_qubits)
-
-    for rect, kill in zip((Rect1, Rect2, Rect3, Rect4), (kill1, kill2, kill3, kill4)):
-        def killf(x, y, u, k): return (((x, y) not in rect) or ((u, k) not in kill))
-        eden_qubits = filter(killf, eden_qubits)
-
-    eden_qubits = set(eden_qubits)
-    eden_couplers = [(q, n) for q in eden_qubits for n in set(
-        _chimera_neighbors(M, N, L, q)) & eden_qubits]
-    eden_couplers.extend(((x, y, 0, 0), (x, y, 1, 0))
-                         for x, y in ((2, 2), (2, 3), (3, 3)))
-
-    eden_couplers = [_bulk_to_linear(M, N, L, c) for c in eden_couplers]
-    eden_proc = processor(eden_couplers, M=M, N=N, L=L)
-    eden_proc._linear = False
-
-
-def setup_eden2_tests():
-    global eden2_proc
-
-    M = 6
-    N = 6
-    L = 4
-
-    eden_qubits = [(x, y, u, k) for x in xrange(M)
-                   for y in xrange(N) for u in (0, 1) for k in xrange(L)]
-    dead_qubits = [(3, 3, 1, 2), (4, 3, 0, 0), (4, 3, 1, 0), (5, 3, 1, 0), (3, 4, 0, 1), (3, 4, 1, 0),
-                   (3, 4, 1, 2), (4, 4, 0, 0), (4, 4, 1, 1), (3, 5, 0, 0), (3, 5, 0, 1), (3, 5, 0, 2)]
-    XYFilter = [(0, 2), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5),
-                (4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (5, 0), (5, 1), (5, 2), (5, 3)]
-    eden_qubits = filter(lambda x, y, u, k: (
-        x, y) in XYFilter, set(eden_qubits) - set(dead_qubits))
-    eden_qubits = set(eden_qubits)
-    eden_couplers = [(q, n) for q in eden_qubits for n in set(
-        _chimera_neighbors(M, N, L, q)) & eden_qubits]
-    eden_couplers = [_bulk_to_linear(M, N, L, c) for c in eden_couplers]
-    eden2_proc = processor(eden_couplers, M=M)
-    eden2_proc._linear = False
+from dwave.embedding.chimera_embedding import processor, _bulk_to_linear, _to_linear, _bulk_to_chimera
+from dwave.embedding.chimera_embedding import _chimera_neighbors, random_processor, _to_chimera
 
 
 def verify_chains(Proc, emb):
@@ -137,220 +66,269 @@ def verify_biclique(Proc, emb, num_A, num_B, len_A, len_B):
                 u in proc[v] for u in e for v in f), "no coupler between %s and %s" % (e, f)
 
 
-@with_setup(setup_eden_tests)
-def clique_12_uniformity_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    runs = 100
-    for _ in range(runs):
-        emb = eden_proc.largestNativeClique(max_chain_length=4)
-        cliques[frozenset(map(tuple, emb))] += 1
-    assert len(cliques) == 2, "should have found exactly 2 cliques."
-    A, B = cliques.keys()
-    verify_clique(eden_proc, list(A), 12, 4)
-    verify_clique(eden_proc, list(B), 12, 4)
+class TestEden(unittest.TestCase):
+    def setUp(self):
 
-    a, b = cliques.values()
-    assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
-    # shoddy statistics:
-    # >>> from random import randint
-    # >>> M = 100
-    # >>> N = 1000000
-    # >>> f = sum(abs(2*sum(randint(0,1) for _ in xrange(M))-M)>3*(M**.5) for _ in range(N))/float(N)
-    # >>> print "%.2f chance of failure"%f
+        M = 12
+        N = 7
+        L = 4
+
+        eden_qubits = [(x, y, u, k) for x in xrange(M)
+                       for y in xrange(N) for u in (0, 1) for k in xrange(L)]
+
+        # one K_12, contains K_{8,8}
+        Cliq1 = {(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (0, 2)}
+
+        # another K_12
+        Cliq2 = {(1, 4), (0, 5), (0, 6), (1, 5), (1, 6), (2, 5)}
+
+        # K_{12,16} after deleting all horizontal qubits in alternating rows
+        Rect1 = {(x, y) for x in range(4, 7) for y in range(7)}
+        kill1 = {}
+
+        # deleting those alternating rows
+        Rect2 = {(x, y) for x in range(4, 7) for y in range(1, 7, 2)}
+        kill2 = {(0, 0), (0, 1), (0, 2), (0, 3)}
+
+        # K_{12,12} after deleting all u=1,k=3
+        Rect3 = {(x, y) for x in range(8, 12) for y in range(3)}
+        kill3 = {(1, 3)}
+
+        # K_{8,16}
+        Rect4 = {(x, y) for x in range(8, 12) for y in range(4, 6)}
+        kill4 = {}
+
+        XYFilter = Cliq1 | Cliq2 | Rect1 | Rect2 | Rect3 | Rect4
+        eden_qubits = filter(lambda (x, y, u, k): (x, y) in XYFilter, eden_qubits)
+
+        for rect, kill in zip((Rect1, Rect2, Rect3, Rect4), (kill1, kill2, kill3, kill4)):
+            killf = lambda (x, y, u, k): (
+                ((x, y) not in rect) or ((u, k) not in kill))
+            eden_qubits = filter(killf, eden_qubits)
+
+        eden_qubits = set(eden_qubits)
+        eden_couplers = [(q, n) for q in eden_qubits for n in set(
+            _chimera_neighbors(M, N, L, q)) & eden_qubits]
+        eden_couplers.extend(((x, y, 0, 0), (x, y, 1, 0))
+                             for x, y in ((2, 2), (2, 3), (3, 3)))
+
+        eden_couplers = [_bulk_to_linear(M, N, L, c) for c in eden_couplers]
+        self.eden_proc = eden_proc = processor(eden_couplers, M=M, N=N, L=L)
+        eden_proc._linear = False
+
+    def test_clique_12_uniformity(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        runs = 100
+        for _ in range(runs):
+            emb = eden_proc.largestNativeClique(max_chain_length=4)
+            cliques[frozenset(map(tuple, emb))] += 1
+        assert len(cliques) == 2, "should have found exactly 2 cliques."
+        A, B = cliques.keys()
+        verify_clique(eden_proc, list(A), 12, 4)
+        verify_clique(eden_proc, list(B), 12, 4)
+
+        a, b = cliques.values()
+        assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
+        # shoddy statistics:
+        # >>> from random import randint
+        # >>> M = 100
+        # >>> N = 1000000
+        # >>> f = sum(abs(2*sum(randint(0,1) for _ in xrange(M))-M)>3*(M**.5) for _ in range(N))/float(N)
+        # >>> print "%.2f chance of failure"%f
+
+    def test_clique_12(self):
+        eden_proc = self.eden_proc
+        emb = eden_proc.largestNativeClique()
+        verify_clique(eden_proc, emb, 12, 4)
+
+    def test_biclique_balanced(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.largestNativeBiClique(chain_imbalance=0)
+        verify_biclique(eden_proc, emb, 12, 9, 3, 3)
+
+    def test_biclique_balanced_length2(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.largestNativeBiClique(
+            chain_imbalance=0, max_chain_length=2)
+        verify_biclique(eden_proc, emb, 8, 8, 2, 2)
+
+    def test_biclique_balanced_length3(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.largestNativeBiClique(
+            chain_imbalance=None, max_chain_length=3)
+        verify_biclique(eden_proc, emb, 12, 9, 3, 3)
+
+    def test_biclique_largest(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.largestNativeBiClique(chain_imbalance=None)
+        verify_biclique(eden_proc, emb, 16, 12, 3, 7)
+
+    def test_biclique_tightest(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.tightestNativeBiClique(8, 12, chain_imbalance=None)
+        verify_biclique(eden_proc, emb, 8, 12, 3, 2)
+
+    def test_biclique_tightest88(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.tightestNativeBiClique(8, chain_imbalance=None)
+        verify_biclique(eden_proc, emb, 8, 8, 2, 2)
+
+    def test_biclique_tightest(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        emb = eden_proc.tightestNativeBiClique(8, 12, chain_imbalance=None)
+        verify_biclique(eden_proc, emb, 8, 12, 3, 2)
+
+    def test_random_bundle(self):
+        eden_proc = self.eden_proc
+        cliques = defaultdict(int)
+        couplers = [((0, 0, 0, 0), (0, 0, 1, 0)), ((0, 0, 0, 0), (0, 0, 1, 1))]
+        proc = processor(couplers, M=1, N=1, L=2, linear=False)
+        proc0 = proc._proc0
+        proc0.random_bundles = True
+
+        runs = 100
+        for _ in range(runs):
+            emb = proc0.largestNativeClique(max_chain_length=2)[1]
+            cliques[frozenset(map(tuple, emb))] += 1
+        assert len(cliques) == 2, "should have found exactly 2 cliques, got %s" % (len(cliques))
+        A, B = cliques.keys()
+        verify_clique(eden_proc, list(A), 1, 2)
+        verify_clique(eden_proc, list(B), 1, 2)
+
+        a, b = cliques.values()
+        assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
 
 
-@with_setup(setup_eden_tests)
-def clique_12_test():
-    global eden_proc
-    emb = eden_proc.largestNativeClique()
-    verify_clique(eden_proc, emb, 12, 4)
+class TestEden2(unittest.TestCase):
+    def setUp(self):
+        M = 6
+        N = 6
+        L = 4
+
+        eden_qubits = [(x, y, u, k) for x in xrange(M)
+                       for y in xrange(N) for u in (0, 1) for k in xrange(L)]
+        dead_qubits = [(3, 3, 1, 2), (4, 3, 0, 0), (4, 3, 1, 0), (5, 3, 1, 0), (3, 4, 0, 1), (3, 4, 1, 0),
+                       (3, 4, 1, 2), (4, 4, 0, 0), (4, 4, 1, 1), (3, 5, 0, 0), (3, 5, 0, 1), (3, 5, 0, 2)]
+        XYFilter = [(0, 2), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5),
+                    (4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (5, 0), (5, 1), (5, 2), (5, 3)]
+        eden_qubits = filter(lambda (x, y, u, k): (
+            x, y) in XYFilter, set(eden_qubits) - set(dead_qubits))
+        eden_qubits = set(eden_qubits)
+        eden_couplers = [(q, n) for q in eden_qubits for n in set(
+            _chimera_neighbors(M, N, L, q)) & eden_qubits]
+        eden_couplers = [_bulk_to_linear(M, N, L, c) for c in eden_couplers]
+        eden2_proc = processor(eden_couplers, M=M)
+        eden2_proc._linear = False
+
+        self.eden2_proc = eden2_proc
+
+    def test_clique_18_test(self):
+        eden2_proc = self.eden2_proc
+        emb = eden2_proc.largestNativeClique()
+        verify_clique(eden2_proc, emb, 18, 7)
+        emb = eden2_proc.nativeCliqueEmbed(6)
+        verify_clique(eden2_proc, emb, 18, 7)
+
+    def test_clique_17(self):
+        eden2_proc = self.eden2_proc
+        emb = eden2_proc.largestNativeClique(max_chain_length=6)
+        verify_clique(eden2_proc, emb, 17, 6)
+        emb = eden2_proc.nativeCliqueEmbed(5)
+        verify_clique(eden2_proc, emb, 17, 6)
+        emb = eden2_proc.tightestNativeClique(17)
+        verify_clique(eden2_proc, emb, 17, 6)
+
+    def test_clique_15(self):
+        eden2_proc = self.eden2_proc
+        emb = eden2_proc.largestNativeClique(max_chain_length=5)
+        verify_clique(eden2_proc, emb, 15, 5)
+        emb = eden2_proc.nativeCliqueEmbed(4)
+        verify_clique(eden2_proc, emb, 15, 5)
+        emb = eden2_proc.tightestNativeClique(15)
+        verify_clique(eden2_proc, emb, 15, 5)
+
+    def test_clique_toobig(self):
+        eden2_proc = self.eden2_proc
+        emb = eden2_proc.tightestNativeClique(20)
+        assert emb == []
 
 
-@with_setup(setup_eden2_tests)
-def clique_18_test():
-    global eden2_proc
-    emb = eden2_proc.largestNativeClique()
-    verify_clique(eden2_proc, emb, 18, 7)
-    emb = eden2_proc.nativeCliqueEmbed(6)
-    verify_clique(eden2_proc, emb, 18, 7)
+class TestGeneric(unittest.TestCase):
+    def test_evil_K_2_2(self):
+        couplers = [((0, 0, 0, i), (1, 0, 0, i)) for i in range(4)]
+        couplers += [((0, 0, 1, i), (0, 1, 1, i)) for i in range(4)]
+        couplers += [((0, 0, 0, 0), (0, 0, 1, 0))]
+        proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=2**16)
 
-
-@with_setup(setup_eden2_tests)
-def clique_17_test():
-    global eden2_proc
-    emb = eden2_proc.largestNativeClique(max_chain_length=6)
-    verify_clique(eden2_proc, emb, 17, 6)
-    emb = eden2_proc.nativeCliqueEmbed(5)
-    verify_clique(eden2_proc, emb, 17, 6)
-    emb = eden2_proc.tightestNativeClique(17)
-    verify_clique(eden2_proc, emb, 17, 6)
-
-
-def clique_15_test():
-    global eden2_proc
-    emb = eden2_proc.largestNativeClique(max_chain_length=5)
-    verify_clique(eden2_proc, emb, 15, 5)
-    emb = eden2_proc.nativeCliqueEmbed(4)
-    verify_clique(eden2_proc, emb, 15, 5)
-    emb = eden2_proc.tightestNativeClique(15)
-    verify_clique(eden2_proc, emb, 15, 5)
-
-
-def clique_toobig_test():
-    global eden2_proc
-    emb = eden2_proc.tightestNativeClique(20)
-    assert emb == []
-
-
-@with_setup(setup_eden_tests)
-def biclique_balanced_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.largestNativeBiClique(chain_imbalance=0)
-    verify_biclique(eden_proc, emb, 12, 9, 3, 3)
-
-
-@with_setup(setup_eden_tests)
-def biclique_balanced_length2_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.largestNativeBiClique(
-        chain_imbalance=0, max_chain_length=2)
-    verify_biclique(eden_proc, emb, 8, 8, 2, 2)
-
-
-@with_setup(setup_eden_tests)
-def biclique_balanced_length3_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.largestNativeBiClique(
-        chain_imbalance=None, max_chain_length=3)
-    verify_biclique(eden_proc, emb, 12, 9, 3, 3)
-
-
-@with_setup(setup_eden_tests)
-def biclique_largest_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.largestNativeBiClique(chain_imbalance=None)
-    verify_biclique(eden_proc, emb, 16, 12, 3, 7)
-
-
-@with_setup(setup_eden_tests)
-def biclique_tightest_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.tightestNativeBiClique(8, 12, chain_imbalance=None)
-    verify_biclique(eden_proc, emb, 8, 12, 3, 2)
-
-
-@with_setup(setup_eden_tests)
-def biclique_tightest88_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.tightestNativeBiClique(8, chain_imbalance=None)
-    verify_biclique(eden_proc, emb, 8, 8, 2, 2)
-
-
-@with_setup(setup_eden_tests)
-def biclique_tightest_test():
-    global eden_proc
-    cliques = defaultdict(int)
-    emb = eden_proc.tightestNativeBiClique(8, 12, chain_imbalance=None)
-    verify_biclique(eden_proc, emb, 8, 12, 3, 2)
-
-
-def evil_K_2_2_test():
-    couplers = [((0, 0, 0, i), (1, 0, 0, i)) for i in range(4)]
-    couplers += [((0, 0, 1, i), (0, 1, 1, i)) for i in range(4)]
-    couplers += [((0, 0, 0, 0), (0, 0, 1, 0))]
-    proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=2**16)
-
-    emb = proc.tightestNativeBiClique(1, 1)
-    verify_biclique(proc, emb, 1, 1, 1, 1)
-
-    for _ in range(100):  # this should be plenty
-        proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=4)
         emb = proc.tightestNativeBiClique(1, 1)
-        if emb is not None:
-            break
-    verify_biclique(proc, emb, 1, 1, 1, 1)
+        verify_biclique(proc, emb, 1, 1, 1, 1)
 
+        for _ in range(100):  # this should be plenty
+            proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=4)
+            emb = proc.tightestNativeBiClique(1, 1)
+            if emb is not None:
+                break
+        verify_biclique(proc, emb, 1, 1, 1, 1)
 
-def objectives_test():
-    couplers = [((0, 0, 0, i), (1, 0, 0, i)) for i in range(4)]
-    couplers += [((0, 0, 1, i), (0, 1, 1, i)) for i in range(4)]
-    couplers += [((0, 0, 0, 0), (0, 0, 1, 0))]
-    proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=2**16)
+    def test_objectives(self):
+        couplers = [((0, 0, 0, i), (1, 0, 0, i)) for i in range(4)]
+        couplers += [((0, 0, 1, i), (0, 1, 1, i)) for i in range(4)]
+        couplers += [((0, 0, 0, 0), (0, 0, 1, 0))]
+        proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=2**16)
 
-    empty = proc._subprocessor(proc._proc0) #an eden_processor with all qubits disabled
-    emb = proc.tightestNativeBiClique(0,0)
-    proc._processors = [empty] + proc._processors + [empty] 
-    verify_biclique(proc, emb, 0, 0, 0, 0)
+        empty = proc._subprocessor(proc._proc0) #an eden_processor with all qubits disabled
+        emb = proc.tightestNativeBiClique(0,0)
+        proc._processors = [empty] + proc._processors + [empty] 
+        verify_biclique(proc, emb, 0, 0, 0, 0)
 
-    empty.largestNativeBiClique = lambda *a,**k:(None,None)
-    emb = proc.largestNativeBiClique()
-    verify_biclique(proc, emb, 1, 1, 1, 1)
+        empty.largestNativeBiClique = lambda *a,**k:(None,None)
+        emb = proc.largestNativeBiClique()
+        verify_biclique(proc, emb, 1, 1, 1, 1)
 
+    def test_proclimit_cornercase(self):
+        couplers  = [((0, y, 1, i), (0, y + 1, 1, i)) for y in xrange(2) for i in xrange(4)]
+        couplers += [((0, y, 1, i), (0, y, 0, j)) for y in xrange(3) for i in xrange(4) for j in xrange(4) if i != 0 or j != y]
+        emb = None
+        count = 0
+        while emb is None and count < 100:
+            proc = processor(couplers, M=1, N=3, L=4, linear=False, proc_limit=2000)
+            emb = proc.tightestNativeBiClique(3, 9, chain_imbalance=None)
+            count += 1
+        verify_biclique(proc, emb, 3, 9, 3, 1)
 
-def proclimit_cornercase_test():
-    couplers  = [((0, y, 1, i), (0, y + 1, 1, i)) for y in xrange(2) for i in xrange(4)]
-    couplers += [((0, y, 1, i), (0, y, 0, j)) for y in xrange(3) for i in xrange(4) for j in xrange(4) if i != 0 or j != y]
-    emb = None
-    count = 0
-    while emb is None and count < 100:
-        proc = processor(couplers, M=1, N=3, L=4, linear=False, proc_limit=2000)
-        emb = proc.tightestNativeBiClique(3, 9, chain_imbalance=None)
-        count += 1
-    verify_biclique(proc, emb, 3, 9, 3, 1)
+    def test_linear_embedding(self):
+        proc = random_processor(1,1,2,1)
+        proc._linear = True
+        emb = proc.largestNativeClique()
+        assert len(emb) == 2
+        emb0 = sorted(emb[0])
+        assert emb0 == [0,2] or emb0 == [1,3]
+        emb1 = sorted(emb[1])
+        assert emb1 == [0,2] or emb1 == [1,3]
 
+    def test_qubits_and_couplers(self):
+        M = N = L = 2
+        qubits = {(x,y,u,k) for x in xrange(M) for y in xrange(N) for u in xrange(2) for k in xrange(L)}
+        couplers = [(p,q) for q in qubits for p in _chimera_neighbors(M,N,L,q)]
+        proc = processor(couplers,M=M,N=N,L=L,linear=False)._proc0
+        for q in proc:
+            assert proc[q] == set(_chimera_neighbors(M,N,L,q)), "Neighborhood is wrong!"
+            qubits.remove(q)
+        assert not qubits, "qubits are missing from proc"
 
-def linear_embedding_test():
-    proc = random_processor(1,1,2,1)
-    proc._linear = True
-    emb = proc.largestNativeClique()
-    assert len(emb) == 2
-    emb0 = sorted(emb[0])
-    assert emb0 == [0,2] or emb0 == [1,3]
-    emb1 = sorted(emb[1])
-    assert emb1 == [0,2] or emb1 == [1,3]
-
-def qubits_and_couplers_test():
-    M = N = L = 2
-    qubits = {(x,y,u,k) for x in xrange(M) for y in xrange(N) for u in xrange(2) for k in xrange(L)}
-    couplers = [(p,q) for q in qubits for p in _chimera_neighbors(M,N,L,q)]
-    proc = processor(couplers,M=M,N=N,L=L,linear=False)._proc0
-    for q in proc:
-        assert proc[q] == set(_chimera_neighbors(M,N,L,q)), "Neighborhood is wrong!"
-        qubits.remove(q)
-    assert not qubits, "qubits are missing from proc"
-
-def biclique_cache_test():
-    proc = random_processor(2,2,2,1)._proc0
-    proc._compute_biclique_sizes()
-    proc._biclique_size[None] = None
-    proc._compute_biclique_sizes()
-    assert None in proc._biclique_size
-    proc._compute_biclique_sizes(recompute=True)
-    assert None not in proc._biclique_size
-
-
-def random_bundle_test():
-    cliques = defaultdict(int)
-    couplers = [((0, 0, 0, 0), (0, 0, 1, 0)), ((0, 0, 0, 0), (0, 0, 1, 1))]
-    proc = processor(couplers, M=1, N=1, L=2, linear=False)
-    proc0 = proc._proc0
-    proc0.random_bundles = True
-
-    runs = 100
-    for _ in range(runs):
-        emb = proc0.largestNativeClique(max_chain_length=2)[1]
-        cliques[frozenset(map(tuple, emb))] += 1
-    assert len(cliques) == 2, "should have found exactly 2 cliques, got %s" % (len(cliques))
-    A, B = cliques.keys()
-    verify_clique(eden_proc, list(A), 1, 2)
-    verify_clique(eden_proc, list(B), 1, 2)
-
-    a, b = cliques.values()
-    assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
+    def test_biclique_cache(self):
+        proc = random_processor(2, 2, 2, 1)._proc0
+        proc._compute_biclique_sizes()
+        proc._biclique_size[None] = None
+        proc._compute_biclique_sizes()
+        assert None in proc._biclique_size
+        proc._compute_biclique_sizes(recompute=True)
+        assert None not in proc._biclique_size
