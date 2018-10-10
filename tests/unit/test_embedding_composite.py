@@ -207,7 +207,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
 
         # Check that the same embedding is used
         csp2 = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
-        csp2.add_constraint(or_gate(['a', 'b', 'c']))   #TODO: Same naming must be used. Weird
+        csp2.add_constraint(or_gate(['a', 'b', 'c']))
         bqm2 = dbc.stitch(csp2)
         sampler.sample(bqm2)
 
