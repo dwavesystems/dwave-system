@@ -13,7 +13,7 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 #
-"""This file implements a polynomial-time algorithm to find a maximum-sized 
+"""This file implements a polynomial-time algorithm to find a maximum-sized
 native clique embedding in an induced Chimera subgraph.  It also provides
 functionality to find maximum-sized native embeddings of complete bipartite
 graphs (bicliques).  Additionally, we wrap the polynomial-time algorithm to
@@ -38,14 +38,14 @@ The :class:`processor` class is suitable for end-users.  It can be used to eithe
 produce optimal native embeddings, or approximately-optimal native embeddings.
 
 
-.. [BKR] Tomas Boothby, Andrew D. King, Aidan Roy.  Fast clique minor 
+.. [BKR] Tomas Boothby, Andrew D. King, Aidan Roy.  Fast clique minor
     generation in Chimera qubit connectivity graphs. Quantum Information
     Processing, (2015).  http://arxiv.org/abs/1507.04774
 """
-
+from __future__ import division
 from random import shuffle, randint, choice, sample
 from collections import defaultdict
-from itertools import izip, islice, imap, product, ifilter
+from itertools import product
 
 
 def _accumulate_random(count, found, oldthing, newthing):
@@ -239,10 +239,10 @@ class eden_processor(object):
         else:
             return
         M, N = self.M, self.N
-        for xmax in xrange(M):
-            for xmin in xrange(xmax + 1):
-                for ymax in xrange(N):
-                    for ymin in xrange(ymax + 1):
+        for xmax in range(M):
+            for xmin in range(xmax + 1):
+                for ymax in range(N):
+                    for ymin in range(ymax + 1):
                         ab = self.biclique_size(xmin, xmax, ymin, ymax)
                         wh = xmax - xmin + 1, ymax - ymin + 1
                         self._biclique_size_to_length[ab][
@@ -338,9 +338,9 @@ class eden_processor(object):
             list of lists of qubits
         """
 
-        y_range = xrange(y1, y0 - 1, -1) if y0 < y1 else xrange(y1, y0 + 1)
+        y_range = range(y1, y0 - 1, -1) if y0 < y1 else range(y1, y0 + 1)
         vlines = [[(x0, y, 1, k) for y in y_range] for k in range(self.L)]
-        return filter(self._contains_line, vlines)
+        return list(filter(self._contains_line, vlines))
 
     def maximum_hline_bundle(self, y0, x0, x1):
         """Compute a maximum set of horizontal lines in the unit cells ``(x,y0)``
@@ -352,9 +352,9 @@ class eden_processor(object):
         OUTPUT:
             list of lists of qubits
         """
-        x_range = xrange(x0, x1 + 1) if x0 < x1 else xrange(x0, x1 - 1, -1)
+        x_range = range(x0, x1 + 1) if x0 < x1 else range(x0, x1 - 1, -1)
         hlines = [[(x, y0, 0, k) for x in x_range] for k in range(self.L)]
-        return filter(self._contains_line, hlines)
+        return list(filter(self._contains_line, hlines))
 
     def maximum_ell_bundle(self, ell):
         """Return a maximum ell bundle in the rectangle bounded by
@@ -646,13 +646,13 @@ class eden_processor(object):
         def sortedpair(k):
             return min(k), max(k)
 
-        feasible_sizes = {mn for mn, S in Siz2Len.iteritems()
-                          if any(imap(acceptable_chains, S))}
+        feasible_sizes = {mn for mn, S in Siz2Len.items()
+                          if any(map(acceptable_chains, S))}
         m, n = max(feasible_sizes, key=sortedpair)
         best_r = None
         best_ab = overkill, overkill
         for mn in set(((m, n), (n, m))) & feasible_sizes:
-            for ab, r in Siz2Len[mn].iteritems():
+            for ab, r in Siz2Len[mn].items():
                 ab = max(ab), min(ab)
                 if acceptable_chains(ab) and ab < best_ab:
                     best_ab = ab
@@ -672,7 +672,7 @@ class eden_processor(object):
         INPUTS:
             n (int): target size for one side of the bipartition
 
-            m (int): target size for the other side of the bipartition, or 
+            m (int): target size for the other side of the bipartition, or
             None for the special case :math:`m=n` (default: ``None``)
 
             chain_imbalance (int): how big of a difference to allow between the
@@ -723,14 +723,14 @@ class eden_processor(object):
             m0, n0 = t
             return (m0 >= m and n0 >= n) or (m0 >= n and n0 >= m)
 
-        feasible_sizes = {mn for mn, S in Siz2Len.iteritems()
-                          if acceptable_size(mn) and any(imap(acceptable_chains, S))}
+        feasible_sizes = {mn for mn, S in Siz2Len.items()
+                          if acceptable_size(mn) and any(map(acceptable_chains, S))}
 
         best_r = None
         best_ab = overkill, overkill
         best_mn = None
         for mn in feasible_sizes:
-            for ab, r in Siz2Len[mn].iteritems():
+            for ab, r in Siz2Len[mn].items():
                 ab = max(ab), min(ab)
                 if acceptable_chains(ab) and ab < best_ab:
                     best_ab = ab
@@ -875,7 +875,7 @@ class processor:
                 deletions = sample(deletions, self._proc_limit)
             return (self._subprocessor(d) for d in deletions)
         else:
-            return (self._random_subprocessor() for i in xrange(self._proc_limit))
+            return (self._random_subprocessor() for i in range(self._proc_limit))
 
     def _map_to_processors(self, f, objective):
         """Map a function to a list of processors, and return the output that
@@ -909,7 +909,7 @@ class processor:
             old (tuple): a tuple (score, embedding)
 
             new (tuple): a tuple (score, embedding)
-        
+
         """
         (oldscore, oldthing) = old
         (newscore, newthing) = new
@@ -929,12 +929,12 @@ class processor:
             old (tuple): a tuple (score, embedding)
 
             new (tuple): a tuple (score, embedding)
-        
+
         """
         (oldscore, oldthing) = old
         (newscore, newthing) = new
         def measure(chains):
-            return sum(imap(len,chains))
+            return sum(map(len,chains))
 
         if oldscore is None:
             return True
@@ -944,10 +944,10 @@ class processor:
             if not len(oldthing):
                 return True
             elif isinstance(newthing,tuple):
-                newlengths = sum(imap(measure,newthing))
-                oldlengths = sum(imap(measure,oldthing))
+                newlengths = sum(map(measure,newthing))
+                oldlengths = sum(map(measure,oldthing))
                 return newlengths < oldlengths
-            else:            
+            else:
                 return measure(newthing) < measure(oldthing)
         else:
             return False
@@ -1097,7 +1097,7 @@ class processor:
         INPUTS:
             n (int): target size for one side of the bipartition
 
-            m (int): target size for the other side of the bipartition, or 
+            m (int): target size for the other side of the bipartition, or
             None for the special case ``m=n`` (default: ``None``)
 
             chain_imbalance (int): how big of a difference to allow between the
@@ -1161,12 +1161,12 @@ def _to_linear(M, N, L, q):
 
 def _bulk_to_chimera(M, N, L, qubits):
     "Converts a list of linear indices to chimera coordinates."
-    return [(q / N / L / 2, (q / L / 2) % N, (q / L) % 2, q % L) for q in qubits]
+    return [(q // N // L // 2, (q // L // 2) % N, (q // L) % 2, q % L) for q in qubits]
 
 
 def _to_chimera(M, N, L, q):
     "Converts a qubit's linear index to chimera coordinates."
-    return (q / N / L / 2, (q / L / 2) % N, (q / L) % 2, q % L)
+    return (q // N // L // 2, (q // L // 2) % N, (q // L) % 2, q % L)
 
 
 def _chimera_neighbors(M, N, L, q):
@@ -1199,11 +1199,17 @@ def random_processor(M, N, L, qubit_yield, num_evil=0):
         proc (:class:`processor`): a :class:`processor` instance with a random
             collection of qubits and couplers as specified
     """
+    # replacement for lambda in edge filter below that works with bot h
+    def edge_filter(pq):
+        # we have to unpack the (p,q) edge
+        p,q = pq
+        return q in qubits and p < q
+
     qubits = [(x, y, u, k) for x in range(M) for y in range(N) for u in [0, 1] for k in range(L)]
     nqubits = len(qubits)
     qubits = set(sample(qubits, int(nqubits * qubit_yield)))
     edges = ((p, q) for p in qubits for q in _chimera_neighbors(M, N, L, p))
-    edges = filter(lambda (p,q): q in qubits and p < q, edges)
+    edges = list(filter(edge_filter, edges))
     possibly_evil_edges = [(p, q) for p, q in edges if p[:2] == q[:2]]
     num_evil = min(num_evil, len(possibly_evil_edges))
     evil_edges = sample(possibly_evil_edges, num_evil)
