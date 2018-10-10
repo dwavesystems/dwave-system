@@ -28,6 +28,8 @@ See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ 
 of technical terms in descriptions of Ocean tools.
 
 """
+from builtins import super      # Adding super from future
+
 import dimod
 import minorminer
 
