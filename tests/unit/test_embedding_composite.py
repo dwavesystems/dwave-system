@@ -21,7 +21,6 @@ import dimod
 import dimod.testing as dtest
 
 from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyEmbeddingComposite
-import dwavebinarycsp as dbc
 from dwavebinarycsp.factories.constraint.gates import and_gate, or_gate
 
 from tests.unit.mock_sampler import MockSampler
@@ -180,11 +179,9 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         self.assertIsNone(sampler.parameters)
         self.assertIsNone(sampler.properties)
 
-        # Set up BQM and sample
-        csp = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
-        csp.add_constraint(and_gate(['a', 'b', 'c']))
-        bqm = dbc.stitch(csp)
-        sampler.sample(bqm)
+        # Set up an and_gate BQM and sample
+        Q = {('a', 'a'): 0.0, ('c', 'c'): 6.0, ('b', 'b'): 0.0, ('b', 'a'): 2.0, ('c', 'a'): -4.0, ('c', 'b'): -4.0}
+        sampler.sample_qubo(Q)
 
         # Check that values have been populated
         self.assertIsNotNone(sampler.embedding)
@@ -205,12 +202,11 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         # Store embedding
         prev_embedding = sampler.embedding
 
-        # Check that the same embedding is used
-        csp2 = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
-        csp2.add_constraint(or_gate(['a', 'b', 'c']))
-        bqm2 = dbc.stitch(csp2)
-        sampler.sample(bqm2)
+        # Set up QUBO of an or_gate
+        Q = {('a', 'a'): 2.0, ('c', 'c'): 2.0, ('b', 'b'): 2.0, ('b', 'a'): 2.0, ('c', 'a'): -4.0, ('c', 'b'): -4.0}
+        sampler.sample_qubo(Q)
 
+        # Check that the same embedding is used
         self.assertEqual(sampler.embedding, prev_embedding)
 
     def test_ising(self):
