@@ -13,7 +13,8 @@
 #    limitations under the License.
 #
 # ================================================================================================
-"""This file implements a polynomial-time algorithm to find a maximum-sized
+"""
+This file implements a polynomial-time algorithm to find a maximum-sized
 native clique embedding in an induced Chimera subgraph.  It also provides
 functionality to find maximum-sized native embeddings of complete bipartite
 graphs (bicliques).  Additionally, we wrap the polynomial-time algorithm to
@@ -38,7 +39,7 @@ The :class:`processor` class is suitable for end-users.  It can be used to eithe
 produce optimal native embeddings, or approximately-optimal native embeddings.
 
 
-.. [BKR] Tomas Boothby, Andrew D. King, Aidan Roy.  Fast clique minor
+.. [BKR] Kelly Boothby, Andrew D. King, Aidan Roy.  Fast clique minor
     generation in Chimera qubit connectivity graphs. Quantum Information
     Processing, (2015).  http://arxiv.org/abs/1507.04774
 
@@ -47,6 +48,8 @@ from __future__ import division
 from random import shuffle, randint, choice, sample
 from collections import defaultdict
 from itertools import product
+
+__author__ = "Kelly Boothby"
 
 
 def _accumulate_random(count, found, oldthing, newthing):
