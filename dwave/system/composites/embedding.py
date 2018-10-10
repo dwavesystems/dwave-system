@@ -406,29 +406,22 @@ def _embed_state(embedding, state):
 
 
 class LazyEmbeddingComposite(FixedEmbeddingComposite):
-
     def __init__(self, child_sampler):
         if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("LazyEmbeddingComposite should only be applied to a Structured sampler")
-        #self.child_sampler = child_sampler
+            raise dimod.InvalidComposition('LazyEmbeddingComposite should only be applied to a Structured sampler')
+
         self.children = [child_sampler]
         self.embedding = None
 
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
         if self.embedding is None:
-            # solve the problem on the child system
-            child = self.child
-
-            # apply the embedding to the given problem to map it to the child sampler
+            # Find embedding
+            child = self.child   # Solve the problem on the child system
             __, target_edgelist, target_adjacency = child.structure
-
-            # add self-loops to edgelist to handle singleton variables
-            source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]
-
-            # get the embedding
+            source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]  # Add self-loops for single variables
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
-            #super().__init__(self.child_sampler, embedding)
+            # Set up initialize properties that need embedding
             super()._set_embedding_init(embedding)
 
         return super().sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
