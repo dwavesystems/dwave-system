@@ -217,29 +217,41 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         h = {0: 11, 5: 2}
         J = {(0, 5): -8}
         sampler = LazyEmbeddingComposite(MockSampler())
-        sampler.sample_ising(h, J)
+        response = sampler.sample_ising(h, J)
 
+        # Check embedding
         self.assertIsNotNone(sampler.embedding)
         self.assertEqual(sampler.nodelist, [0, 5])
         self.assertEqual(sampler.edgelist, [(0, 5)])
         self.assertEqual(sampler.adjacency, {0: {5}, 5: {0}})
 
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
+
     def test_qubo(self):
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (2, 3): 5, (1, 3): 6}
         sampler = LazyEmbeddingComposite(MockSampler())
-        sampler.sample_qubo(Q)
+        response = sampler.sample_qubo(Q)
 
+        # Check embedding
         self.assertIsNotNone(sampler.embedding)
         self.assertEqual(sampler.nodelist, [1, 2, 3])
         self.assertEqual(sampler.edgelist, [(1, 2), (1, 3), (2, 3)])
         self.assertEqual(sampler.adjacency, {1: {2, 3}, 2: {1, 3}, 3: {1, 2}})
 
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
+
     def test_sparse_qubo(self):
         # There is no relationship between nodes 2 and 3
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (1, 3): 6}
         sampler = LazyEmbeddingComposite(MockSampler())
-        sampler.sample_qubo(Q)
+        response = sampler.sample_qubo(Q)
 
+        # Check embedding
         self.assertIsNotNone(sampler.embedding)
         self.assertEqual(sampler.nodelist, [1, 2, 3])
         self.assertEqual(sampler.edgelist, [(1, 2), (1, 3)])
+
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
