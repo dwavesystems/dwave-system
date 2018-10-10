@@ -194,9 +194,19 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         self.assertIsNotNone(sampler.parameters)
         self.assertIsNotNone(sampler.properties)
 
-        # Check that the same embedding is used
+    def test_same_embedding(self):
+        sampler = LazyEmbeddingComposite(MockSampler())
+
+        # Set up BQM and sample
+        csp = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
+        csp.add_constraint(and_gate(['a', 'b', 'c']))
+        bqm = dbc.stitch(csp)
+        sampler.sample(bqm)
+
+        # Store embedding
         prev_embedding = sampler.embedding
 
+        # Check that the same embedding is used
         csp2 = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
         csp2.add_constraint(or_gate(['a', 'b', 'c']))   #TODO: Same naming must be used. Weird
         bqm2 = dbc.stitch(csp2)
