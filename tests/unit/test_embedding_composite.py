@@ -234,3 +234,12 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampler.edgelist, [(1, 2), (1, 3), (2, 3)])
         self.assertEqual(sampler.adjacency, {1: {2, 3}, 2: {1, 3}, 3: {1, 2}})
 
+    def test_sparse_qubo(self):
+        # There is no relationship between nodes 2 and 3
+        Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (1, 3): 6}
+        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler.sample_qubo(Q)
+
+        self.assertIsNotNone(sampler.embedding)
+        self.assertEqual(sampler.nodelist, [1, 2, 3])
+        self.assertEqual(sampler.edgelist, [(1, 2), (1, 3)])
