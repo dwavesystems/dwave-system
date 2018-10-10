@@ -4,7 +4,7 @@ dimod==0.7.5
 dwave-cloud-client==0.4.13
 dwave-networkx==0.6.5
 dwave-drivers==0.4.1
-homebase==1.0.0
+homebase==1.0.1
 minorminer==0.1.5
 six==1.11.0
 mock==2.0.0

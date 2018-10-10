@@ -44,6 +44,7 @@ install_requires = ['dimod>=0.7.4,<0.8.0',
 extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0']}
 
 packages = ['dwave',
+            'dwave.embedding',
             'dwave.system',
             'dwave.system.cache',
             'dwave.system.composites',

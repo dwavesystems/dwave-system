@@ -1,22 +1,20 @@
+# Copyright 2016 D-Wave Systems Inc.
 #
-#Copyright 2016 D-Wave Systems Inc.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+#        http://www.apache.org/licenses/LICENSE-2.0
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
-#
+# ================================================================================================
 
-
-from chimera_embedding import polynomialembedder
-from polynomialembedder import processor, _bulk_to_linear, _to_linear, _bulk_to_chimera, _to_chimera, _chimera_neighbors, random_processor
+from dwave.embedding.chimera_embedding import processor, _bulk_to_linear, _to_linear, _bulk_to_chimera, _to_chimera, _chimera_neighbors, random_processor
 from collections import defaultdict
 from nose import with_setup
 
@@ -54,11 +52,11 @@ def setup_eden_tests():
     kill4 = {}
 
     XYFilter = Cliq1 | Cliq2 | Rect1 | Rect2 | Rect3 | Rect4
-    eden_qubits = filter(lambda (x, y, u, k): (x, y) in XYFilter, eden_qubits)
+    def f(x, y, u, k): return (x, y)
+    eden_qubits = filter(f in XYFilter, eden_qubits)
 
     for rect, kill in zip((Rect1, Rect2, Rect3, Rect4), (kill1, kill2, kill3, kill4)):
-        killf = lambda (x, y, u, k): (
-            ((x, y) not in rect) or ((u, k) not in kill))
+        def killf(x, y, u, k): return (((x, y) not in rect) or ((u, k) not in kill))
         eden_qubits = filter(killf, eden_qubits)
 
     eden_qubits = set(eden_qubits)
@@ -85,7 +83,7 @@ def setup_eden2_tests():
                    (3, 4, 1, 2), (4, 4, 0, 0), (4, 4, 1, 1), (3, 5, 0, 0), (3, 5, 0, 1), (3, 5, 0, 2)]
     XYFilter = [(0, 2), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5),
                 (4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (5, 0), (5, 1), (5, 2), (5, 3)]
-    eden_qubits = filter(lambda (x, y, u, k): (
+    eden_qubits = filter(lambda x, y, u, k: (
         x, y) in XYFilter, set(eden_qubits) - set(dead_qubits))
     eden_qubits = set(eden_qubits)
     eden_couplers = [(q, n) for q in eden_qubits for n in set(

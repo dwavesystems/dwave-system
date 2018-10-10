@@ -1,18 +1,18 @@
+# Copyright 2016 D-Wave Systems Inc.
 #
-#Copyright 2016 D-Wave Systems Inc.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+#        http://www.apache.org/licenses/LICENSE-2.0
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
-#
+# ================================================================================================
 """This file implements a polynomial-time algorithm to find a maximum-sized
 native clique embedding in an induced Chimera subgraph.  It also provides
 functionality to find maximum-sized native embeddings of complete bipartite
@@ -41,6 +41,7 @@ produce optimal native embeddings, or approximately-optimal native embeddings.
 .. [BKR] Tomas Boothby, Andrew D. King, Aidan Roy.  Fast clique minor
     generation in Chimera qubit connectivity graphs. Quantum Information
     Processing, (2015).  http://arxiv.org/abs/1507.04774
+
 """
 from __future__ import division
 from random import shuffle, randint, choice, sample
