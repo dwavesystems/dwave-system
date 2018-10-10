@@ -406,6 +406,13 @@ def _embed_state(embedding, state):
 
 
 class LazyEmbeddingComposite(FixedEmbeddingComposite):
+    """ Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+    for all following sample(..) calls.
+
+    Args:
+        sampler (dimod.Sampler):
+            Structured dimod sampler.
+    """
     def __init__(self, child_sampler):
         if not isinstance(child_sampler, dimod.Structured):
             raise dimod.InvalidComposition('LazyEmbeddingComposite should only be applied to a Structured sampler')
@@ -414,6 +421,11 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
         self.embedding = None
 
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
+        """ Sample the binary quadratic model.
+
+        Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
+        before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
+        """
         if self.embedding is None:
             # Find embedding
             child = self.child   # Solve the problem on the child system
