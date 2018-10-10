@@ -21,7 +21,6 @@ import dimod
 import dimod.testing as dtest
 
 from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyEmbeddingComposite
-from dwavebinarycsp.factories.constraint.gates import and_gate, or_gate
 
 from tests.unit.mock_sampler import MockSampler
 
