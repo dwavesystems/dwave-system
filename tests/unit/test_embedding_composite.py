@@ -20,7 +20,9 @@ from collections import Mapping
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite
+from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyEmbeddingComposite
+import dwavebinarycsp as dbc
+from dwavebinarycsp.factories.constraint.gates import and_gate, or_gate
 
 from tests.unit.mock_sampler import MockSampler
 
@@ -165,3 +167,39 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         resp = sampler.sample_ising({'a': 1, 'b': 1, 'c': 0}, {})
 
         self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
+
+
+class TestLazyEmbeddingComposite(unittest.TestCase):
+    def test_sample_instantiation(self):
+        # Check that values have not been instantiated
+        sampler = LazyEmbeddingComposite(MockSampler())
+        self.assertIsNone(sampler.embedding)
+        self.assertIsNone(sampler.nodelist)
+        self.assertIsNone(sampler.edgelist)
+        self.assertIsNone(sampler.adjacency)
+        self.assertIsNone(sampler.parameters)
+        self.assertIsNone(sampler.properties)
+
+        # Set up BQM and sample
+        csp = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
+        csp.add_constraint(and_gate(['a', 'b', 'c']))
+        bqm = dbc.stitch(csp)
+        sampler.sample(bqm)
+
+        # Check that values have been populated
+        self.assertIsNotNone(sampler.embedding)
+        self.assertEqual(sampler.nodelist, ['a', 'b', 'c'])
+        self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
+        self.assertEqual(sampler.adjacency, {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}})
+        self.assertIsNotNone(sampler.parameters)
+        self.assertIsNotNone(sampler.properties)
+
+        # Check that the same embedding is used
+        prev_embedding = sampler.embedding
+
+        csp2 = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
+        csp2.add_constraint(or_gate(['a', 'b', 'c']))   #TODO: Same naming must be used. Weird
+        bqm2 = dbc.stitch(csp2)
+        sampler.sample(bqm2)
+
+        self.assertEqual(sampler.embedding, prev_embedding)
