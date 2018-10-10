@@ -20,7 +20,9 @@ from collections import Mapping
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite
+from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyEmbeddingComposite
+import dwavebinarycsp as dbc
+from dwavebinarycsp.factories.constraint.gates import and_gate, or_gate
 
 from tests.unit.mock_sampler import MockSampler
 
@@ -165,3 +167,91 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         resp = sampler.sample_ising({'a': 1, 'b': 1, 'c': 0}, {})
 
         self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
+
+
+class TestLazyEmbeddingComposite(unittest.TestCase):
+    def test_sample_instantiation(self):
+        # Check that values have not been instantiated
+        sampler = LazyEmbeddingComposite(MockSampler())
+        self.assertIsNone(sampler.embedding)
+        self.assertIsNone(sampler.nodelist)
+        self.assertIsNone(sampler.edgelist)
+        self.assertIsNone(sampler.adjacency)
+        self.assertIsNone(sampler.parameters)
+        self.assertIsNone(sampler.properties)
+
+        # Set up BQM and sample
+        csp = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
+        csp.add_constraint(and_gate(['a', 'b', 'c']))
+        bqm = dbc.stitch(csp)
+        sampler.sample(bqm)
+
+        # Check that values have been populated
+        self.assertIsNotNone(sampler.embedding)
+        self.assertEqual(sampler.nodelist, ['a', 'b', 'c'])
+        self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
+        self.assertEqual(sampler.adjacency, {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}})
+        self.assertIsNotNone(sampler.parameters)
+        self.assertIsNotNone(sampler.properties)
+
+    def test_same_embedding(self):
+        sampler = LazyEmbeddingComposite(MockSampler())
+
+        # Set up Ising and sample
+        h = {'a': 1, 'b': 1, 'c': 1}
+        J = {('a', 'b'): 3, ('b', 'c'): -2, ('a', 'c'): 1}
+        sampler.sample_ising(h, J)
+
+        # Store embedding
+        prev_embedding = sampler.embedding
+
+        # Check that the same embedding is used
+        csp2 = dbc.ConstraintSatisfactionProblem(dbc.BINARY)
+        csp2.add_constraint(or_gate(['a', 'b', 'c']))
+        bqm2 = dbc.stitch(csp2)
+        sampler.sample(bqm2)
+
+        self.assertEqual(sampler.embedding, prev_embedding)
+
+    def test_ising(self):
+        h = {0: 11, 5: 2}
+        J = {(0, 5): -8}
+        sampler = LazyEmbeddingComposite(MockSampler())
+        response = sampler.sample_ising(h, J)
+
+        # Check embedding
+        self.assertIsNotNone(sampler.embedding)
+        self.assertEqual(sampler.nodelist, [0, 5])
+        self.assertEqual(sampler.edgelist, [(0, 5)])
+        self.assertEqual(sampler.adjacency, {0: {5}, 5: {0}})
+
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
+
+    def test_qubo(self):
+        Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (2, 3): 5, (1, 3): 6}
+        sampler = LazyEmbeddingComposite(MockSampler())
+        response = sampler.sample_qubo(Q)
+
+        # Check embedding
+        self.assertIsNotNone(sampler.embedding)
+        self.assertEqual(sampler.nodelist, [1, 2, 3])
+        self.assertEqual(sampler.edgelist, [(1, 2), (1, 3), (2, 3)])
+        self.assertEqual(sampler.adjacency, {1: {2, 3}, 2: {1, 3}, 3: {1, 2}})
+
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
+
+    def test_sparse_qubo(self):
+        # There is no relationship between nodes 2 and 3
+        Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (1, 3): 6}
+        sampler = LazyEmbeddingComposite(MockSampler())
+        response = sampler.sample_qubo(Q)
+
+        # Check embedding
+        self.assertIsNotNone(sampler.embedding)
+        self.assertEqual(sampler.nodelist, [1, 2, 3])
+        self.assertEqual(sampler.edgelist, [(1, 2), (1, 3)])
+
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)

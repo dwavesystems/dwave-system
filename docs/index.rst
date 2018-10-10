@@ -17,6 +17,7 @@ Documentation
 .. toctree::
   :maxdepth: 1
 
+  intro
   reference/index
   installation
   license
@@ -25,7 +26,14 @@ Documentation
   :caption: D-Wave's Ocean Software
   :maxdepth: 1
 
-  dwave
   ocean
   contributing
   glossary
+
+.. toctree::
+  :caption: D-Wave
+  :maxdepth: 1
+
+  dwave
+  leap
+  sysdocs

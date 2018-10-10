@@ -31,7 +31,7 @@ of technical terms in descriptions of Ocean tools.
 import dimod
 import minorminer
 
-__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite']
+__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyEmbeddingComposite']
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
@@ -263,7 +263,10 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
             raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
 
         self.children = [child_sampler]
+        self._set_embedding_init(embedding)
 
+    def _set_embedding_init(self, embedding):
+        child_sampler = self.children[0]
         # Derive the structure of our composed sampler from the target graph and the embedding
         source_adjacency = dimod.embedding.target_to_source(child_sampler.adjacency, embedding)
         try:
@@ -400,3 +403,54 @@ def _adjacency_to_edges(adjacency):
 def _embed_state(embedding, state):
     """Embed a single state/sample by spreading it's values over the chains in the embedding"""
     return {u: state[v] for v, chain in embedding.items() for u in chain}
+
+
+class LazyEmbeddingComposite(FixedEmbeddingComposite):
+    """ Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+    for all following sample(..) calls.
+
+    Args:
+        sampler (dimod.Sampler):
+            Structured dimod sampler.
+    """
+    def __init__(self, child_sampler):
+        if not isinstance(child_sampler, dimod.Structured):
+            raise dimod.InvalidComposition('LazyEmbeddingComposite should only be applied to a Structured sampler')
+
+        self.children = [child_sampler]
+        self.embedding = None
+
+    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
+        """ Sample the binary quadratic model.
+
+        Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
+        before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
+
+        Args:
+            bqm (:obj:`dimod.BinaryQuadraticModel`):
+                Binary quadratic model to be sampled from.
+
+            chain_strength (float, optional, default=1.0):
+                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
+                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_fraction (bool, optional, default=True):
+                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
+                what fraction of the chains were broken before unembedding.
+
+            **parameters:
+                Parameters for the sampling method, specified by the child sampler.
+        Returns:
+            :class:`dimod.Response`
+        """
+        if self.embedding is None:
+            # Find embedding
+            child = self.child   # Solve the problem on the child system
+            __, target_edgelist, target_adjacency = child.structure
+            source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]  # Add self-loops for single variables
+            embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
+
+            # Initialize properties that need embedding
+            super()._set_embedding_init(embedding)
+
+        return super().sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
