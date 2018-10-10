@@ -110,6 +110,7 @@ class TestEden(unittest.TestCase):
                 x, y, u, k = tup
                 return ((x, y) not in rect) or ((u, k) not in kill)
             eden_qubits = filter(killf, eden_qubits)
+            eden_qubits = list(eden_qubits)  # need to run the function now
 
         eden_qubits = set(eden_qubits)
         eden_couplers = [(q, n) for q in eden_qubits for n in set(
@@ -128,7 +129,7 @@ class TestEden(unittest.TestCase):
         for _ in range(runs):
             emb = eden_proc.largestNativeClique(max_chain_length=4)
             cliques[frozenset(map(tuple, emb))] += 1
-        assert len(cliques) == 2, "should have found exactly 2 cliques."
+        assert len(cliques) == 2, "should have found exactly 2 cliques, got %d."%len(cliques)
         A, B = cliques.keys()
         verify_clique(eden_proc, list(A), 12, 4)
         verify_clique(eden_proc, list(B), 12, 4)
