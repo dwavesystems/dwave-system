@@ -73,8 +73,8 @@ class TestEden(unittest.TestCase):
         N = 7
         L = 4
 
-        eden_qubits = [(x, y, u, k) for x in xrange(M)
-                       for y in xrange(N) for u in (0, 1) for k in xrange(L)]
+        eden_qubits = [(x, y, u, k) for x in range(M)
+                       for y in range(N) for u in (0, 1) for k in range(L)]
 
         # one K_12, contains K_{8,8}
         Cliq1 = {(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (0, 2)}
@@ -99,11 +99,16 @@ class TestEden(unittest.TestCase):
         kill4 = {}
 
         XYFilter = Cliq1 | Cliq2 | Rect1 | Rect2 | Rect3 | Rect4
-        eden_qubits = filter(lambda (x, y, u, k): (x, y) in XYFilter, eden_qubits)
+
+        def xyfilt(tup):
+            x, y, u, k = tup
+            return (x, y) in XYFilter
+        eden_qubits = filter(xyfilt, eden_qubits)
 
         for rect, kill in zip((Rect1, Rect2, Rect3, Rect4), (kill1, kill2, kill3, kill4)):
-            killf = lambda (x, y, u, k): (
-                ((x, y) not in rect) or ((u, k) not in kill))
+            def killf(tup):
+                x, y, u, k = tup
+                return ((x, y) not in rect) or ((u, k) not in kill)
             eden_qubits = filter(killf, eden_qubits)
 
         eden_qubits = set(eden_qubits)
@@ -134,7 +139,7 @@ class TestEden(unittest.TestCase):
         # >>> from random import randint
         # >>> M = 100
         # >>> N = 1000000
-        # >>> f = sum(abs(2*sum(randint(0,1) for _ in xrange(M))-M)>3*(M**.5) for _ in range(N))/float(N)
+        # >>> f = sum(abs(2*sum(randint(0,1) for _ in range(M))-M)>3*(M**.5) for _ in range(N))/float(N)
         # >>> print "%.2f chance of failure"%f
 
     def test_clique_12(self):
@@ -213,14 +218,17 @@ class TestEden2(unittest.TestCase):
         N = 6
         L = 4
 
-        eden_qubits = [(x, y, u, k) for x in xrange(M)
-                       for y in xrange(N) for u in (0, 1) for k in xrange(L)]
+        eden_qubits = [(x, y, u, k) for x in range(M)
+                       for y in range(N) for u in (0, 1) for k in range(L)]
         dead_qubits = [(3, 3, 1, 2), (4, 3, 0, 0), (4, 3, 1, 0), (5, 3, 1, 0), (3, 4, 0, 1), (3, 4, 1, 0),
                        (3, 4, 1, 2), (4, 4, 0, 0), (4, 4, 1, 1), (3, 5, 0, 0), (3, 5, 0, 1), (3, 5, 0, 2)]
         XYFilter = [(0, 2), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5),
                     (4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (5, 0), (5, 1), (5, 2), (5, 3)]
-        eden_qubits = filter(lambda (x, y, u, k): (
-            x, y) in XYFilter, set(eden_qubits) - set(dead_qubits))
+
+        def xyfilt(tup):
+            x, y, u, k = tup
+            return (x, y) in XYFilter
+        eden_qubits = filter(xyfilt, set(eden_qubits) - set(dead_qubits))
         eden_qubits = set(eden_qubits)
         eden_couplers = [(q, n) for q in eden_qubits for n in set(
             _chimera_neighbors(M, N, L, q)) & eden_qubits]
@@ -284,18 +292,18 @@ class TestGeneric(unittest.TestCase):
         couplers += [((0, 0, 0, 0), (0, 0, 1, 0))]
         proc = processor(couplers, M=2, N=2, L=4, linear=False, proc_limit=2**16)
 
-        empty = proc._subprocessor(proc._proc0) #an eden_processor with all qubits disabled
-        emb = proc.tightestNativeBiClique(0,0)
-        proc._processors = [empty] + proc._processors + [empty] 
+        empty = proc._subprocessor(proc._proc0)  # an eden_processor with all qubits disabled
+        emb = proc.tightestNativeBiClique(0, 0)
+        proc._processors = [empty] + proc._processors + [empty]
         verify_biclique(proc, emb, 0, 0, 0, 0)
 
-        empty.largestNativeBiClique = lambda *a,**k:(None,None)
+        empty.largestNativeBiClique = lambda *a, **k: (None, None)
         emb = proc.largestNativeBiClique()
         verify_biclique(proc, emb, 1, 1, 1, 1)
 
     def test_proclimit_cornercase(self):
-        couplers  = [((0, y, 1, i), (0, y + 1, 1, i)) for y in xrange(2) for i in xrange(4)]
-        couplers += [((0, y, 1, i), (0, y, 0, j)) for y in xrange(3) for i in xrange(4) for j in xrange(4) if i != 0 or j != y]
+        couplers  = [((0, y, 1, i), (0, y + 1, 1, i)) for y in range(2) for i in range(4)]
+        couplers += [((0, y, 1, i), (0, y, 0, j)) for y in range(3) for i in range(4) for j in range(4) if i != 0 or j != y]
         emb = None
         count = 0
         while emb is None and count < 100:
@@ -316,7 +324,7 @@ class TestGeneric(unittest.TestCase):
 
     def test_qubits_and_couplers(self):
         M = N = L = 2
-        qubits = {(x,y,u,k) for x in xrange(M) for y in xrange(N) for u in xrange(2) for k in xrange(L)}
+        qubits = {(x,y,u,k) for x in range(M) for y in range(N) for u in range(2) for k in range(L)}
         couplers = [(p,q) for q in qubits for p in _chimera_neighbors(M,N,L,q)]
         proc = processor(couplers,M=M,N=N,L=L,linear=False)._proc0
         for q in proc:

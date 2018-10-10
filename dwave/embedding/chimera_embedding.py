@@ -45,6 +45,7 @@ produce optimal native embeddings, or approximately-optimal native embeddings.
 
 """
 from __future__ import division
+
 from random import shuffle, randint, choice, sample
 from collections import defaultdict
 from itertools import product
@@ -479,7 +480,7 @@ class eden_processor(object):
                 rscore, nr = None, 1
             score = self._combine_clique_scores(
                 rscore, (y0, xmin, xmax), (x0, nymin, nymax))
-            if score > bestscore or bestscore is None:
+            if bestscore is None or score > bestscore:
                 bestscore = score
                 count = 0
             if score == bestscore:
@@ -523,7 +524,7 @@ class eden_processor(object):
                     R = (xmin, xmax, ymin, ymax)
                     score, best = self.maxCliqueWithRectangle(R, maxCWR)
                     maxCWR[R] = best
-                    if maxscore < score or maxscore is None:
+                    if maxscore is None or (score is not None and maxscore < score):
                         maxscore = score
                         key = None  # this gets overwritten immediately
                         count = 0  # this gets overwritten immediately
@@ -569,7 +570,7 @@ class eden_processor(object):
 
         for w in range(wmax + 1):
             score, clique = self.nativeCliqueEmbed(w)
-            if score > bestscore or bestscore is None:
+            if bestscore is None or score > bestscore:
                 bigclique = clique
                 bestscore = score
         return bestscore, bigclique
@@ -937,8 +938,9 @@ class processor:
         """
         (oldscore, oldthing) = old
         (newscore, newthing) = new
+
         def measure(chains):
-            return sum(map(len,chains))
+            return sum(map(len, chains))
 
         if oldscore is None:
             return True
@@ -947,9 +949,9 @@ class processor:
         if len(newthing):
             if not len(oldthing):
                 return True
-            elif isinstance(newthing,tuple):
-                newlengths = sum(map(measure,newthing))
-                oldlengths = sum(map(measure,oldthing))
+            elif isinstance(newthing, tuple):
+                newlengths = sum(map(measure, newthing))
+                oldlengths = sum(map(measure, oldthing))
                 return newlengths < oldlengths
             else:
                 return measure(newthing) < measure(oldthing)
@@ -1206,7 +1208,7 @@ def random_processor(M, N, L, qubit_yield, num_evil=0):
     # replacement for lambda in edge filter below that works with bot h
     def edge_filter(pq):
         # we have to unpack the (p,q) edge
-        p,q = pq
+        p, q = pq
         return q in qubits and p < q
 
     qubits = [(x, y, u, k) for x in range(M) for y in range(N) for u in [0, 1] for k in range(L)]
