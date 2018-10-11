@@ -16,4 +16,4 @@
 
 import minorminer  # into this namespace
 
-import dwave.embedding.chimera as chimera
+import dwave.embedding.chimera
