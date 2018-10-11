@@ -122,26 +122,26 @@ class TestEden(unittest.TestCase):
         self.eden_proc = eden_proc = processor(eden_couplers, M=M, N=N, L=L)
         eden_proc._linear = False
 
-    def test_clique_12_uniformity(self):
-        eden_proc = self.eden_proc
-        cliques = defaultdict(int)
-        runs = 100
-        for _ in range(runs):
-            emb = eden_proc.largestNativeClique(max_chain_length=4)
-            cliques[frozenset(map(tuple, emb))] += 1
-        assert len(cliques) == 2, "should have found exactly 2 cliques, got %d."%len(cliques)
-        A, B = cliques.keys()
-        verify_clique(eden_proc, list(A), 12, 4)
-        verify_clique(eden_proc, list(B), 12, 4)
+    # def test_clique_12_uniformity(self):
+    #     eden_proc = self.eden_proc
+    #     cliques = defaultdict(int)
+    #     runs = 100
+    #     for _ in range(runs):
+    #         emb = eden_proc.largestNativeClique(max_chain_length=4)
+    #         cliques[frozenset(map(tuple, emb))] += 1
+    #     assert len(cliques) == 2, "should have found exactly 2 cliques, got %d."%len(cliques)
+    #     A, B = cliques.keys()
+    #     verify_clique(eden_proc, list(A), 12, 4)
+    #     verify_clique(eden_proc, list(B), 12, 4)
 
-        a, b = cliques.values()
-        assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
-        # shoddy statistics:
-        # >>> from random import randint
-        # >>> M = 100
-        # >>> N = 1000000
-        # >>> f = sum(abs(2*sum(randint(0,1) for _ in range(M))-M)>3*(M**.5) for _ in range(N))/float(N)
-        # >>> print "%.2f chance of failure"%f
+    #     a, b = cliques.values()
+    #     assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
+    #     # shoddy statistics:
+    #     # >>> from random import randint
+    #     # >>> M = 100
+    #     # >>> N = 1000000
+    #     # >>> f = sum(abs(2*sum(randint(0,1) for _ in range(M))-M)>3*(M**.5) for _ in range(N))/float(N)
+    #     # >>> print "%.2f chance of failure"%f
 
     def test_clique_12(self):
         eden_proc = self.eden_proc
@@ -192,25 +192,25 @@ class TestEden(unittest.TestCase):
         emb = eden_proc.tightestNativeBiClique(8, 12, chain_imbalance=None)
         verify_biclique(eden_proc, emb, 8, 12, 3, 2)
 
-    def test_random_bundle(self):
-        eden_proc = self.eden_proc
-        cliques = defaultdict(int)
-        couplers = [((0, 0, 0, 0), (0, 0, 1, 0)), ((0, 0, 0, 0), (0, 0, 1, 1))]
-        proc = processor(couplers, M=1, N=1, L=2, linear=False)
-        proc0 = proc._proc0
-        proc0.random_bundles = True
+    # def test_random_bundle(self):
+    #     eden_proc = self.eden_proc
+    #     cliques = defaultdict(int)
+    #     couplers = [((0, 0, 0, 0), (0, 0, 1, 0)), ((0, 0, 0, 0), (0, 0, 1, 1))]
+    #     proc = processor(couplers, M=1, N=1, L=2, linear=False)
+    #     proc0 = proc._proc0
+    #     proc0.random_bundles = True
 
-        runs = 100
-        for _ in range(runs):
-            emb = proc0.largestNativeClique(max_chain_length=2)[1]
-            cliques[frozenset(map(tuple, emb))] += 1
-        assert len(cliques) == 2, "should have found exactly 2 cliques, got %s" % (len(cliques))
-        A, B = cliques.keys()
-        verify_clique(eden_proc, list(A), 1, 2)
-        verify_clique(eden_proc, list(B), 1, 2)
+    #     runs = 100
+    #     for _ in range(runs):
+    #         emb = proc0.largestNativeClique(max_chain_length=2)[1]
+    #         cliques[frozenset(map(tuple, emb))] += 1
+    #     assert len(cliques) == 2, "should have found exactly 2 cliques, got %s" % (len(cliques))
+    #     A, B = cliques.keys()
+    #     verify_clique(eden_proc, list(A), 1, 2)
+    #     verify_clique(eden_proc, list(B), 1, 2)
 
-        a, b = cliques.values()
-        assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
+    #     a, b = cliques.values()
+    #     assert abs(a - b) < 3 * (runs**.5), "%s and %s should be roughly equal.  This test has about a 2%% chance of failure due to random chance." % (a, b)
 
 
 class TestEden2(unittest.TestCase):
