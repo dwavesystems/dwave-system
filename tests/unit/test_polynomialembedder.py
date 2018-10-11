@@ -18,8 +18,8 @@ import unittest
 
 from collections import defaultdict
 
-from dwave.embedding.polynomialembeddor import processor, _bulk_to_linear, _to_linear, _bulk_to_chimera
-from dwave.embedding.polynomialembeddor import _chimera_neighbors, random_processor, _to_chimera
+from dwave.embedding.polynomialembedder import processor, _bulk_to_linear, _to_linear, _bulk_to_chimera
+from dwave.embedding.polynomialembedder import _chimera_neighbors, random_processor, _to_chimera
 
 
 def verify_chains(Proc, emb):

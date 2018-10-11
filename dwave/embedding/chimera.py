@@ -17,7 +17,7 @@
 import dwave_networkx as dnx
 import networkx as nx
 
-from dwave.embedding.polynomialembeddor import processor
+from dwave.embedding.polynomialembedder import processor
 
 __all__ = ['find_clique_embedding', 'find_biclique_embedding']
 
@@ -69,10 +69,10 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
 
     embedding = processor(target_edges, M=m, N=n, L=t).tightestNativeClique(len(nodes))
 
-    if embedding:
-        return dict(zip(nodes, embedding))
-    else:
+    if not embedding:
         raise ValueError("cannot find a K{} embedding for given Chimera lattice".format(k))
+
+    return dict(zip(nodes, embedding))
 
 
 @nx.utils.decorators.nodes_or_number(0)
@@ -84,13 +84,13 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
         a (int/iterable):
             If a is an integer, generates an embedding for a biclique with the left shore of size a
             labelled [0,a-1].
-            If a is an iterable, generates an embedding for a biclique with the left short of size
+            If a is an iterable, generates an embedding for a biclique with the left shore of size
             len(a) where a provides the variable labels.
 
         b (int/iterable):
             If b is an integer, generates an embedding for a biclique with the right shore of size b
             labelled [0,b-1].
-            If b is an iterable, generates an embedding for a biclique with the right short of size
+            If b is an iterable, generates an embedding for a biclique with the right shore of size
             len(b) where a provides the variable labels.
 
         m (int):
@@ -130,11 +130,11 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
     m, n, t, target_edges = _chimera_input(m, n, t, target_edges)
     embedding = processor(target_edges, M=m, N=n, L=t).tightestNativeBiClique(len(anodes), len(bnodes))
 
-    if embedding:
-        left, right = embedding
-        return dict(zip(anodes, left)), dict(zip(bnodes, right))
-    else:
+    if not embedding:
         raise ValueError("cannot find a K{},{} embedding for given Chimera lattice".format(a, b))
+
+    left, right = embedding
+    return dict(zip(anodes, left)), dict(zip(bnodes, right))
 
 
 def _chimera_input(m, n=None, t=None, target_edges=None):
