@@ -1,23 +1,26 @@
-.. _polynomialembedder:
+.. _embedding:
 
-Native Clique Embedder
-**********************
+=========
+Embedding
+=========
 
+.. automodule:: dwave.embedding
 
-.. automodule:: dwave.embedding.chimera_embedding
+.. currentmodule:: dwave.embedding
 
+MinorMiner
+==========
 
-The `processor` class.
-======================
+.. autosummary::
+   :toctree: generated/
 
-.. autoclass:: dwave.embedding.chimera_embedding.processor
-    :members:
+   minorminer.find_embedding
 
+Chimera
+=======
 
-The `eden_processor` class.
-===========================
+.. autosummary::
+   :toctree: generated/
 
-.. autoclass:: dwave.embedding.chimera_embedding.eden_processor
-    :members:
-
-
+   chimera.find_clique_embedding
+   chimera.find_biclique_embedding
