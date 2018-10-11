@@ -28,8 +28,6 @@ See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ 
 of technical terms in descriptions of Ocean tools.
 
 """
-from builtins import super      # Adding super from future
-
 import dimod
 import minorminer
 
@@ -453,6 +451,6 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
             # Initialize properties that need embedding
-            super()._set_embedding_init(embedding)
+            super(LazyEmbeddingComposite, self)._set_embedding_init(embedding)
 
-        return super().sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
+        return super(LazyEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
