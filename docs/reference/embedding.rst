@@ -24,3 +24,4 @@ Chimera
 
    chimera.find_clique_embedding
    chimera.find_biclique_embedding
+   chimera.find_grid_embedding

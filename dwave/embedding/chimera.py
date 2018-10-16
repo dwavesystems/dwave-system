@@ -137,6 +137,66 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
     return dict(zip(anodes, left)), dict(zip(bnodes, right))
 
 
+def find_grid_embedding(dim, m, n=None, t=4):
+    """Find an embedding for a grid.
+
+    Args:
+        dim (iterable[int]):
+            The size of each grid dimension. Length can be between 1 and 3.
+
+        m (int):
+            Number of rows in the Chimera lattice.
+
+        n (int, optional, default=m):
+            Number of columns in the Chimera lattice.
+
+        t (int, optional, default 4):
+            Size of the shore within each Chimera tile.
+
+    Returns:
+        dict: An embedding mapping a grid to the Chimera lattice.
+
+    Examples:
+
+        >>> from dwave.embedding.chimera import find_grid_embedding
+        ...
+        >>> embedding = find_grid_embedding([2, 3], m=12, n=12, t=4)
+        >>> embedding  # doctest: +SKIP
+        {(0, 0): [0, 4],
+         (0, 1): [8, 12],
+         (0, 2): [16, 20],
+         (1, 0): [96, 100],
+         (1, 1): [104, 108],
+         (1, 2): [112, 116]}
+
+    """
+
+    m, n, t, target_edges = _chimera_input(m, n, t, None)
+    indexer = dnx.generators.chimera.chimera_coordinates(m, n, t)
+
+    dim = list(dim)
+    num_dim = len(dim)
+    if num_dim == 1:
+        def _key(row, col, aisle): return row
+        dim.extend([1, 1])
+    elif num_dim == 2:
+        def _key(row, col, aisle): return row, col
+        dim.append(1)
+    elif num_dim == 3:
+        def _key(row, col, aisle): return row, col, aisle
+    else:
+        raise ValueError("find_grid_embedding supports between one and three dimensions")
+
+    rows, cols, aisles = dim
+    if rows > m or cols > n or aisles > t:
+        msg = ("the largest grid that can fit in a ({}, {}, {}) Chimera-lattice "
+               "is {}x{}x{}").format(m, n, t, rows, cols, aisles)
+        raise ValueError(msg)
+
+    return {_key(row, col, aisle): [indexer.int((row, col, 0, aisle)), indexer.int((row, col, 1, aisle))]
+            for row in range(dim[0]) for col in range(dim[1]) for aisle in range(dim[2])}
+
+
 def _chimera_input(m, n=None, t=None, target_edges=None):
     if not isinstance(m, int):
         raise TypeError('Chimera lattice parameter m must be an int and >= 1')
