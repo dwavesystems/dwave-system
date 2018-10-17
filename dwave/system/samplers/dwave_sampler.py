@@ -107,10 +107,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                          endpoint=endpoint, token=token, proxy=proxy,
                                          permissive_ssl=permissive_ssl)
 
-        if solver_features is None:
-            # default to getting a QPU rather than a software solver
-            solver_features = {'qpu': True}
-
         # TODO: deprecate `solver`` name in favor of name regex in `solver_features`
         self.solver = self.client.get_solver(name=solver, features=solver_features)
 
