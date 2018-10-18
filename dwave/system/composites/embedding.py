@@ -26,7 +26,7 @@ of technical terms in descriptions of Ocean tools.
 import dimod
 import minorminer
 
-__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyEmbeddingComposite']
+__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite']
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
@@ -414,7 +414,7 @@ def _embed_state(embedding, state):
     return {u: state[v] for v, chain in embedding.items() for u in chain}
 
 
-class LazyEmbeddingComposite(FixedEmbeddingComposite):
+class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
     """ Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
     for all following sample(..) calls.
 
@@ -424,7 +424,7 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
     """
     def __init__(self, child_sampler):
         if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition('LazyEmbeddingComposite should only be applied to a Structured sampler')
+            raise dimod.InvalidComposition('LazyFixedEmbeddingComposite should only be applied to a Structured sampler')
 
         self.children = [child_sampler]
         self.embedding = None
@@ -460,6 +460,7 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
             # Initialize properties that need embedding
-            super(LazyEmbeddingComposite, self)._set_embedding_init(embedding)
+            super(LazyFixedEmbeddingComposite, self)._set_embedding_init(embedding)
 
-        return super(LazyEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
+        return super(LazyFixedEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength,
+                                                               chain_break_fraction=chain_break_fraction, **parameters)

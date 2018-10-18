@@ -20,7 +20,7 @@ from collections import Mapping
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyEmbeddingComposite
+from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite
 
 from tests.unit.mock_sampler import MockSampler
 
@@ -167,10 +167,10 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
 
 
-class TestLazyEmbeddingComposite(unittest.TestCase):
+class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sample_instantiation(self):
         # Check that values have not been instantiated
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         self.assertIsNone(sampler.embedding)
         self.assertIsNone(sampler.nodelist)
         self.assertIsNone(sampler.edgelist)
@@ -191,7 +191,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         self.assertIsNotNone(sampler.properties)
 
     def test_same_embedding(self):
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
 
         # Set up Ising and sample
         h = {'a': 1, 'b': 1, 'c': 1}
@@ -211,7 +211,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
     def test_ising(self):
         h = {0: 11, 5: 2}
         J = {(0, 5): -8}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         response = sampler.sample_ising(h, J)
 
         # Check embedding
@@ -225,7 +225,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
 
     def test_qubo(self):
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (2, 3): 5, (1, 3): 6}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         response = sampler.sample_qubo(Q)
 
         # Check embedding
@@ -240,7 +240,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
     def test_sparse_qubo(self):
         # There is no relationship between nodes 2 and 3
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (1, 3): 6}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         response = sampler.sample_qubo(Q)
 
         # Check embedding
