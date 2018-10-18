@@ -122,6 +122,24 @@ class TestFindGridEmbedding(unittest.TestCase):
         with self.assertRaises(ValueError):
             find_grid_embedding(dims, *chimera)
 
+    def test_3d_4x4x4_on_c16(self):
+        dims = [4, 4, 4]
+        chimera = (16,)
+
+        embedding = find_grid_embedding(dims, *chimera)
+
+        self.assertEqual(len(embedding), self.prod(dims))
+
+        target_adj = dimod.embedding.target_to_source(dnx.chimera_graph(*chimera), embedding)
+
+        G = nx.grid_graph(dims)
+        for u in G.adj:
+            for v in G.adj[u]:
+                self.assertIn(u, target_adj)
+                self.assertIn(v, target_adj[u], "{} is not adjacent to {}".format(v, u))
+
+        self.assertEqual(set(G.nodes), set(target_adj))
+
     @staticmethod
     def prod(iterable):
         import operator
