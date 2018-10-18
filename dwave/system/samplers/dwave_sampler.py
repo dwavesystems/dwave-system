@@ -401,7 +401,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             pass
         elif start_s == 0:
             # forward annealing, s must monotonically increase.
-            if not all(tail_s < lead_s for tail_s, lead_s in zip(s_list, s_list[1:])):
+            if not all(tail_s <= lead_s for tail_s, lead_s in zip(s_list, s_list[1:])):
                 raise ValueError("For forward anneals, anneal fraction s must monotonically increase")
         else:
             msg = ("In the first point, anneal fraction s must equal 0 for forward annealing or "
