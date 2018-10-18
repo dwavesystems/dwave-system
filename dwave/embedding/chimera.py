@@ -190,7 +190,7 @@ def find_grid_embedding(dim, m, n=None, t=4):
     rows, cols, aisles = dim
     if rows > m or cols > n or aisles > t:
         msg = ("the largest grid that can fit in a ({}, {}, {}) Chimera-lattice "
-               "is {}x{}x{}").format(m, n, t, rows, cols, aisles)
+               "is {}x{}x{}; given grid is {}x{}x{}").format(m, n, t, m, n, t, rows, cols, aisles)
         raise ValueError(msg)
 
     return {_key(row, col, aisle): [indexer.int((row, col, 0, aisle)), indexer.int((row, col, 1, aisle))]
