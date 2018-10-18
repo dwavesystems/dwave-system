@@ -15,14 +15,9 @@
 #
 # ================================================================================================
 """
-A :std:doc:`dimod composite <dimod:reference/samplers>` that maps unstructured problems
-to a structured sampler.
-
-A structured sampler can only solve problems that map to a specific graph: the
-D-Wave system's architecture is represented by a :std:doc:`Chimera <system:reference/intro>` graph.
-
-The :class:`.EmbeddingComposite` uses the :std:doc:`minorminer <minorminer:index>` library
-to map unstructured problems to a structured sampler such as a D-Wave system.
+:std:doc:`dimod composites <dimod:reference/samplers>` that map problems
+to a structured sampler. A structured sampler, such as :class:`~dwave.system.samplers.DWaveSampler()`,
+solves problems that map to a specific graph: the :term:`Chimera` graph for a D-Wave system.
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
 of technical terms in descriptions of Ocean tools.
@@ -35,28 +30,26 @@ __all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyEmbeddingCompos
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
-    """Composite to map unstructured problems to a structured sampler.
+    """Composite that maps problems to a structured sampler.
 
-    Inherits from :class:`dimod.ComposedSampler`.
-
-    Enables quick incorporation of the D-Wave system as a sampler in the D-Wave Ocean
-    software stack by handling the minor-embedding of the problem into the D-Wave
-    system's Chimera graph.
+    Enables quick incorporation of the D-Wave system as a sampler by handling minor-embedding
+    of the problem into the D-Wave system's :term:`Chimera` graph. Minor-embedding is
+    calculated using the heuristic :std:doc:`minorminer <minorminer:index>` library
+    each time one of its sampling methods is called.
 
     Args:
        sampler (:class:`dimod.Sampler`):
-            Structured dimod sampler.
+            Structured dimod sampler such as a :class:`~dwave.system.samplers.DWaveSampler()`.
 
     Examples:
-       This example uses :class:`.EmbeddingComposite` to instantiate a composed sampler
-       that submits a simple Ising problem to a D-Wave solver selected by the user's
+       This example submits a simple Ising problem to a D-Wave solver selected by the user's
        default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
-       The composed sampler handles
-       minor-embedding of the problem's two generic variables, a and b, to physical
-       qubits on the solver.
+       :class:`.EmbeddingComposite` minor-embedds the problem's variables a and b
+       to particular qubits on the D-Wave system.
 
        >>> from dwave.system.samplers import DWaveSampler
        >>> from dwave.system.composites import EmbeddingComposite
+       ...
        >>> sampler = EmbeddingComposite(DWaveSampler())
        >>> h = {'a': -1., 'b': 2}
        >>> J = {('a', 'b'): 1.5}
@@ -82,13 +75,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
         For an instantiated composed sampler, contains the single wrapped structured sampler.
 
         Examples:
-            This example instantiates a composed sampler using a D-Wave solver selected by
-            the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
-            and views the solver's parameters.
-
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
             >>> sampler = EmbeddingComposite(DWaveSampler())
             >>> sampler.children   # doctest: +SKIP
             [<dwave.system.samplers.dwave_sampler.DWaveSampler at 0x7f45b20a8d50>]
@@ -102,16 +88,17 @@ class EmbeddingComposite(dimod.ComposedSampler):
     def parameters(self):
         """dict[str, list]: Parameters in the form of a dict.
 
-        For an instantiated composed sampler, keys are the keyword parameters accepted by the child sampler.
+        For an instantiated composed sampler, keys are the keyword parameters accepted by the child sampler
+        and parameters added by the composite such as those related to chains.
 
         Examples:
-            This example instantiates a composed sampler using a D-Wave solver selected by
+            This example views parameters of a composed sampler using a D-Wave system selected by
             the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
-            and views the solver's parameters.
+            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:reference/intro>`
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
+            ...
             >>> sampler = EmbeddingComposite(DWaveSampler())
             >>> sampler.parameters   # doctest: +SKIP
             {'anneal_offsets': ['parameters'],
@@ -122,9 +109,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             >>> # Snipped above response for brevity
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
-
         """
-        # does not add or remove any parameters
+
         param = self.child.parameters.copy()
         param['chain_strength'] = []
         param['chain_break_fraction'] = []
@@ -134,17 +120,17 @@ class EmbeddingComposite(dimod.ComposedSampler):
     def properties(self):
         """dict: Properties in the form of a dict.
 
-        For an instantiated composed sampler, contains one key :code:`'child_properties'` that
+        For an instantiated composed sampler, contains one key :code:`child_properties` that
         has a copy of the child sampler's properties.
 
         Examples:
-            This example instantiates a composed sampler using a D-Wave solver selected by
+            This example views properties of a composed sampler using a D-Wave system selected by
             the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
-            and views the solver's properties.
+            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:reference/intro>`
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
+            ...
             >>> sampler = EmbeddingComposite(DWaveSampler())
             >>> sampler.properties   # doctest: +SKIP
             {'child_properties': {u'anneal_offset_ranges': [[-0.2197463755538704,
@@ -161,45 +147,45 @@ class EmbeddingComposite(dimod.ComposedSampler):
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
         """Sample from the provided binary quadratic model.
 
+        Also set parameters for handling a chain, the set of vertices in a target graph that
+        represents a source-graph vertex; when a D-Wave system is the sampler, it is a set
+        of qubits that together represent a variable of the binary quadratic model being
+        minor-embedded.
+
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
-                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+                chains. The energy penalty of chain breaks is 2 * `chain_strength`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
-                what fraction of the chains were broken before unembedding.
+                If True, the unembedded response contains a ‘chain_break_fraction’ field that
+                reports the fraction of chains broken before unembedding.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :class:`dimod.Response`
+            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
 
         Examples:
-            This example uses :class:`.EmbeddingComposite` to instantiate a composed sampler
-            that submits an unstructured Ising problem to a D-Wave solver, selected by the user's
-            default
+            This example submits an triangle-structured Ising problem to a D-Wave solver, selected
+            by the user's default
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
-            while minor-embedding the problem's variables to physical qubits on the solver.
+            by minor-embedding the problem's variables to physical qubits.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
             >>> import dimod
-            >>> sampler = EmbeddingComposite(DWaveSampler())
-            >>> h = {1: 1, 2: 2, 3: 3, 4: 4}
-            >>> J = {(1, 2): 12, (1, 3): 13, (1, 4): 14,
-            ...      (2, 3): 23, (2, 4): 24,
-            ...      (3, 4): 34}
-            >>> bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
-            >>> response = sampler.sample(bqm)
-            >>> for sample in response.samples():    # doctest: +SKIP
-            ...     print(sample)
             ...
-            {1: -1, 2: 1, 3: 1, 4: -1}
+            >>> sampler = EmbeddingComposite(DWaveSampler())
+            >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {'ab': 0.5, 'bc': 0.5, 'ca': 0.5})
+            >>> response = sampler.sample(bqm, chain_strength=2)
+            >>> response.first:    # doctest: +SKIP
+            Sample(sample={'a': -1, 'b': 1, 'c': 1}, energy=-0.5,
+                   num_occurrences=1, chain_break_fraction=0.0)
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -232,18 +218,22 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
 
 class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
-    """Composite to alter the structure of a child sampler via an embedding.
+    """Composite that uses a specified minor-embedding to map problems to a structured sampler.
 
-    Inherits from :class:`dimod.ComposedSampler` and :class:`dimod.Structured`.
+    Enables incorporation of the D-Wave system as a sampler, given a precalculated minor-embedding.
 
     Args:
         sampler (dimod.Sampler):
-            Structured dimod sampler.
+            Structured dimod sampler such as a D-Wave system.
 
         embedding (dict[hashable, iterable]):
             Mapping from a source graph to the specified sampler’s graph (the target graph).
 
     Examples:
+        This example submits an triangle-structured Ising problem to a D-Wave solver, selected
+        by the user's default
+        :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+        using a given minor-embedding of the problem's variables to physical qubits.
 
         >>> from dwave.system.samplers import DWaveSampler
         >>> from dwave.system.composites import FixedEmbeddingComposite
@@ -289,41 +279,59 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         self.embedding = self.properties['embedding'] = embedding
 
     nodelist = None
-    """list:
-           Nodes available to the composed sampler.
+    """list: Nodes available to the composed sampler.
+
+    Examples:
+        >>> fixedsampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+        >>> fixedsampler.nodelist
+        ['a', 'b', 'c']
     """
 
     edgelist = None
-    """list:
-           Edges available to the composed sampler.
+    """list: Edges available to the composed sampler.
+
+    Examples:
+        >>> fixedsampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+        >>> fixedsampler.edgelist
+        [('a', 'b'), ('a', 'c'), ('b', 'c')]
     """
 
     adjacency = None
-    """dict[variable, set]:
-           Adjacency structure for the composed sampler.
+    """dict[variable, set]: Adjacency structure for the composed sampler.
+
+    Examples:
+        >>> fixedsampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+        >>> fixedsampler.adjacency    # doctest: +SKIP
+        {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}}
 
     """
 
     children = None
-    """list: List containing the wrapped sampler."""
+    """list: List containing the wrapped sampler.
+
+    See :obj:`.EmbeddingComposite.children` for detailed information.
+    """
 
     parameters = None
     """dict[str, list]: Parameters in the form of a dict.
 
-    The same as the child sampler with the addition of 'chain_strength'
+    See :obj:`.EmbeddingComposite.parameters` for detailed information.
     """
 
     properties = None
     """dict: Properties in the form of a dict.
 
-    For an instantiated composed sampler, :code:`'child_properties'` has a copy of the child
-    sampler's properties and :code:`'embedding'` contains the fixed embedding.
-
+    See :obj:`.EmbeddingComposite.properties` for detailed information.
     """
 
     @dimod.bqm_structured
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
         """Sample from the provided binary quadratic model.
+
+        Also set parameters for handling a chain, the set of vertices in a target graph that
+        represents a source-graph vertex; when a D-Wave system is the sampler, it is a set
+        of qubits that together represent a variable of the binary quadratic model being
+        minor-embedded.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -331,30 +339,32 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
-                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+                chains. The energy penalty of chain breaks is 2 * `chain_strength`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
-                what fraction of the chains were broken before unembedding.
+                If True, the unembedded response contains a ‘chain_break_fraction’ field
+                that reports the fraction of chains broken before unembedding.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :class:`dimod.Response`
+            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
 
         Examples:
-            This example uses :class:`.FixedEmbeddingComposite` to instantiate a composed sampler
-            that submits an unstructured Ising problem to a D-Wave solver, selected by the user's
-            default
+            This example submits an triangle-structured problem to a D-Wave solver, selected
+            by the user's default
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
-            while minor-embedding the problem's variables to physical qubits on the solver.
+            using a specified minor-embedding of the problem’s variables to physical qubits.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import FixedEmbeddingComposite
             >>> import dimod
+            ...
             >>> sampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
-            >>> resp = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
+            >>> response = sampler.sample_ising({}, {'ab': 0.5, 'bc': 0.5, 'ca': 0.5}, chain_strength=2)
+            >>> response.first    # doctest: +SKIP
+            Sample(sample={'a': 1, 'b': -1, 'c': 1}, energy=-0.5, num_occurrences=1, chain_break_fraction=0.0)
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.

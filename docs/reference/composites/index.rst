@@ -8,8 +8,6 @@ Composites
 :std:doc:`dimod composites <dimod:reference/samplers>` for using the D-Wave system.
 
 
-
-
    :Release: |release|
    :Date: |today|
 
