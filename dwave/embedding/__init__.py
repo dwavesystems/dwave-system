@@ -13,9 +13,7 @@
 #    limitations under the License.
 #
 # ================================================================================================
-__all__ = ['__version__', '__author__', '__authoremail__', '__description__']
 
-__version__ = '0.5.4'
-__author__ = 'D-Wave Systems Inc.'
-__authoremail__ = 'acondello@dwavesys.com'
-__description__ = 'All things D-Wave System.'
+import minorminer  # into this namespace
+
+import dwave.embedding.chimera

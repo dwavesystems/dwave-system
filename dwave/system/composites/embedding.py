@@ -266,9 +266,8 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         self._set_embedding_init(embedding)
 
     def _set_embedding_init(self, embedding):
-        child_sampler = self.children[0]
         # Derive the structure of our composed sampler from the target graph and the embedding
-        source_adjacency = dimod.embedding.target_to_source(child_sampler.adjacency, embedding)
+        source_adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
         try:
             nodelist = sorted(source_adjacency)
             edgelist = sorted(_adjacency_to_edges(source_adjacency))
@@ -281,11 +280,11 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         self.edgelist = edgelist
         self.adjacency = source_adjacency
 
-        self.parameters = parameters = child_sampler.parameters.copy()
+        self.parameters = parameters = self.child.parameters.copy()
         parameters['chain_strength'] = []
         parameters['chain_break_fraction'] = []
 
-        self.properties = {'child_properties': child_sampler.properties.copy()}
+        self.properties = {'child_properties': self.child.properties.copy()}
 
         self.embedding = self.properties['embedding'] = embedding
 
@@ -451,6 +450,6 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
             # Initialize properties that need embedding
-            super()._set_embedding_init(embedding)
+            super(LazyEmbeddingComposite, self)._set_embedding_init(embedding)
 
-        return super().sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
+        return super(LazyEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)

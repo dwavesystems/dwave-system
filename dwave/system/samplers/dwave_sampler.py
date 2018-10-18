@@ -107,10 +107,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                          endpoint=endpoint, token=token, proxy=proxy,
                                          permissive_ssl=permissive_ssl)
 
-        if solver_features is None:
-            # default to getting a QPU rather than a software solver
-            solver_features = {'qpu': True}
-
         # TODO: deprecate `solver`` name in favor of name regex in `solver_features`
         self.solver = self.client.get_solver(name=solver, features=solver_features)
 
@@ -405,7 +401,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             pass
         elif start_s == 0:
             # forward annealing, s must monotonically increase.
-            if not all(tail_s < lead_s for tail_s, lead_s in zip(s_list, s_list[1:])):
+            if not all(tail_s <= lead_s for tail_s, lead_s in zip(s_list, s_list[1:])):
                 raise ValueError("For forward anneals, anneal fraction s must monotonically increase")
         else:
             msg = ("In the first point, anneal fraction s must equal 0 for forward annealing or "
