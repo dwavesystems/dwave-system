@@ -169,14 +169,12 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sample_instantiation(self):
-        # Check that values have not been instantiated
+        # Check that graph related values have not been instantiated
         sampler = LazyFixedEmbeddingComposite(MockSampler())
         self.assertIsNone(sampler.embedding)
         self.assertIsNone(sampler.nodelist)
         self.assertIsNone(sampler.edgelist)
         self.assertIsNone(sampler.adjacency)
-        self.assertIsNone(sampler.parameters)
-        self.assertIsNone(sampler.properties)
 
         # Set up an and_gate BQM and sample
         Q = {('a', 'a'): 0.0, ('c', 'c'): 6.0, ('b', 'b'): 0.0, ('b', 'a'): 2.0, ('c', 'a'): -4.0, ('c', 'b'): -4.0}
@@ -187,8 +185,6 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampler.nodelist, ['a', 'b', 'c'])
         self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
         self.assertEqual(sampler.adjacency, {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}})
-        self.assertIsNotNone(sampler.parameters)
-        self.assertIsNotNone(sampler.properties)
 
     def test_same_embedding(self):
         sampler = LazyFixedEmbeddingComposite(MockSampler())

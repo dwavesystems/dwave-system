@@ -262,6 +262,13 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         self.children = [child_sampler]
 
+        self.parameters = parameters = self.child.parameters.copy()
+        parameters['chain_strength'] = []
+        parameters['chain_break_fraction'] = []
+
+        self.properties = {'child_properties': self.child.properties.copy()}
+
+
     def _set_graph_related_init(self, embedding):
         # Derive the structure of our composed sampler from the target graph and the embedding
         source_adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
@@ -276,12 +283,6 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         self.nodelist = nodelist
         self.edgelist = edgelist
         self.adjacency = source_adjacency
-
-        self.parameters = parameters = self.child.parameters.copy()
-        parameters['chain_strength'] = []
-        parameters['chain_break_fraction'] = []
-
-        self.properties = {'child_properties': self.child.properties.copy()}
 
         self.embedding = self.properties['embedding'] = embedding
 
