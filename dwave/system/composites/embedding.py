@@ -253,7 +253,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
     def __init__(self, child_sampler, embedding=None, source_adjacency=None):
         self._set_child_related_init(child_sampler)
-        self._set_graph_related_init(embedding)
+        self._set_graph_related_init(embedding, source_adjacency)
 
     def _set_child_related_init(self, child_sampler):
         #TODO: Change name to include Fixed and LazyFixed in raise message
@@ -268,23 +268,42 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         self.properties = {'child_properties': self.child.properties.copy()}
 
+    def _set_graph_related_init(self, embedding=None, source_adjacency=None):
+        # Must have embedding xor source_adjacency
+        if (embedding is None) == (source_adjacency is None):
+            raise IOError
 
-    def _set_graph_related_init(self, embedding):
-        # Derive the structure of our composed sampler from the target graph and the embedding
-        source_adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
+        # Populate embedding and adjacency attributes
+        if embedding is not None:
+            self.embedding = self.properties['embedding'] = embedding
+            self.adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
+
+        else:
+            self.adjacency = source_adjacency
+
+            # Find embedding with source_adjacency
+            __, target_edgelist, target_adjacency = self.child.structure
+            source_edgelist = []
+
+            for k, edges in source_adjacency.items():
+                source_edgelist.append((k, k))
+                for e in edges:
+                    source_edgelist.append((k, e))
+
+            embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
+            self.embedding = self.properties['embedding'] = embedding
+
+        # Populate nodelist and edgelist
         try:
-            nodelist = sorted(source_adjacency)
-            edgelist = sorted(_adjacency_to_edges(source_adjacency))
+            nodelist = sorted(self.adjacency)
+            edgelist = sorted(_adjacency_to_edges(self.adjacency))
         except TypeError:
             # python3 does not allow sorting of unlike types, so if nodes have
             # different type names just choose an arbitrary order
-            nodelist = list(source_adjacency)
-            edgelist = list(_adjacency_to_edges(source_adjacency))
+            nodelist = list(self.adjacency)
+            edgelist = list(_adjacency_to_edges(self.adjacency))
         self.nodelist = nodelist
         self.edgelist = edgelist
-        self.adjacency = source_adjacency
-
-        self.embedding = self.properties['embedding'] = embedding
 
     nodelist = None
     """list: Nodes available to the composed sampler.
