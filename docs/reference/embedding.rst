@@ -4,10 +4,6 @@
 Embedding
 =========
 
-.. automodule:: dwave.embedding
-
-.. currentmodule:: dwave.embedding
-
 MinorMiner
 ==========
 
@@ -18,6 +14,8 @@ MinorMiner
 
 Chimera
 =======
+
+.. currentmodule:: dwave.embedding
 
 .. autosummary::
    :toctree: generated/
