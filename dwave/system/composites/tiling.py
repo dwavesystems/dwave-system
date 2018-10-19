@@ -35,8 +35,7 @@ import dwave_networkx as dnx
 
 import numpy as np
 
-__all__ = ['TilingComposite', 'draw_tiling']
-
+__all__ = ['TilingComposite']
 
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """Composite to tile a small problem across a Chimera-structured sampler.
@@ -265,31 +264,3 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     @property
     def num_tiles(self):
         return len(self.embeddings)
-
-
-def draw_tiling(sampler, t=4):
-    """Draw Chimera graph of sampler with colored tiles.
-
-    Uses :std:doc:`dwave_networkx.draw_chimera <networkx:index>`.
-
-    Linear biases are overloaded to color the graph according to which tile each Chimera cell belongs to.
-
-    Args:
-        sampler (:class:`dwave_micro_client_dimod.TilingComposite`): A tiled dimod
-            sampler to be drawn.
-        t (int): The size of the shore within each
-            :term:`Chimera` cell.
-            
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-    for explanations of technical terms in descriptions of Ocean tools.
-
-    """
-
-    child = sampler.child
-    nodes_per_cell = t * 2
-    m = n = int(ceil(sqrt(ceil(len(child.structure.nodelist) / nodes_per_cell))))  # assume square lattice shape
-    system = dnx.chimera_graph(m, n, t, node_list=child.structure.nodelist, edge_list=child.structure.edgelist)
-
-    labels = {node: -len(sampler.embeddings) for node in system.nodes}  # unused cells are blue
-    labels.update({node: i for i, embedding in enumerate(sampler.embeddings) for s in embedding.values() for node in s})
-    dnx.draw_chimera(system, linear_biases=labels)
