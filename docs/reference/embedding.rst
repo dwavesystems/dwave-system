@@ -7,6 +7,9 @@ Embedding
 MinorMiner
 ==========
 
+:std:doc:`minorminer <minorminer:index>` is a heuristic tool for minor embedding: given a
+minor and target graph, it tries to find a mapping that embeds the minor into the target.
+
 .. autosummary::
    :toctree: generated/
 
@@ -14,6 +17,8 @@ MinorMiner
 
 Chimera
 =======
+
+Functionality for minor-embedding in :term:`Chimera`\ -structured target graphs.
 
 .. currentmodule:: dwave.embedding
 

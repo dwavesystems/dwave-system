@@ -86,13 +86,11 @@ information, see the :std:doc:`D-Wave System Documentation <sysdocs_gettingstart
 Minor-Embedding
 ---------------
 
-The D-Wave system is Chimera-structured.
-
-The Chimera architecture comprises sets of connected unit cells, each with four
-horizontal qubits connected to four vertical qubits via couplers (bipartite
-connectivity). Unit cells are tiled vertically and horizontally with adjacent
-qubits connected, creating a lattice of sparsely connected qubits. A unit cell
-is typically rendered as either a cross or a column.
+The D-Wave system is Chimera-structured. The Chimera architecture comprises sets of
+connected unit cells, each with four horizontal qubits connected to four vertical qubits
+via couplers (bipartite connectivity). Unit cells are tiled vertically and horizontally
+with adjacent qubits connected, creating a lattice of sparsely connected qubits. A unit
+cell is typically rendered as either a cross or a column.
 
 .. figure:: _static/ChimeraUnitCell.png
 	:align: center
@@ -113,3 +111,6 @@ To solve an arbitrarily posed binary quadratic problem on a D-Wave system requir
 called *minor embedding*, to a Chimera graph that represents the system's quantum processing unit.
 This preprocessing can be done by a composed sampler consisting of the
 :class:`~dwave.system.samplers.DWaveSampler()` and a composite that performs minor-embedding.
+
+In addition to composites that handle minor-embedding, dwave-system provides the related
+functionality described in :ref:`embedding`.
