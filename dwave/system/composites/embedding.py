@@ -232,6 +232,9 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         embedding (dict[hashable, iterable]):
             Mapping from a source graph to the specified sampler’s graph (the target graph).
 
+        source_adjacency (dict[hashable, iterable]):
+            Dictionary to describe source graph. Ex. {node: {node neighbours}}
+
     Examples:
         This example submits an triangle-structured Ising problem to a D-Wave solver, selected
         by the user's default
@@ -256,9 +259,9 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         self._set_graph_related_init(embedding, source_adjacency)
 
     def _set_child_related_init(self, child_sampler):
-        #TODO: Change name to include Fixed and LazyFixed in raise message
         if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
+            raise dimod.InvalidComposition("{} should only be applied to a Structured sampler"
+                                           .format(type(self).__name__))
 
         self.children = [child_sampler]
 
