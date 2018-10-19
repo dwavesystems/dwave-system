@@ -186,7 +186,15 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
 
     def test_adjacency(self):
-        adjacency = {''}
+        square_adj = {1: [2, 3], 2: [1, 4], 3: [1, 4], 4: [2, 3]}
+        sampler = FixedEmbeddingComposite(MockSampler(), source_adjacency=square_adj)
+
+        self.assertTrue(hasattr(sampler, 'adjacency'))
+        self.assertTrue(hasattr(sampler, 'embedding'))
+        self.assertIn('embedding', sampler.properties)
+
+        self.assertEqual(sampler.nodelist, [1, 2, 3, 4])
+        self.assertEqual(sampler.edgelist, [(1, 2), (1, 3), (2, 4), (3, 4)])
 
 
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
