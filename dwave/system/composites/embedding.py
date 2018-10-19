@@ -274,7 +274,8 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
     def _set_graph_related_init(self, embedding=None, source_adjacency=None):
         # Must have embedding xor source_adjacency
         if (embedding is None) == (source_adjacency is None):
-            raise IOError
+            raise TypeError('_set_graph_related_init() must take either an embedding or a source_adjacency argument,'
+                            ' but not both.')
 
         # Populate embedding and adjacency attributes
         if embedding is not None:
@@ -487,7 +488,7 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
             # Initialize properties that need embedding
-            super(LazyFixedEmbeddingComposite, self)._set_graph_related_init(embedding)
+            super(LazyFixedEmbeddingComposite, self)._set_graph_related_init(embedding=embedding)
 
         return super(LazyFixedEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength,
                                                                chain_break_fraction=chain_break_fraction, **parameters)

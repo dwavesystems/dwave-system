@@ -139,10 +139,29 @@ class TestEmbeddingComposite(unittest.TestCase):
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
-    def test_instantiation_empty(self):
+    def test_without_embedding_and_adjacency(self):
+        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockSampler()))
+
+    def test_with_embedding_and_adjacency(self):
+        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockSampler(),
+                                                                     {'a': [0, 4], 'b': [1], 'c': [5]},
+                                                                     {'a': ['b', 'c'], 'b': ['a', 'c'],
+                                                                      'c': ['a', 'b']}))
+
+    def test_instantiation_empty_embedding(self):
         sampler = FixedEmbeddingComposite(MockSampler(), {})
 
         dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
+
+        self.assertEqual(sampler.edgelist, [])
+
+        self.assertTrue(hasattr(sampler, 'embedding'))
+        self.assertIn('embedding', sampler.properties)
+
+    def test_instantiation_empty_adjacency(self):
+        sampler = FixedEmbeddingComposite(MockSampler(), source_adjacency={})
+
+        dtest.assert_sampler_api(sampler)  # checks for attributes needed in a sampler
 
         self.assertEqual(sampler.edgelist, [])
 
@@ -165,6 +184,9 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         resp = sampler.sample_ising({'a': 1, 'b': 1, 'c': 0}, {})
 
         self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
+
+    def test_adjacency(self):
+        adjacency = {''}
 
 
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
