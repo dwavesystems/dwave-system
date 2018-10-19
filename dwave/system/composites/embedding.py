@@ -251,14 +251,18 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
     """
 
-    def __init__(self, child_sampler, embedding):
+    def __init__(self, child_sampler, embedding=None, source_adjacency=None):
+        self._set_child_related_init(child_sampler)
+        self._set_graph_related_init(embedding)
+
+    def _set_child_related_init(self, child_sampler):
+        #TODO: Change name to include Fixed and LazyFixed in raise message
         if not isinstance(child_sampler, dimod.Structured):
             raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
 
         self.children = [child_sampler]
-        self._set_embedding_init(embedding)
 
-    def _set_embedding_init(self, embedding):
+    def _set_graph_related_init(self, embedding):
         # Derive the structure of our composed sampler from the target graph and the embedding
         source_adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
         try:
@@ -426,10 +430,7 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             Structured dimod sampler.
     """
     def __init__(self, child_sampler):
-        if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition('LazyFixedEmbeddingComposite should only be applied to a Structured sampler')
-
-        self.children = [child_sampler]
+        self._set_child_related_init(child_sampler)
         self.embedding = None
 
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
@@ -463,7 +464,7 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
             # Initialize properties that need embedding
-            super(LazyFixedEmbeddingComposite, self)._set_embedding_init(embedding)
+            super(LazyFixedEmbeddingComposite, self)._set_graph_related_init(embedding)
 
         return super(LazyFixedEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength,
                                                                chain_break_fraction=chain_break_fraction, **parameters)
