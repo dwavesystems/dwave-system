@@ -5,8 +5,6 @@ TilingComposite
 Class
 ========
 
-.. automodule:: dwave.system.composites.tiling
-
 .. currentmodule:: dwave.system.composites
 .. autoclass:: TilingComposite
 
