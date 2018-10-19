@@ -16,18 +16,14 @@ Class
 Sampler Properties
 ==================
 
+:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>` lists and describes
+the parameters and properties of D-Wave systems.
+
 .. autosummary::
    :toctree: generated/
 
    DWaveSampler.properties
    DWaveSampler.parameters
-
-Structured Sampler Properties
-=============================
-
-.. autosummary::
-   :toctree: generated/
-
    DWaveSampler.nodelist
    DWaveSampler.edgelist
    DWaveSampler.adjacency

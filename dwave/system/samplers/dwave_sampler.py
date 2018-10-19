@@ -16,7 +16,7 @@
 """
 A :std:doc:`dimod sampler <dimod:reference/samplers>` for the D-Wave system.
 
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
@@ -38,6 +38,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     parameters to :std:doc:`D-Wave Cloud Client <cloud-client:index>`
     (the stack's communication-manager package).
 
+    Typically you store the parameters used to identify and communicate with your
+    D-Wave system in a configuration file, the
+    :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+    which may include more than one profile, and are selected when not overridden by
+    explicit input arguments or environment variables. For more information, see
+    https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/.
+
     Args:
         config_file (str, optional):
             Path to a
@@ -45,49 +52,38 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             that identifies a D-Wave system and provides connection information.
 
         profile (str, optional):
-            Profile to select from a
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            Profile to select from the configuration file.
 
         endpoint (str, optional):
-            D-Wave API endpoint URL. If specified, used instead of retrieving a value from
-            a :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            D-Wave API endpoint URL.
 
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
-            If specified, used instead of retrieving a value from a
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
         solver (str, optional):
             Solver (a D-Wave system on which to run submitted problems).
-            If specified, used instead of retrieving a value from a
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
         solver_features (dict, optional):
-            Set of features the used solver has to have. Name-based selection via `solver`
-            argument overrides the feature-based selection. For available features (and values),
-            see: :meth:`~dwave.cloud.client.Client.solvers`.
+            Set of features the selected solver must support. Selection by name using
+            the `solver` argument overrides feature-based selection. Supported features and
+            values are described in :meth:`~dwave.cloud.client.Client.solvers`.
 
         proxy (str, optional):
-            Proxy URL to be used for accessing the D-Wave API. If specified, used instead of
-            retrieving a value from a
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            Proxy URL to be used for accessing the D-Wave API.
 
     Examples:
-        This example creates a :class:`DWaveSampler` based on a fictive user's
-        :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
-        and submits a simple Ising problem of just two variables
-        that map to qubits 0 and 1 on the example system. (The simplicity of this example
-        obviates the need for an embedding composite---the presence of qubits 0 and 1 on
-        the selected D-Wave system can be verified manually.)
+        This example submits a two-variable Ising problem mapped directly to qubits 0
+        and 1 on the example system.
 
-        >>> # Example configuration file /home/susan/.config/dwave/dwave.conf:
-        >>> #    [defaults]
-        >>> #    endpoint = https://url.of.some.dwavesystem.com/sapi
-        >>> #    client = qpu
-        >>> #
-        >>> #    [dw2000]
-        >>> #    solver = EXAMPLE_2000Q_SYSTEM
-        >>> #    token = ABC-123456789123456789123456789
+        Example configuration file /home/susan/.config/dwave/dwave.conf::
+
+          [defaults]
+          endpoint = https://url.of.some.dwavesystem.com/sapi
+          client = qpu
+          [dw2000]
+          solver = EXAMPLE_2000Q_SYSTEM
+          token = ABC-123456789123456789123456789
+
         >>> from dwave.system.samplers import DWaveSampler
         >>> sampler = DWaveSampler()
         >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
@@ -124,8 +120,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for example, new released features may add properties.
 
         Examples:
-            This example creates a :class:`DWaveSampler` and prints the properties retrieved
-            from a D-Wave solver selected by the user's default
+            This example prints properties retrieved from a D-Wave system selected by
+            the user's default
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
@@ -152,8 +148,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for example, new released features may add parameters.
 
         Examples:
-            This example creates a :class:`DWaveSampler` and prints the parameters retrieved
-            from a D-Wave solver selected by the user's default
+            This example prints the parameters retrieved
+            from a D-Wave system selected by the user's default
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
@@ -177,8 +173,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active couplers for the D-Wave solver.
 
         Examples:
-            This example creates a :class:`DWaveSampler` and prints the active couplers retrieved
-            from a D-Wave solver selected by the user's default
+            This example prints the active couplers retrieved
+            from a D-Wave system selected by the user's default
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
@@ -190,11 +186,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
              (0, 7),
              (0, 128),
              (1, 4),
-             (1, 5),
-             (1, 6),
-             (1, 7),
-             (1, 129),
-             (2, 4),
             # Snipped above response for brevity
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
@@ -208,8 +199,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active qubits for the D-Wave solver.
 
         Examples:
-            This example creates a :class:`DWaveSampler` and prints the active qubits retrieved
-            from a D-Wave solver selected by the user's default
+            This example prints the active qubits retrieved from a D-Wave system selected
+            by the user's default
             :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
@@ -218,9 +209,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             [0,
              1,
              2,
-             3,
-             4,
-             5,
             # Snipped above response for brevity
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
@@ -230,7 +218,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return self._nodelist
 
     def sample_ising(self, h, J, **kwargs):
-        """Sample from the provided Ising model.
+        """Sample from the specified Ising model.
 
         Args:
             h (list/dict):
@@ -245,16 +233,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 :attr:`.DWaveSampler.parameters`
 
         Returns:
-            :class:`dimod.Response`
+            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
 
         Examples:
-            This example creates a :class:`DWaveSampler` based on a D-Wave solver selected by the
-            user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
-            and submits a simple Ising problem of just two variables that map to qubits
-            0 and 1 on the example system. (The simplicity of this example obviates
-            the need for an embedding composite---the presence of qubits 0 and 1 on
-            the selected D-Wave system can be verified manually.)
+            This example submits a two-variable Ising problem mapped directly to qubits
+            0 and 1 on a D-Wave system selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -283,7 +267,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
 
     def sample_qubo(self, Q, **kwargs):
-        """Sample from the provided QUBO.
+        """Sample from the specified QUBO.
 
         Args:
             Q (dict):
@@ -294,16 +278,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 :attr:`.DWaveSampler.parameters`
 
         Returns:
-            :class:`dimod.Response`
+            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
 
         Examples:
-            This example creates a :class:`DWaveSampler` based on a D-Wave solver selected by the
-            user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
-            and submits a simple QUBO problem of just two variables that map to coupled
-            qubits 0 and 4 on the example system. (The simplicity of this example obviates
-            the need for an embedding composite---the presence of qubits 0 and 4, and
-            their coupling, on the selected D-Wave system can be verified manually.)
+            This example submits a two-variable Ising problem mapped directly to qubits
+            0 and 4 on a D-Wave system selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -330,7 +310,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
 
     def validate_anneal_schedule(self, anneal_schedule):
-        """Raise an exception of the given schedule is not valid for the sampler.
+        """Raise an exception if the specified schedule is invalid for the sampler.
 
         Args:
             anneal_schedule (list):
@@ -341,10 +321,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 that connects the provided points.
 
         Raises:
-            ValueError: If any of the above conditions are not satisfied.
+            ValueError: If the schedule violates any of the conditions listed below.
 
-            RuntimeError: If the sampler does not accept the anneal_schedule parameter or
-                if it does not have annealing_time_range or max_anneal_schedule_points properties.
+            RuntimeError: If the sampler does not accept the `anneal_schedule` parameter or
+                if it does not have `annealing_time_range` or `max_anneal_schedule_points`
+                properties.
 
         An anneal schedule must satisfy the following conditions:
 
@@ -353,11 +334,21 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
               increase monotonically.
             * For reverse annealing, the anneal fraction s must start and end at s=1.
             * In the final point, anneal fraction s must equal 1 and time t must not exceed the
-              maximum  value in the annealing_time_range property.
+              maximum  value in the `annealing_time_range` property.
             * The number of points must be >=2.
-            * The upper bound is system-dependent; check the max_anneal_schedule_points property.
+            * The upper bound is system-dependent; check the `max_anneal_schedule_points` property.
               For reverse annealing, the maximum number of points allowed is one more than the
               number given by this property.
+
+        Examples:
+            This example sets a quench schedule on a D-Wave system selected by the user's default
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+
+            >>> from dwave.system.samplers import DWaveSampler
+            >>> sampler = DWaveSampler()
+            >>> quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
+            >>> DWaveSampler().validate_anneal_schedule(quench_schedule)    # doctest: +SKIP
+            >>>
 
         """
         if 'anneal_schedule' not in self.parameters:

@@ -7,8 +7,6 @@ EmbeddingComposite
 Class
 =====
 
-.. automodule:: dwave.system.composites.embedding
-
 .. currentmodule:: dwave.system.composites
 .. autoclass:: EmbeddingComposite
 
