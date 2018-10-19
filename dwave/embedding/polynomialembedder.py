@@ -14,6 +14,10 @@
 #
 # ================================================================================================
 """
+
+**This module is currently under development. It is subject to change and not
+recommended for use at this time.**
+
 This file implements a polynomial-time algorithm to find a maximum-sized
 native clique embedding in an induced Chimera subgraph.  It also provides
 functionality to find maximum-sized native embeddings of complete bipartite
