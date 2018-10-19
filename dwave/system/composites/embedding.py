@@ -79,7 +79,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             >>> sampler.children   # doctest: +SKIP
             [<dwave.system.samplers.dwave_sampler.DWaveSampler at 0x7f45b20a8d50>]
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
+        terms in descriptions of Ocean tools.
 
         """
         return self._children
@@ -108,7 +109,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
              'auto_scale': ['parameters'],
             >>> # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
+        terms in descriptions of Ocean tools.
         """
 
         param = self.child.parameters.copy()
@@ -139,7 +141,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                [-0.20860153999435985, 0.05511969218508182],
             >>> # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
+        terms in descriptions of Ocean tools.
 
         """
         return {'child_properties': self.child.properties.copy()}
