@@ -21,8 +21,8 @@ from collections import Mapping
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,\
-    LazyEmbeddingComposite
+from dwave.system.composites import (EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,
+                                     LazyEmbeddingComposite)
 
 from tests.unit.mock_sampler import MockSampler
 
