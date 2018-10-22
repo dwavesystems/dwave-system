@@ -14,13 +14,15 @@
 #
 # ================================================================================================
 import unittest
+import warnings
 
 from collections import Mapping
 
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite
+from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,\
+    LazyEmbeddingComposite
 
 from tests.unit.mock_sampler import MockSampler
 
@@ -273,6 +275,28 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
         self.assertIsNotNone(sampler.embedding)
         self.assertEqual(sampler.nodelist, [1, 2, 3])
         self.assertEqual(sampler.edgelist, [(1, 2), (1, 3)])
+
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
+
+
+class TestLazyEmbeddingComposite(unittest.TestCase):
+    def test_deprecation_raise(self):
+        # Temporarily mutate warnings filter
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")  # Cause all warnings to always be triggered.
+            LazyEmbeddingComposite(MockSampler())  # Trigger warning
+
+            # Verify deprecation warning
+            assert len(w) == 1
+            assert issubclass(w[-1].category, DeprecationWarning)
+            assert "renamed" in str(w[-1].message)
+
+    def test_ising_sample(self):
+        h = {'a': 1, 'b': -2}
+        J = {('a', 'b'): -3}
+        sampler = LazyEmbeddingComposite(MockSampler())
+        response = sampler.sample_ising(h, J)
 
         # Check that at least one response was found
         self.assertGreaterEqual(len(response), 1)

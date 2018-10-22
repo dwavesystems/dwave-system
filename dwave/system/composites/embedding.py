@@ -23,10 +23,12 @@ See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ 
 of technical terms in descriptions of Ocean tools.
 
 """
+from warnings import warn
+
 import dimod
 import minorminer
 
-__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite']
+__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite', 'LazyEmbeddingComposite']
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
@@ -446,7 +448,7 @@ def _embed_state(embedding, state):
 
 
 class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
-    """ Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+    """Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
     for all following sample(..) calls.
 
     Args:
@@ -458,7 +460,7 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
         self.embedding = None
 
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
-        """ Sample the binary quadratic model.
+        """Sample the binary quadratic model.
 
         Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
         before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
@@ -492,3 +494,18 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
 
         return super(LazyFixedEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength,
                                                                chain_break_fraction=chain_break_fraction, **parameters)
+
+
+class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
+    """Deprecated Class. 'LazyEmbeddingComposite' has been deprecated and renamed to 'LazyFixedEmbeddingComposite'.
+
+    Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+    for all following sample(..) calls.
+
+    Args:
+        sampler (dimod.Sampler):
+            Structured dimod sampler.
+    """
+    def __init__(self, child_sampler):
+        super(LazyEmbeddingComposite, self).__init__(child_sampler)
+        warn("'LazyEmbeddingComposite' has been renamed to 'LazyFixedEmbeddingComposite'.", DeprecationWarning)
