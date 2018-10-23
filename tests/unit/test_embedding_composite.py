@@ -14,13 +14,15 @@
 #
 # ================================================================================================
 import unittest
+import warnings
 
 from collections import Mapping
 
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import EmbeddingComposite, FixedEmbeddingComposite, LazyEmbeddingComposite
+from dwave.system.composites import (EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,
+                                     LazyEmbeddingComposite)
 
 from tests.unit.mock_sampler import MockSampler
 
@@ -139,10 +141,29 @@ class TestEmbeddingComposite(unittest.TestCase):
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
-    def test_instantiation_empty(self):
+    def test_without_embedding_and_adjacency(self):
+        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockSampler()))
+
+    def test_with_embedding_and_adjacency(self):
+        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockSampler(),
+                                                                     {'a': [0, 4], 'b': [1], 'c': [5]},
+                                                                     {'a': ['b', 'c'], 'b': ['a', 'c'],
+                                                                      'c': ['a', 'b']}))
+
+    def test_instantiation_empty_embedding(self):
         sampler = FixedEmbeddingComposite(MockSampler(), {})
 
         dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
+
+        self.assertEqual(sampler.edgelist, [])
+
+        self.assertTrue(hasattr(sampler, 'embedding'))
+        self.assertIn('embedding', sampler.properties)
+
+    def test_instantiation_empty_adjacency(self):
+        sampler = FixedEmbeddingComposite(MockSampler(), source_adjacency={})
+
+        dtest.assert_sampler_api(sampler)  # checks for attributes needed in a sampler
 
         self.assertEqual(sampler.edgelist, [])
 
@@ -166,17 +187,26 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
         self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
 
+    def test_adjacency(self):
+        square_adj = {1: [2, 3], 2: [1, 4], 3: [1, 4], 4: [2, 3]}
+        sampler = FixedEmbeddingComposite(MockSampler(), source_adjacency=square_adj)
 
-class TestLazyEmbeddingComposite(unittest.TestCase):
+        self.assertTrue(hasattr(sampler, 'adjacency'))
+        self.assertTrue(hasattr(sampler, 'embedding'))
+        self.assertIn('embedding', sampler.properties)
+
+        self.assertEqual(sampler.nodelist, [1, 2, 3, 4])
+        self.assertEqual(sampler.edgelist, [(1, 2), (1, 3), (2, 4), (3, 4)])
+
+
+class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sample_instantiation(self):
-        # Check that values have not been instantiated
-        sampler = LazyEmbeddingComposite(MockSampler())
+        # Check that graph related values have not been instantiated
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         self.assertIsNone(sampler.embedding)
         self.assertIsNone(sampler.nodelist)
         self.assertIsNone(sampler.edgelist)
         self.assertIsNone(sampler.adjacency)
-        self.assertIsNone(sampler.parameters)
-        self.assertIsNone(sampler.properties)
 
         # Set up an and_gate BQM and sample
         Q = {('a', 'a'): 0.0, ('c', 'c'): 6.0, ('b', 'b'): 0.0, ('b', 'a'): 2.0, ('c', 'a'): -4.0, ('c', 'b'): -4.0}
@@ -187,11 +217,9 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampler.nodelist, ['a', 'b', 'c'])
         self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
         self.assertEqual(sampler.adjacency, {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}})
-        self.assertIsNotNone(sampler.parameters)
-        self.assertIsNotNone(sampler.properties)
 
     def test_same_embedding(self):
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
 
         # Set up Ising and sample
         h = {'a': 1, 'b': 1, 'c': 1}
@@ -211,7 +239,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
     def test_ising(self):
         h = {0: 11, 5: 2}
         J = {(0, 5): -8}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         response = sampler.sample_ising(h, J)
 
         # Check embedding
@@ -225,7 +253,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
 
     def test_qubo(self):
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (2, 3): 5, (1, 3): 6}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         response = sampler.sample_qubo(Q)
 
         # Check embedding
@@ -240,13 +268,35 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
     def test_sparse_qubo(self):
         # There is no relationship between nodes 2 and 3
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (1, 3): 6}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockSampler())
         response = sampler.sample_qubo(Q)
 
         # Check embedding
         self.assertIsNotNone(sampler.embedding)
         self.assertEqual(sampler.nodelist, [1, 2, 3])
         self.assertEqual(sampler.edgelist, [(1, 2), (1, 3)])
+
+        # Check that at least one response was found
+        self.assertGreaterEqual(len(response), 1)
+
+
+class TestLazyEmbeddingComposite(unittest.TestCase):
+    def test_deprecation_raise(self):
+        # Temporarily mutate warnings filter
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")  # Cause all warnings to always be triggered.
+            LazyEmbeddingComposite(MockSampler())  # Trigger warning
+
+            # Verify deprecation warning
+            assert len(w) == 1
+            assert issubclass(w[-1].category, DeprecationWarning)
+            assert "renamed" in str(w[-1].message)
+
+    def test_ising_sample(self):
+        h = {'a': 1, 'b': -2}
+        J = {('a', 'b'): -3}
+        sampler = LazyEmbeddingComposite(MockSampler())
+        response = sampler.sample_ising(h, J)
 
         # Check that at least one response was found
         self.assertGreaterEqual(len(response), 1)

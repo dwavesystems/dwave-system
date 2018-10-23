@@ -23,10 +23,12 @@ See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ 
 of technical terms in descriptions of Ocean tools.
 
 """
+from warnings import warn
+
 import dimod
 import minorminer
 
-__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyEmbeddingComposite']
+__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite', 'LazyEmbeddingComposite']
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
@@ -79,7 +81,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             >>> sampler.children   # doctest: +SKIP
             [<dwave.system.samplers.dwave_sampler.DWaveSampler at 0x7f45b20a8d50>]
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
+        terms in descriptions of Ocean tools.
 
         """
         return self._children
@@ -108,7 +111,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
              'auto_scale': ['parameters'],
             >>> # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
+        terms in descriptions of Ocean tools.
         """
 
         param = self.child.parameters.copy()
@@ -139,7 +143,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                [-0.20860153999435985, 0.05511969218508182],
             >>> # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical terms in descriptions of Ocean tools.
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
+        terms in descriptions of Ocean tools.
 
         """
         return {'child_properties': self.child.properties.copy()}
@@ -229,6 +234,9 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         embedding (dict[hashable, iterable]):
             Mapping from a source graph to the specified sampler’s graph (the target graph).
 
+        source_adjacency (dict[hashable, iterable]):
+            Dictionary to describe source graph. Ex. {node: {node neighbours}}
+
     Examples:
         This example submits an triangle-structured Ising problem to a D-Wave solver, selected
         by the user's default
@@ -248,27 +256,16 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
     """
 
-    def __init__(self, child_sampler, embedding):
+    def __init__(self, child_sampler, embedding=None, source_adjacency=None):
+        self._set_child_related_init(child_sampler)
+        self._set_graph_related_init(embedding, source_adjacency)
+
+    def _set_child_related_init(self, child_sampler):
         if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
+            raise dimod.InvalidComposition("{} should only be applied to a Structured sampler"
+                                           .format(type(self).__name__))
 
         self.children = [child_sampler]
-        self._set_embedding_init(embedding)
-
-    def _set_embedding_init(self, embedding):
-        # Derive the structure of our composed sampler from the target graph and the embedding
-        source_adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
-        try:
-            nodelist = sorted(source_adjacency)
-            edgelist = sorted(_adjacency_to_edges(source_adjacency))
-        except TypeError:
-            # python3 does not allow sorting of unlike types, so if nodes have
-            # different type names just choose an arbitrary order
-            nodelist = list(source_adjacency)
-            edgelist = list(_adjacency_to_edges(source_adjacency))
-        self.nodelist = nodelist
-        self.edgelist = edgelist
-        self.adjacency = source_adjacency
 
         self.parameters = parameters = self.child.parameters.copy()
         parameters['chain_strength'] = []
@@ -276,7 +273,43 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         self.properties = {'child_properties': self.child.properties.copy()}
 
-        self.embedding = self.properties['embedding'] = embedding
+    def _set_graph_related_init(self, embedding=None, source_adjacency=None):
+        # Must have embedding xor source_adjacency
+        if (embedding is None) == (source_adjacency is None):
+            raise TypeError('_set_graph_related_init() must take either an embedding or a source_adjacency argument,'
+                            ' but not both.')
+
+        # Populate embedding and adjacency attributes
+        if embedding is not None:
+            self.embedding = self.properties['embedding'] = embedding
+            self.adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
+
+        else:
+            self.adjacency = source_adjacency
+
+            # Find embedding with source_adjacency
+            __, target_edgelist, target_adjacency = self.child.structure
+            source_edgelist = []
+
+            for k, edges in source_adjacency.items():
+                source_edgelist.append((k, k))
+                for e in edges:
+                    source_edgelist.append((k, e))
+
+            embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
+            self.embedding = self.properties['embedding'] = embedding
+
+        # Populate nodelist and edgelist
+        try:
+            nodelist = sorted(self.adjacency)
+            edgelist = sorted(_adjacency_to_edges(self.adjacency))
+        except TypeError:
+            # python3 does not allow sorting of unlike types, so if nodes have
+            # different type names just choose an arbitrary order
+            nodelist = list(self.adjacency)
+            edgelist = list(_adjacency_to_edges(self.adjacency))
+        self.nodelist = nodelist
+        self.edgelist = edgelist
 
     nodelist = None
     """list: Nodes available to the composed sampler.
@@ -414,8 +447,8 @@ def _embed_state(embedding, state):
     return {u: state[v] for v, chain in embedding.items() for u in chain}
 
 
-class LazyEmbeddingComposite(FixedEmbeddingComposite):
-    """ Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
+    """Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
     for all following sample(..) calls.
 
     Args:
@@ -423,14 +456,11 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
             Structured dimod sampler.
     """
     def __init__(self, child_sampler):
-        if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition('LazyEmbeddingComposite should only be applied to a Structured sampler')
-
-        self.children = [child_sampler]
+        self._set_child_related_init(child_sampler)
         self.embedding = None
 
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
-        """ Sample the binary quadratic model.
+        """Sample the binary quadratic model.
 
         Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
         before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
@@ -460,6 +490,22 @@ class LazyEmbeddingComposite(FixedEmbeddingComposite):
             embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
 
             # Initialize properties that need embedding
-            super(LazyEmbeddingComposite, self)._set_embedding_init(embedding)
+            super(LazyFixedEmbeddingComposite, self)._set_graph_related_init(embedding=embedding)
 
-        return super(LazyEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength, chain_break_fraction=chain_break_fraction, **parameters)
+        return super(LazyFixedEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength,
+                                                               chain_break_fraction=chain_break_fraction, **parameters)
+
+
+class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
+    """Deprecated Class. 'LazyEmbeddingComposite' has been deprecated and renamed to 'LazyFixedEmbeddingComposite'.
+
+    Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+    for all following sample(..) calls.
+
+    Args:
+        sampler (dimod.Sampler):
+            Structured dimod sampler.
+    """
+    def __init__(self, child_sampler):
+        super(LazyEmbeddingComposite, self).__init__(child_sampler)
+        warn("'LazyEmbeddingComposite' has been renamed to 'LazyFixedEmbeddingComposite'.", DeprecationWarning)
