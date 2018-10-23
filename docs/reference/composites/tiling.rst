@@ -5,8 +5,6 @@ TilingComposite
 Class
 ========
 
-.. automodule:: dwave.system.composites.tiling
-
 .. currentmodule:: dwave.system.composites
 .. autoclass:: TilingComposite
 
@@ -49,11 +47,3 @@ Methods
    TilingComposite.sample
    TilingComposite.sample_ising
    TilingComposite.sample_qubo
-
-Related Functions
-=================
-
-.. autosummary::
-   :toctree: generated/
-
-   tiling.draw_tiling
