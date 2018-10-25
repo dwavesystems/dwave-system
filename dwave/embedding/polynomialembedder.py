@@ -15,7 +15,7 @@
 # ================================================================================================
 """
 
-**This module is currently under development. It is subject to change and not
+**This module is used as a private source file. It is subject to change and not
 recommended for use at this time.**
 
 This file implements a polynomial-time algorithm to find a maximum-sized
