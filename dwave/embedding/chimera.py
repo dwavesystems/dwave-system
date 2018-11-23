@@ -24,13 +24,17 @@ __all__ = ['find_clique_embedding', 'find_biclique_embedding']
 
 @nx.utils.decorators.nodes_or_number(0)
 def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
-    """Find an embedding for a clique.
+    """Find an embedding for a clique in a Chimera graph.
+
+    Given a target :term:`Chimera` graph size, and a clique (fully connect graph),
+    attempts to find an embedding.
 
     Args:
         k (int/iterable):
-            If k is an integer, generates an embedding for a clique of size k labelled [0,k-1].
-            If k is an iterable, generates an embedding for a clique of size len(k) where k
-            provides the variable labels.
+            Clique to embed. If k is an integer, generates an embedding for a clique of size k
+            labelled [0,k-1].
+            If k is an iterable, generates an embedding for a clique of size len(k), where
+            iterable k is the variable labels.
 
         m (int):
             Number of rows in the Chimera lattice.
@@ -42,19 +46,22 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
             Size of the shore within each Chimera tile.
 
         target_edges (iterable[edge]):
-            A list of edges in the target Chimera graph. Expects the nodes to be labelled as
+            A list of edges in the target Chimera graph. Nodes are labelled as
             returned by :func:`~dwave_networkx.generators.chimera_graph`.
 
     Returns:
         dict: An embedding mapping a clique to the Chimera lattice.
 
     Examples:
+        The first example finds an embedding for a :math:`K_4` complete graph in a single
+        Chimera unit cell. The second for an alphanumerically labeled :math:`K_3`
+        graph in 4 unit cells.
 
         >>> from dwave.embedding.chimera import find_clique_embedding
         ...
-        >>> embedding = find_clique_embedding(3, m=2, n=2, t=4)
+        >>> embedding = find_clique_embedding(4, 1, 1)
         >>> embedding  # doctest: +SKIP
-        {0: [20, 16], 1: [21, 17], 2: [22, 18]}
+        {0: [4, 0], 1: [5, 1], 2: [6, 2], 3: [7, 3]}
 
         >>> from dwave.embedding.chimera import find_clique_embedding
         ...
@@ -78,20 +85,23 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
 @nx.utils.decorators.nodes_or_number(0)
 @nx.utils.decorators.nodes_or_number(1)
 def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
-    """Find an embedding for a biclique.
+    """Find an embedding for a biclique in a Chimera graph.
+
+    Given a target :term:`Chimera` graph size, and a biclique (a bipartite graph where every
+    vertex in a set in connected to all vertices in the other set), attempts to find an embedding.
 
     Args:
         a (int/iterable):
-            If a is an integer, generates an embedding for a biclique with the left shore of size a
-            labelled [0,a-1].
+            Left shore of the biclique to embed. If a is an integer, generates an embedding
+            for a biclique with the left shore of size a labelled [0,a-1].
             If a is an iterable, generates an embedding for a biclique with the left shore of size
-            len(a) where a provides the variable labels.
+            len(a), where iterable a is the variable labels.
 
         b (int/iterable):
-            If b is an integer, generates an embedding for a biclique with the right shore of size b
-            labelled [0,b-1].
-            If b is an iterable, generates an embedding for a biclique with the right shore of size
-            len(b) where a provides the variable labels.
+            Right shore of the biclique to embed.If b is an integer, generates an embedding
+            for a biclique with the right shore of size b labelled [0,b-1].
+            If b is an iterable, generates an embedding for a biclique with the right shore of
+            size len(b), where iterable b provides the variable labels.
 
         m (int):
             Number of rows in the Chimera lattice.
@@ -103,7 +113,7 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
             Size of the shore within each Chimera tile.
 
         target_edges (iterable[edge]):
-            A list of edges in the target Chimera graph. Expects the nodes to be labelled as
+            A list of edges in the target Chimera graph. Nodes are labelled as
             returned by :func:`~dwave_networkx.generators.chimera_graph`.
 
     Returns:
@@ -114,14 +124,14 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
             dict: An embedding mapping the right shore of the biclique to the Chimera lattice
 
     Examples:
+        This example finds an embedding for an alphanumerically labeled biclique in a single
+        Chimera unit cell.
 
         >>> from dwave.embedding.chimera import find_biclique_embedding
         ...
-        >>> left, right = find_biclique_embedding(3, 3, m=2, n=2, t=4)
-        >>> left  # doctest: +SKIP
-        {0: [28], 1: [29], 2: [30]}
-        >>> right  # doctest: +SKIP
-        {0: [24], 1: [25], 2: [26]}
+        >>> left, right = find_biclique_embedding(['a', 'b', 'c'], ['d', 'e'], 1, 1)
+        >>> print(left, right)  # doctest: +SKIP
+        {'a': [4], 'b': [5], 'c': [6]} {'d': [0], 'e': [1]}
 
     """
     _, anodes = a
@@ -138,11 +148,13 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
 
 
 def find_grid_embedding(dim, m, n=None, t=4):
-    """Find an embedding for a grid.
+    """Find an embedding for a grid in a Chimera graph.
+
+    Given a target :term:`Chimera` graph size, and grid dimensions, attempts to find an embedding.
 
     Args:
         dim (iterable[int]):
-            The size of each grid dimension. Length can be between 1 and 3.
+            Sizes of each grid dimension. Length can be between 1 and 3.
 
         m (int):
             Number of rows in the Chimera lattice.
@@ -157,6 +169,7 @@ def find_grid_embedding(dim, m, n=None, t=4):
         dict: An embedding mapping a grid to the Chimera lattice.
 
     Examples:
+        This example finds an embedding for a 2x3 grid in a 12x12 lattice of Chimera unit cells.
 
         >>> from dwave.embedding.chimera import find_grid_embedding
         ...
@@ -189,7 +202,7 @@ def find_grid_embedding(dim, m, n=None, t=4):
 
     rows, cols, aisles = dim
     if rows > m or cols > n or aisles > t:
-        msg = ("the largest grid that can fit in a ({}, {}, {}) Chimera-lattice "
+        msg = ("the largest grid that find_grid_embedding can fit in a ({}, {}, {}) Chimera-lattice "
                "is {}x{}x{}; given grid is {}x{}x{}").format(m, n, t, m, n, t, rows, cols, aisles)
         raise ValueError(msg)
 
