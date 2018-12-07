@@ -1,3 +1,4 @@
+from dwave_networkx.generators.chimera import chimera_graph
 from dwave_networkx.generators.pegasus import pegasus_graph, pegasus_coordinates
 from dwave.embedding.polynomialembedder import processor
 
@@ -36,9 +37,11 @@ def find_largest_clique(G):
     # Break pegasus qubits into chimera fragments
 
     # Find clique embedding in terms of chimera fragments
-    n_chimera_rows = n_rows * n_fragments
-    n_chimera_cols = n_cols * n_fragments
-    embedding_processor = processor(edges, M=n_chimera_rows, N=n_chimera_cols, L=2, linear=False)
+    n_chim_rows = n_rows * n_fragments
+    n_chim_cols = n_cols * n_fragments
+    chim_graph = chimera_graph(n_chim_rows, n=n_chim_cols, t=2)
+    chim_edges = chim_graph.subgraph(qubits).edges()
+    embedding_processor = processor(chim_edges, M=n_chim_rows, N=n_chim_cols, L=2, linear=False)
 
     clique_embedding = embedding_processor.largestNativeClique()
 
