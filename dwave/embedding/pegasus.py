@@ -6,8 +6,9 @@ from dwave.embedding.polynomialembedder import processor
 #TODO: ask Kelly if largest clique in pegasus == largest native clique in pegasus
 #TODO: ask Kelly if this is the only code that needs fragment to coord conversion.
 #TODO: remove hardcoded 12 and 2
+#TODO: double check that Pegasus generator topology is the one we want
 
-def _fragmentize(G):
+def _fragmentize(G, n_fragments=6):
     """Takes the Pegasus qubits from G and returns their corresponding Chimera fragments"""
     fragments = []
     coord_converter = pegasus_coordinates(G.graph['rows'])   #TODO: double check n_cols is not needed
@@ -15,17 +16,17 @@ def _fragmentize(G):
     for node in G.nodes:
         u, w, k, z = coord_converter.tuple(node)
 
-        # Find base Chimera fragmenta
-        #TODO: check that things are ints
+        # Find base Chimera fragment
+        #TODO: check that // is okay
         offset = G.graph['horizontal_offsets'] if u else G.graph['vertical_offsets']
         offset = offset[k]
-        x0 = int((z * 12 + offset) / 2)
-        y = int((w * 12 + k) / 2)
-        ck = int(k % 2)
+        x0 = (z * 12 + offset) // 2
+        y = (w * 12 + k) // 2
+        ck = k % 2
         base = [0, 0, u, ck]
 
-        # Generate the 6 fragments associated with node
-        for x in range(x0, x0 + 6):
+        # Generate the fragments associated with node
+        for x in range(x0, x0 + n_fragments):
             base[u] = x
             base[1 - u] = y
             fragments.append(tuple(base))
@@ -45,29 +46,30 @@ def _defragmentize(embedding, G):
             w, k = divmod(2 * y + q[3], 12)
             offset = G.graph['horizontal_offsets'] if u else G.graph['vertical_offsets']
             x0 = x * 2 - offset[k]
-            z = x0 / 12
+            z = x0 // 12
             pegasus_chain.append((u, w, k, z))
 
         pegasus_embedding.append(set(pegasus_chain))
 
     return pegasus_embedding
 
+
 def find_largest_clique(G):
-    # Set up
-    n_rows = G.graph['rows']    # Rows of unit cells
-    n_cols = G.graph['columns']    # Columns of unit cells
-    n_fragments = 6             # Number of fragments a qubit breaks into
-
     # Break pegasus qubits into chimera fragments
-    fragments = _fragmentize(G)
+    n_fragments = 6             # Number of fragments a qubit breaks into
+    fragments = _fragmentize(G, n_fragments)
 
-    # Find clique embedding in terms of chimera fragments
-    n_chim_rows = n_rows * n_fragments
-    n_chim_cols = n_cols * n_fragments
-    chim_graph = chimera_graph(n_chim_rows, n=n_chim_cols, t=2, coordinates=True)
+    # Create a Chimera graph to store chimera fragments
+    n_rows = G.graph['rows'] * n_fragments
+    n_cols = G.graph['columns'] * n_fragments
+    shore_size = 2
+    chim_graph = chimera_graph(n_rows, n=n_cols, t=shore_size, coordinates=True)
+
+    # Determine valid fragment couplers in a K2,2 Chimera graph
     chim_edges = chim_graph.subgraph(fragments).edges()
-    embedding_processor = processor(chim_edges, M=n_chim_rows, N=n_chim_cols, L=2, linear=False)
 
+    # Find clique embedding in K2,2 Chimera graph
+    embedding_processor = processor(chim_edges, M=n_rows, N=n_cols, L=2, linear=False)
     chim_clique_embedding = embedding_processor.largestNativeClique()
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
