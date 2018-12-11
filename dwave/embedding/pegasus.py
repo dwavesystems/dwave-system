@@ -55,28 +55,29 @@ def _defragmentize(embedding, G):
 
 
 def find_largest_clique(G):
-    # Break pegasus qubits into chimera fragments
-    n_fragments = 6             # Number of fragments a qubit breaks into
+    # Break Pegasus qubits into chimera fragments
+    # Note: When you break Pegasus qubits into 6 pieces, you end up with a K2,2 Chimera graph
+    n_fragments = 6
     fragments = _fragmentize(G, n_fragments)
 
-    # Create a Chimera graph to store chimera fragments
+    # Create a K2,2 Chimera graph
     n_rows = G.graph['rows'] * n_fragments
     n_cols = G.graph['columns'] * n_fragments
     shore_size = 2
     chim_graph = chimera_graph(n_rows, n=n_cols, t=shore_size, coordinates=True)
 
     # Determine valid fragment couplers in a K2,2 Chimera graph
-    chim_edges = chim_graph.subgraph(fragments).edges()
+    edges = chim_graph.subgraph(fragments).edges()
 
     # Find clique embedding in K2,2 Chimera graph
-    embedding_processor = processor(chim_edges, M=n_rows, N=n_cols, L=2, linear=False)
-    chim_clique_embedding = embedding_processor.largestNativeClique()
+    embedding_processor = processor(edges, M=n_rows, N=n_cols, L=2, linear=False)
+    chimera_clique_embedding = embedding_processor.largestNativeClique()
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
     #TODO: differentiate between list and dict clique embedding
     #TODO: need to convert calculations in terms of int
-    clique_embedding = {i: x for i, x in enumerate(_defragmentize(chim_clique_embedding, G))}
-    return clique_embedding
+    pegasus_clique_embedding = {i: x for i, x in enumerate(_defragmentize(chimera_clique_embedding, G))}
+    return pegasus_clique_embedding
 
 def k_example():
     G = pegasus_graph(6)
