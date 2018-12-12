@@ -70,9 +70,14 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
         w, k = divmod(2 * shift + ck, 12)
 
         # Determine qubit index on track
+        shift2 = x if u else y
         offset = pegasus_horizontal_offsets if u else pegasus_vertical_offsets
-        x0 = x * 2 - offset[k]
+        x0 = shift2 * 2 - offset[k]
         z = x0 // 12
+
+        if z < 0:
+            print("uh oh!")
+            k=5
 
         pegasus_coords.append((u, w, k, z))
 
