@@ -5,7 +5,7 @@ from dwave.embedding.polynomialembedder import processor
 
 #TODO: ask Kelly if largest clique in pegasus == largest native clique in pegasus
 #TODO: double check that Pegasus generator topology is the one we want
-#TODO: check that // is okay
+#TODO: ask if 'ck' is standard coordinate notation
 
 #TODO: should I be catching the case when user does not provide sufficient offsets?
 #TODO: perhaps just note that if the offset isn't needed, put in None
@@ -23,11 +23,17 @@ def get_chimera_fragments(pegasus_coords, vertical_offsets, horizontal_offsets):
         x: number of horizontal fragments from the left-most column
         u: 1 if it belongs to a horizontal qubit, 0 otherwise
         ck: fragment index on the K2,2 shore
+
+    Args:
+        pegasus_coords: List of 4-tuple ints
+        vertical_offsets: List of ints. List of offsets for vertical pegasus qubits
+        horizontal_offsets: List of ints. List of offsets for horizontal Pegasus qubits
+
     """
     fragments = []
     for u, w, k, z in pegasus_coords:
         # Determine offset
-        offset = vertical_offsets if u else horizontal_offsets
+        offset = horizontal_offsets if u else vertical_offsets
         offset = offset[k]
 
         # Find the base (i.e. zeroth) Chimera fragment of this pegasus coordinate
@@ -50,24 +56,27 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
     coordinates.
 
     Args:
-        chimera_coords: List of K2,2 Chimera coordinates
-        pegasus_vertical_offsets: List of vertical offsets of the Pegasus graph
-        pegasus_horizontal_offsets: List of horizontal offsets of the Pegasus graph
+        chimera_coords: List of 4-tuple ints
+        pegasus_vertical_offsets: List of ints
+        pegasus_horizontal_offsets: List of ints
 
     Return:
         A set of pegasus coordinates
     """
     pegasus_coords = []
-    for q in chimera_coords:
-        u = q[2]
-        x = q[u]
-        y = q[1 - u]
-        w, k = divmod(2 * y + q[3], 12)
+    for y, x, u, ck in chimera_coords:
+        # Determine number of tiles and track number
+        shift = y if u else x
+        w, k = divmod(2 * shift + ck, 12)
+
+        # Determine qubit index on track
         offset = pegasus_horizontal_offsets if u else pegasus_vertical_offsets
         x0 = x * 2 - offset[k]
         z = x0 // 12
+
         pegasus_coords.append((u, w, k, z))
 
+    # Several chimera coordinates may map to the same pegasus coordinate, hence, apply set(..)
     return set(pegasus_coords)
 
 
@@ -90,7 +99,7 @@ def find_largest_native_clique(G):
     # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
     v_offsets = G.graph['vertical_offsets']
     h_offsets = G.graph['horizontal_offsets']
-    coord_converter = pegasus_coordinates(G.graph['rows'])   #TODO: double check n_cols is not needed
+    coord_converter = pegasus_coordinates(G.graph['rows'])   #TODO: double check n_cols is not needed. i.e. Is pegasus always square?
     pegasus_coords = map(coord_converter.tuple, G.nodes)
     fragments = get_chimera_fragments(pegasus_coords, v_offsets, h_offsets)
 
