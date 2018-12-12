@@ -42,7 +42,7 @@ def get_chimera_fragments(pegasus_coords, vertical_offsets, horizontal_offsets):
         ck = k % 2
         base = [0, 0, u, ck]
 
-        # Generate the 6 fragments associated with this pegasus coordinate
+        # Generate the six fragments associated with this pegasus coordinate
         for x in range(x0, x0 + 6):
             base[u] = x
             base[1 - u] = y
@@ -122,11 +122,5 @@ def find_largest_native_clique(G):
     pegasus_clique_embedding = map(lambda x: get_pegasus_coordinates(x, v_offsets, h_offsets),
                                    chimera_clique_embedding)
     pegasus_clique_embedding = {i: x for i, x in enumerate(pegasus_clique_embedding)}
+
     return pegasus_clique_embedding
-
-def k_example():
-    G = pegasus_graph(6)
-    print(find_largest_native_clique(G))
-
-
-k_example()
