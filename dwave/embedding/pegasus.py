@@ -65,19 +65,16 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
     """
     pegasus_coords = []
     for y, x, u, ck in chimera_coords:
+        # Set up shifts and offsets
+        shifts = [x, y]
+        offsets = pegasus_horizontal_offsets if u else pegasus_vertical_offsets
+
         # Determine number of tiles and track number
-        shift = y if u else x
-        w, k = divmod(2 * shift + ck, 12)
+        w, k = divmod(2 * shifts[u] + ck, 12)
 
         # Determine qubit index on track
-        shift2 = x if u else y
-        offset = pegasus_horizontal_offsets if u else pegasus_vertical_offsets
-        x0 = shift2 * 2 - offset[k]
+        x0 = shifts[1-u] * 2 - offsets[k]
         z = x0 // 12
-
-        if z < 0:
-            print("uh oh!")
-            k=5
 
         pegasus_coords.append((u, w, k, z))
 
