@@ -21,6 +21,8 @@ for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
 
+from warnings import warn
+
 import dimod
 
 from dwave.cloud import Client
@@ -80,8 +82,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
           [defaults]
           endpoint = https://url.of.some.dwavesystem.com/sapi
           client = qpu
-          [dw2000]
-          solver = EXAMPLE_2000Q_SYSTEM
+          [2000q]
+          solver = {"num_qubits__gte": 2000}
           token = ABC-123456789123456789123456789
 
         >>> from dwave.system.samplers import DWaveSampler
@@ -99,12 +101,19 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def __init__(self, config_file=None, profile=None, endpoint=None, token=None,
                  solver=None, solver_features=None, proxy=None, permissive_ssl=False):
 
-        self.client = Client.from_config(config_file=config_file, profile=profile,
-                                         endpoint=endpoint, token=token, proxy=proxy,
-                                         permissive_ssl=permissive_ssl)
+        if solver_features is not None:
+            warn("'solver_features' has been renamed to 'solver'.", DeprecationWarning)
 
-        # TODO: deprecate `solver`` name in favor of name regex in `solver_features`
-        self.solver = self.client.get_solver(name=solver, features=solver_features)
+            if solver is not None:
+                raise ValueError("can not combine 'solver' and 'solver_features'")
+
+            solver = solver_features
+
+        self.client = Client.from_config(config_file=config_file, profile=profile,
+                                         endpoint=endpoint, token=token, solver=solver,
+                                         proxy=proxy, permissive_ssl=permissive_ssl)
+
+        self.solver = self.client.get_solver()
 
         # need to set up the nodelist and edgelist, properties, parameters
         self._nodelist = sorted(self.solver.nodes)
