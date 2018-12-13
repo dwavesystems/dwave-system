@@ -62,16 +62,17 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
 
-        solver (str, optional):
-            Solver (a D-Wave system on which to run submitted problems).
-
-        solver_features (dict, optional):
-            Set of features the selected solver must support. Selection by name using
-            the `solver` argument overrides feature-based selection. Supported features and
-            values are described in :meth:`~dwave.cloud.client.Client.solvers`.
+        solver (dict/str, optional):
+            Solver (a D-Wave system on which to run submitted problems) given as a set of
+            features the selected solver must support. For backward compatibility, solver
+            name (as string) is accepted also. Supported features and values are
+            described in :meth:`~dwave.cloud.client.Client.solvers`.
 
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API.
+
+        **config:
+            Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example submits a two-variable Ising problem mapped directly to qubits 0
@@ -98,21 +99,17 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
-    def __init__(self, config_file=None, profile=None, endpoint=None, token=None,
-                 solver=None, solver_features=None, proxy=None, permissive_ssl=False):
+    def __init__(self, **config):
 
-        if solver_features is not None:
-            warn("'solver_features' has been renamed to 'solver'.", DeprecationWarning)
+        if config.get('solver_features') is not None:
+            warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
 
-            if solver is not None:
+            if config.get('solver') is not None:
                 raise ValueError("can not combine 'solver' and 'solver_features'")
 
-            solver = solver_features
+            config['solver'] = config['solver_features']
 
-        self.client = Client.from_config(config_file=config_file, profile=profile,
-                                         endpoint=endpoint, token=token, solver=solver,
-                                         proxy=proxy, permissive_ssl=permissive_ssl)
-
+        self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
         # need to set up the nodelist and edgelist, properties, parameters
