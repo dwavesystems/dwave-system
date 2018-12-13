@@ -3,7 +3,6 @@ from dwave_networkx.generators.pegasus import pegasus_graph, pegasus_coordinates
 from dwave.embedding.polynomialembedder import processor
 
 
-#TODO: ask Kelly if largest clique in pegasus == largest native clique in pegasus
 #TODO: double check that Pegasus generator topology is the one we want
 #TODO: ask if 'ck' is standard coordinate notation
 
@@ -82,7 +81,9 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
     return set(pegasus_coords)
 
 
-def find_largest_native_clique(G):
+#TODO: ask Kelly if largest clique in pegasus == largest native clique in pegasus
+#TODO: change function interface to more closely resemble chimera
+def find_largest_clique_embedding(G):
     """Find the largest native clique in a Pegasus graph.
 
     This clique is found by transforming the Pegasus graph into a K2,2 Chimera graph and then

@@ -1,4 +1,4 @@
-from dwave.embedding.pegasus import get_chimera_fragments, get_pegasus_coordinates, find_largest_native_clique
+from dwave.embedding.pegasus import get_chimera_fragments, get_pegasus_coordinates, find_largest_clique_embedding
 from dwave_networkx.generators.pegasus import pegasus_graph
 import unittest
 
@@ -59,7 +59,7 @@ class TestGetPegasusCoordinates(unittest.TestCase):
 class TestFindLargestNativeClique(unittest.TestCase):
     def test_valid_clique(self):
         G = pegasus_graph(6)
-        embedding = find_largest_native_clique(G)
+        embedding = find_largest_clique_embedding(G)
 
         self.assertEqual(60, len(embedding))
 
