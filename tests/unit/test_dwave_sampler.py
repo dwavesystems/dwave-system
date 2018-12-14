@@ -131,6 +131,7 @@ class TestDwaveSampler(unittest.TestCase):
 
         # assertWarns not available in py2
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             DWaveSampler(solver_features={'qpu': True})
             self.assertEqual(len(w), 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
@@ -142,6 +143,7 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertTrue(sampler.solver.is_software)
 
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             DWaveSampler(solver={'qpu': True})
             self.assertEqual(len(w), 0)
 
