@@ -24,17 +24,17 @@ import dimod.testing as dtest
 from dwave.system.composites import (EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,
                                      LazyEmbeddingComposite)
 
-from tests.unit.mock_sampler import MockSampler
+from dwave.system.testing import MockDWaveSampler
 
 
 class TestEmbeddingComposite(unittest.TestCase):
     def test_instantiation_smoketest(self):
-        sampler = EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockDWaveSampler())
 
         dtest.assert_sampler_api(sampler)
 
     def test_sample_ising(self):
-        sampler = EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockDWaveSampler())
 
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
@@ -55,7 +55,7 @@ class TestEmbeddingComposite(unittest.TestCase):
                                    energy)
 
     def test_sample_ising_unstructured_not_integer_labelled(self):
-        sampler = EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockDWaveSampler())
 
         h = {'a': -1., 'b': 2}
         J = {('a', 'b'): 1.5}
@@ -74,7 +74,7 @@ class TestEmbeddingComposite(unittest.TestCase):
                                    energy)
 
     def test_sample_qubo(self):
-        sampler = EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockDWaveSampler())
 
         Q = {(0, 0): .1, (0, 4): -.8, (4, 4): 1}
 
@@ -93,7 +93,7 @@ class TestEmbeddingComposite(unittest.TestCase):
                                    energy)
 
     def test_max_cut(self):
-        sampler = EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockDWaveSampler())
 
         m = 2
         n = 2
@@ -129,7 +129,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         response = sampler.sample_ising(h, J)
 
     def test_singleton_variables(self):
-        sampler = EmbeddingComposite(MockSampler())
+        sampler = EmbeddingComposite(MockDWaveSampler())
 
         h = {0: -1., 4: 2}
         J = {}
@@ -142,16 +142,16 @@ class TestEmbeddingComposite(unittest.TestCase):
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):
-        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockSampler()))
+        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockDWaveSampler()))
 
     def test_with_embedding_and_adjacency(self):
-        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockSampler(),
+        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockDWaveSampler(),
                                                                      {'a': [0, 4], 'b': [1], 'c': [5]},
                                                                      {'a': ['b', 'c'], 'b': ['a', 'c'],
                                                                       'c': ['a', 'b']}))
 
     def test_instantiation_empty_embedding(self):
-        sampler = FixedEmbeddingComposite(MockSampler(), {})
+        sampler = FixedEmbeddingComposite(MockDWaveSampler(), {})
 
         dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
 
@@ -161,7 +161,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         self.assertIn('embedding', sampler.properties)
 
     def test_instantiation_empty_adjacency(self):
-        sampler = FixedEmbeddingComposite(MockSampler(), source_adjacency={})
+        sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency={})
 
         dtest.assert_sampler_api(sampler)  # checks for attributes needed in a sampler
 
@@ -172,7 +172,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
     def test_instantiation_triangle(self):
         embedding = {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]}
-        sampler = FixedEmbeddingComposite(MockSampler(), embedding)
+        sampler = FixedEmbeddingComposite(MockDWaveSampler(), embedding)
         self.assertEqual(embedding, sampler.embedding)
 
         dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
@@ -181,7 +181,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
 
     def test_sample_bqm_triangle(self):
-        sampler = FixedEmbeddingComposite(MockSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+        sampler = FixedEmbeddingComposite(MockDWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
 
         resp = sampler.sample_ising({'a': 1, 'b': 1, 'c': 0}, {})
 
@@ -189,7 +189,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
     def test_adjacency(self):
         square_adj = {1: [2, 3], 2: [1, 4], 3: [1, 4], 4: [2, 3]}
-        sampler = FixedEmbeddingComposite(MockSampler(), source_adjacency=square_adj)
+        sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency=square_adj)
 
         self.assertTrue(hasattr(sampler, 'adjacency'))
         self.assertTrue(hasattr(sampler, 'embedding'))
@@ -202,7 +202,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sample_instantiation(self):
         # Check that graph related values have not been instantiated
-        sampler = LazyFixedEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
         self.assertIsNone(sampler.embedding)
         self.assertIsNone(sampler.nodelist)
         self.assertIsNone(sampler.edgelist)
@@ -219,7 +219,7 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampler.adjacency, {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}})
 
     def test_same_embedding(self):
-        sampler = LazyFixedEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
 
         # Set up Ising and sample
         h = {'a': 1, 'b': 1, 'c': 1}
@@ -239,7 +239,7 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_ising(self):
         h = {0: 11, 5: 2}
         J = {(0, 5): -8}
-        sampler = LazyFixedEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
         response = sampler.sample_ising(h, J)
 
         # Check embedding
@@ -253,7 +253,7 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
 
     def test_qubo(self):
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (2, 3): 5, (1, 3): 6}
-        sampler = LazyFixedEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
         response = sampler.sample_qubo(Q)
 
         # Check embedding
@@ -268,7 +268,7 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sparse_qubo(self):
         # There is no relationship between nodes 2 and 3
         Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (1, 3): 6}
-        sampler = LazyFixedEmbeddingComposite(MockSampler())
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
         response = sampler.sample_qubo(Q)
 
         # Check embedding
@@ -285,7 +285,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         # Temporarily mutate warnings filter
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")  # Cause all warnings to always be triggered.
-            LazyEmbeddingComposite(MockSampler())  # Trigger warning
+            LazyEmbeddingComposite(MockDWaveSampler())  # Trigger warning
 
             # Verify deprecation warning
             assert len(w) == 1
@@ -295,7 +295,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
     def test_ising_sample(self):
         h = {'a': 1, 'b': -2}
         J = {('a', 'b'): -3}
-        sampler = LazyEmbeddingComposite(MockSampler())
+        sampler = LazyEmbeddingComposite(MockDWaveSampler())
         response = sampler.sample_ising(h, J)
 
         # Check that at least one response was found
