@@ -1,6 +1,7 @@
 from dwave_networkx.generators.chimera import chimera_graph
 from dwave_networkx.generators.pegasus import pegasus_graph, pegasus_coordinates
 from dwave.embedding.polynomialembedder import processor
+import networkx as nx
 
 
 #TODO: should I be catching the case when user does not provide sufficient offsets?
@@ -79,6 +80,7 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
 
 
 #TODO: change function interface to more closely resemble chimera
+@nx.utils.decorators.nodes_or_number(0)
 def find_clique_embedding(k, G):
     """Find an embedding of a k-sized clique on a Pegasus graph.
 
@@ -94,30 +96,33 @@ def find_clique_embedding(k, G):
         in said clique. Each corresponding dictionary value is a list of pegasus coordinates
         that should be chained together to represent said node.
     """
-    # Break each Pegasus qubits into six Chimera fragments
-    # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
+    n_nodes, nodes = k
+    m = G.graph['rows']     # We only support square Pegasus graphs
     v_offsets = G.graph['vertical_offsets']
     h_offsets = G.graph['horizontal_offsets']
-    coord_converter = pegasus_coordinates(G.graph['rows'])   #TODO: double check n_cols is not needed. i.e. Is pegasus always square?
+
+    # Break each Pegasus qubits into six Chimera fragments
+    # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
+    coord_converter = pegasus_coordinates(m)
     pegasus_coords = map(coord_converter.tuple, G.nodes)
     fragments = get_chimera_fragments(pegasus_coords, v_offsets, h_offsets)
 
     # Create a K2,2 Chimera graph
-    n_fragments = 6
-    n_rows = G.graph['rows'] * n_fragments
-    n_cols = G.graph['columns'] * n_fragments
-    chim_graph = chimera_graph(n_rows, n=n_cols, t=2, coordinates=True)
+    # Note: 6 * m because Pegasus qubits split into six pieces, so the number of rows and columns
+    #   get multiplied by six
+    chim_m = 6 * m
+    chim_graph = chimera_graph(6*m, t=2, coordinates=True)
 
     # Determine valid fragment couplers in a K2,2 Chimera graph
     edges = chim_graph.subgraph(fragments).edges()
 
     # Find clique embedding in K2,2 Chimera graph
-    embedding_processor = processor(edges, M=n_rows, N=n_cols, L=2, linear=False)
-    chimera_clique_embedding = embedding_processor.tightestNativeClique(k)
+    embedding_processor = processor(edges, M=chim_m, N=chim_m, L=2, linear=False)
+    chimera_clique_embedding = embedding_processor.tightestNativeClique(n_nodes)
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
     pegasus_clique_embedding = map(lambda x: get_pegasus_coordinates(x, v_offsets, h_offsets),
                                    chimera_clique_embedding)
-    pegasus_clique_embedding = {i: x for i, x in enumerate(pegasus_clique_embedding)}
 
-    return pegasus_clique_embedding
+    #TODO: raise error for no embedding
+    return dict(zip(nodes, pegasus_clique_embedding))
