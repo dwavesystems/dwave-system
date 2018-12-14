@@ -26,8 +26,8 @@ except ImportError:
 C4 = dnx.chimera_graph(4, 4, 4)
 
 
-class MockSampler(dimod.Sampler, dimod.Structured):
-    """Create a mock sampler that can be used for tests."""
+class MockDWaveSampler(dimod.Sampler, dimod.Structured):
+    """Mock sampler modeled after DWaveSampler that can be used for tests."""
 
     nodelist = None
     edgelist = None
