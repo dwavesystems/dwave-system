@@ -3,9 +3,6 @@ from dwave_networkx.generators.pegasus import pegasus_graph, pegasus_coordinates
 from dwave.embedding.polynomialembedder import processor
 
 
-#TODO: double check that Pegasus generator topology is the one we want
-#TODO: ask if 'ck' is standard coordinate notation
-
 #TODO: should I be catching the case when user does not provide sufficient offsets?
 #TODO: perhaps just note that if the offset isn't needed, put in None
 def get_chimera_fragments(pegasus_coords, vertical_offsets, horizontal_offsets):
@@ -21,7 +18,7 @@ def get_chimera_fragments(pegasus_coords, vertical_offsets, horizontal_offsets):
         y: number of vertical fragments from the top-most row
         x: number of horizontal fragments from the left-most column
         u: 1 if it belongs to a horizontal qubit, 0 otherwise
-        ck: fragment index on the K2,2 shore
+        r: fragment index on the K2,2 shore
 
     Args:
         pegasus_coords: List of 4-tuple ints
@@ -38,8 +35,8 @@ def get_chimera_fragments(pegasus_coords, vertical_offsets, horizontal_offsets):
         # Find the base (i.e. zeroth) Chimera fragment of this pegasus coordinate
         x0 = (z * 12 + offset) // 2
         y = (w * 12 + k) // 2
-        ck = k % 2
-        base = [0, 0, u, ck]
+        r = k % 2
+        base = [0, 0, u, r]
 
         # Generate the six fragments associated with this pegasus coordinate
         for x in range(x0, x0 + 6):
@@ -63,13 +60,13 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
         A set of pegasus coordinates
     """
     pegasus_coords = []
-    for y, x, u, ck in chimera_coords:
+    for y, x, u, r in chimera_coords:
         # Set up shifts and offsets
         shifts = [x, y]
         offsets = pegasus_horizontal_offsets if u else pegasus_vertical_offsets
 
         # Determine number of tiles and track number
-        w, k = divmod(2 * shifts[u] + ck, 12)
+        w, k = divmod(2 * shifts[u] + r, 12)
 
         # Determine qubit index on track
         x0 = shifts[1-u] * 2 - offsets[k]
@@ -81,7 +78,6 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
     return set(pegasus_coords)
 
 
-#TODO: ask Kelly if largest clique in pegasus == largest native clique in pegasus
 #TODO: change function interface to more closely resemble chimera
 def find_largest_clique_embedding(G):
     """Find the largest native clique in a Pegasus graph.
