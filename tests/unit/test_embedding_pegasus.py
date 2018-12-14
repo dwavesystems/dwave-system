@@ -39,7 +39,23 @@ class TestGetChimeraFragments(unittest.TestCase):
         self.assertEqual(expected_fragments, set(fragments))
 
     def test_list_of_coordinates(self):
-        pass
+        pegasus_coords = [(1, 5, 11, 4), (0, 2, 2, 3)]
+        fragments = get_chimera_fragments(pegasus_coords, VERTICAL_OFFSETS, HORIZONTAL_OFFSETS)
+
+        expected_fragments = {(35, 29, 1, 1),
+                              (35, 30, 1, 1),
+                              (35, 31, 1, 1),
+                              (35, 32, 1, 1),
+                              (35, 33, 1, 1),
+                              (35, 34, 1, 1),
+                              (19, 13, 0, 0),
+                              (20, 13, 0, 0),
+                              (21, 13, 0, 0),
+                              (22, 13, 0, 0),
+                              (23, 13, 0, 0),
+                              (24, 13, 0, 0)}
+
+        self.assertEqual(expected_fragments, set(fragments))
 
 
 class TestGetPegasusCoordinates(unittest.TestCase):
