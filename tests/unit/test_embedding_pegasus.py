@@ -75,9 +75,10 @@ class TestGetPegasusCoordinates(unittest.TestCase):
 class TestFindLargestNativeClique(unittest.TestCase):
     def test_valid_clique(self):
         G = pegasus_graph(6)
-        embedding = find_largest_clique_embedding(G)
+        k = 60
+        embedding = find_largest_clique_embedding(k, G)
 
-        self.assertEqual(60, len(embedding))
+        self.assertEqual(k, len(embedding))
 
         #TODO: verify connections in clique
 

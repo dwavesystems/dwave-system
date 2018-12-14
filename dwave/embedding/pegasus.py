@@ -79,8 +79,8 @@ def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_ho
 
 
 #TODO: change function interface to more closely resemble chimera
-def find_largest_clique_embedding(G):
-    """Find the largest native clique in a Pegasus graph.
+def find_clique_embedding(k, G):
+    """Find an embedding of a k-sized clique on a Pegasus graph.
 
     This clique is found by transforming the Pegasus graph into a K2,2 Chimera graph and then
     applying a Chimera clique finding algorithm. The results are then converted back in terms of
@@ -113,7 +113,7 @@ def find_largest_clique_embedding(G):
 
     # Find clique embedding in K2,2 Chimera graph
     embedding_processor = processor(edges, M=n_rows, N=n_cols, L=2, linear=False)
-    chimera_clique_embedding = embedding_processor.largestNativeClique()
+    chimera_clique_embedding = embedding_processor.tightestNativeClique(k)
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
     pegasus_clique_embedding = map(lambda x: get_pegasus_coordinates(x, v_offsets, h_offsets),
