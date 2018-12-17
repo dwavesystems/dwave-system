@@ -1,5 +1,5 @@
-from dwave.embedding.pegasus import get_chimera_fragments, get_pegasus_coordinates, find_clique_embedding
-from dwave_networkx.generators.pegasus import pegasus_graph
+from dwave.embedding.pegasus import get_pegasus_coordinates, find_clique_embedding
+from dwave_networkx.generators.pegasus import pegasus_graph, get_tuple_fragmentation_fn
 import unittest
 
 # Pegasus qubit offsets
@@ -7,14 +7,24 @@ VERTICAL_OFFSETS = [2, 2, 2, 2, 10, 10, 10, 10, 6, 6, 6, 6]
 HORIZONTAL_OFFSETS = [6, 6, 6, 6, 2, 2, 2, 2, 10, 10, 10, 10]
 
 
-class TestGetChimeraFragments(unittest.TestCase):
+class TestTupleFragmentation(unittest.TestCase):
     def test_empty_list(self):
-        fragments = get_chimera_fragments([], VERTICAL_OFFSETS, HORIZONTAL_OFFSETS)
+        # Set up fragmentation function
+        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        fragment_tuple = get_tuple_fragmentation_fn(G)
+
+        # Fragment pegasus coordinates
+        fragments = fragment_tuple([])
         self.assertEqual([], fragments)
 
     def test_single_horizontal_coordinate(self):
+        # Set up fragmentation function
+        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        fragment_tuple = get_tuple_fragmentation_fn(G)
+
+        # Fragment pegasus coordinates
         pegasus_coord = (1, 0, 0, 0)
-        fragments = get_chimera_fragments([pegasus_coord], None, HORIZONTAL_OFFSETS)
+        fragments = fragment_tuple([pegasus_coord])
 
         expected_fragments = {(0, 3, 1, 0),
                               (0, 4, 1, 0),
@@ -26,8 +36,12 @@ class TestGetChimeraFragments(unittest.TestCase):
         self.assertEqual(expected_fragments, set(fragments))
 
     def test_single_vertical_coordinate(self):
+        # Set up fragmentation function
+        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        fragment_tuple = get_tuple_fragmentation_fn(G)
+
         pegasus_coord = (0, 1, 3, 1)
-        fragments = get_chimera_fragments([pegasus_coord], VERTICAL_OFFSETS, None)
+        fragments = fragment_tuple([pegasus_coord])
 
         expected_fragments = {(7, 7, 0, 1),
                               (8, 7, 0, 1),
@@ -39,8 +53,13 @@ class TestGetChimeraFragments(unittest.TestCase):
         self.assertEqual(expected_fragments, set(fragments))
 
     def test_list_of_coordinates(self):
+        # Set up fragmentation function
+        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        fragment_tuple = get_tuple_fragmentation_fn(G)
+
+        # Fragment pegasus coordinates
         pegasus_coords = [(1, 5, 11, 4), (0, 2, 2, 3)]
-        fragments = get_chimera_fragments(pegasus_coords, VERTICAL_OFFSETS, HORIZONTAL_OFFSETS)
+        fragments = fragment_tuple(pegasus_coords)
 
         expected_fragments = {(35, 29, 1, 1),
                               (35, 30, 1, 1),
