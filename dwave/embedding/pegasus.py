@@ -1,42 +1,46 @@
 from dwave_networkx.generators.chimera import chimera_graph
 from dwave_networkx.generators.pegasus import (get_tuple_defragmentation_fn, get_tuple_fragmentation_fn,
-    pegasus_coordinates)
+    pegasus_coordinates, pegasus_graph)
 from dwave.embedding.polynomialembedder import processor
 import networkx as nx
 
 
-#TODO: should I be catching the case when user does not provide sufficient offsets?
-#TODO: perhaps just note that if the offset isn't needed, put in None
-
-
-
 #TODO: change function interface to more closely resemble chimera
 @nx.utils.decorators.nodes_or_number(0)
-def find_clique_embedding(k, G):
-    """Find an embedding of a k-sized clique on a Pegasus graph.
+def find_clique_embedding(k, m=None, target_graph=None):
+    """Find an embedding of a k-sized clique on a Pegasus graph (target_graph).
 
     This clique is found by transforming the Pegasus graph into a K2,2 Chimera graph and then
     applying a Chimera clique finding algorithm. The results are then converted back in terms of
     Pegasus coordinates.
 
+    Note: If target_graph is None, m will be used to generate a m-by-m Pegasus graph. Hence m and
+    target_graph cannot both be None.
+
     Args:
-         G: a Pegasus graph
+        k (int): Number of members in the requested clique
+        m (int): Number of tiles in a row of a square Pegasus graph
+        target_graph (networkx.graph): A Pegasus graph
 
     Returns:
-        A dictionary representing G's clique embedding. Each dictionary key represents a node
-        in said clique. Each corresponding dictionary value is a list of pegasus coordinates
+        A dictionary representing target_graphs's clique embedding. Each dictionary key represents a
+        node in said clique. Each corresponding dictionary value is a list of pegasus coordinates
         that should be chained together to represent said node.
     """
+    # Organize parameter values
+    if target_graph is None:
+        if m is None:
+            raise ValueError("m and target_graph cannot both be None.")
+        target_graph = pegasus_graph(m)
+
+    m = target_graph.graph['rows']     # We only support square Pegasus graphs
     n_nodes, nodes = k
-    m = G.graph['rows']     # We only support square Pegasus graphs
-    v_offsets = G.graph['vertical_offsets']
-    h_offsets = G.graph['horizontal_offsets']
 
     # Break each Pegasus qubits into six Chimera fragments
     # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
     coord_converter = pegasus_coordinates(m)
-    pegasus_coords = map(coord_converter.tuple, G.nodes)
-    fragment_tuple = get_tuple_fragmentation_fn(G)
+    pegasus_coords = map(coord_converter.tuple, target_graph.nodes)
+    fragment_tuple = get_tuple_fragmentation_fn(target_graph)
     fragments = fragment_tuple(pegasus_coords)
 
     # Create a K2,2 Chimera graph
@@ -53,7 +57,7 @@ def find_clique_embedding(k, G):
     chimera_clique_embedding = embedding_processor.tightestNativeClique(n_nodes)
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
-    defragment_tuple = get_tuple_defragmentation_fn(G)
+    defragment_tuple = get_tuple_defragmentation_fn(target_graph)
     pegasus_clique_embedding = map(defragment_tuple, chimera_clique_embedding)
 
     #TODO: raise error for no embedding
