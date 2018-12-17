@@ -20,15 +20,15 @@ import dimod
 
 from dwave.system.composites import VirtualGraphComposite
 
-from tests.unit.mock_sampler import MockSampler
+from dwave.system.testing import MockDWaveSampler
 
 
-class TestVirtualGraphWithMockSampler(unittest.TestCase):
+class TestVirtualGraphWithMockDWaveSampler(unittest.TestCase):
     def setUp(self):
-        self.sampler = MockSampler()
+        self.sampler = MockDWaveSampler()
 
     def test_smoke(self):
-        child_sampler = MockSampler()
+        child_sampler = MockDWaveSampler()
         sampler = VirtualGraphComposite(child_sampler, {'a': [0]}, flux_bias_num_reads=1)
 
         # depending on how recenlty flux bias data was gathered, this may be true

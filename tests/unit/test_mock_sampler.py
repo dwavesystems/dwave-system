@@ -16,13 +16,13 @@
 """who watches the watchmen?"""
 import unittest
 
-from tests.unit.mock_sampler import MockSampler
+from dwave.system.testing import MockDWaveSampler
 
 import dimod.testing as dit
 
 
-class TestMockSampler(unittest.TestCase):
+class TestMockDWaveSampler(unittest.TestCase):
     def setUp(self):
-        sampler = MockSampler()
+        sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)

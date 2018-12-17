@@ -19,14 +19,13 @@ import random
 import dimod
 import dwave_networkx as dnx
 
-from tests.unit.mock_sampler import MockSampler
-
+from dwave.system.testing import MockDWaveSampler
 from dwave.system.composites import TilingComposite
 
 
 class TestTiling(unittest.TestCase):
     def test_sample_ising(self):
-        mock_sampler = MockSampler()  # C4 structured sampler
+        mock_sampler = MockDWaveSampler()  # C4 structured sampler
 
         sampler = TilingComposite(mock_sampler, 2, 2)
 
@@ -43,7 +42,7 @@ class TestTiling(unittest.TestCase):
         # OOOO
         # OOOO
         # where O: complete cell, X: incomplete cell
-        mock_sampler = MockSampler(broken_nodes=[8 * 3])  # C4 structured sampler with a node missing
+        mock_sampler = MockDWaveSampler(broken_nodes=[8 * 3])  # C4 structured sampler with a node missing
         hardware_graph = dnx.chimera_graph(4)  # C4
 
         sampler = TilingComposite(mock_sampler, 2, 2, 4)
@@ -67,7 +66,7 @@ class TestTiling(unittest.TestCase):
                              if i in (2, 3) and j in (0, 1)})
 
     def test_sample_ising(self):
-        sampler = TilingComposite(MockSampler(), 2, 2)
+        sampler = TilingComposite(MockDWaveSampler(), 2, 2)
 
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
@@ -85,7 +84,7 @@ class TestTiling(unittest.TestCase):
             self.assertAlmostEqual(dimod.ising_energy(sample, h, J), energy)
 
     def test_sample_qubo(self):
-        sampler = TilingComposite(MockSampler(), 2, 2)
+        sampler = TilingComposite(MockDWaveSampler(), 2, 2)
 
         Q = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
         Q.update({(node, node): random.uniform(-1, 1) for node in sampler.structure.nodelist})
@@ -104,7 +103,7 @@ class TestTiling(unittest.TestCase):
             self.assertAlmostEqual(dimod.qubo_energy(sample, Q), energy)
 
     def test_too_many_nodes(self):
-        mock_sampler = MockSampler()  # C4 structured sampler
+        mock_sampler = MockDWaveSampler()  # C4 structured sampler
 
         sampler = TilingComposite(mock_sampler, 2, 2)
 
