@@ -1,40 +1,13 @@
 from dwave_networkx.generators.chimera import chimera_graph
-from dwave_networkx.generators.pegasus import pegasus_graph, pegasus_coordinates, get_tuple_fragmentation_fn
+from dwave_networkx.generators.pegasus import (get_tuple_defragmentation_fn, get_tuple_fragmentation_fn,
+    pegasus_coordinates)
 from dwave.embedding.polynomialembedder import processor
 import networkx as nx
 
 
 #TODO: should I be catching the case when user does not provide sufficient offsets?
 #TODO: perhaps just note that if the offset isn't needed, put in None
-def get_pegasus_coordinates(chimera_coords, pegasus_vertical_offsets, pegasus_horizontal_offsets):
-    """Given a list of K2,2 Chimera coordinates, return the corresponding set of pegasus
-    coordinates.
 
-    Args:
-        chimera_coords: List of 4-tuple ints
-        pegasus_vertical_offsets: List of ints
-        pegasus_horizontal_offsets: List of ints
-
-    Return:
-        A set of pegasus coordinates
-    """
-    pegasus_coords = []
-    for y, x, u, r in chimera_coords:
-        # Set up shifts and offsets
-        shifts = [x, y]
-        offsets = pegasus_horizontal_offsets if u else pegasus_vertical_offsets
-
-        # Determine number of tiles and track number
-        w, k = divmod(2 * shifts[u] + r, 12)
-
-        # Determine qubit index on track
-        x0 = shifts[1-u] * 2 - offsets[k]
-        z = x0 // 12
-
-        pegasus_coords.append((u, w, k, z))
-
-    # Several chimera coordinates may map to the same pegasus coordinate, hence, apply set(..)
-    return set(pegasus_coords)
 
 
 #TODO: change function interface to more closely resemble chimera
@@ -80,8 +53,8 @@ def find_clique_embedding(k, G):
     chimera_clique_embedding = embedding_processor.tightestNativeClique(n_nodes)
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
-    pegasus_clique_embedding = map(lambda x: get_pegasus_coordinates(x, v_offsets, h_offsets),
-                                   chimera_clique_embedding)
+    defragment_tuple = get_tuple_defragmentation_fn(G)
+    pegasus_clique_embedding = map(defragment_tuple, chimera_clique_embedding)
 
     #TODO: raise error for no embedding
     return dict(zip(nodes, pegasus_clique_embedding))

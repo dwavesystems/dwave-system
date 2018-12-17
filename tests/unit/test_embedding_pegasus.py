@@ -1,4 +1,4 @@
-from dwave.embedding.pegasus import get_pegasus_coordinates, find_clique_embedding
+from dwave.embedding.pegasus import find_clique_embedding
 from dwave_networkx.generators.pegasus import pegasus_graph, get_tuple_fragmentation_fn
 import unittest
 
