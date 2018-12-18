@@ -1,5 +1,6 @@
 from dwave.embedding.pegasus import find_clique_embedding
-from dwave_networkx.generators.pegasus import pegasus_graph, get_tuple_fragmentation_fn
+from dwave_networkx.generators.pegasus import (pegasus_graph, get_tuple_fragmentation_fn,
+                                               get_tuple_defragmentation_fn)
 import unittest
 
 # Pegasus qubit offsets
@@ -10,7 +11,7 @@ HORIZONTAL_OFFSETS = [6, 6, 6, 6, 2, 2, 2, 2, 10, 10, 10, 10]
 class TestTupleFragmentation(unittest.TestCase):
     def test_empty_list(self):
         # Set up fragmentation function
-        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        G = pegasus_graph(3)
         fragment_tuple = get_tuple_fragmentation_fn(G)
 
         # Fragment pegasus coordinates
@@ -19,7 +20,7 @@ class TestTupleFragmentation(unittest.TestCase):
 
     def test_single_horizontal_coordinate(self):
         # Set up fragmentation function
-        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        G = pegasus_graph(2)
         fragment_tuple = get_tuple_fragmentation_fn(G)
 
         # Fragment pegasus coordinates
@@ -37,7 +38,7 @@ class TestTupleFragmentation(unittest.TestCase):
 
     def test_single_vertical_coordinate(self):
         # Set up fragmentation function
-        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        G = pegasus_graph(6)
         fragment_tuple = get_tuple_fragmentation_fn(G)
 
         pegasus_coord = (0, 1, 3, 1)
@@ -54,7 +55,7 @@ class TestTupleFragmentation(unittest.TestCase):
 
     def test_list_of_coordinates(self):
         # Set up fragmentation function
-        G = pegasus_graph(6, offset_lists=(VERTICAL_OFFSETS, HORIZONTAL_OFFSETS))
+        G = pegasus_graph(6)
         fragment_tuple = get_tuple_fragmentation_fn(G)
 
         # Fragment pegasus coordinates
@@ -77,26 +78,60 @@ class TestTupleFragmentation(unittest.TestCase):
         self.assertEqual(expected_fragments, set(fragments))
 
 
-class TestGetPegasusCoordinates(unittest.TestCase):
+class TestTupleDefragmentation(unittest.TestCase):
     def test_empty_list(self):
-        pass
+        # Set up defragmentation function
+        G = pegasus_graph(2)
+        defragment_tuple = get_tuple_defragmentation_fn(G)
+
+        # De-fragment chimera coordinates
+        chimera_coords = []
+        pegasus_coords = defragment_tuple(chimera_coords)
+
+        self.assertEqual([], pegasus_coords)
 
     def test_single_fragment(self):
-        pass
+        # Set up defragmentation function
+        G = pegasus_graph(4)
+        defragment_tuple = get_tuple_defragmentation_fn(G)
+
+        # De-fragment chimera coordinates
+        chimera_coords = [(3, 7, 0, 0)]
+        pegasus_coords = defragment_tuple(chimera_coords)
+
+        expected_pegasus_coords = [(0, 1, 2, 0)]
+        self.assertEqual(expected_pegasus_coords, pegasus_coords)
 
     def test_multiple_fragments_from_same_qubit(self):
-        pass
+        # Set up defragmentation function
+        G = pegasus_graph(3)
+        defragment_tuple = get_tuple_defragmentation_fn(G)
+
+        # De-fragment chimera coordinates
+        chimera_coords = [(9, 8, 1, 1), (9, 11, 1, 1)]
+        pegasus_coords = defragment_tuple(chimera_coords)
+
+        expected_pegasus_coords = [(1, 1, 7, 1)]
+        self.assertEqual(expected_pegasus_coords, pegasus_coords)
 
     def test_mixed_fragments(self):
-        pass
+        # Set up defragmenation function
+        G = pegasus_graph(8)
+        defragment_tuple = get_tuple_defragmentation_fn(G)
 
+        # De-fragment chimera coordinates
+        chimera_coords = [(17, 14, 0, 0), (22, 14, 0, 0), (24, 32, 1, 0), (1, 31, 0, 0)]
+        pegasus_coords = defragment_tuple(chimera_coords)
 
-class TestFindLargestNativeClique(unittest.TestCase):
+        expected_pegasus_coords = {(0, 2, 4, 2), (1, 4, 0, 4), (0, 5, 2, 0)}
+        self.assertEqual(expected_pegasus_coords, set(pegasus_coords))
+
+class TestFindClique(unittest.TestCase):
     #TODO: test k as a list of nodes
     def test_valid_clique(self):
         G = pegasus_graph(6)
         k = 60
-        embedding = find_clique_embedding(k, G)
+        embedding = find_clique_embedding(k, target_graph=G)
 
         self.assertEqual(k, len(embedding))
 
