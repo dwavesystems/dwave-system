@@ -107,7 +107,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             if config.get('solver') is not None:
                 raise ValueError("can not combine 'solver' and 'solver_features'")
 
-            config['solver'] = config['solver_features']
+            config['solver'] = config.pop('solver_features')
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
