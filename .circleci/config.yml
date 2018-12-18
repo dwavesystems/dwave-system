@@ -229,6 +229,7 @@ jobs:
 
 workflows:
   version: 2
+
   test:
     jobs:
       - test-3.7
@@ -241,7 +242,11 @@ workflows:
       - test-osx-3.5
       - test-osx-3.4
       - test-osx-2.7
-      - test-doctest
+      - test-doctest:
+          filters:
+            branches:
+              ignore: /^pull\/.*/
+
   deploy:
     jobs:
       - deploy:
