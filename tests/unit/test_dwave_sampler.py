@@ -143,12 +143,10 @@ class TestDwaveSampler(unittest.TestCase):
             self.assertEqual(len(w), 0)
 
         MockClient.reset_mock()
-        sampler = DWaveSampler(solver_features={'qpu': True})
-        MockClient.from_config.assert_called_once_with(solver={'qpu': True})
+        solver = {'qpu': True, 'num_qubits__gt': 1000}
+        sampler = DWaveSampler(solver_features=solver)
+        MockClient.from_config.assert_called_once_with(solver=solver)
 
-        MockClient.reset_mock()
-        sampler = DWaveSampler(solver_features={'software': True})
-        MockClient.from_config.assert_called_once_with(solver={'software': True})
 
     def test_sample_ising_variables(self):
 
