@@ -15,6 +15,7 @@
 # ================================================================================================
 import unittest
 import random
+import warnings
 
 from collections import namedtuple
 from concurrent.futures import Future
@@ -23,8 +24,6 @@ import numpy as np
 
 import dimod
 import dwave_networkx as dnx
-
-import dwave.cloud.qpu as qpuclient
 
 from dwave.system.samplers import DWaveSampler
 
@@ -126,6 +125,30 @@ class TestDwaveSampler(unittest.TestCase):
         self.sampler = DWaveSampler()
 
         self.sampler.solver = MockSolver()
+
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_solver_init(self, MockClient):
+        """Deprecation warning is raised for `solver_features` use, but it still works."""
+
+        # assertWarns not available in py2
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            DWaveSampler(solver_features={'qpu': True})
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            DWaveSampler(solver={'qpu': True})
+            self.assertEqual(len(w), 0)
+
+        MockClient.reset_mock()
+        sampler = DWaveSampler(solver_features={'qpu': True})
+        MockClient.from_config.assert_called_once_with(solver={'qpu': True})
+
+        MockClient.reset_mock()
+        sampler = DWaveSampler(solver_features={'software': True})
+        MockClient.from_config.assert_called_once_with(solver={'software': True})
 
     def test_sample_ising_variables(self):
 
