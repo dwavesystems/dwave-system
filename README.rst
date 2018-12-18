@@ -61,7 +61,7 @@ To install with optional dependencies:
 .. code-block:: bash
 
     pip install -r requirements.txt
-    python setup.py
+    python setup.py install
 
 Note that installing from source installs ``dwave-drivers``. To uninstall the proprietary components:
 
