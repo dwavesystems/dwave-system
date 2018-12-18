@@ -44,7 +44,7 @@ class TestGetFluxBiases(unittest.TestCase):
         return fb.get_flux_biases(sampler, embedding, chain_strength=1)
 
     def test_simple(self):
-        sampler = DWaveSampler(solver_features={'qpu': True})
+        sampler = DWaveSampler(solver={'qpu': True})
 
         embedding = minorminer.find_embedding([[0, 1], [1, 2], [0, 2]], sampler.edgelist)
 
