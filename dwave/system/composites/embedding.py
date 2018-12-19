@@ -45,7 +45,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
     Examples:
        This example submits a simple Ising problem to a D-Wave solver selected by the user's
-       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
        :class:`.EmbeddingComposite` minor-embedds the problem's variables a and b
        to particular qubits on the D-Wave system.
 
@@ -97,7 +97,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         Examples:
             This example views parameters of a composed sampler using a D-Wave system selected by
             the user's default
-            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:reference/intro>`
+            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:intro>`
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
@@ -130,7 +130,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         Examples:
             This example views properties of a composed sampler using a D-Wave system selected by
             the user's default
-            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:reference/intro>`
+            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:intro>`
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> from dwave.system.composites import EmbeddingComposite
@@ -178,7 +178,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         Examples:
             This example submits an triangle-structured Ising problem to a D-Wave solver, selected
             by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
             by minor-embedding the problem's variables to physical qubits.
 
             >>> from dwave.system.samplers import DWaveSampler
@@ -240,7 +240,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
         This example submits an triangle-structured Ising problem to a D-Wave solver, selected
         by the user's default
-        :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+        :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
         using a given minor-embedding of the problem's variables to physical qubits.
 
         >>> from dwave.system.samplers import DWaveSampler
@@ -387,7 +387,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         Examples:
             This example submits an triangle-structured problem to a D-Wave solver, selected
             by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
             using a specified minor-embedding of the problem’s variables to physical qubits.
 
             >>> from dwave.system.samplers import DWaveSampler

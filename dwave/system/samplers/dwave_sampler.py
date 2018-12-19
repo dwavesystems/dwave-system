@@ -42,15 +42,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Typically you store the parameters used to identify and communicate with your
     D-Wave system in a configuration file, the
-    :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`,
+    :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
     which may include more than one profile, and are selected when not overridden by
     explicit input arguments or environment variables. For more information, see
-    https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/.
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_\ .
 
     Args:
         config_file (str, optional):
             Path to a
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`
             that identifies a D-Wave system and provides connection information.
 
         profile (str, optional):
@@ -63,10 +63,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Authentication token for the D-Wave API to authenticate the client session.
 
         solver (dict/str, optional):
-            Solver (a D-Wave system on which to run submitted problems) given as a set of
-            features the selected solver must support. For backward compatibility, solver
-            name (as string) is accepted also. Supported features and values are
-            described in :meth:`~dwave.cloud.client.Client.solvers`.
+            Solver (a D-Wave system on which to run submitted problems) to select given
+            as a set of required features. Supported features and values are described in
+            :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
+            compatibility, solver name, formatted as a string, is accepted.
 
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API.
@@ -128,7 +128,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example prints properties retrieved from a D-Wave system selected by
             the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -156,7 +156,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example prints the parameters retrieved
             from a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -181,7 +181,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example prints the active couplers retrieved
             from a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -207,7 +207,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example prints the active qubits retrieved from a D-Wave system selected
             by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -244,7 +244,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
             0 and 1 on a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -289,7 +289,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
             0 and 4 on a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -348,7 +348,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example sets a quench schedule on a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()

@@ -15,7 +15,7 @@
 # ================================================================================================
 """
 A :std:doc:`dimod composite <dimod:reference/samplers>` that uses the D-Wave virtual
-graph feature for improved :std:doc:`minor-embedding <system:reference/intro>`.
+graph feature for improved :std:doc:`minor-embedding <system:intro>`.
 
 D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you to more
 easily create, optimize, use, and reuse an embedding for a given working graph. When you submit an
@@ -80,11 +80,11 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that submits a QUBO problem to a D-Wave solver selected by the user's
-       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
        The problem represents a logical
        AND gate using penalty function :math:`P = xy - 2(x+y)z +3z`, where variables x and y
        are the gate's inputs and z the output. This simple three-variable problem is manually
-       minor-embedded to a single :std:doc:`Chimera <system:reference/intro>` unit cell:
+       minor-embedded to a single :std:doc:`Chimera <system:intro>` unit cell:
        variables x and y are represented by qubits 1 and 5, respectively, and z by a
        two-qubit chain consisting of qubits 0 and 4.
        The chain strength is set to the maximum allowed found from querying the solver's extended
@@ -162,7 +162,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
        Because qubits 0, 1, 4, 5 are active on the selected D-Wave solver, the three nodes, x, y, and z,
        specified by the embedding, are all available to problems using this composed sampler.
 
@@ -185,7 +185,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
        Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
        between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
        composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
@@ -210,7 +210,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
        Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
        between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
        composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
@@ -240,7 +240,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`
        and views the composed sampler's parameters.
 
        >>> from dwave.system.samplers import DWaveSampler
@@ -270,7 +270,7 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`
+       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`
        and views the composed sampler's properties.
 
        >>> from dwave.system.samplers import DWaveSampler
@@ -313,11 +313,11 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
            This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
            that submits an Ising problem to a D-Wave solver selected by the user's
            default
-           :std:doc:`D-Wave Cloud Client configuration file <cloud-client:reference/intro>`.
+           :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
            The problem represents a logical
            NOT gate using penalty function :math:`P = xy`, where variable x is the gate's input
            and y the output. This simple two-variable problem is manually minor-embedded
-           to a single :std:doc:`Chimera <system:reference/intro>` unit cell: each variable
+           to a single :std:doc:`Chimera <system:intro>` unit cell: each variable
            is represented by a chain of half the cell's qubits, x as qubits 0, 1, 4, 5,
            and y as qubits 2, 3, 6, 7.
            The chain strength is set to half the maximum allowed found from querying the solver's extended
