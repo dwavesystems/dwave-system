@@ -30,7 +30,7 @@ def find_clique_embedding(k, m=None, target_graph=None):
     # Organize parameter values
     if target_graph is None:
         if m is None:
-            raise ValueError("m and target_graph cannot both be None.")
+            raise TypeError("m and target_graph cannot both be None.")
         target_graph = pegasus_graph(m)
 
     m = target_graph.graph['rows']     # We only support square Pegasus graphs
@@ -59,6 +59,10 @@ def find_clique_embedding(k, m=None, target_graph=None):
     # Convert chimera fragment embedding in terms of Pegasus coordinates
     defragment_tuple = get_tuple_defragmentation_fn(target_graph)
     pegasus_clique_embedding = map(defragment_tuple, chimera_clique_embedding)
+    pegasus_clique_embedding = dict(zip(nodes, pegasus_clique_embedding))
 
-    #TODO: raise error for no embedding
-    return dict(zip(nodes, pegasus_clique_embedding))
+    #TODO: Should I be raising a warning? Is the warning ID too generic?
+    if len(pegasus_clique_embedding) != n_nodes:
+        raise Warning("No clique embedding found")
+
+    return pegasus_clique_embedding

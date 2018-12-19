@@ -174,15 +174,10 @@ class TestFindClique(unittest.TestCase):
 
         # Find embedding
         pg = pegasus_graph(m)
-        embedding = find_clique_embedding(k, target_graph=pg)
 
-        self.assertEqual(k, len(embedding))
+        with self.assertRaises(Warning):
+            find_clique_embedding(k, target_graph=pg)
 
-        # Verify clique embedding
-        # Note: need to first convert coordinates into qubit indices
-        converter = pegasus_coordinates(m)
-        embedding_indices = {key: list(converter.ints(values)) for key, values in embedding.items()}
-        self.assertTrue(is_valid_embedding(embedding_indices, nx.complete_graph(k), pg))
 
 if __name__ == "__main__":
     unittest.main()
