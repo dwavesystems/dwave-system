@@ -5,7 +5,6 @@ from dwave.embedding.polynomialembedder import processor
 import networkx as nx
 
 
-#TODO: change function interface to more closely resemble chimera
 @nx.utils.decorators.nodes_or_number(0)
 def find_clique_embedding(k, m=None, target_graph=None):
     """Find an embedding of a k-sized clique on a Pegasus graph (target_graph).
@@ -61,8 +60,7 @@ def find_clique_embedding(k, m=None, target_graph=None):
     pegasus_clique_embedding = map(defragment_tuple, chimera_clique_embedding)
     pegasus_clique_embedding = dict(zip(nodes, pegasus_clique_embedding))
 
-    #TODO: Should I be raising a warning? Is the warning ID too generic?
     if len(pegasus_clique_embedding) != n_nodes:
-        raise Warning("No clique embedding found")
+        raise ValueError("No clique embedding found")
 
     return pegasus_clique_embedding

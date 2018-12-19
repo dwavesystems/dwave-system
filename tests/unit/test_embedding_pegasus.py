@@ -55,7 +55,7 @@ class TestFindClique(unittest.TestCase):
         # Find embedding
         pg = pegasus_graph(m)
 
-        with self.assertRaises(Warning):
+        with self.assertRaises(ValueError):
             find_clique_embedding(k, target_graph=pg)
 
 
