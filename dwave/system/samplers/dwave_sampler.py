@@ -45,7 +45,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
     which may include more than one profile, and are selected when not overridden by
     explicit input arguments or environment variables. For more information, see
-    https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/.
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_\ .
 
     Args:
         config_file (str, optional):
@@ -63,10 +63,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Authentication token for the D-Wave API to authenticate the client session.
 
         solver (dict/str, optional):
-            Solver (a D-Wave system on which to run submitted problems) given as a set of
-            features the selected solver must support. For backward compatibility, solver
-            name (as string) is accepted also. Supported features and values are
-            described in :meth:`~dwave.cloud.client.Client.solvers`.
+            Solver (a D-Wave system on which to run submitted problems) to select given
+            as a set of required features. Supported features and values are described in
+            :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
+            compatibility, solver name, formatted as a string, is accepted.
 
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API.
