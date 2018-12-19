@@ -147,7 +147,6 @@ class TestDwaveSampler(unittest.TestCase):
         sampler = DWaveSampler(solver_features=solver)
         MockClient.from_config.assert_called_once_with(solver=solver)
 
-
     def test_sample_ising_variables(self):
 
         sampler = self.sampler
