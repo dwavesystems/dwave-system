@@ -1,6 +1,9 @@
 from dwave.embedding.pegasus import find_clique_embedding
-from dwave_networkx.generators.pegasus import (pegasus_graph, get_tuple_fragmentation_fn,
+from dwave.embedding.diagnostic import is_valid_embedding
+from dwave_networkx.generators.pegasus import (pegasus_coordinates, pegasus_graph,
+                                               get_tuple_fragmentation_fn,
                                                get_tuple_defragmentation_fn)
+import networkx as nx
 import unittest
 
 # Pegasus qubit offsets
@@ -126,17 +129,24 @@ class TestTupleDefragmentation(unittest.TestCase):
         expected_pegasus_coords = {(0, 2, 4, 2), (1, 4, 0, 4), (0, 5, 2, 0)}
         self.assertEqual(expected_pegasus_coords, set(pegasus_coords))
 
+
 class TestFindClique(unittest.TestCase):
-    #TODO: test k as a list of nodes
     def test_valid_clique(self):
-        G = pegasus_graph(6)
+        m = 6
         k = 60
+        converter = pegasus_coordinates(m)
+
+        # Find embedding
+        G = pegasus_graph(m)
         embedding = find_clique_embedding(k, target_graph=G)
 
+        # Verify solution
         self.assertEqual(k, len(embedding))
 
-        #TODO: verify connections in clique
-
+        # Convert embedding from coordinates to indices in order to run is_valid_embedding(..)
+        embedding_indices = {key: list(converter.ints(values))
+                             for key, values in embedding.items()}
+        self.assertTrue(is_valid_embedding(embedding_indices, nx.complete_graph(k), G))
 
 if __name__ == "__main__":
     unittest.main()
