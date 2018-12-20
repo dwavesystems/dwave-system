@@ -17,7 +17,7 @@ def find_clique_embedding(k, m=None, target_graph=None):
     target_graph cannot both be None.
 
     Args:
-        k (int): Number of members in the requested clique
+        k (int): Number of members in the requested clique  TODO: k can also accept graphs
         m (int): Number of tiles in a row of a square Pegasus graph
         target_graph (networkx.graph): A Pegasus graph
 
@@ -33,12 +33,17 @@ def find_clique_embedding(k, m=None, target_graph=None):
         target_graph = pegasus_graph(m)
 
     m = target_graph.graph['rows']     # We only support square Pegasus graphs
-    n_nodes, nodes = k
+    _, nodes = k
+
+    # Get Pegasus nodes in terms of coordinates
+    if target_graph.graph['labels'] == 'int':
+        coord_converter = pegasus_coordinates(m)
+        pegasus_coords = map(coord_converter.tuple, target_graph.nodes)
+    else:
+        pegasus_coords = target_graph.nodes
 
     # Break each Pegasus qubits into six Chimera fragments
     # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
-    coord_converter = pegasus_coordinates(m)
-    pegasus_coords = map(coord_converter.tuple, target_graph.nodes)
     fragment_tuple = get_tuple_fragmentation_fn(target_graph)
     fragments = fragment_tuple(pegasus_coords)
 
@@ -53,14 +58,14 @@ def find_clique_embedding(k, m=None, target_graph=None):
 
     # Find clique embedding in K2,2 Chimera graph
     embedding_processor = processor(edges, M=chim_m, N=chim_m, L=2, linear=False)
-    chimera_clique_embedding = embedding_processor.tightestNativeClique(n_nodes)
+    chimera_clique_embedding = embedding_processor.tightestNativeClique(len(nodes))
 
     # Convert chimera fragment embedding in terms of Pegasus coordinates
     defragment_tuple = get_tuple_defragmentation_fn(target_graph)
     pegasus_clique_embedding = map(defragment_tuple, chimera_clique_embedding)
     pegasus_clique_embedding = dict(zip(nodes, pegasus_clique_embedding))
 
-    if len(pegasus_clique_embedding) != n_nodes:
+    if len(pegasus_clique_embedding) != len(nodes):
         raise ValueError("No clique embedding found")
 
     return pegasus_clique_embedding
