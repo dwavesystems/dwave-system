@@ -17,7 +17,8 @@ def find_clique_embedding(k, m=None, target_graph=None):
     target_graph cannot both be None.
 
     Args:
-        k (int): Number of members in the requested clique  TODO: k can also accept graphs
+        k (int/iterable/networkx.graph): Number of members in the requested clique; list of nodes;
+          a complete graph that you want to embed onto the target_graph
         m (int): Number of tiles in a row of a square Pegasus graph
         target_graph (networkx.graph): A Pegasus graph
 
