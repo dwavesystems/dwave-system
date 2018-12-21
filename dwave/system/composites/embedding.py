@@ -28,6 +28,8 @@ from warnings import warn
 import dimod
 import minorminer
 
+from dwave.embedding import target_to_source, unembed_response, embed_bqm
+
 __all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite', 'LazyEmbeddingComposite']
 
 
@@ -211,15 +213,15 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
+        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
 
         if 'initial_state' in parameters:
             parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return dimod.unembed_response(response, embedding, source_bqm=bqm,
-                                      chain_break_fraction=chain_break_fraction)
+        return unembed_response(response, embedding, source_bqm=bqm,
+                                chain_break_fraction=chain_break_fraction)
 
 
 class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
@@ -282,7 +284,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         # Populate embedding and adjacency attributes
         if embedding is not None:
             self.embedding = self.properties['embedding'] = embedding
-            self.adjacency = dimod.embedding.target_to_source(self.child.adjacency, embedding)
+            self.adjacency = target_to_source(self.child.adjacency, embedding)
 
         else:
             self.adjacency = source_adjacency
@@ -413,15 +415,15 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         # get the embedding
         embedding = self.embedding
 
-        bqm_embedded = dimod.embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
+        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
 
         if 'initial_state' in parameters:
             parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return dimod.unembed_response(response, embedding, source_bqm=bqm,
-                                      chain_break_fraction=chain_break_fraction)
+        return unembed_response(response, embedding, source_bqm=bqm,
+                                chain_break_fraction=chain_break_fraction)
 
 
 def _adjacency_to_edges(adjacency):
