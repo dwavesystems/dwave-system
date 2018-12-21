@@ -19,11 +19,18 @@ environment:
     - PYTHON: "C:\\Python37"
     - PYTHON: "C:\\Python37-x64"
 
-install:
-  - "%PYTHON%\\python.exe --version"
-  - "%PYTHON%\\python.exe -m pip install -r requirements.txt"
+matrix:
+  fast_finish: true
 
-build: off
+cache:
+  - '%PYTHON%\Lib\site-packages -> requirements.txt'
+  - '%AppData%\pip-cache'
+
+build_script:
+  - "%PYTHON%\\python.exe -m pip install -r requirements.txt --cache-dir %AppData%\\pip-cache"
+
+before_test:
+  - "%PYTHON%\\python.exe -m pip install ."
 
 test_script:
   - "%PYTHON%\\python.exe -m unittest discover"
