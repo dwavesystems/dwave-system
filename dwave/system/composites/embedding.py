@@ -213,7 +213,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
+        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency,
+                                 chain_strength=chain_strength,
+                                 smear_vartype=dimod.SPIN)
 
         if 'initial_state' in parameters:
             parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
@@ -415,7 +417,9 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         # get the embedding
         embedding = self.embedding
 
-        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency, chain_strength=chain_strength)
+        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency,
+                                 chain_strength=chain_strength,
+                                 smear_vartype=dimod.SPIN)
 
         if 'initial_state' in parameters:
             parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
