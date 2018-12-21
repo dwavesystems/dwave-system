@@ -36,12 +36,18 @@ def find_clique_embedding(k, m=None, target_graph=None):
     m = target_graph.graph['rows']     # We only support square Pegasus graphs
     _, nodes = k
 
-    # Get Pegasus nodes in terms of coordinates
+    # Deal with differences in ints vs coordinate target_graphs
     if target_graph.graph['labels'] == 'int':
+        # Convert nodes in terms of Pegasus coordinates
         coord_converter = pegasus_coordinates(m)
         pegasus_coords = map(coord_converter.tuple, target_graph.nodes)
+
+        # A function to convert our final coordinate embedding to an ints embedding
+        back_translate = lambda emb: {key: list(coord_converter.ints(chain))
+                                      for key, chain in emb.items()}
     else:
         pegasus_coords = target_graph.nodes
+        back_translate = lambda emb: emb
 
     # Break each Pegasus qubits into six Chimera fragments
     # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
@@ -65,6 +71,7 @@ def find_clique_embedding(k, m=None, target_graph=None):
     defragment_tuple = get_tuple_defragmentation_fn(target_graph)
     pegasus_clique_embedding = map(defragment_tuple, chimera_clique_embedding)
     pegasus_clique_embedding = dict(zip(nodes, pegasus_clique_embedding))
+    pegasus_clique_embedding = back_translate(pegasus_clique_embedding)
 
     if len(pegasus_clique_embedding) != len(nodes):
         raise ValueError("No clique embedding found")

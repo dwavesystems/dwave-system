@@ -57,6 +57,16 @@ class TestFindClique(unittest.TestCase):
 
         self.assertTrue(is_valid_embedding(embedding, nx.complete_graph(k), pg))
 
+    def test_valid_clique_ints(self):
+        k = nx.complete_graph(55)
+        m = 6
+
+        # Find embedding
+        pg = pegasus_graph(m)
+        embedding = find_clique_embedding(k, target_graph=pg)
+
+        self.assertTrue(is_valid_embedding(embedding, k, pg))
+
     def test_valid_clique_coord(self):
         k = nx.complete_graph(55)
         m = 6
@@ -65,7 +75,7 @@ class TestFindClique(unittest.TestCase):
         pg = pegasus_graph(m, coordinates=True)
         embedding = find_clique_embedding(k, target_graph=pg)
 
-        self.assertTrue(is_valid_embedding(embedding, nx.complete_graph(k), pg))
+        self.assertTrue(is_valid_embedding(embedding, k, pg))
 
     def test_impossible_clique(self):
         k = 55
