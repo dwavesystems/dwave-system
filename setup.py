@@ -32,7 +32,7 @@ else:
     exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.7.4,<0.8.0',
+install_requires = ['dimod>=0.7.7,<0.8.0',
                     'dwave-cloud-client>=0.5.0,<0.6.0',
                     'dwave-networkx>=0.6.0,<0.7.0',
                     'networkx>=2.0,<3.0',

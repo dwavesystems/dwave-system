@@ -20,6 +20,8 @@ import networkx as nx
 import dwave_networkx as dnx
 import dimod
 
+import dwave.embedding
+
 from dwave.embedding.chimera import find_clique_embedding, find_biclique_embedding, find_grid_embedding
 
 
@@ -29,7 +31,7 @@ class Test_find_clique_embedding(unittest.TestCase):
 
         target = dnx.chimera_graph(1)
 
-        source = dimod.embedding.target_to_source(target, emb)
+        source = dwave.embedding.target_to_source(target, emb)
 
         self.assertEqual(source, {0: {1, 2}, 1: {0, 2}, 2: {0, 1}})
 
@@ -38,7 +40,7 @@ class Test_find_clique_embedding(unittest.TestCase):
 
         target = dnx.chimera_graph(1)
 
-        source = dimod.embedding.target_to_source(target, emb)
+        source = dwave.embedding.target_to_source(target, emb)
 
         self.assertEqual(source, {0: {1}, 1: {0}})
 
@@ -63,7 +65,7 @@ class TestFindGridEmbedding(unittest.TestCase):
         # should be 4 grids
         self.assertEqual(len(embedding), 2*2*2)
 
-        target_adj = dimod.embedding.target_to_source(dnx.chimera_graph(2), embedding)
+        target_adj = dwave.embedding.target_to_source(dnx.chimera_graph(2), embedding)
 
         G = nx.grid_graph(dim=[2, 2, 2])
         for u in G.adj:
@@ -81,7 +83,7 @@ class TestFindGridEmbedding(unittest.TestCase):
 
         self.assertEqual(len(embedding), 3)
 
-        target_adj = dimod.embedding.target_to_source(dnx.chimera_graph(16), embedding)
+        target_adj = dwave.embedding.target_to_source(dnx.chimera_graph(16), embedding)
 
         G = nx.path_graph(3)
         for u in G.adj:
@@ -102,7 +104,7 @@ class TestFindGridEmbedding(unittest.TestCase):
 
         self.assertEqual(len(embedding), self.prod(dims))
 
-        target_adj = dimod.embedding.target_to_source(dnx.chimera_graph(*chimera), embedding)
+        target_adj = dwave.embedding.target_to_source(dnx.chimera_graph(*chimera), embedding)
 
         G = nx.grid_graph(list(reversed(dims)))
         for u in G.adj:
@@ -130,7 +132,7 @@ class TestFindGridEmbedding(unittest.TestCase):
 
         self.assertEqual(len(embedding), self.prod(dims))
 
-        target_adj = dimod.embedding.target_to_source(dnx.chimera_graph(*chimera), embedding)
+        target_adj = dwave.embedding.target_to_source(dnx.chimera_graph(*chimera), embedding)
 
         G = nx.grid_graph(dims)
         for u in G.adj:
