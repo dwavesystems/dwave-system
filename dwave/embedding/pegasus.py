@@ -43,11 +43,11 @@ def find_clique_embedding(k, m=None, target_graph=None):
         pegasus_coords = map(coord_converter.tuple, target_graph.nodes)
 
         # A function to convert our final coordinate embedding to an ints embedding
-        back_translate = lambda emb: {key: list(coord_converter.ints(chain))
-                                      for key, chain in emb.items()}
+        back_translate = lambda embedding: {key: list(coord_converter.ints(chain))
+                                      for key, chain in embedding.items()}
     else:
         pegasus_coords = target_graph.nodes
-        back_translate = lambda emb: emb
+        back_translate = lambda embedding: embedding
 
     # Break each Pegasus qubits into six Chimera fragments
     # Note: By breaking the graph in this way, you end up with a K2,2 Chimera graph
