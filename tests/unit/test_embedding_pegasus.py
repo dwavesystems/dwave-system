@@ -1,6 +1,6 @@
 from dwave.embedding.pegasus import find_clique_embedding
 from dwave.embedding.diagnostic import is_valid_embedding
-from dwave_networkx.generators.pegasus import (pegasus_coordinates, pegasus_graph)
+from dwave_networkx.generators.pegasus import pegasus_graph
 import networkx as nx
 import unittest
 
