@@ -6,7 +6,7 @@ class EmbeddingError(RuntimeError):
     
 class MissingChainError(EmbeddingError):
     def __init__(self, snode):
-        super(MissingChainError, self).__init__("chain for {} is not contained in this embedding", snode)
+        super(MissingChainError, self).__init__("chain for {} is empty or not contained in this embedding", snode)
         self.source_node = snode
 
 class ChainOverlapError(EmbeddingError):
@@ -50,7 +50,7 @@ def diagnose_embedding(emb, source, target):
         target (graph or edgelist): the graph being embedded into
 
     Yields:
-        MissingChainError, snode: a source node label that does not occur as a key of `emb`
+        MissingChainError, snode: a source node label that does not occur as a key of `emb`, or for which emb[snode] is empty
         ChainOverlapError, tnode, snode0, snode0: a target node which occurs in both `emb[snode0]` and `emb[snode1]`
         DisconnectedChainError, snode: a source node label whose chain is not a connected subgraph of `target`
         InvalidNodeError, snode, tnode: a source node label and putative target node label which is not a node of `target`
@@ -63,19 +63,28 @@ def diagnose_embedding(emb, source, target):
         target = nx.Graph(target)
 
     label = {}
+    embedded = set()
     for x in source:
         try:
             embx = emb[x]
+            missing_chain = len(embx) == 0
         except KeyError:
+            missing_chain = True
+        if missing_chain:
             yield MissingChainError, x
+            continue
+        else:
+            embedded.add(x)
+        all_present = True
         for q in embx:
             if label.get(q,x) != x:
+                all_present = False
                 yield ChainOverlapError, q, x, label[q]
             elif q not in target:
-                yield InvalidNodeError, q, x
+                yield InvalidNodeError, x, q
             else:
                 label[q] = x
-        if not nx.is_connected(target.subgraph(embx)):
+        if all_present and not nx.is_connected(target.subgraph(embx)):
             yield DisconnectedChainError, x
 
     yielded = nx.Graph()
@@ -84,7 +93,7 @@ def diagnose_embedding(emb, source, target):
     for x, y in source.edges():
         if x == y:
             continue
-        if not yielded.has_edge(x, y):
+        if x in embedded and y in embedded and not yielded.has_edge(x, y):
             yield MissingEdgeError, x, y
 
 def is_valid_embedding(emb, source, target):
@@ -118,7 +127,7 @@ def verify_embedding(emb, source, target, ignore_errors=()):
     Raises:
         EmbeddingError: a catch-all class for the below
 
-        MissingChainError: in case a key is missing from `emb`
+        MissingChainError: in case a key is missing from `emb`, or the associated chain is empty
         ChainOverlapError: in case two chains contain the same target node
         DisconnectedChainError: in case a chain is disconnected
         InvalidNodeError: in case a chain contains a node label not found in `target`
