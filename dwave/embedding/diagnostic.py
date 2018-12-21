@@ -51,10 +51,9 @@ def diagnose_embedding(emb, source, target):
 
             :exc:`.DisconnectedChainError`, snode: a source node label whose chain is not a connected subgraph of `target`
 
-            :exc:`.InvalidNodeError`, snode, tnode: a source node label and putative target node label which is not a node of `target`
+            :exc:`.InvalidNodeError`, tnode, snode: a source node label and putative target node label which is not a node of `target`
 
             :exc:`.MissingEdgeError`, snode0, snode1: a pair of source node labels defining an edge which is not present between their chains
-
     """
 
     if not hasattr(source, 'edges'):
@@ -73,19 +72,19 @@ def diagnose_embedding(emb, source, target):
         if missing_chain:
             yield MissingChainError, x
             continue
-        else:
-            embedded.add(x)
         all_present = True
         for q in embx:
             if label.get(q, x) != x:
-                all_present = False
                 yield ChainOverlapError, q, x, label[q]
             elif q not in target:
+                all_present = False
                 yield InvalidNodeError, x, q
             else:
                 label[q] = x
-        if all_present and not nx.is_connected(target.subgraph(embx)):
-            yield DisconnectedChainError, x
+        if all_present:
+            embedded.add(x)
+            if not nx.is_connected(target.subgraph(embx)):
+                yield DisconnectedChainError, x
 
     yielded = nx.Graph()
     for p, q in target.subgraph(label).edges():
