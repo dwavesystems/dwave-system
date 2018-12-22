@@ -11,4 +11,4 @@ Reference Documentation
 
    samplers/index
    composites/index
-   embedding.rst
+   embedding

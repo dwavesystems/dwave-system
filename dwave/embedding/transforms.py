@@ -24,6 +24,7 @@ import dimod
 from six import iteritems, itervalues
 
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
+from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError
 from dwave.embedding.utils import chain_to_quadratic
 
 
@@ -127,10 +128,10 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         if v in embedding:
             chain = embedding[v]
         else:
-            raise ValueError('no embedding provided for source variable {}'.format(v))
+            raise MissingChainError(v)
 
         if any(u not in target_adjacency for u in chain):
-            raise ValueError('chain variable {} not in target_adjacency'.format(v))
+            raise InvalidNodeError(v, next(u not in target_adjacency for u in chain))
 
         b = bias / len(chain)
 
@@ -142,7 +143,7 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         available_interactions = {(s, t) for s in embedding[u] for t in embedding[v] if s in target_adjacency[t]}
 
         if not available_interactions:
-            raise ValueError("no edges in target graph between source variables {}, {}".format(u, v))
+            raise MissingEdgeError(u, v)
 
         b = bias / len(available_interactions)
 

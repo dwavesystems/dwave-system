@@ -313,7 +313,7 @@ class TestEmbedBQM(unittest.TestCase):
         adj = nx.Graph()
         adj.add_edges_from({(0, 1), (1, 2), (2, 3), (3, 4)})
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(dwave.embedding.exceptions.EmbeddingError):
             dwave.embedding.embed_ising(h, j, embeddings, adj)
 
     def test_embed_ising_h_embedding_mismatch(self):
@@ -324,7 +324,7 @@ class TestEmbedBQM(unittest.TestCase):
         adj = nx.Graph()
         adj.add_edges_from({(0, 1), (1, 2)})
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(dwave.embedding.exceptions.EmbeddingError):
             dwave.embedding.embed_ising(h, j, embedding, adj)
 
     def test_embed_ising_j_index_too_large(self):
@@ -335,7 +335,7 @@ class TestEmbedBQM(unittest.TestCase):
         adj = nx.Graph()
         adj.add_edges_from({(0, 1), (1, 2)})
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(dwave.embedding.exceptions.EmbeddingError):
             dwave.embedding.embed_ising(h, j, embedding, adj)
 
     def test_embed_ising_typical(self):
@@ -371,7 +371,7 @@ class TestEmbedBQM(unittest.TestCase):
 
         adjacency = {0: {1}, 1: {0}}
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(dwave.embedding.exceptions.EmbeddingError):
             dwave.embedding.embed_ising(h, J, embedding, adjacency)
 
     def test_embed_bqm_BINARY(self):

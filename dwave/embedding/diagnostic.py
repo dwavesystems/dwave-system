@@ -1,35 +1,24 @@
+# Copyright 2018 D-Wave Systems Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+# ================================================================================================
+
 import networkx as nx
 
-class EmbeddingError(RuntimeError):
-    def __init__(self, msg, *args):
-        super(EmbeddingError, self).__init__(msg.format(*args))
-    
-class MissingChainError(EmbeddingError):
-    def __init__(self, snode):
-        super(MissingChainError, self).__init__("chain for {} is empty or not contained in this embedding", snode)
-        self.source_node = snode
+from dwave.embedding.exceptions import MissingChainError, ChainOverlapError, DisconnectedChainError
+from dwave.embedding.exceptions import InvalidNodeError, MissingEdgeError
 
-class ChainOverlapError(EmbeddingError):
-    def __init__(self, tnode, snode0, snode1):
-        super(ChainOverlapError, self).__init__("overlapped chains at target node {}: source nodes are {} and {}", tnode, snode0, snode1)
-        self.target_node = tnode
-        self.source_nodes = (snode0, snode1)
-
-class DisconnectedChainError(EmbeddingError):
-    def __init__(self, snode):
-        super(DisconnectedChainError, self).__init__("chain for {} is not connected", snode)
-        self.source_node = snode
-
-class InvalidNodeError(EmbeddingError):
-    def __init__(self, snode, tnode):
-        super(InvalidNodeError, self).__init__("chain for {} contains a node label {} not contained in the target graph", snode, tnode)
-        self.source_node = snode
-        self.target_node = tnode
-
-class MissingEdgeError(EmbeddingError):
-    def __init__(self, snode0, snode1):
-        super(MissingEdgeError, self).__init__("source edge ({}, {}) is not represented by any target edge", snode0, snode1)
-        self.source_nodes = (snode0, snode1)
 
 def diagnose_embedding(emb, source, target):
     """A detailed diagnostic for minor embeddings.
@@ -42,19 +31,30 @@ def diagnose_embedding(emb, source, target):
     where the arguments following the class are used to construct the exception object.
     User-friendly variants of this function are :func:`is_valid_embedding`, which returns a
     bool, and :func:`verify_embedding` which raises the first observed error.  All exceptions
-    are subclasses of :class:`EmbeddingError`.
+    are subclasses of :exc:`.EmbeddingError`.
 
     Args:
-        emb (dict): a dictionary mapping source nodes to arrays of target nodes
-        source (graph or edgelist): the graph to be embedded
-        target (graph or edgelist): the graph being embedded into
+        emb (dict):
+            Dictionary mapping source nodes to arrays of target nodes.
+
+        source (list/:obj:`networkx.Graph`):
+            Graph to be embedded as a NetworkX graph or a list of edges.
+
+        target (list/:obj:`networkx.Graph`):
+            Graph being embedded into as a NetworkX graph or a list of edges.
 
     Yields:
-        MissingChainError, snode: a source node label that does not occur as a key of `emb`, or for which emb[snode] is empty
-        ChainOverlapError, tnode, snode0, snode0: a target node which occurs in both `emb[snode0]` and `emb[snode1]`
-        DisconnectedChainError, snode: a source node label whose chain is not a connected subgraph of `target`
-        InvalidNodeError, snode, tnode: a source node label and putative target node label which is not a node of `target`
-        MissingEdgeError, snode0, snode1: a pair of source node labels defining an edge which is not present between their chains
+        One of:
+            :exc:`.MissingChainError`, snode: a source node label that does not occur as a key of `emb`, or for which emb[snode] is empty
+
+            :exc:`.ChainOverlapError`, tnode, snode0, snode0: a target node which occurs in both `emb[snode0]` and `emb[snode1]`
+
+            :exc:`.DisconnectedChainError`, snode: a source node label whose chain is not a connected subgraph of `target`
+
+            :exc:`.InvalidNodeError`, snode, tnode: a source node label and putative target node label which is not a node of `target`
+
+            :exc:`.MissingEdgeError`, snode0, snode1: a pair of source node labels defining an edge which is not present between their chains
+
     """
 
     if not hasattr(source, 'edges'):
@@ -77,7 +77,7 @@ def diagnose_embedding(emb, source, target):
             embedded.add(x)
         all_present = True
         for q in embx:
-            if label.get(q,x) != x:
+            if label.get(q, x) != x:
                 all_present = False
                 yield ChainOverlapError, q, x, label[q]
             elif q not in target:
@@ -96,6 +96,7 @@ def diagnose_embedding(emb, source, target):
         if x in embedded and y in embedded and not yielded.has_edge(x, y):
             yield MissingEdgeError, x, y
 
+
 def is_valid_embedding(emb, source, target):
     """A simple (bool) diagnostic for minor embeddings.
 
@@ -113,6 +114,7 @@ def is_valid_embedding(emb, source, target):
     for _ in diagnose_embedding(emb, source, target):
         return False
     return True
+
 
 def verify_embedding(emb, source, target, ignore_errors=()):
     """A simple (exception-raising) diagnostic for minor embeddings.

@@ -43,10 +43,50 @@ target graph: two nodes (qubits) are chained to represent a single node.
   system's graph are chained to represent the single node :math:`z` of the
   source graph.
 
-Utilities
-=========
+Generating Embeddings
+=====================
 
 .. currentmodule:: dwave.embedding
+
+MinorMiner
+----------
+
+:std:doc:`minorminer <minorminer:index>` is a heuristic tool for minor embedding: given a
+minor and target graph, it tries to find a mapping that embeds the minor into the target.
+
+.. autosummary::
+   :toctree: generated/
+
+   minorminer.find_embedding
+
+Chimera
+-------
+
+Functionality for minor-embedding in :term:`Chimera`\ -structured target graphs.
+
+.. autosummary::
+   :toctree: generated/
+
+   chimera.find_clique_embedding
+   chimera.find_biclique_embedding
+   chimera.find_grid_embedding
+
+Pegasus
+-------
+
+Functionality for minor-embedding in :term:`Pegasus`\ -structured target graphs.
+
+.. autosummary::
+   :toctree: generated/
+
+   pegasus.find_clique_embedding
+
+Embedding Utilities
+===================
+
+Utilities
+---------
+
 .. autosummary::
    :toctree: generated/
 
@@ -56,15 +96,21 @@ Utilities
    unembed_response
    chain_break_frequency
 
+Diagnostics
+-----------
+
+.. autosummary::
+   :toctree: generated/
+
+   diagnose_embedding
+   is_valid_embedding
+   verify_embedding
+
 Chain-Break Resolution
 ======================
 
-.. automodule:: dwave.embedding.chain_breaks
-
 Generators
 ----------
-
-.. currentmodule:: dwave.embedding
 
 .. autosummary::
    :toctree: generated/
@@ -81,28 +127,15 @@ Callable Objects
 
    chain_breaks.MinimizeEnergy
 
-
-MinorMiner
+Exceptions
 ==========
 
-:std:doc:`minorminer <minorminer:index>` is a heuristic tool for minor embedding: given a
-minor and target graph, it tries to find a mapping that embeds the minor into the target.
-
 .. autosummary::
    :toctree: generated/
 
-   minorminer.find_embedding
-
-Chimera
-=======
-
-Functionality for minor-embedding in :term:`Chimera`\ -structured target graphs.
-
-.. currentmodule:: dwave.embedding
-
-.. autosummary::
-   :toctree: generated/
-
-   chimera.find_clique_embedding
-   chimera.find_biclique_embedding
-   chimera.find_grid_embedding
+   exceptions.EmbeddingError
+   exceptions.MissingChainError
+   exceptions.ChainOverlapError
+   exceptions.DisconnectedChainError
+   exceptions.InvalidNodeError
+   exceptions.MissingEdgeError
