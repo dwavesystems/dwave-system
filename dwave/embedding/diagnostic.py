@@ -1,4 +1,4 @@
-# Copyright 2016 D-Wave Systems Inc.
+# Copyright 2018 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,47 +13,11 @@
 #    limitations under the License.
 #
 # ================================================================================================
+
 import networkx as nx
 
-
-class EmbeddingError(RuntimeError):
-    def __init__(self, msg, *args):
-        super(EmbeddingError, self).__init__(msg.format(*args))
-
-
-class MissingChainError(EmbeddingError):
-    def __init__(self, snode):
-        super(MissingChainError, self).__init__("chain for {} is empty or not contained in this embedding", snode)
-        self.source_node = snode
-
-
-class ChainOverlapError(EmbeddingError):
-    def __init__(self, tnode, snode0, snode1):
-        super(ChainOverlapError, self).__init__("overlapped chains at target node {}: source nodes are {} and {}",
-                                                tnode, snode0, snode1)
-        self.target_node = tnode
-        self.source_nodes = (snode0, snode1)
-
-
-class DisconnectedChainError(EmbeddingError):
-    def __init__(self, snode):
-        super(DisconnectedChainError, self).__init__("chain for {} is not connected", snode)
-        self.source_node = snode
-
-
-class InvalidNodeError(EmbeddingError):
-    def __init__(self, snode, tnode):
-        super(InvalidNodeError, self).__init__("chain for {} contains a node label {} not contained in the target graph",
-                                               snode, tnode)
-        self.source_node = snode
-        self.target_node = tnode
-
-
-class MissingEdgeError(EmbeddingError):
-    def __init__(self, snode0, snode1):
-        super(MissingEdgeError, self).__init__("source edge ({}, {}) is not represented by any target edge",
-                                               snode0, snode1)
-        self.source_nodes = (snode0, snode1)
+from dwave.embedding.exceptions import MissingChainError, ChainOverlapError, DisconnectedChainError
+from dwave.embedding.exceptions import InvalidNodeError, MissingEdgeError
 
 
 def diagnose_embedding(emb, source, target):

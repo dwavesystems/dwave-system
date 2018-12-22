@@ -15,11 +15,11 @@
 # ================================================================================================
 import unittest
 
-from dwave.embedding.diagnostic import (MissingChainError, ChainOverlapError, DisconnectedChainError,
-                                        InvalidNodeError, MissingEdgeError, diagnose_embedding,
-                                        is_valid_embedding, verify_embedding)
-
 import networkx as nx
+
+from dwave.embedding.exceptions import MissingChainError, ChainOverlapError, DisconnectedChainError
+from dwave.embedding.exceptions import InvalidNodeError, MissingEdgeError
+from dwave.embedding.diagnostic import diagnose_embedding, is_valid_embedding, verify_embedding
 
 
 class TestEmbeddingDiagnostic(unittest.TestCase):
