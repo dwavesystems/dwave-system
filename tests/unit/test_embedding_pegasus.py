@@ -87,6 +87,23 @@ class TestFindClique(unittest.TestCase):
         with self.assertRaises(ValueError):
             find_clique_embedding(k, target_graph=pg)
 
+    def test_clique_incomplete_graph(self):
+        k = 5
+        m = 2
+
+        # Nodes in a known K5 embedding
+        # Note: {0: [14, 32], 1: [33, 15], 2: [16, 34], 3: [35, 17], 4: [36, 12]}
+        known_embedding_nodes = {14, 32, 33, 15, 16, 34, 35, 17, 36, 12}
+
+        # Create graph with missing nodes
+        incomplete_pg = pegasus_graph(m)
+        removed_nodes = set(incomplete_pg.nodes) - known_embedding_nodes
+        incomplete_pg.remove_nodes_from(removed_nodes)
+
+        # See if clique embedding is found
+        embedding = find_clique_embedding(k, target_graph=incomplete_pg)
+        self.assertTrue(is_valid_embedding(embedding, nx.complete_graph(k), incomplete_pg))
+
 
 if __name__ == "__main__":
     unittest.main()
