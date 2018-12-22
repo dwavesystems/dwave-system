@@ -2,7 +2,7 @@
 
 dimod==0.7.9
 dwave-cloud-client==0.5.0
-dwave-networkx==0.6.5
+dwave-networkx==0.6.8
 dwave-drivers==0.4.1
 homebase==1.0.1
 minorminer==0.1.5
