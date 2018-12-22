@@ -17,15 +17,16 @@ def find_clique_embedding(k, m=None, target_graph=None):
     target_graph cannot both be None.
 
     Args:
-        k (int/iterable/networkx.graph): Number of members in the requested clique; list of nodes;
+        k (int/iterable/:obj:`networkx.Graph`): Number of members in the requested clique; list of nodes;
           a complete graph that you want to embed onto the target_graph
         m (int): Number of tiles in a row of a square Pegasus graph
-        target_graph (networkx.graph): A Pegasus graph
+        target_graph (:obj:`networkx.Graph`): A Pegasus graph
 
     Returns:
-        A dictionary representing target_graphs's clique embedding. Each dictionary key represents a
-        node in said clique. Each corresponding dictionary value is a list of pegasus coordinates
-        that should be chained together to represent said node.
+        dict: A dictionary representing target_graphs's clique embedding. Each dictionary key
+        represents a node in said clique. Each corresponding dictionary value is a list of pegasus
+        coordinates that should be chained together to represent said node.
+
     """
     # Organize parameter values
     if target_graph is None:

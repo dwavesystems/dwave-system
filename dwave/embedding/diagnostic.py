@@ -31,24 +31,30 @@ def diagnose_embedding(emb, source, target):
     where the arguments following the class are used to construct the exception object.
     User-friendly variants of this function are :func:`is_valid_embedding`, which returns a
     bool, and :func:`verify_embedding` which raises the first observed error.  All exceptions
-    are subclasses of :class:`EmbeddingError`.
+    are subclasses of :exc:`.EmbeddingError`.
 
     Args:
         emb (dict):
             Dictionary mapping source nodes to arrays of target nodes.
 
-        source (graph or edgelist):
-            Graph to be embedded
+        source (list/:obj:`networkx.Graph`):
+            Graph to be embedded as a NetworkX graph or a list of edges.
 
-        target (graph or edgelist):
-            Graph being embedded into
+        target (list/:obj:`networkx.Graph`):
+            Graph being embedded into as a NetworkX graph or a list of edges.
 
     Yields:
-        MissingChainError, snode: a source node label that does not occur as a key of `emb`, or for which emb[snode] is empty
-        ChainOverlapError, tnode, snode0, snode0: a target node which occurs in both `emb[snode0]` and `emb[snode1]`
-        DisconnectedChainError, snode: a source node label whose chain is not a connected subgraph of `target`
-        InvalidNodeError, snode, tnode: a source node label and putative target node label which is not a node of `target`
-        MissingEdgeError, snode0, snode1: a pair of source node labels defining an edge which is not present between their chains
+        One of:
+            :exc:`.MissingChainError`, snode: a source node label that does not occur as a key of `emb`, or for which emb[snode] is empty
+
+            :exc:`.ChainOverlapError`, tnode, snode0, snode0: a target node which occurs in both `emb[snode0]` and `emb[snode1]`
+
+            :exc:`.DisconnectedChainError`, snode: a source node label whose chain is not a connected subgraph of `target`
+
+            :exc:`.InvalidNodeError`, snode, tnode: a source node label and putative target node label which is not a node of `target`
+
+            :exc:`.MissingEdgeError`, snode0, snode1: a pair of source node labels defining an edge which is not present between their chains
+
     """
 
     if not hasattr(source, 'edges'):
