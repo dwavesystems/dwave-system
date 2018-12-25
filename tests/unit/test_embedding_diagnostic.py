@@ -62,7 +62,7 @@ class TestEmbeddingDiagnostic(unittest.TestCase):
 
     def test_invalid_node(self):
         k2 = nx.complete_graph(2)
-        emb = {0: [0], 1: [1, 2]}
+        emb = {0: [0], 1: [2]}
 
         self.assertRaises(InvalidNodeError, lambda: verify_embedding(emb, k2, k2))
         self.assertFalse(is_valid_embedding(emb, k2, k2))
