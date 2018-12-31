@@ -150,12 +150,13 @@ def chain_to_quadratic(chain, target_adjacency, chain_strength):
     return quadratic
 
 
-def chain_break_frequency(samples, embedding):
+def chain_break_frequency(samples_like, embedding):
     """Determine the frequency of chain breaks in the given samples.
 
     Args:
-        samples (array-like/:obj:`.Response`):
-            Matrix of samples or a dimod response object.
+        samples_like (samples_like/:obj:`dimod.SampleSet`:
+            A collection of raw samples. 'samples_like' is an extension of NumPy's array_like.
+            See :func:`dimod.as_samples`.
 
         embedding (dict):
             Mapping from source graph to target graph as a dict of form {s: {t, ...}, ...},
@@ -185,20 +186,22 @@ def chain_break_frequency(samples, embedding):
 
         >>> import dimod
         ...
-        >>> response = dimod.Response.from_samples([{'a': 1, 'b': 0}, {'a': 0, 'b': 0}],
+        >>> response = dimod.SampleSet.from_samples([{'a': 1, 'b': 0}, {'a': 0, 'b': 0}],
         ...                                        {'energy': [1, 0]}, {}, dimod.BINARY)
         >>> embedding = {0: {'a', 'b'}}
         >>> print(dimod.chain_break_frequency(response, embedding)[0])
         0.5
 
     """
-    if isinstance(samples, dimod.SampleSet):
-        if samples.variable_labels is not None:
-            label_to_idx = samples.label_to_idx
-            embedding = {v: {label_to_idx[u] for u in chain} for v, chain in iteritems(embedding)}
-        samples = samples.record.sample
+    if isinstance(samples_like, dimod.SampleSet):
+        labels = samples_like.variables
+        samples = samples_like.record.sample
     else:
-        samples = np.asarray(samples, dtype=np.int8)
+        samples, labels = dimod.as_samples(samples_like)
+
+    if not all(v == idx for idx, v in enumerate(labels)):
+        labels_to_idx = {v: idx for idx, v in enumerate(labels)}
+        embedding = {v: {labels_to_idx[u] for u in chain} for v, chain in embedding.items()}
 
     if not embedding:
         return {}

@@ -239,7 +239,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 :attr:`.DWaveSampler.parameters`
 
         Returns:
-            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
@@ -270,7 +270,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_ising(h, J, **kwargs)
 
-        return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
+        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the specified QUBO.
@@ -284,7 +284,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 :attr:`.DWaveSampler.parameters`
 
         Returns:
-            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
@@ -313,7 +313,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_qubo(Q, **kwargs)
 
-        return dimod.Response.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
+        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
 
     def validate_anneal_schedule(self, anneal_schedule):
         """Raise an exception if the specified schedule is invalid for the sampler.
@@ -419,12 +419,6 @@ def _result_to_response_hook(variables, vartype):
         # get the samples. The future will return all spins so filter for the ones in variables
         samples = [[sample[v] for v in variables] for sample in result.get('solutions')]
 
-        # the only two data vectors we're interested in are energies and num_occurrences
-        vectors = {'energy': result['energies']}
-
-        if 'num_occurrences' in result:
-            vectors['num_occurrences'] = result['num_occurrences']
-
         # finally put the timing information (if present) into the misc info. We ignore everything
         # else
         if 'timing' in result:
@@ -432,6 +426,8 @@ def _result_to_response_hook(variables, vartype):
         else:
             info = {}
 
-        return dimod.Response.from_samples(samples, vectors, info, vartype, variable_labels=variables)
+        return dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
+                                            energy=result['energies'],
+                                            num_occurrences=result.get('num_occurrences', None))
 
     return _hook

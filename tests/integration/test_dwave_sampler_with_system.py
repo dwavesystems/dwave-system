@@ -41,10 +41,10 @@ class TestDWaveSamplerSystem(unittest.TestCase):
 
         response = DWaveSampler(solver={'qpu': True}).sample(bqm)
 
-        self.assertFalse(np.any(response.samples_matrix == 0))
+        self.assertFalse(np.any(response.record.sample == 0))
         self.assertIs(response.vartype, dimod.SPIN)
 
-        rows, cols = response.samples_matrix.shape
+        rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 5)
 

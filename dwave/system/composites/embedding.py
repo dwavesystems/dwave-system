@@ -175,7 +175,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
 
         Examples:
             This example submits an triangle-structured Ising problem to a D-Wave solver, selected
@@ -386,7 +386,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
 
         Examples:
             This example submits an triangle-structured problem to a D-Wave solver, selected
@@ -486,7 +486,7 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
         Returns:
-            :class:`dimod.Response`
+            :class:`dimod.SampleSet`
         """
         if self.embedding is None:
             # Find embedding
