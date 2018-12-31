@@ -185,7 +185,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
         resp = sampler.sample_ising({'a': 1, 'b': 1, 'c': 0}, {})
 
-        self.assertEqual(set(resp.variable_labels), {'a', 'b', 'c'})
+        self.assertEqual(set(resp.variables), {'a', 'b', 'c'})
 
     def test_adjacency(self):
         square_adj = {1: [2, 3], 2: [1, 4], 3: [1, 4], 4: [2, 3]}

@@ -58,6 +58,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[]):
         # we are altering the bqm
+
+        if not flux_biases:
+            return SimulatedAnnealingSampler().sample(bqm, num_reads=num_reads)
+
         new_bqm = bqm.copy()
 
         for v, fbo in enumerate(flux_biases):
@@ -66,6 +70,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         response = SimulatedAnnealingSampler().sample(new_bqm, num_reads=num_reads)
 
-        energies = [bqm.energy(sample) for sample in response.samples(sorted_by=None)]
-
-        return dimod.Response.from_samples(response.samples(sorted_by=None), {'energy': energies}, {}, bqm.vartype)
+        # recalculate the energies with the old bqm
+        return dimod.SampleSet.from_samples_bqm([{v: sample[v] for v in bqm}
+                                                 for sample in response.samples()],
+                                                bqm)

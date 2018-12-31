@@ -29,7 +29,7 @@ import dimod
 import dwave.embedding
 
 
-class TestUnembedResponse(unittest.TestCase):
+class TestUnembedSampleSet(unittest.TestCase):
 
     def test_majority_vote(self):
         """should return the most common value in the chain"""
@@ -42,7 +42,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 1}, {})
 
-        resp = dimod.Response.from_samples(samples, {'energy': [-1, 1]}, {}, dimod.SPIN)
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
         resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.majority_vote)
 
@@ -61,7 +61,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 1}, {})
 
-        resp = dimod.Response.from_samples(samples, {'energy': [-1, 1]}, {}, dimod.SPIN)
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
         resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.majority_vote)
 
@@ -80,7 +80,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 1}, {})
 
-        resp = dimod.Response.from_samples(samples, {'energy': [-1, 1]}, {}, dimod.SPIN)
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
         resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
 
@@ -94,7 +94,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 1}, {('a', 'b'): -1})
 
-        resp = dimod.Response.from_samples(samples, {'energy': [-1, 1]}, {}, dimod.SPIN)
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
         resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
 
@@ -113,7 +113,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 1}, {('a', 'b'): -1})
 
-        resp = dimod.Response.from_samples(samples, {'energy': [-1, 1]}, {}, dimod.SPIN)
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
         resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
 
@@ -152,7 +152,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         chain_break_method = dwave.embedding.discard
         response = dwave.embedding.unembed_response(embedded_response, embedding, bqm,
-                                          chain_break_method=chain_break_method)
+                                                    chain_break_method=chain_break_method)
 
         self.assertEqual(len(embedded_response) / 2, len(response))  # half chains should be broken
 
@@ -172,7 +172,7 @@ class TestUnembedResponse(unittest.TestCase):
 
         chain_break_method = dwave.embedding.discard
         response = dwave.embedding.unembed_response(embedded_response, embedding, bqm,
-                                          chain_break_method=dwave.embedding.discard)
+                                                    chain_break_method=dwave.embedding.discard)
 
         self.assertEqual(len(embedded_response) / 2, len(response))  # half chains should be broken
 
@@ -181,7 +181,7 @@ class TestUnembedResponse(unittest.TestCase):
 
     def test_embedding_superset(self):
         # source graph in the embedding is a superset of the bqm
-        response = dimod.Response(np.rec.array([([-1,  1, -1,  1, -1,  1, -1,  1], -1.4, 1),
+        response = dimod.SampleSet(np.rec.array([([-1,  1, -1,  1, -1,  1, -1,  1], -1.4, 1),
                                                 ([-1,  1, -1, -1, -1,  1, -1, -1], -1.4, 1),
                                                 ([+1, -1, -1, -1,  1, -1, -1, -1], -1.6, 1),
                                                 ([+1, -1, -1, -1,  1, -1, -1, -1], -1.6, 1)],
@@ -207,10 +207,10 @@ class TestUnembedResponse(unittest.TestCase):
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 1}, {('a', 'b'): -1})
 
-        resp = dimod.Response.from_samples(samples, {'energy': [-1, 1]}, {}, dimod.SPIN)
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
         resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard,
-                                      chain_break_fraction=True)
+                                                chain_break_fraction=True)
 
         source_samples = list(resp)
 

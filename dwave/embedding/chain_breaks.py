@@ -49,13 +49,13 @@ def broken_chains(samples, chains):
     Examples:
         >>> samples = np.array([[-1, +1, -1, +1], [-1, -1, +1, +1]], dtype=np.int8)
         >>> chains = [[0, 1], [2, 3]]
-        >>> dimod.broken_chains(samples, chains)
+        >>> dwave.embedding.broken_chains(samples, chains)
         array([[True, True],
                [ False,  False]])
 
         >>> samples = np.array([[-1, +1, -1, +1], [-1, -1, +1, +1]], dtype=np.int8)
         >>> chains = [[0, 2], [1, 3]]
-        >>> dimod.broken_chains(samples, chains)
+        >>> dwave.embedding.broken_chains(samples, chains)
         array([[False, False],
                [ True,  True]])
 
@@ -117,7 +117,7 @@ def discard(samples, chains):
         ...
         >>> chains = [(0, 1), (2,)]
         >>> samples = np.array([[1, 1, 0], [1, 0, 0]], dtype=np.int8)
-        >>> unembedded, idx = dimod.embedding.discard(samples, chains)
+        >>> unembedded, idx = dwave.embedding.discard(samples, chains)
         >>> unembedded
         array([[1, 0]], dtype=int8)
         >>> idx
@@ -174,7 +174,7 @@ def majority_vote(samples, chains):
         ...
         >>> chains = [(0, 1), (2, 3, 4)]
         >>> samples = np.array([[1, 1, 0, 0, 1], [1, 1, 1, 0, 1]], dtype=np.int8)
-        >>> unembedded, idx = dimod.embedding.majority_vote(samples, chains)
+        >>> unembedded, idx = dwave.embedding.majority_vote(samples, chains)
         >>> unembedded
         array([[1, 0],
                [1, 1]], dtype=int8)
@@ -238,7 +238,7 @@ def weighted_random(samples, chains):
         ...
         >>> chains = [(0, 1), (2, 3, 4)]
         >>> samples = np.array([[1, 0, 1, 0, 1]], dtype=np.int8)
-        >>> unembedded, idx = dimod.embedding.weighted_random(samples, chains)  # doctest: +SKIP
+        >>> unembedded, idx = dwave.embedding.weighted_random(samples, chains)  # doctest: +SKIP
         >>> unembedded  # doctest: +SKIP
         array([[1, 1]], dtype=int8)
         >>> idx  # doctest: +SKIP
@@ -280,7 +280,7 @@ class MinimizeEnergy(Callable):
         >>> J = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
         >>> bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
         >>> embedding = {'a': [0], 'b': [1], 'c': [2, 3]}
-        >>> cbm = dimod.embedding.MinimizeEnergy(bqm, embedding)
+        >>> cbm = dwave.embedding.MinimizeEnergy(bqm, embedding)
         >>> samples = np.array([[+1, -1, +1, +1],
         ...                     [-1, -1, -1, -1],
         ...                     [-1, -1, +1, -1],

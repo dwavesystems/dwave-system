@@ -351,8 +351,8 @@ def unembed_response(target_response, embedding, source_bqm,
     response from the target BQM.
 
     Args:
-        target_response (:obj:`.Response`):
-            Response from the target BQM.
+        target_response (:obj:`.SampleSet`):
+            SampleSet from the target BQM.
 
         embedding (dict):
             Mapping from source graph to target graph as a dict of form {s: {t, ...}, ...},
@@ -370,8 +370,8 @@ def unembed_response(target_response, embedding, source_bqm,
             what fraction of the chains were broken before unembedding.
 
     Returns:
-        :obj:`.Response`:
-            Response for the source binary quadratic model.
+        :obj:`.SampleSet`:
+            SampleSet for the source binary quadratic model.
 
     Examples:
         This example embeds a Boolean AND gate,
@@ -444,10 +444,7 @@ def unembed_response(target_response, embedding, source_bqm,
     except KeyError:
         raise ValueError("given bqm does not match the embedding")
 
-    if target_response.label_to_idx is None:
-        chain_idxs = [list(chain) for chain in chains]
-    else:
-        chain_idxs = [[target_response.label_to_idx[v] for v in chain] for chain in chains]
+    chain_idxs = [[target_response.variables.index[v] for v in chain] for chain in chains]
 
     record = target_response.record
 
@@ -476,4 +473,4 @@ def unembed_response(target_response, embedding, source_bqm,
     if chain_break_fraction:
         data['chain_break_fraction'] = broken_chains(record.sample, chain_idxs).mean(axis=1)[idxs]
 
-    return dimod.Response(data, variables, target_response.info, target_response.vartype)
+    return dimod.SampleSet(data, variables, target_response.info, target_response.vartype)

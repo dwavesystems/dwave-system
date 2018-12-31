@@ -32,10 +32,12 @@ from math import sqrt, ceil
 
 import dimod
 import dwave_networkx as dnx
-
 import numpy as np
 
+import dwave.embedding
+
 __all__ = ['TilingComposite']
+
 
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """Composite to tile a small problem across a Chimera-structured sampler.
@@ -205,7 +207,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                 Optional keyword arguments for the sampling method, specified per solver.
 
         Returns:
-            :class:`dimod.Response`: A `dimod` :obj:`~dimod.Response` object.
+            :class:`dimod.SampleSet`
 
         Examples:
             This example submits a simple Ising problem of just two variables on a
@@ -233,7 +235,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         embedded_bqm = dimod.BinaryQuadraticModel.empty(bqm.vartype)
         __, __, target_adjacency = self.child.structure
         for embedding in self.embeddings:
-            embedded_bqm.update(dimod.embed_bqm(bqm, embedding, target_adjacency))
+            embedded_bqm.update(dwave.embedding.embed_bqm(bqm, embedding, target_adjacency))
 
         # solve the problem on the child system
         tiled_response = self.child.sample(embedded_bqm, **kwargs)
@@ -241,25 +243,11 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         responses = []
 
         for embedding in self.embeddings:
-            embedding = {v: chain for v, chain in embedding.items() if v in bqm.linear}
+            embedding = {v: chain for v, chain in embedding.items() if v in bqm.variables}
 
-            responses.append(dimod.unembed_response(tiled_response, embedding, bqm))
+            responses.append(dwave.embedding.unembed_response(tiled_response, embedding, bqm))
 
-        # stack the records
-        record = np.rec.array(np.hstack((resp.record for resp in responses)))
-
-        vartypes = set(resp.vartype for resp in responses)
-        if len(vartypes) > 1:
-            raise RuntimeError("inconsistent vartypes returned")
-        vartype = vartypes.pop()
-
-        info = {}
-        for resp in responses:
-            info.update(resp.info)
-
-        labels = responses[0].variable_labels
-
-        return dimod.Response(record, labels, info, vartype)
+        return dimod.concatenate(responses)
 
     @property
     def num_tiles(self):
