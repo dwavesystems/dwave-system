@@ -28,7 +28,7 @@ from warnings import warn
 import dimod
 import minorminer
 
-from dwave.embedding import target_to_source, unembed_response, embed_bqm
+from dwave.embedding import target_to_source, unembed_sampleset, embed_bqm
 
 __all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite', 'LazyEmbeddingComposite']
 
@@ -222,8 +222,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return unembed_response(response, embedding, source_bqm=bqm,
-                                chain_break_fraction=chain_break_fraction)
+        return unembed_sampleset(response, embedding, source_bqm=bqm,
+                                 chain_break_fraction=chain_break_fraction)
 
 
 class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
@@ -426,8 +426,8 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return unembed_response(response, embedding, source_bqm=bqm,
-                                chain_break_fraction=chain_break_fraction)
+        return unembed_sampleset(response, embedding, source_bqm=bqm,
+                                 chain_break_fraction=chain_break_fraction)
 
 
 def _adjacency_to_edges(adjacency):

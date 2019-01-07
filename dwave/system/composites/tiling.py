@@ -245,7 +245,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         for embedding in self.embeddings:
             embedding = {v: chain for v, chain in embedding.items() if v in bqm.variables}
 
-            responses.append(dwave.embedding.unembed_response(tiled_response, embedding, bqm))
+            responses.append(dwave.embedding.unembed_sampleset(tiled_response, embedding, bqm))
 
         return dimod.concatenate(responses)
 

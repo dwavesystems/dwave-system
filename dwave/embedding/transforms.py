@@ -31,7 +31,7 @@ from dwave.embedding.utils import chain_to_quadratic
 __all__ = ['embed_bqm',
            'embed_ising',
            'embed_qubo',
-           'unembed_response',
+           'unembed_sampleset',
            ]
 
 
@@ -98,14 +98,14 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         >>> # Embed the BQM
         >>> target_bqm = dimod.embed_bqm(bqm, embedding, sampler.adjacency)
         >>> # Sample
-        >>> response = sampler.sample(target_bqm)
-        >>> response.record.sample   # doctest: +SKIP
+        >>> samples = sampler.sample(target_bqm)
+        >>> samples.record.sample   # doctest: +SKIP
         array([[-1, -1, -1, -1],
                [ 1, -1, -1, -1],
                [ 1,  1, -1, -1],
                [-1,  1, -1, -1],
                [-1,  1,  1, -1],
-        >>> # Snipped above response for brevity
+        >>> # Snipped above samples for brevity
 
     """
     if smear_vartype is dimod.SPIN and source_bqm.vartype is dimod.BINARY:
@@ -235,8 +235,8 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
         >>> # Embed the Ising problem
         >>> target_h, target_J = dimod.embed_ising(h, J, embedding, sampler.adjacency)
         >>> # Sample
-        >>> response = sampler.sample_ising(target_h, target_J)
-        >>> for sample in response.samples(n=3, sorted_by='energy'):   # doctest: +SKIP
+        >>> samples = sampler.sample_ising(target_h, target_J)
+        >>> for sample in samples.samples(n=3, sorted_by='energy'):   # doctest: +SKIP
         ...     print(sample)
         ...
         {0: 1, 1: -1, 2: -1, 3: -1}
@@ -324,8 +324,8 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
         >>> # Embed the QUBO
         >>> target_Q = dimod.embed_qubo(Q, embedding, sampler.adjacency)
         >>> # Sample
-        >>> response = sampler.sample_qubo(target_Q)
-        >>> for datum in response.data():   # doctest: +SKIP
+        >>> samples = sampler.sample_qubo(target_Q)
+        >>> for datum in samples.data():   # doctest: +SKIP
         ...     print(datum)
         ...
         Sample(sample={1: 0, 2: 1, 3: 1, 4: 0}, energy=-8.0)
@@ -334,7 +334,7 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
         Sample(sample={1: 1, 2: 1, 3: 0, 4: 0}, energy=-4.0)
         Sample(sample={1: 0, 2: 1, 3: 0, 4: 0}, energy=-4.0)
         Sample(sample={1: 1, 2: 1, 3: 1, 4: 0}, energy=-4.0)
-        >>> # Snipped above response for brevity
+        >>> # Snipped above samples for brevity
 
     """
     source_bqm = dimod.BinaryQuadraticModel.from_qubo(source_Q)
@@ -343,95 +343,57 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
     return target_Q
 
 
-def unembed_response(target_response, embedding, source_bqm,
-                     chain_break_method=None, chain_break_fraction=False):
-    """Unembed the response.
+def unembed_sampleset(target_sampleset, embedding, source_bqm,
+                      chain_break_method=None, chain_break_fraction=False):
+    """Unembed the samples set.
 
-    Construct a response for the source binary quadratic model (BQM) by unembedding the given
-    response from the target BQM.
+    Construct a sample set for the source binary quadratic model (BQM) by
+    unembedding the given samples from the target BQM.
 
     Args:
-        target_response (:obj:`.SampleSet`):
+        target_sampleset (:obj:`dimod.SampleSet`):
             SampleSet from the target BQM.
 
         embedding (dict):
-            Mapping from source graph to target graph as a dict of form {s: {t, ...}, ...},
-            where s is a source-model variable and t is a target-model variable.
+            Mapping from source graph to target graph as a dict of form
+            {s: {t, ...}, ...}, where s is a source variable and t is a target
+            variable.
 
-        source_bqm (:obj:`.BinaryQuadraticModel`):
+        source_bqm (:obj:`dimod.BinaryQuadraticModel`):
             Source binary quadratic model.
 
         chain_break_method (function, optional):
-            Method used to resolve chain breaks. Must be an iterator which accepts a sample and
-            an embedding and yields unembedded samples.
+            Method used to resolve chain breaks.
+            See :mod:`dwave.embedding.chain_breaks`.
 
         chain_break_fraction (bool, optional, default=False):
-            If True, a 'chain_break_fraction' field is added to the unembedded response which report
-            what fraction of the chains were broken before unembedding.
+            If True, a 'chain_break_fraction' field is added to the unembedded
+            samples which report what fraction of the chains were broken before
+            unembedding.
 
     Returns:
         :obj:`.SampleSet`:
-            SampleSet for the source binary quadratic model.
 
     Examples:
-        This example embeds a Boolean AND gate,
-        :math:`x_3 \Leftrightarrow x_1 \wedge x_2`, in a square-structured
-        graph and samples with dimod reference structured sampler,
-        `StructureComposite`, using the dimod reference `ExactSolver` sampler.
-        The gate is represented as penalty model
-        :math:`x_1 x_2 - 2(x_1+x_2)x_3 +3x_3`, which is submitted to the
-        sampler as QUBO  problem
-        :math:`E(a_i, b_{i,j}; x_i) = 3x_3 + x_1x_2 - 2x_1x_3 - 2x_2x_3`.
-        This QUBO represents a fully connected :math:`K_3` graph.
-        Samples are unembedded by :func:`.unembed_response` and show that
-        only valid states of the AND gate have zero energy (e.g., only input
-        :math:`x_1 x_2=1,1` results in :math:`z=1`), while invalid states have
-        higher energy.
 
         >>> import dimod
-        >>> import networkx as nx
-        >>> # Binary quadratic model for the AND gate
-        >>> Q = {('x1', 'x2'): 1, ('x1', 'z'): -2, ('x2', 'z'): -2, ('z', 'z'): 3}
-        >>> bqm = dimod.BinaryQuadraticModel.from_qubo(Q)
-        >>> # Embed the BQM in a structured dimod sampler defined by a square graph
-        >>> target_graph = nx.cycle_graph(4)
-        >>> sampler = dimod.StructureComposite(dimod.ExactSolver(),
-        ...                          list(target_graph.nodes), list(target_graph.edges))
-        >>> embedding = {'x1': {0}, 'x2': {1}, 'z': {2, 3}}
-        >>> target_Q = dimod.embed_qubo(Q, embedding, sampler.adjacency)
-        >>> # Sample on the target graph
-        >>> target_response = sampler.sample_qubo(target_Q)
-        >>> # Unembed samples back to the problem graph
-        >>> source_response = dimod.unembed_response(target_response, embedding, bqm)
-        >>> # Verify correct representation of the AND gate (first automatically then manually)
-        >>> for datum in source_response.data():
-        ...     if (datum.sample['x1'] and datum.sample['x2']) == datum.sample['z']:
-        ...         if datum.energy > 0:
-        ...            print('Valid AND has high energy')
         ...
-        ...     else:
-        ...         if datum.energy == 0:
-        ...             print('invalid AND has low energy')
+        >>> # say we have a bqm on a triangle and an embedding
+        >>> J = {('a', 'b'): -1, ('b', 'c'): -1, ('a', 'c'): -1}
+        >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, J)
+        >>> embedding = {'a': [0, 1], 'b': [2], 'c': [3]}
         ...
-        >>> for datum in source_response.data():     # doctest: +SKIP
-        ...     print(datum)
+        >>> # and some samples from the embedding
+        >>> samples = [{0: -1, 1: -1, 2: -1, 3: -1},  # [0, 1] is unbroken
+                       {0: -1, 1: +1, 2: +1, 3: +1}]  # [0, 1] is broken
+        >>> energies = [-3, 1]
+        >>> embedded = dimod.SampleSet.from_samples(samples, dimod.SPIN, energies)
         ...
-        Sample(sample={'x2': 0, 'x1': 0, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 0, 'x1': 1, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 1, 'x1': 0, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 1, 'x1': 1, 'z': 1}, energy=0.0)
-        Sample(sample={'x2': 1, 'x1': 0, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 0, 'x1': 1, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 0, 'x1': 1, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 0, 'x1': 0, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 1, 'x1': 0, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 0, 'x1': 0, 'z': 0}, energy=0.0)
-        Sample(sample={'x2': 1, 'x1': 1, 'z': 0}, energy=1.0)
-        Sample(sample={'x2': 0, 'x1': 1, 'z': 1}, energy=1.0)
-        Sample(sample={'x2': 1, 'x1': 0, 'z': 1}, energy=1.0)
-        Sample(sample={'x2': 1, 'x1': 1, 'z': 0}, energy=1.0)
-        Sample(sample={'x2': 1, 'x1': 1, 'z': 0}, energy=1.0)
-        Sample(sample={'x2': 0, 'x1': 0, 'z': 1}, energy=3.0)
+        >>> # unembed
+        >>> samples = dwave.embedding.unembed_sampleset(embedded, embedding, bqm)
+        >>> samples.record.sample   # doctest: +SKIP
+        array([[-1, -1, -1],
+               [ 1,  1,  1]], dtype=int8)
 
     """
 
@@ -444,33 +406,36 @@ def unembed_response(target_response, embedding, source_bqm,
     except KeyError:
         raise ValueError("given bqm does not match the embedding")
 
-    chain_idxs = [[target_response.variables.index[v] for v in chain] for chain in chains]
+    chain_idxs = [[target_sampleset.variables.index[v] for v in chain] for chain in chains]
 
-    record = target_response.record
+    record = target_sampleset.record
 
     unembedded, idxs = chain_break_method(record.sample, chain_idxs)
 
-    lin, (i, j, quad), off = source_bqm.to_numpy_vectors(variable_order=variables)
-    energies = unembedded.dot(lin) + (unembedded[:, i]*unembedded[:, j]).dot(quad) + off
+    # dev note: this is a bug in dimod that empty unembedded is not handled,
+    # in the future this try-except can be removed
+    try:
+        energies = source_bqm.energies((unembedded, variables))
+    except ValueError:
+        datatypes = [('sample', np.dtype(np.int8), (len(variables),)), ('energy', np.float)]
+        datatypes.extend((name, record[name].dtype, record[name].shape[1:])
+                         for name in record.dtype.names
+                         if name not in {'sample', 'energy'})
+        if chain_break_fraction:
+            datatypes.append(('chain_break_fraction', np.float64))
+        # there are no samples so everything is empty
+        data = np.rec.array(np.empty(0, dtype=datatypes))
+        return dimod.SampleSet(data, variables, target_sampleset.info.copy(), target_sampleset.vartype)
 
-    num_samples, num_variables = unembedded.shape
-
-    datatypes = [('sample', np.dtype(np.int8), (num_variables,)), ('energy', energies.dtype)]
-    datatypes.extend((name, record[name].dtype, record[name].shape[1:]) for name in record.dtype.names
-                     if name not in {'sample', 'energy'})
+    reserved = {'sample', 'energy'}
+    vectors = {name: record[name][idxs]
+               for name in record.dtype.names if name not in reserved}
 
     if chain_break_fraction:
-        datatypes.append(('chain_break_fraction', np.float64))
+        vectors['chain_break_fraction'] = broken_chains(record.sample, chain_idxs).mean(axis=1)[idxs]
 
-    data = np.rec.array(np.empty(num_samples, dtype=datatypes))
-
-    data.sample = unembedded
-    data.energy = energies
-    for name in record.dtype.names:
-        if name not in {'sample', 'energy'}:
-            data[name] = record[name][idxs]
-
-    if chain_break_fraction:
-        data['chain_break_fraction'] = broken_chains(record.sample, chain_idxs).mean(axis=1)[idxs]
-
-    return dimod.SampleSet(data, variables, target_response.info, target_response.vartype)
+    return dimod.SampleSet.from_samples((unembedded, variables),
+                                        target_sampleset.vartype,
+                                        energy=energies,
+                                        info=target_sampleset.info.copy(),
+                                        **vectors)

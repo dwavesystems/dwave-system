@@ -44,7 +44,7 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
-        resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.majority_vote)
+        resp = dwave.embedding.unembed_sampleset(resp, embedding, bqm, chain_break_method=dwave.embedding.majority_vote)
 
         # specify that majority vote should be used
         source_samples = list(resp)
@@ -63,7 +63,7 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
-        resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.majority_vote)
+        resp = dwave.embedding.unembed_sampleset(resp, embedding, bqm, chain_break_method=dwave.embedding.majority_vote)
 
         # specify that majority vote should be used
         source_samples = list(resp)
@@ -82,7 +82,7 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
-        resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
+        resp = dwave.embedding.unembed_sampleset(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
 
         source_samples = list(resp)
 
@@ -96,7 +96,7 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
-        resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
+        resp = dwave.embedding.unembed_sampleset(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
 
         source_samples = list(resp)
         # only the first sample should be returned
@@ -115,7 +115,7 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
-        resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
+        resp = dwave.embedding.unembed_sampleset(resp, embedding, bqm, chain_break_method=dwave.embedding.discard)
 
         source_samples = list(resp)
 
@@ -134,7 +134,7 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         embedded_response = dimod.ExactSolver().sample(embedded_bqm)
 
-        response = dwave.embedding.unembed_response(embedded_response, embedding, bqm)
+        response = dwave.embedding.unembed_sampleset(embedded_response, embedding, bqm)
 
         for sample, energy in response.data(['sample', 'energy']):
             self.assertAlmostEqual(bqm.energy(sample), energy)
@@ -151,15 +151,15 @@ class TestUnembedSampleSet(unittest.TestCase):
         embedded_response = dimod.ExactSolver().sample(embedded_bqm)
 
         chain_break_method = dwave.embedding.discard
-        response = dwave.embedding.unembed_response(embedded_response, embedding, bqm,
-                                                    chain_break_method=chain_break_method)
+        response = dwave.embedding.unembed_sampleset(embedded_response, embedding, bqm,
+                                                   chain_break_method=chain_break_method)
 
         self.assertEqual(len(embedded_response) / 2, len(response))  # half chains should be broken
 
         for sample, energy in response.data(['sample', 'energy']):
             self.assertEqual(bqm.energy(sample), energy)
 
-    def test_unembed_response_with_discard_matrix_typical(self):
+    def test_unembed_sampleset_with_discard_matrix_typical(self):
         h = {'a': .1, 'b': 0, 'c': 0}
         J = {('a', 'b'): 1, ('b', 'c'): 1.3, ('a', 'c'): -1}
         bqm = dimod.BinaryQuadraticModel.from_ising(h, J, offset=1.3)
@@ -171,8 +171,8 @@ class TestUnembedSampleSet(unittest.TestCase):
         embedded_response = dimod.ExactSolver().sample(embedded_bqm)
 
         chain_break_method = dwave.embedding.discard
-        response = dwave.embedding.unembed_response(embedded_response, embedding, bqm,
-                                                    chain_break_method=dwave.embedding.discard)
+        response = dwave.embedding.unembed_sampleset(embedded_response, embedding, bqm,
+                                                   chain_break_method=dwave.embedding.discard)
 
         self.assertEqual(len(embedded_response) / 2, len(response))  # half chains should be broken
 
@@ -185,12 +185,12 @@ class TestUnembedSampleSet(unittest.TestCase):
                                                 ([-1,  1, -1, -1, -1,  1, -1, -1], -1.4, 1),
                                                 ([+1, -1, -1, -1,  1, -1, -1, -1], -1.6, 1),
                                                 ([+1, -1, -1, -1,  1, -1, -1, -1], -1.6, 1)],
-                                  dtype=[('sample', 'i1', (8,)), ('energy', '<f8'), ('num_occurrences', '<i8')]),
-                                  [0, 1, 2, 3, 4, 5, 6, 7], {}, 'SPIN')
+                                   dtype=[('sample', 'i1', (8,)), ('energy', '<f8'), ('num_occurrences', '<i8')]),
+                                   [0, 1, 2, 3, 4, 5, 6, 7], {}, 'SPIN')
         embedding = {0: {0, 4}, 1: {1, 5}, 2: {2, 6}, 3: {3, 7}}
         bqm = dimod.BinaryQuadraticModel.from_ising([.1, .2], {(0, 1): 1.5}, 0.0)
 
-        unembedded = dwave.embedding.unembed_response(response, embedding, source_bqm=bqm)
+        unembedded = dwave.embedding.unembed_sampleset(response, embedding, source_bqm=bqm)
 
         arr = np.rec.array([([-1,  1], -1.4, 1), ([-1,  1], -1.4, 1), ([+1, -1], -1.6, 1), ([+1, -1], -1.6, 1)],
                            dtype=[('sample', 'i1', (2,)), ('energy', '<f8'), ('num_occurrences', '<i8')])
@@ -209,8 +209,8 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={}, vartype=dimod.SPIN)
 
-        resp = dwave.embedding.unembed_response(resp, embedding, bqm, chain_break_method=dwave.embedding.discard,
-                                                chain_break_fraction=True)
+        resp = dwave.embedding.unembed_sampleset(resp, embedding, bqm, chain_break_method=dwave.embedding.discard,
+                                               chain_break_fraction=True)
 
         source_samples = list(resp)
 

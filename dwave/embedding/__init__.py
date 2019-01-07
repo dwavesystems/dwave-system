@@ -24,6 +24,6 @@ from dwave.embedding.diagnostic import diagnose_embedding, is_valid_embedding, v
 from dwave.embedding.chain_breaks import broken_chains
 from dwave.embedding.chain_breaks import discard, majority_vote, weighted_random, MinimizeEnergy
 
-from dwave.embedding.transforms import embed_bqm, embed_ising, embed_qubo, unembed_response
+from dwave.embedding.transforms import embed_bqm, embed_ising, embed_qubo, unembed_sampleset
 
 from dwave.embedding.utils import target_to_source, chain_to_quadratic, chain_break_frequency
