@@ -93,7 +93,7 @@ Utilities
    embed_bqm
    embed_ising
    embed_qubo
-   unembed_response
+   unembed_sampleset
    chain_break_frequency
 
 Diagnostics
