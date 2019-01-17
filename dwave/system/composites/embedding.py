@@ -14,15 +14,6 @@
 #    limitations under the License.
 #
 # ================================================================================================
-"""
-:std:doc:`dimod composites <dimod:reference/samplers>` that map problems
-to a structured sampler. A structured sampler, such as :class:`~dwave.system.samplers.DWaveSampler()`,
-solves problems that map to a specific graph: the :term:`Chimera` graph for a D-Wave system.
-
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
-of technical terms in descriptions of Ocean tools.
-
-"""
 from warnings import warn
 
 import dimod
@@ -30,7 +21,11 @@ import minorminer
 
 from dwave.embedding import target_to_source, unembed_sampleset, embed_bqm
 
-__all__ = ['EmbeddingComposite', 'FixedEmbeddingComposite', 'LazyFixedEmbeddingComposite', 'LazyEmbeddingComposite']
+__all__ = ('EmbeddingComposite',
+           'FixedEmbeddingComposite',
+           'LazyFixedEmbeddingComposite',
+           'LazyEmbeddingComposite',  # deprecated
+           )
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
@@ -48,11 +43,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
     Examples:
        This example submits a simple Ising problem to a D-Wave solver selected by the user's
        default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
-       :class:`.EmbeddingComposite` minor-embedds the problem's variables a and b
-       to particular qubits on the D-Wave system.
+       :class:`.EmbeddingComposite` maps the problem's variables 'a' and 'b'
+       to qubits on the D-Wave system.
 
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import EmbeddingComposite
+       >>> from dwave.system import DWaveSampler, EmbeddingComposite
        ...
        >>> sampler = EmbeddingComposite(DWaveSampler())
        >>> h = {'a': -1., 'b': 2}
@@ -60,7 +54,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
        >>> response = sampler.sample_ising(h, J)
        >>> for sample in response.samples():    # doctest: +SKIP
        ...     print(sample)
-       ...
        {'a': 1, 'b': -1}
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
@@ -74,19 +67,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
     @property
     def children(self):
-        """list: Children property inherited from :class:`dimod.Composite` class.
-
-        For an instantiated composed sampler, contains the single wrapped structured sampler.
-
-        Examples:
-            >>> sampler = EmbeddingComposite(DWaveSampler())
-            >>> sampler.children   # doctest: +SKIP
-            [<dwave.system.samplers.dwave_sampler.DWaveSampler at 0x7f45b20a8d50>]
-
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
-        terms in descriptions of Ocean tools.
-
-        """
+        """list: `[child_sampler]"""
         return self._children
 
     @property
@@ -460,9 +441,21 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
     Args:
         sampler (dimod.Sampler):
             Structured dimod sampler.
+
+    Examples:
+
+        >>> from dwave.system import LazyFixedEmbeddingComposite, DWaveSampler
+        ...
+        >>> sampler = LazyFixedEmbeddingComposite(DWaveSampler())
+        >>> sampler.nodelist is None  # no structure yet
+        True
+        >>> __ = sampler.sample_ising({}, {('a', 'b'): -1})
+        >>> sampler.nodelist  # has structure based on given problem
+        ['a', 'b']
+
     """
-    def __init__(self, child_sampler):
-        self._set_child_related_init(child_sampler)
+    def __init__(self, sampler):
+        self._set_child_related_init(sampler)
         self.embedding = None
 
     def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
