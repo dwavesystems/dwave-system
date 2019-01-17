@@ -16,5 +16,6 @@ Composites
 
    embedding
    fixed_embedding
+   lazy_embedding
    tiling
    virtual_graph

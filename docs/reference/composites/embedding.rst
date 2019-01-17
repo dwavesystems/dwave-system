@@ -10,23 +10,16 @@ Class
 .. currentmodule:: dwave.system.composites
 .. autoclass:: EmbeddingComposite
 
-Sampler Properties
-==================
+Properties
+==========
 
 .. autosummary::
    :toctree: generated/
 
+   EmbeddingComposite.child
+   EmbeddingComposite.children
    EmbeddingComposite.properties
    EmbeddingComposite.parameters
-
-Composite Properties
-====================
-
-.. autosummary::
-   :toctree: generated/
-
-   EmbeddingComposite.children
-   EmbeddingComposite.child
 
 
 Methods
