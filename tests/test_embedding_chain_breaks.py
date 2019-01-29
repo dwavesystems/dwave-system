@@ -162,6 +162,32 @@ class TestMinimizeEnergy(unittest.TestCase):
 
         np.testing.assert_array_equal(expected, unembedded)
 
+    def test_minimize_energy_non_clique(self):
+        embedding = {0: (0, 5), 1: (1, 6), 2: (2, 7), 3: (3, 8), 4: (4, 10)}
+        h = []
+        j = {(0, 1): -1, (0, 2): 2, (0, 3): 2, (0, 4): -1,
+             (1, 3): 2, (3, 1): -1, (1, 4): -1,
+             (2, 3): 1, (4, 2): -1, (2, 4): -1, (3, 4): 1}
+
+        bqm = dimod.BinaryQuadraticModel.from_ising(h, j)
+
+        solutions = [
+            [-1, -1, -1, -1, -1, -1, +1, +1, +1, 3, +1],
+            [+1, +1, +1, +1, +1, -1, +1, -1, -1, 3, -1],
+            [+1, +1, -1, +1, -1, -1, -1, -1, -1, 3, -1]
+        ]
+
+        expected = [
+            [-1, -1, +1, +1, -1],
+            [+1, +1, +1, -1, +1],
+            [-1, -1, -1, +1, -1]
+        ]
+
+        cbm = dwave.embedding.MinimizeEnergy(bqm, embedding)
+        unembedded, idx = cbm(solutions, [embedding[v] for v in range(5)])
+
+        np.testing.assert_array_equal(expected, unembedded)
+
     def test_minimize_energy_easy(self):
         chains = ({0, 1}, [2], (4, 5, 6))
         embedding = {v: chain for v, chain in enumerate(chains)}
