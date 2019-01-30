@@ -369,7 +369,8 @@ class MinimizeEnergy(Callable):
 
                 for energy_triple in energies:
                     k = energy_triple[2]
-                    energy_triple[1] += val * bqm.adj[i][k]
+                    if k in bqm.adj[i]:
+                        energy_triple[1] += val * bqm.adj[i][k]
                     energy_triple[0] = -abs(energy_triple[1])
 
                 heapify(energies)
