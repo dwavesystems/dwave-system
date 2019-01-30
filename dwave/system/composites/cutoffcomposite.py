@@ -14,16 +14,17 @@
 #
 # ================================================================================================
 """
-A composite that removes all variables smaller than the provided cutoff
+A composite that removes all variables with bias smaller than the provided
+cutoff
 
 """
 
 from heapq import heapify, heappop
-
+import warnings
 import numpy as np
 from dimod import BinaryQuadraticModel, SampleSet
 from dimod.core.composite import ComposedSampler
-from dimod.higherorder import _relabeled_poly, poly_energies
+from dimod.higherorder import poly_energies
 from dimod.vartypes import SPIN
 
 __all__ = ['CutOffComposite']
@@ -121,6 +122,10 @@ class CutOffComposite(ComposedSampler):
 
         # if quadratic, create a bqm and send to sample
         if max(map(len, J.keys())) == 2:
+            warnings.warn("Higher order problem support is currently"
+                          "experimental and use case may"
+                          "change in the future", DeprecationWarning)
+
             bqm = BinaryQuadraticModel.from_ising(h, J, offset=offset)
             return self.sample(bqm, cutoff=cutoff, **parameters)
 
@@ -362,3 +367,33 @@ def _minimize_energy_hubo(poly, samples, removed):
         return arr
 
     return np.apply_along_axis(_minenergy, 1, samples)
+
+
+def _relabeled_poly(h, j, label_dict):
+    """ Creates relabeled polynomial dict.
+
+    given h, j and a relabeling dictionary, will create a polynomial
+    with the new labels
+
+    Args:
+        h (dict): a dict of linear variables
+
+        j (dict): a dict of quadratic and higher order variables
+
+        label_dict (dict): a dict for relabeling e.g. {old_label:new_label}
+
+    Returns:
+        dict: a higher order problem dict that contains linear,
+              quadratic and n-order terms written in a new labeling
+              scheme provided by label_dict
+
+    """
+
+    poly = {}
+    for k, v in h.items():
+        new_tup = (label_dict[k],)
+        poly[new_tup] = v
+    for k, v in j.items():
+        new_tup = tuple((label_dict[vidx] for vidx in list(k)))
+        poly[new_tup] = v
+    return poly
