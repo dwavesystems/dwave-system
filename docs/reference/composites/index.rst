@@ -19,3 +19,4 @@ Composites
    lazy_embedding
    tiling
    virtual_graph
+   cutoffcomposite
