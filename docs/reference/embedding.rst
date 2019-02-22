@@ -46,8 +46,6 @@ target graph: two nodes (qubits) are chained to represent a single node.
 Generating Embeddings
 =====================
 
-.. currentmodule:: dwave.embedding
-
 MinorMiner
 ----------
 
@@ -58,6 +56,8 @@ minor and target graph, it tries to find a mapping that embeds the minor into th
    :toctree: generated/
 
    minorminer.find_embedding
+
+.. currentmodule:: dwave.embedding
 
 Chimera
 -------

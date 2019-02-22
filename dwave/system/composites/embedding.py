@@ -67,7 +67,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
     @property
     def children(self):
-        """list: `[child_sampler]"""
+        """list [child_sampler]: List containing the structured sampler."""
         return self._children
 
     @property
