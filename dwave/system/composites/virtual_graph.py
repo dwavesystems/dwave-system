@@ -77,6 +77,11 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
             Maximum age (in seconds) allowed for a previously calculated flux bias offset to
             be considered valid.
 
+    .. attention::
+       D-Wave's *virtual graphs* feature can require many seconds of D-Wave system time to calibrate
+       qubits to compensate for the effects of biases. If your account has limited
+       D-Wave system access, consider using *FixedEmbeddingComposite()* instead.
+
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
        that submits a QUBO problem to a D-Wave solver selected by the user's
