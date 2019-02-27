@@ -1,6 +1,6 @@
 from dwave_networkx.generators.chimera import chimera_graph
 from dwave_networkx.generators.pegasus import (get_tuple_defragmentation_fn, get_tuple_fragmentation_fn,
-    pegasus_coordinates, pegasus_graph)
+    pegasus_coordinates, pegasus_graph, get_nice_to_pegasus_fn, get_pegasus_to_nice_fn)
 from dwave.embedding.polynomialembedder import processor
 import networkx as nx
 
@@ -38,7 +38,13 @@ def find_clique_embedding(k, m=None, target_graph=None):
     _, nodes = k
 
     # Deal with differences in ints vs coordinate target_graphs
-    if target_graph.graph['labels'] == 'int':
+    if target_graph.graph['labels'] == 'nice':
+        fwd_converter = get_nice_to_pegasus_fn(m = m)
+        back_converter = get_pegasus_to_nice_fn(m = m)
+        pegasus_coords = [fwd_converter(*p) for p in target_graph.nodes]
+        back_translate = lambda embedding: {key: [back_converter(*p) for p in chain]
+                                      for key, chain in embedding.items()}
+    elif target_graph.graph['labels'] == 'int':
         # Convert nodes in terms of Pegasus coordinates
         coord_converter = pegasus_coordinates(m)
         pegasus_coords = map(coord_converter.tuple, target_graph.nodes)
