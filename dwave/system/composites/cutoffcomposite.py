@@ -14,9 +14,8 @@
 #
 # =============================================================================
 """
-A composite that removes all variables with bias smaller than the provided
-cutoff
-
+Composites that removed interactions with bias smaller than a cutoff. Isolated
+variables (after the cutoff) are also removed.
 """
 import operator
 
@@ -28,11 +27,13 @@ __all__ = 'CutOffComposite', 'PolyCutOffComposite'
 
 
 class CutOffComposite(dimod.ComposedSampler):
-    """Composite to cut off variables of a problem
+    """Composite to cut off small interactions.
 
-    Inherits from :class:`dimod.ComposedSampler`.
+    Removes interactions smaller than a given cutoff. Isolated
+    variables (after the cutoff) are also removed.
 
-    Cuts off the variables that are smaller than cutoff defined.
+    Note that if the problem had isolated variables before the cutoff, they
+    will also be affected.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
@@ -43,19 +44,15 @@ class CutOffComposite(dimod.ComposedSampler):
             with biases less than cutoff are removed. Isolated variables
             are also not sent to the child sampler.
 
-        cutoff_vartype
+        cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
+            Variable space to do the cutoff in. Accepted input values:
 
-        comparison
+            * :class:`.Vartype.SPIN`, ``'SPIN'``, ``{-1, 1}``
+            * :class:`.Vartype.BINARY`, ``'BINARY'``, ``{0, 1}``
 
-    Examples:
-       This example uses :class:`.CutOffComposite` to instantiate a
-       composed sampler that submits a simple Ising problem to a sampler.
-       The composed sampler introduces a cutoff to linear, higher order biases.
-
-       >>> linear = {'a': -4.0, 'b': -4.0,'c':0.01}
-       >>> quadratic = {('a', 'b'): 3.2}
-       >>> sampler = dwave.system.CutOffComposite(dwave.system.DwaveSampler())
-       >>> response = sampler.sample_ising(linear, quadratic, cutoff=1)
+        comparison (function, optional):
+            A comparison operator for comparing the bias magnitude to the cutoff
+            value. Defaults to :func:`operator.lt`.
 
     """
 
@@ -177,6 +174,34 @@ def _restore_isolated(sampleset, bqm, isolated):
 
 
 class PolyCutOffComposite(dimod.ComposedPolySampler):
+    """Composite to cut off small interactions.
+
+    Removes interactions smaller than a given cutoff. Isolated
+    variables (after the cutoff) are also removed.
+
+    Note that if the problem had isolated variables before the cutoff, they
+    will also be affected.
+
+    Args:
+       sampler (:obj:`dimod.PolySampler`):
+            A dimod binary polynomial sampler
+
+        cutoff (number, optional, default=-1):
+            The lower bound for interaction bias magnitudes. Interactions
+            with biases less than cutoff are removed. Isolated variables
+            are also not sent to the child sampler.
+
+        cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
+            Variable space to do the cutoff in. Accepted input values:
+
+            * :class:`.Vartype.SPIN`, ``'SPIN'``, ``{-1, 1}``
+            * :class:`.Vartype.BINARY`, ``'BINARY'``, ``{0, 1}``
+
+        comparison (function, optional):
+            A comparison operator for comparing the bias magnitude to the cutoff
+            value. Defaults to :func:`operator.lt`.
+
+    """
     @dimod.decorators.vartype_argument('cutoff_vartype')
     def __init__(self, child_sampler, cutoff, cutoff_vartype=dimod.SPIN,
                  comparison=operator.lt):
@@ -200,6 +225,19 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
         return {'child_properties': self.child.properties.copy()}
 
     def sample_poly(self, poly, **kwargs):
+        """Cutoff and sample from the provided binary polynomial.
+
+        Args:
+            bqm (:obj:`dimod.BinaryPolynomial`):
+                Binary quadratic model to be sampled from.
+
+            **parameters:
+                Parameters for the sampling method, specified by the child sampler.
+
+        Returns:
+            :obj:`dimod.SampleSet`
+
+        """
         child = self.child
         cutoff = self._cutoff
         cutoff_vartype = self._cutoff_vartype
