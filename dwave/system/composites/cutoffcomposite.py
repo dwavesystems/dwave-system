@@ -253,10 +253,13 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
                           if len(term) > 1 and not comp(abs(bias), cutoff)),
                          cutoff_vartype)
 
-        # next we check for isolated qubits and remove them, we could do this as
-        # part of the construction but the assumption is there should not be
-        # a large number in the 'typical' case. We want isolated to be a set
-        # because we're going to be doing __contains__
+        # also include the linear biases for the variables in new
+        for v in new.variables:
+            term = v,
+            if term in original:
+                new[term] = original[term]
+
+        # everything else is isolated
         isolated = list(original.variables.difference(new.variables))
 
         if isolated and len(new) == 0:
