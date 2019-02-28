@@ -14,7 +14,7 @@
 #
 # =============================================================================
 """
-Composites that removed interactions with bias smaller than a cutoff. Isolated
+Composites that remove interactions with biases smaller than a cutoff. Isolated
 variables (after the cutoff) are also removed.
 """
 import operator
@@ -39,7 +39,7 @@ class CutOffComposite(dimod.ComposedSampler):
        sampler (:obj:`dimod.Sampler`):
             A dimod sampler
 
-        cutoff (number, optional, default=-1):
+        cutoff (number):
             The lower bound for interaction bias magnitudes. Interactions
             with biases less than cutoff are removed. Isolated variables
             are also not sent to the child sampler.
@@ -78,6 +78,12 @@ class CutOffComposite(dimod.ComposedSampler):
 
     def sample(self, bqm, **parameters):
         """Cutoff and sample from the provided binary quadratic model.
+
+        Removes interactions smaller than a given cutoff. Isolated
+        variables (after the cutoff) are also removed.
+
+        Note that if the problem had isolated variables before the cutoff, they
+        will also be affected.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -143,21 +149,19 @@ def _restore_isolated(sampleset, bqm, isolated):
     way that minimizes the energy (relative to the other non-isolated variables).
     """
 
-    low = -1 if bqm.vartype is dimod.SPIN else 0
-
     samples = sampleset.record.sample
     variables = sampleset.variables
 
     new_samples = np.empty((len(sampleset), len(isolated)), dtype=samples.dtype)
 
-    # we don't let the isolated variables interact with eachother for now because
+    # we don't let the isolated variables interact with each other for now because
     # it will slow this down substantially
     for col, v in enumerate(isolated):
         try:
             neighbours, biases = zip(*((u, bias) for u, bias in bqm.adj[v].items()
                                        if u in variables))  # ignore other isolates
         except ValueError:
-            # happens when only neightbours are other isolated variables
+            # happens when only neighbors are other isolated variables
             new_samples[:, col] = bqm.linear[v] <= 0
             continue
 
@@ -186,7 +190,7 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
        sampler (:obj:`dimod.PolySampler`):
             A dimod binary polynomial sampler
 
-        cutoff (number, optional, default=-1):
+        cutoff (number):
             The lower bound for interaction bias magnitudes. Interactions
             with biases less than cutoff are removed. Isolated variables
             are also not sent to the child sampler.
@@ -227,9 +231,15 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
     def sample_poly(self, poly, **kwargs):
         """Cutoff and sample from the provided binary polynomial.
 
+        Removes interactions smaller than a given cutoff. Isolated
+        variables (after the cutoff) are also removed.
+
+        Note that if the problem had isolated variables before the cutoff, they
+        will also be affected.
+
         Args:
-            bqm (:obj:`dimod.BinaryPolynomial`):
-                Binary quadratic model to be sampled from.
+            poly (:obj:`dimod.BinaryPolynomial`):
+                Binary polynomial to be sampled from.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -293,8 +303,6 @@ def _restore_isolated_higherorder(sampleset, poly, isolated):
     Isolated should be ordered.
     """
 
-    low = -1 if poly.vartype is dimod.SPIN else 0
-
     samples = sampleset.record.sample
     variables = sampleset.variables
 
@@ -302,7 +310,7 @@ def _restore_isolated_higherorder(sampleset, poly, isolated):
 
     # we don't let the isolated variables interact with eachother for now because
     # it will slow this down substantially
-    energies = {v: 0 for v in isolated}
+    isolated_energies = {v: 0 for v in isolated}
     for term, bias in poly.items():
 
         isolated_components = term.intersection(isolated)
@@ -312,16 +320,16 @@ def _restore_isolated_higherorder(sampleset, poly, isolated):
 
         en = bias  # energy contribution of the term
         for v in term:
-            if v in energies:
+            if v in isolated_energies:
                 continue
             en *= samples[:, sampleset.variables.index(v)]
 
         for v in isolated_components:
-            energies[v] += en
+            isolated_energies[v] += en
 
     # now put those energies into new_samples
     for col, v in enumerate(isolated):
-        new_samples[:, col] = energies[v] < 0
+        new_samples[:, col] = isolated_energies[v] < 0
 
     if poly.vartype is dimod.SPIN:
         new_samples = 2*new_samples - 1
