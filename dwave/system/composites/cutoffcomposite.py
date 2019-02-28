@@ -24,7 +24,7 @@ import numpy as np
 
 import dimod
 
-__all__ = ['CutOffComposite']
+__all__ = 'CutOffComposite', 'PolyCutOffComposite'
 
 
 class CutOffComposite(dimod.ComposedSampler):
@@ -142,6 +142,9 @@ class CutOffComposite(dimod.ComposedSampler):
 
 
 def _restore_isolated(sampleset, bqm, isolated):
+    """Return samples-like by adding isolated variables into sampleset in a
+    way that minimizes the energy (relative to the other non-isolated variables).
+    """
 
     low = -1 if bqm.vartype is dimod.SPIN else 0
 
@@ -168,6 +171,118 @@ def _restore_isolated(sampleset, bqm, isolated):
         new_samples[:, col] = samples[:, idxs].dot(biases) < -bqm.linear[v]
 
     if bqm.vartype is dimod.SPIN:
+        new_samples = 2*new_samples - 1
+
+    return np.concatenate((samples, new_samples), axis=1), list(variables) + isolated
+
+
+class PolyCutOffComposite(dimod.ComposedPolySampler):
+    @dimod.decorators.vartype_argument('cutoff_vartype')
+    def __init__(self, child_sampler, cutoff, cutoff_vartype=dimod.SPIN,
+                 comparison=operator.lt):
+        if not isinstance(child_sampler, dimod.PolySampler):
+            raise TypeError("Child sampler must be a PolySampler")
+        self._children = [child_sampler]
+        self._cutoff = cutoff
+        self._cutoff_vartype = cutoff_vartype
+        self._comparison = comparison
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def parameters(self):
+        return self.child.parameters.copy()
+
+    @property
+    def properties(self):
+        return {'child_properties': self.child.properties.copy()}
+
+    def sample_poly(self, poly, **kwargs):
+        child = self.child
+        cutoff = self._cutoff
+        cutoff_vartype = self._cutoff_vartype
+        comp = self._comparison
+
+        if cutoff_vartype is dimod.SPIN:
+            original = poly.to_spin(copy=False)
+        else:
+            original = poly.to_binary(copy=False)
+
+        # remove all of the terms of order >= 2 that have a bias less than cutoff
+        new = type(poly)(((term, bias) for term, bias in original.items()
+                          if len(term) > 1 and not comp(abs(bias), cutoff)),
+                         cutoff_vartype)
+
+        # next we check for isolated qubits and remove them, we could do this as
+        # part of the construction but the assumption is there should not be
+        # a large number in the 'typical' case. We want isolated to be a set
+        # because we're going to be doing __contains__
+        isolated = list(original.variables.difference(new.variables))
+
+        if isolated and len(new) == 0:
+            # in this case all variables are isolated, so we just put one back
+            # to serve as the basis
+            term = isolated.pop(),
+            new[term] = original[term]
+
+        # get the samples from the child sampler and put them into the original vartype
+        sampleset = child.sample_poly(new, **kwargs).change_vartype(poly.vartype, inplace=True)
+
+        # we now need to add the isolated back in, in a way that minimizes
+        # the energy. There are lots of ways to do this but for now we'll just
+        # do one
+        if isolated:
+            samples, variables = _restore_isolated_higherorder(sampleset, poly, isolated)
+        else:
+            samples = sampleset.record.sample
+            variables = sampleset.variables
+
+        vectors = sampleset.data_vectors
+        vectors.pop('energy')  # we're going to recalculate the energy anyway
+
+        return dimod.SampleSet.from_samples_bqm((samples, variables), poly, **vectors)
+
+
+def _restore_isolated_higherorder(sampleset, poly, isolated):
+    """Return samples-like by adding isolated variables into sampleset in a
+    way that minimizes the energy (relative to the other non-isolated variables).
+
+    Isolated should be ordered.
+    """
+
+    low = -1 if poly.vartype is dimod.SPIN else 0
+
+    samples = sampleset.record.sample
+    variables = sampleset.variables
+
+    new_samples = np.empty((len(sampleset), len(isolated)), dtype=samples.dtype)
+
+    # we don't let the isolated variables interact with eachother for now because
+    # it will slow this down substantially
+    energies = {v: 0 for v in isolated}
+    for term, bias in poly.items():
+
+        isolated_components = term.intersection(isolated)
+
+        if not isolated_components:
+            continue
+
+        en = bias  # energy contribution of the term
+        for v in term:
+            if v in energies:
+                continue
+            en *= samples[:, sampleset.variables.index(v)]
+
+        for v in isolated_components:
+            energies[v] += en
+
+    # now put those energies into new_samples
+    for col, v in enumerate(isolated):
+        new_samples[:, col] = energies[v] < 0
+
+    if poly.vartype is dimod.SPIN:
         new_samples = 2*new_samples - 1
 
     return np.concatenate((samples, new_samples), axis=1), list(variables) + isolated
