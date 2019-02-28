@@ -98,7 +98,7 @@ class TestSampleHising(unittest.TestCase):
         h = {'a': -1}
         J = {'abde': -1, 'bc': -.5, 'ca': -.5}
         cutoff = .75
-        expected = dimod.BinaryPolynomial({'abde': -1}, dimod.SPIN)
+        expected = dimod.BinaryPolynomial({'a': -1, 'abde': -1}, dimod.SPIN)
 
         checker = CutoffChecker(self.child, expected)
         samples = PolyCutOffComposite(checker, cutoff).sample_hising(h, J)
