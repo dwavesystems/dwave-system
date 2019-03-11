@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 
 import unittest
 import itertools
@@ -28,8 +28,8 @@ import dimod
 import dwave.embedding
 
 
-class TestUtils(unittest.TestCase):
-    def test_target_to_source_identity_embedding(self):
+class TestTargetToSource(unittest.TestCase):
+    def test_identity_embedding(self):
         """a 1-to-1 embedding should not change the adjacency"""
         target_adj = nx.karate_club_graph()
 
@@ -48,7 +48,7 @@ class TestUtils(unittest.TestCase):
             for u in source_adj[v]:
                 self.assertIn(u, target_adj[v])
 
-    def test_target_to_source_embedding_to_one_node(self):
+    def test_embedding_to_one_node(self):
         """an embedding that maps everything to one node should result in a singleton graph"""
         target_adj = nx.barbell_graph(16, 7)
         embedding = {'a': set(target_adj)}  # all map to 'a'
@@ -60,7 +60,7 @@ class TestUtils(unittest.TestCase):
         source_adj = dwave.embedding.target_to_source(target_adj, embedding)
         self.assertEqual(source_adj, {'a': set()})
 
-    def test_target_to_source_embedding_overlap(self):
+    def test_embedding_overlap(self):
         """overlapping embeddings should raise an error"""
         target_adj = nx.complete_graph(5)
         embedding = {'a': {0, 1}, 'b': {1, 2}}  # overlap
@@ -68,13 +68,15 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             source_adj = dwave.embedding.target_to_source(target_adj, embedding)
 
-    def test_target_to_source_square_to_triangle(self):
+    def test_square_to_triangle(self):
         target_adjacency = {0: {1, 3}, 1: {0, 2}, 2: {1, 3}, 3: {0, 2}}  # a square graph
         embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
         source_adjacency = dwave.embedding.target_to_source(target_adjacency, embedding)
         self.assertEqual(source_adjacency, {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}})
 
-    def test_edgelist_to_adjacency_typical(self):
+
+class TestEdgelistToAdjacency(unittest.TestCase):
+    def test_typical(self):
         graph = nx.barbell_graph(17, 8)
 
         edgelist = set(graph.edges())
@@ -93,7 +95,9 @@ class TestUtils(unittest.TestCase):
                 self.assertTrue((u, v) in edgelist or (v, u) in edgelist)
                 self.assertFalse((u, v) in edgelist and (v, u) in edgelist)
 
-    def test_chain_to_quadratic_K5(self):
+
+class TestChainToQuadratic(unittest.TestCase):
+    def test_K5(self):
         """Test that when given a chain, the returned Jc uses all
         available edges."""
         chain_variables = set(range(5))
@@ -111,7 +115,7 @@ class TestUtils(unittest.TestCase):
         for u in chain_variables:
             self.assertFalse((u, u) in Jc)
 
-    def test_chain_to_quadratic_5_cycle(self):
+    def test_5_cycle(self):
         chain_variables = set(range(5))
 
         # now try a cycle
@@ -124,7 +128,7 @@ class TestUtils(unittest.TestCase):
                 self.assertFalse((u, v) in Jc and (v, u) in Jc)
                 self.assertTrue((u, v) in Jc or (v, u) in Jc)
 
-    def test_chain_to_quadratic_disconnected(self):
+    def test_disconnected(self):
         chain_variables = {0, 2}
 
         adjacency = {0: {1}, 1: {0, 2}, 2: {1}}
@@ -132,7 +136,9 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             dwave.embedding.chain_to_quadratic(chain_variables, adjacency, 1.0)
 
-    def test_chain_break_frequency_matrix_all_ones(self):
+
+class TestChainBreakFrequency(unittest.TestCase):
+    def test_matrix_all_ones(self):
         """should have no breaks"""
 
         samples = np.ones((10, 5))
@@ -143,7 +149,7 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(freq, {'a': 0, 'b': 0})
 
-    def test_chain_break_frequency_matrix_all_zeros(self):
+    def test_matrix_all_zeros(self):
         """should have no breaks"""
 
         samples = np.zeros((10, 5))
@@ -154,7 +160,7 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(freq, {'a': 0, 'b': 0})
 
-    def test_chain_break_frequency_matrix_mix(self):
+    def test_matrix_mix(self):
         samples = np.array([[-1, 1], [1, 1]])
 
         embedding = {'a': {0, 1}}
@@ -163,7 +169,7 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(freq, {'a': .5})
 
-    def test_chain_break_frequency_response_mix_string_labels(self):
+    def test_mix_string_labels(self):
         response = dimod.SampleSet.from_samples([{'a': 1, 'b': 0}, {'a': 0, 'b': 0}],
                                                 energy=[1, 0], info={}, vartype=dimod.BINARY)
         embedding = {0: {'a', 'b'}}
