@@ -196,8 +196,10 @@ def chain_break_frequency(samples_like, embedding):
     if isinstance(samples_like, dimod.SampleSet):
         labels = samples_like.variables
         samples = samples_like.record.sample
+        num_occurrences = samples_like.record.num_occurrences
     else:
         samples, labels = dimod.as_samples(samples_like)
+        num_occurrences = np.ones(samples.shape[0])
 
     if not all(v == idx for idx, v in enumerate(labels)):
         labels_to_idx = {v: idx for idx, v in enumerate(labels)}
@@ -210,9 +212,8 @@ def chain_break_frequency(samples_like, embedding):
 
     broken = broken_chains(samples, chains)
 
-    freq = {v: float(broken[:, cidx].mean()) for cidx, v in enumerate(variables)}
-
-    return freq
+    return {v: float(np.average(broken[:, cidx], weights=num_occurrences))
+            for cidx, v in enumerate(variables)}
 
 
 def edgelist_to_adjacency(edgelist):

@@ -176,3 +176,21 @@ class TestChainBreakFrequency(unittest.TestCase):
         freq = dwave.embedding.chain_break_frequency(response, embedding)
 
         self.assertEqual(freq, {0: .5})
+
+    def test_with_num_occurences(self):
+        samples = [[-1, -1, +1],
+                   [-1, +1, +1],
+                   [-1, +1, +1],
+                   [-1, -1, -1],
+                   [-1, +1, +1]]
+        labels = 'abc'
+
+        sampleset = dimod.SampleSet.from_samples((samples, labels), energy=0,
+                                                 vartype=dimod.SPIN)
+        sampleset = sampleset.aggregate()
+
+        embedding = {0: 'ab', 1: 'c'}
+
+        freq = dwave.embedding.chain_break_frequency(sampleset, embedding)
+
+        self.assertEqual(freq, {0: 3./5, 1: 0})
