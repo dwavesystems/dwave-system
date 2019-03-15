@@ -144,7 +144,7 @@ class TestDwaveSampler(unittest.TestCase):
 
         MockClient.reset_mock()
         solver = {'qpu': True, 'num_qubits__gt': 1000}
-        sampler = DWaveSampler(solver_features=solver)
+        sampler = DWaveSampler(solver=solver)
         MockClient.from_config.assert_called_once_with(solver=solver)
 
     def test_sample_ising_variables(self):
