@@ -16,6 +16,8 @@
 
 import dwave_networkx as dnx
 import networkx as nx
+import numpy as np
+
 
 from dwave.embedding.polynomialembedder import processor
 
@@ -74,7 +76,30 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
 
     m, n, t, target_edges = _chimera_input(m, n, t, target_edges)
 
-    embedding = processor(target_edges, M=m, N=n, L=t).tightestNativeClique(len(nodes))
+    # Special cases to return optimal embeddings for small k.  The general clique embedder uses chains of length
+    # at least 2, whereas cliques of size 1 and 2 can be embedded with single-qubit chains.
+
+    if len(nodes) == 1:
+        # If k == 1 we simply return a single chain consisting of a randomly sampled qubit.
+
+        qubits = set()
+        for edge in target_edges:
+            qubits = qubits.union(edge)
+
+        qubit = np.random.choice(list(qubits))
+        embedding = [[qubit]]
+
+    elif len(nodes) == 2:
+        # If k == 2 we simply return two one-qubit chains that are the endpoints of a randomly sampled coupler.
+
+        edges = list(target_edges)
+        edge = edges[np.random.randint(0, len(edges))]
+        embedding = [[edge[0]], [edge[1]]]
+
+    else:
+        # General case for k > 2.
+
+        embedding = processor(target_edges, M=m, N=n, L=t).tightestNativeClique(len(nodes))
 
     if not embedding:
         raise ValueError("cannot find a K{} embedding for given Chimera lattice".format(k))
