@@ -92,7 +92,7 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
 
         if not isinstance(target_edges, list):
             edges = list(target_edges)
-        edge = edges[random.randint(0, len(edges))]
+        edge = edges[random.randrange(len(edges))]
         embedding = [[edge[0]], [edge[1]]]
 
     else:
