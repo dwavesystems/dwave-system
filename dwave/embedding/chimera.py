@@ -16,7 +16,6 @@
 
 import dwave_networkx as dnx
 import networkx as nx
-import numpy as np
 
 
 from dwave.embedding.polynomialembedder import processor
@@ -72,6 +71,8 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
         {'a': [20, 16], 'b': [21, 17], 'c': [22, 18]}
 
     """
+    import random
+
     _, nodes = k
 
     m, n, t, target_edges = _chimera_input(m, n, t, target_edges)
@@ -82,18 +83,16 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
     if len(nodes) == 1:
         # If k == 1 we simply return a single chain consisting of a randomly sampled qubit.
 
-        qubits = set()
-        for edge in target_edges:
-            qubits = qubits.union(edge)
-
-        qubit = np.random.choice(list(qubits))
+        qubits = set().union(*target_edges)
+        qubit = random.choice(tuple(qubits))
         embedding = [[qubit]]
 
     elif len(nodes) == 2:
         # If k == 2 we simply return two one-qubit chains that are the endpoints of a randomly sampled coupler.
 
-        edges = list(target_edges)
-        edge = edges[np.random.randint(0, len(edges))]
+        if not isinstance(target_edges, list):
+            edges = list(target_edges)
+        edge = edges[random.randint(0, len(edges))]
         embedding = [[edge[0]], [edge[1]]]
 
     else:
