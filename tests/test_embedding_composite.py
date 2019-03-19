@@ -295,7 +295,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
     def test_ising_sample(self):
         h = {'a': 1, 'b': -2}
         J = {('a', 'b'): -3}
-        sampler = LazyEmbeddingComposite(MockDWaveSampler())
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
         response = sampler.sample_ising(h, J)
 
         # Check that at least one response was found
