@@ -39,8 +39,8 @@ def find_clique_embedding(k, m=None, target_graph=None):
 
     # Deal with differences in ints vs coordinate target_graphs
     if target_graph.graph['labels'] == 'nice':
-        fwd_converter = get_nice_to_pegasus_fn(m = m)
-        back_converter = get_pegasus_to_nice_fn(m = m)
+        fwd_converter = get_nice_to_pegasus_fn()
+        back_converter = get_pegasus_to_nice_fn()
         pegasus_coords = [fwd_converter(*p) for p in target_graph.nodes]
         back_translate = lambda embedding: {key: [back_converter(*p) for p in chain]
                                       for key, chain in embedding.items()}
