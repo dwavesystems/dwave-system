@@ -22,11 +22,11 @@ import dwave_networkx as dnx
 from dwave.system import common_working_graph
 
 
-class TestCommonGraph(unittest.TestCase):
+class TestCommonWorkingGraph(unittest.TestCase):
     def test_single_tile(self):
 
         G1 = dnx.chimera_graph(1)
-        G = dnx.common_working_graph(G1, G1)
+        G = common_working_graph(G1, G1)
 
         # should have 8 nodes
         self.assertEqual(len(G), 8)
@@ -44,7 +44,7 @@ class TestCommonGraph(unittest.TestCase):
         G1 = dnx.chimera_graph(1)
         G2 = dnx.chimera_graph(2)
 
-        G = dnx.common_working_graph(G1, G1)
+        G = common_working_graph(G1, G1)
 
         self.assertEqual(len(G), 8)
 
@@ -53,7 +53,16 @@ class TestCommonGraph(unittest.TestCase):
         G1.remove_node(2)
         G2 = dnx.chimera_graph(2)
 
-        G = dnx.common_working_graph(G1, G1)
+        G = common_working_graph(G1, G1)
 
         self.assertNotIn(2, G)
         self.assertNotIn((2, 4), G.edges())
+
+    def test_sampler_adjacency(self):
+        adj = {0: {1, 2}, 1: {2}, 2: {0, 1}}
+        G = dnx.chimera_graph(1)
+
+        H = common_working_graph(adj, G)
+
+        self.assertEqual(set(H.nodes), {0, 1, 2})
+        self.assertEqual(set(H.edges), set())
