@@ -13,16 +13,13 @@
 #    limitations under the License.
 #
 # =============================================================================
-"""
-Generators for graphs derived from the D-Wave System.
 
-"""
-import numpy as np
 import networkx as nx
 
-__all__ = ['common_graph']
+__all__ = ['common_working_graph']
 
-def common_graph(graph0, graph1):
+
+def common_working_graph(graph0, graph1):
     """Creates a graph using the common nodes and edges of two given graphs.
 
     Parameters
