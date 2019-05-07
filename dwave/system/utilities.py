@@ -23,6 +23,9 @@ __all__ = ['common_working_graph']
 def common_working_graph(graph0, graph1):
     """Creates a graph using the common nodes and edges of two given graphs.
 
+    This function finds the edges and nodes with common labels. Note that this
+    not the same as finding the greatest common subgraph with isomorphisms.
+
     Args:
         graph0: (dict[dict]/:obj:`~networkx.Graph`)
             A NetworkX graph or a dictionary of dictionaries adjacency
