@@ -24,7 +24,8 @@ import dimod.testing as dtest
 from dwave.system.composites import (EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,
                                      LazyEmbeddingComposite)
 
-from dwave.system.testing import MockDWaveSampler
+from dwave.system.testing import MockDWaveSampler, mock
+from dwave.embedding import chain_breaks
 
 
 class TestEmbeddingComposite(unittest.TestCase):
@@ -139,6 +140,16 @@ class TestEmbeddingComposite(unittest.TestCase):
         # nothing failed and we got at least one response back
         self.assertGreaterEqual(len(response), 1)
 
+    def test_chain_break_method_customization(self):
+        sampler = EmbeddingComposite(MockDWaveSampler())
+
+        with mock.patch('dwave.system.composites.embedding.unembed_sampleset') as mock_unembed:
+            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard)
+
+            # assert chain_break_method propagated to unembed_sampleset
+            __, kwargs = mock_unembed.call_args
+            self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
+
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):
@@ -197,6 +208,16 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
         self.assertEqual(sampler.nodelist, [1, 2, 3, 4])
         self.assertEqual(sampler.edgelist, [(1, 2), (1, 3), (2, 4), (3, 4)])
+
+    def test_chain_break_method_customization(self):
+        sampler = FixedEmbeddingComposite(MockDWaveSampler(), {'a': [0]})
+
+        with mock.patch('dwave.system.composites.embedding.unembed_sampleset') as mock_unembed:
+            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard)
+
+            # assert chain_break_method propagated to unembed_sampleset
+            __, kwargs = mock_unembed.call_args
+            self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
 
 
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
@@ -278,6 +299,16 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
 
         # Check that at least one response was found
         self.assertGreaterEqual(len(response), 1)
+
+    def test_chain_break_method_customization(self):
+        sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
+
+        with mock.patch('dwave.system.composites.embedding.unembed_sampleset') as mock_unembed:
+            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard)
+
+            # assert chain_break_method propagated to unembed_sampleset
+            __, kwargs = mock_unembed.call_args
+            self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
 
 
 class TestLazyEmbeddingComposite(unittest.TestCase):

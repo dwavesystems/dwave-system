@@ -23,6 +23,14 @@ try:
 except ImportError:
     from dimod import SimulatedAnnealingSampler
 
+try:
+    # py3
+    import unittest.mock as mock
+except ImportError:
+    # py2
+    import mock
+
+
 C4 = dnx.chimera_graph(4, 4, 4)
 
 
