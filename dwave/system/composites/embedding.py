@@ -100,6 +100,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         param = self.child.parameters.copy()
         param['chain_strength'] = []
+        param['chain_break_method'] = []
         param['chain_break_fraction'] = []
         return param
 
@@ -132,7 +133,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
         """
         return {'child_properties': self.child.properties.copy()}
 
-    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
+    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
+               chain_break_fraction=True, **parameters):
         """Sample from the provided binary quadratic model.
 
         Also set parameters for handling a chain, the set of vertices in a target graph that
@@ -147,6 +149,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
                 chains. The energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+                Method used to resolve chain breaks during sample unembedding.
+                See :mod:`dwave.embedding.chain_breaks`.
 
             chain_break_fraction (bool, optional, default=True):
                 If True, the unembedded response contains a ‘chain_break_fraction’ field that
@@ -204,6 +210,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         response = child.sample(bqm_embedded, **parameters)
 
         return unembed_sampleset(response, embedding, source_bqm=bqm,
+                                 chain_break_method=chain_break_method,
                                  chain_break_fraction=chain_break_fraction)
 
 
@@ -254,6 +261,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
         self.parameters = parameters = self.child.parameters.copy()
         parameters['chain_strength'] = []
+        parameters['chain_break_method'] = []
         parameters['chain_break_fraction'] = []
 
         self.properties = {'child_properties': self.child.properties.copy()}
@@ -343,7 +351,8 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
     """
 
     @dimod.bqm_structured
-    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
+    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
+               chain_break_fraction=True, **parameters):
         """Sample from the provided binary quadratic model.
 
         Also set parameters for handling a chain, the set of vertices in a target graph that
@@ -358,6 +367,10 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
                 chains. The energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+                Method used to resolve chain breaks during sample unembedding.
+                See :mod:`dwave.embedding.chain_breaks`.
 
             chain_break_fraction (bool, optional, default=True):
                 If True, the unembedded response contains a ‘chain_break_fraction’ field
@@ -408,6 +421,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         response = child.sample(bqm_embedded, **parameters)
 
         return unembed_sampleset(response, embedding, source_bqm=bqm,
+                                 chain_break_method=chain_break_method,
                                  chain_break_fraction=chain_break_fraction)
 
 
@@ -458,7 +472,8 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
         self._set_child_related_init(sampler)
         self.embedding = None
 
-    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, **parameters):
+    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
+               chain_break_fraction=True, **parameters):
         """Sample the binary quadratic model.
 
         Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
@@ -471,6 +486,10 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
                 chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+                Method used to resolve chain breaks during sample unembedding.
+                See :mod:`dwave.embedding.chain_breaks`.
 
             chain_break_fraction (bool, optional, default=True):
                 If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
@@ -491,8 +510,9 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             # Initialize properties that need embedding
             super(LazyFixedEmbeddingComposite, self)._set_graph_related_init(embedding=embedding)
 
-        return super(LazyFixedEmbeddingComposite, self).sample(bqm, chain_strength=chain_strength,
-                                                               chain_break_fraction=chain_break_fraction, **parameters)
+        return super(LazyFixedEmbeddingComposite, self).sample(
+            bqm, chain_strength=chain_strength, chain_break_method=chain_break_method,
+            chain_break_fraction=chain_break_fraction, **parameters)
 
 
 class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
