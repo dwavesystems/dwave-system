@@ -247,7 +247,10 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
             responses.append(dwave.embedding.unembed_sampleset(tiled_response, embedding, bqm))
 
-        return dimod.concatenate(responses)
+        answer = dimod.concatenate(responses)
+        answer.info.update(tiled_response.info)
+
+        return answer
 
     @property
     def num_tiles(self):
