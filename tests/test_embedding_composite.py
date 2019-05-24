@@ -21,7 +21,10 @@ from collections import Mapping
 import dimod
 import dimod.testing as dtest
 
-from dwave.system.composites import (EmbeddingComposite, FixedEmbeddingComposite, LazyFixedEmbeddingComposite,
+from dwave.system.composites import (EmbeddingComposite,
+                                     FixedEmbeddingComposite,
+                                     LazyFixedEmbeddingComposite,
+                                     ParamEmbeddingComposite,
                                      LazyEmbeddingComposite)
 
 from dwave.system.testing import MockDWaveSampler, mock
@@ -309,6 +312,27 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
             # assert chain_break_method propagated to unembed_sampleset
             __, kwargs = mock_unembed.call_args
             self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
+
+
+class TestParamEmbeddingComposite(unittest.TestCase):
+    def test_defaults(self):
+        sampler = ParamEmbeddingComposite(MockDWaveSampler())
+        dtest.assert_sampler_api(sampler)
+
+    def test_embed_method_costumization(self):
+        Q = {(1, 1): 1, (2, 2): 2, (3, 3): 3, (1, 2): 4, (2, 3): 5, (1, 3): 6}
+        embedding_parameters = {'random_seed':42}
+        sampler = ParamEmbeddingComposite(MockDWaveSampler(), **embedding_parameters)
+
+        with mock.patch('dwave.system.composites.embedding.minorminer.find_embedding') as mock_method:
+            # assert raising ValueError if not given bqm
+            self.assertRaises(ValueError, lambda: sampler.get_embedding(Q))
+            # assert correct call to minorminer.find_embedding with parameters
+            bqm = dimod.BinaryQuadraticModel.from_qubo(Q)
+            embedding = sampler.get_embedding(bqm)
+            # assert embedding_parameters propagated to mock_method
+            __, kwargs = mock_method.call_args
+            self.assertEqual(kwargs['random_seed'], 42)
 
 
 class TestLazyEmbeddingComposite(unittest.TestCase):

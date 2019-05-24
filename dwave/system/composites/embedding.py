@@ -515,6 +515,7 @@ class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
             bqm, chain_strength=chain_strength, chain_break_method=chain_break_method,
             chain_break_fraction=chain_break_fraction, **parameters)
 
+
 class ParamEmbeddingComposite(dimod.ComposedSampler):
     """Composite that maps problems to a structured sampler using a
     parameterized embedding method.
@@ -531,9 +532,12 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
             Parameter dictionary to be passed to the embedding method.
 
     """
-    def __init__(self, child_sampler, embedding_method=minorminer, **embedding_parameters):
+    def __init__(self, child_sampler, embedding_method=minorminer,
+                 **embedding_parameters):
         if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("ParamEmbeddingComposite should only be applied to a Structured sampler")
+            raise dimod.InvalidComposition("ParamEmbeddingComposite should "
+                                           "only be applied to a "
+                                           "Structured sampler")
         self._children = [child_sampler]
         self._embedding_method = embedding_method
         self._embedding_parameters = embedding_parameters
@@ -557,6 +561,7 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
         param = self.child.parameters.copy()
         param['force_embed'] = []
         param['chain_strength'] = []
+        param['chain_break_method'] =  []
         param['chain_break_fraction'] = []
         # Ideally
         # param['embedding_parameters'] = self._embedding_method.parameters.copy()
@@ -570,9 +575,9 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
         return {'child_properties': self.child.properties.copy()}
 
     def get_embedding(self, bqm, target_edgelist=None,
-                        force_embed=False,
-                        embedding_method=None,
-                        **embedding_parameters):
+                      force_embed=False,
+                      embedding_method=None,
+                      **embedding_parameters):
         """Retrieve or create a minor-embedding from BinaryQuadraticModel
 
         Args:
@@ -593,6 +598,10 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
                 Dictionary that maps labels in S_edgelist to lists of labels in the
                 graph of the structured sampler.
         """
+        if not isinstance(bqm, dimod.BinaryQuadraticModel):
+            raise ValueError("get_embedding() only takes "
+                                   "dimod.BinaryQuadraticModel as input")
+
         embedding = self.embedding
 
         if not embedding_parameters:
@@ -618,7 +627,8 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
 
         return embedding
 
-    def sample(self, bqm, chain_strength=1.0, chain_break_fraction=True, force_embed=False, **parameters):
+    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
+               chain_break_fraction=True, force_embed=False, **parameters):
         """Sample from the provided binary quadratic model.
 
         Also set parameters for handling a chain, the set of vertices in a target graph that
@@ -633,6 +643,10 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
             chain_strength (float, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
                 chains. The energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+                Method used to resolve chain breaks during sample unembedding.
+                See :mod:`dwave.embedding.chain_breaks`.
 
             chain_break_fraction (bool, optional, default=True):
                 If True, the unembedded response contains a ‘chain_break_fraction’ field that
@@ -660,9 +674,8 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
 
         # get the embedding
         embedding = self.get_embedding(bqm, target_edgelist=target_edgelist,
-                                            force_embed=force_embed,
-                                            **embedding_parameters)
-
+                                       force_embed=force_embed,
+                                       **embedding_parameters)
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
@@ -679,7 +692,9 @@ class ParamEmbeddingComposite(dimod.ComposedSampler):
         self.child_response = response
 
         return unembed_sampleset(response, embedding, source_bqm=bqm,
+                                 chain_break_method=chain_break_method,
                                  chain_break_fraction=chain_break_fraction)
+
 
 class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
     """Deprecated Class. 'LazyEmbeddingComposite' has been deprecated and renamed to 'LazyFixedEmbeddingComposite'.
