@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 from warnings import warn
 
 import dimod
@@ -32,14 +32,23 @@ __all__ = ('EmbeddingComposite',
 class EmbeddingComposite(dimod.ComposedSampler):
     """Composite that maps problems to a structured sampler.
 
-    Enables quick incorporation of the D-Wave system as a sampler by handling minor-embedding
-    of the problem into the D-Wave system's :term:`Chimera` graph. Minor-embedding is
-    calculated using the heuristic :std:doc:`minorminer <minorminer:index>` library
-    each time one of its sampling methods is called.
+    Enables quick incorporation of the D-Wave system as a sampler by handling
+    minor-embedding of the problem into the D-Wave system's :term:`Chimera`
+    graph. A new minor-embedding is calculated using the given `find_embedding`
+    function each time one of its sampling methods is called.
 
     Args:
-       sampler (:class:`dimod.Sampler`):
-            Structured dimod sampler such as a :class:`~dwave.system.samplers.DWaveSampler()`.
+        sampler (:class:`dimod.Sampler`):
+            Structured dimod sampler, such as a
+            :obj:`~dwave.system.samplers.DWaveSampler()`.
+
+        find_embedding (function, default=:func:`minorminer.find_embedding`):
+            A function `find_embedding(S, T, **kwargs)` where `S` and `T`
+            are edgelists. The function can accept addition keyword arguments.
+
+        embedding_parameters (dict, optional):
+            If provided, parameter are passed to the embedding method as keyword
+            arguments.
 
     Examples:
        This example submits a simple Ising problem to a D-Wave solver selected by the user's
@@ -61,81 +70,54 @@ class EmbeddingComposite(dimod.ComposedSampler):
     of technical terms in descriptions of Ocean tools.
 
     """
-    def __init__(self, child_sampler):
+    def __init__(self, child_sampler,
+                 find_embedding=minorminer.find_embedding,
+                 embedding_parameters=None):
+
         if not isinstance(child_sampler, dimod.Structured):
             raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
-        self._children = [child_sampler]
+        self.children = [child_sampler]
 
-    @property
-    def children(self):
-        """list [child_sampler]: List containing the structured sampler."""
-        return self._children
+        # keep any embedding parameters around until later, because we might
+        # want to overwrite them
+        if embedding_parameters is None:
+            self.embedding_parameters = {}
+        else:
+            self.embedding_parameters = embedding_parameters
+        self.find_embedding = find_embedding
 
-    @property
-    def parameters(self):
-        """dict[str, list]: Parameters in the form of a dict.
+        # set the parameters
+        self.parameters = parameters = self.child.parameters.copy()
+        parameters.update(chain_strength=[],
+                          chain_break_method=[],
+                          chain_break_fraction=[],
+                          embedding_parameters=[],
+                          )
 
-        For an instantiated composed sampler, keys are the keyword parameters accepted by the child sampler
-        and parameters added by the composite such as those related to chains.
+        # set the properties
+        self.properties = dict(child_properties=self.child.properties.copy())
 
-        Examples:
-            This example views parameters of a composed sampler using a D-Wave system selected by
-            the user's default
-            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:intro>`
+    parameters = None  # overwritten by init
+    """dict[str, list]: Parameters in the form of a dict.
 
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
-            ...
-            >>> sampler = EmbeddingComposite(DWaveSampler())
-            >>> sampler.parameters   # doctest: +SKIP
-            {'anneal_offsets': ['parameters'],
-             'anneal_schedule': ['parameters'],
-             'annealing_time': ['parameters'],
-             'answer_mode': ['parameters'],
-             'auto_scale': ['parameters'],
-            >>> # Snipped above response for brevity
+    For an instantiated composed sampler, keys are the keyword parameters
+    accepted by the child sampler and parameters added by the composite.
+    """
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
-        terms in descriptions of Ocean tools.
-        """
+    children = None  # overwritten by init
+    """list [child_sampler]: List containing the structured sampler."""
 
-        param = self.child.parameters.copy()
-        param['chain_strength'] = []
-        param['chain_break_method'] = []
-        param['chain_break_fraction'] = []
-        return param
+    properties = None  # overwritten by init
+    """dict: Properties in the form of a dict.
 
-    @property
-    def properties(self):
-        """dict: Properties in the form of a dict.
+    Contains the properties of the child sampler.
+    """
 
-        For an instantiated composed sampler, contains one key :code:`child_properties` that
-        has a copy of the child sampler's properties.
-
-        Examples:
-            This example views properties of a composed sampler using a D-Wave system selected by
-            the user's default
-            :std:doc:`D-Wave Cloud Client configuration file. <cloud-client:intro>`
-
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
-            ...
-            >>> sampler = EmbeddingComposite(DWaveSampler())
-            >>> sampler.properties   # doctest: +SKIP
-            {'child_properties': {u'anneal_offset_ranges': [[-0.2197463755538704,
-                0.03821687759418928],
-               [-0.2242514597680286, 0.01718456460967399],
-               [-0.20860153999435985, 0.05511969218508182],
-            >>> # Snipped above response for brevity
-
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations of technical
-        terms in descriptions of Ocean tools.
-
-        """
-        return {'child_properties': self.child.properties.copy()}
-
-    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
-               chain_break_fraction=True, **parameters):
+    def sample(self, bqm, chain_strength=1.0,
+               chain_break_method=None,
+               chain_break_fraction=True,
+               embedding_parameters=None,
+               **parameters):
         """Sample from the provided binary quadratic model.
 
         Also set parameters for handling a chain, the set of vertices in a target graph that
@@ -158,6 +140,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
             chain_break_fraction (bool, optional, default=True):
                 If True, the unembedded response contains a ‘chain_break_fraction’ field that
                 reports the fraction of chains broken before unembedding.
+
+            embedding_parameters (dict, optional):
+                If provided, parameter are passed to the embedding method as
+                keyword arguments. Overrides any `embedding_parameters` passed
+                to the constructor.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -196,7 +183,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
         source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]
 
         # get the embedding
-        embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
+        if embedding_parameters is None:
+            embedding_parameters = self.embedding_parameters
+        else:
+            # update the base parameters with the new ones provided
+            embedding_parameters.update((key, val)
+                                        for key, val in self.embedding_parameters
+                                        if key not in embedding_parameters)
+
+        embedding = self.find_embedding(source_edgelist, target_edgelist,
+                                        **embedding_parameters)
 
         if bqm and not embedding:
             raise ValueError("no embedding found")
