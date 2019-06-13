@@ -194,12 +194,6 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):
         self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockDWaveSampler()))
 
-    def test_with_embedding_and_adjacency(self):
-        self.assertRaises(TypeError, lambda: FixedEmbeddingComposite(MockDWaveSampler(),
-                                                                     {'a': [0, 4], 'b': [1], 'c': [5]},
-                                                                     {'a': ['b', 'c'], 'b': ['a', 'c'],
-                                                                      'c': ['a', 'b']}))
-
     def test_instantiation_empty_embedding(self):
         sampler = FixedEmbeddingComposite(MockDWaveSampler(), {})
 

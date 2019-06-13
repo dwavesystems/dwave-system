@@ -407,8 +407,25 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
 
 
     """
-    def __init__(self, child_sampler, embedding):
+    def __init__(self, child_sampler, embedding=None, source_adjacency=None):
         super(FixedEmbeddingComposite, self).__init__(child_sampler)
+
+        # dev note: this entire block is to support a deprecated feature and can
+        # be removed in the next major release
+        if embedding is None:
+
+            warn(("The source_adjacency parameter is deprecated"),
+                 DeprecationWarning)
+
+            if source_adjacency is None:
+                raise TypeError("either embedding or source_adjacency must be "
+                                "provided")
+
+            source_edgelist = [(u, v) for u in source_adjacency for v in source_adjacency[u]]
+
+            embedding = self.find_embedding(source_edgelist,
+                                            self.target_structure.edgelist)
+
         self._fix_embedding(embedding)
 
 
