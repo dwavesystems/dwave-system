@@ -52,23 +52,13 @@ class EmbeddingComposite(dimod.ComposedSampler):
             arguments.
 
     Examples:
-       This example submits a simple Ising problem to a D-Wave solver selected by the user's
-       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
-       :class:`.EmbeddingComposite` maps the problem's variables 'a' and 'b'
-       to qubits on the D-Wave system.
 
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
        ...
        >>> sampler = EmbeddingComposite(DWaveSampler())
        >>> h = {'a': -1., 'b': 2}
        >>> J = {('a', 'b'): 1.5}
-       >>> response = sampler.sample_ising(h, J)
-       >>> for sample in response.samples():    # doctest: +SKIP
-       ...     print(sample)
-       {'a': 1, 'b': -1}
-
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
-    of technical terms in descriptions of Ocean tools.
+       >>> sampleset = sampler.sample_ising(h, J)
 
     """
     def __init__(self, child_sampler,
@@ -76,7 +66,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                  embedding_parameters=None):
 
         if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("EmbeddingComposite should only be applied to a Structured sampler")
+            raise dimod.InvalidComposition("EmbeddingComposite should only be "
+                                           "applied to a Structured sampler")
         self.children = [child_sampler]
 
         # keep any embedding parameters around until later, because we might
@@ -124,26 +115,23 @@ class EmbeddingComposite(dimod.ComposedSampler):
                **parameters):
         """Sample from the provided binary quadratic model.
 
-        Also set parameters for handling a chain, the set of vertices in a target graph that
-        represents a source-graph vertex; when a D-Wave system is the sampler, it is a set
-        of qubits that together represent a variable of the binary quadratic model being
-        minor-embedded.
-
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float, optional, default=1.0):
-                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
-                chains. The energy penalty of chain breaks is 2 * `chain_strength`.
+                Magnitude of the quadratic bias (in SPIN-space) applied between
+                variables to create chains. The energy penalty of chain breaks
+                is 2 * `chain_strength`.
 
-            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+            chain_break_method (function, optional):
                 Method used to resolve chain breaks during sample unembedding.
-                See :mod:`dwave.embedding.chain_breaks`.
+                See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, the unembedded response contains a ‘chain_break_fraction’ field that
-                reports the fraction of chains broken before unembedding.
+                If True, the unembedded response contains a
+                ‘chain_break_fraction’ field that reports the fraction of chains
+                broken before unembedding.
 
             embedding_parameters (dict, optional):
                 If provided, parameter are passed to the embedding method as
@@ -151,30 +139,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 to the constructor.
 
             **parameters:
-                Parameters for the sampling method, specified by the child sampler.
+                Parameters for the sampling method, specified by the child
+                sampler.
 
         Returns:
-            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
+            :obj:`dimod.SampleSet`
 
-        Examples:
-            This example submits an triangle-structured Ising problem to a D-Wave solver, selected
-            by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
-            by minor-embedding the problem's variables to physical qubits.
-
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
-            >>> import dimod
-            ...
-            >>> sampler = EmbeddingComposite(DWaveSampler())
-            >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {'ab': 0.5, 'bc': 0.5, 'ca': 0.5})
-            >>> response = sampler.sample(bqm, chain_strength=2)
-            >>> response.first:    # doctest: +SKIP
-            Sample(sample={'a': -1, 'b': 1, 'c': 1}, energy=-0.5,
-                   num_occurrences=1, chain_break_fraction=0.0)
-
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-        for explanations of technical terms in descriptions of Ocean tools.
         """
 
         # solve the problem on the child system
@@ -206,7 +176,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
                                  smear_vartype=dimod.SPIN)
 
         if 'initial_state' in parameters:
-            parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
+            state = parameters['initial_state']
+            parameters['initial_state'] = {u: state[v]
+                                           for v, chain in embedding.items()
+                                           for u in chain}
 
         response = child.sample(bqm_embedded, **parameters)
 
@@ -216,12 +189,21 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
 
 class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
-    """Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
-    for all following sample(..) calls.
+    """Fixes itself to the structure of the first problem it samples.
 
     Args:
         sampler (dimod.Sampler):
             Structured dimod sampler.
+
+        find_embedding (function, default=:func:`minorminer.find_embedding`):
+            A function `find_embedding(S, T, **kwargs)` where `S` and `T`
+            are edgelists. The function can accept addition keyword arguments.
+            The function is used to find the embedding for the first problem
+            solved.
+
+        embedding_parameters (dict, optional):
+            If provided, parameter are passed to the embedding method as keyword
+            arguments.
 
     Examples:
 
@@ -315,7 +297,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         return adj
 
     embedding = None
-    """todo"""
+    """The embedding used to map bqms to the child sampler."""
 
     def _fix_embedding(self, embedding):
         # save the embedding and overwrite the find_embedding function
@@ -330,29 +312,40 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     def sample(self, bqm, **parameters):
         """Sample the binary quadratic model.
 
-        Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
-        before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
+        Note: At the initial sample(..) call, it will find a suitable embedding
+        and initialize the remaining attributes before sampling the bqm. All
+        following sample(..) calls will reuse that initial embedding.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float, optional, default=1.0):
-                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
-                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+                Magnitude of the quadratic bias (in SPIN-space) applied between
+                variables to create chains. The energy penalty of chain breaks
+                is 2 * `chain_strength`.
 
-            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+            chain_break_method (function, optional):
                 Method used to resolve chain breaks during sample unembedding.
-                See :mod:`dwave.embedding.chain_breaks`.
+                See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
-                what fraction of the chains were broken before unembedding.
+                If True, the unembedded response contains a
+                ‘chain_break_fraction’ field that reports the fraction of chains
+                broken before unembedding.
+
+            embedding_parameters (dict, optional):
+                If provided, parameter are passed to the embedding method as
+                keyword arguments. Overrides any `embedding_parameters` passed
+                to the constructor. Only used on the first call.
 
             **parameters:
-                Parameters for the sampling method, specified by the child sampler.
+                Parameters for the sampling method, specified by the child
+                sampler.
+
         Returns:
-            :class:`dimod.SampleSet`
+            :obj:`dimod.SampleSet`
+
         """
         if self.embedding is None:
             # get an embedding using the current find_embedding function
@@ -380,36 +373,33 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
 
 
 class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
-    """Composite that uses a specified minor-embedding to map problems to a structured sampler.
-
-    Enables incorporation of the D-Wave system as a sampler, given a precalculated minor-embedding.
+    """Uses a specified minor-embedding to map problems to a structured sampler.
 
     Args:
         sampler (dimod.Sampler):
             Structured dimod sampler such as a D-Wave system.
 
-        embedding (dict[hashable, iterable]):
-            Mapping from a source graph to the specified sampler’s graph (the target graph).
+        embedding (dict[hashable, iterable], optional):
+            Mapping from a source graph to the specified sampler’s graph (the
+            target graph).
 
         source_adjacency (dict[hashable, iterable]):
-            Dictionary to describe source graph. Ex. {node: {node neighbours}}
+            Deprecated. Dictionary to describe source graph. Ex. `{node:
+            {node neighbours}}`.
+
 
     Examples:
-        This example submits an triangle-structured Ising problem to a D-Wave solver, selected
-        by the user's default
-        :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
-        using a given minor-embedding of the problem's variables to physical qubits.
 
         >>> from dwave.system.samplers import DWaveSampler
         >>> from dwave.system.composites import FixedEmbeddingComposite
         ...
-        >>> sampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
+        >>> embedding = {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]}
+        >>> sampler = FixedEmbeddingComposite(DWaveSampler(), embedding)
         >>> sampler.nodelist
         ['a', 'b', 'c']
         >>> sampler.edgelist
         [('a', 'b'), ('a', 'c'), ('b', 'c')]
-        >>> resp = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
-
+        >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
 
     """
     def __init__(self, child_sampler, embedding=None, source_adjacency=None):
@@ -432,11 +422,6 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
                                             self.target_structure.edgelist)
 
         self._fix_embedding(embedding)
-
-
-def _embed_state(embedding, state):
-    """Embed a single state/sample by spreading it's values over the chains in the embedding"""
-    return {u: state[v] for v, chain in embedding.items() for u in chain}
 
 
 class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
