@@ -87,7 +87,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         self.find_embedding = find_embedding
 
         # set the parameters
-        self.parameters = parameters = self.child.parameters.copy()
+        self.parameters = parameters = child_sampler.parameters.copy()
         parameters.update(chain_strength=[],
                           chain_break_method=[],
                           chain_break_fraction=[],
@@ -95,7 +95,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
                           )
 
         # set the properties
-        self.properties = dict(child_properties=self.child.properties.copy())
+        self.properties = dict(child_properties=child_sampler.properties.copy())
+
+        # track the child's structure
+        self.target_structure = child_sampler.structure
 
     parameters = None  # overwritten by init
     """dict[str, list]: Parameters in the form of a dict.
@@ -177,7 +180,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         child = self.child
 
         # apply the embedding to the given problem to map it to the child sampler
-        __, target_edgelist, target_adjacency = child.structure
+        __, target_edgelist, target_adjacency = self.target_structure
 
         # add self-loops to edgelist to handle singleton variables
         source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]
@@ -211,7 +214,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                                  chain_break_fraction=chain_break_fraction)
 
 
-class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
+class FixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     """Composite that uses a specified minor-embedding to map problems to a structured sampler.
 
     Enables incorporation of the D-Wave system as a sampler, given a precalculated minor-embedding.
@@ -245,51 +248,23 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
 
     """
 
-    def __init__(self, child_sampler, embedding=None, source_adjacency=None):
-        self._set_child_related_init(child_sampler)
-        self._set_graph_related_init(embedding, source_adjacency)
+    def __init__(self, child_sampler, embedding):
 
-    def _set_child_related_init(self, child_sampler):
-        if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("{} should only be applied to a Structured sampler"
-                                           .format(type(self).__name__))
+        # for the fixed embedding composite, the embedding is fixed, so we
+        # always returns the same embedding regardless of S, T
+        def find_embedding(S, T):
+            return embedding
 
-        self.children = [child_sampler]
+        super(FixedEmbeddingComposite, self).__init__(child_sampler,
+                                                      find_embedding=find_embedding)
 
-        self.parameters = parameters = self.child.parameters.copy()
-        parameters['chain_strength'] = []
-        parameters['chain_break_method'] = []
-        parameters['chain_break_fraction'] = []
+        # also save the embedding for API reasons
+        self.embedding = embedding
+        self.properties.update(embedding=embedding)
 
-        self.properties = {'child_properties': self.child.properties.copy()}
-
-    def _set_graph_related_init(self, embedding=None, source_adjacency=None):
-        # Must have embedding xor source_adjacency
-        if (embedding is None) == (source_adjacency is None):
-            raise TypeError('_set_graph_related_init() must take either an embedding or a source_adjacency argument,'
-                            ' but not both.')
-
-        # Populate embedding and adjacency attributes
-        if embedding is not None:
-            self.embedding = self.properties['embedding'] = embedding
-            self.adjacency = target_to_source(self.child.adjacency, embedding)
-
-        else:
-            self.adjacency = source_adjacency
-
-            # Find embedding with source_adjacency
-            __, target_edgelist, target_adjacency = self.child.structure
-            source_edgelist = []
-
-            for k, edges in source_adjacency.items():
-                source_edgelist.append((k, k))
-                for e in edges:
-                    source_edgelist.append((k, e))
-
-            embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
-            self.embedding = self.properties['embedding'] = embedding
-
-        # Populate nodelist and edgelist
+        # need to set up the structured attributes
+        self.adjacency = target_to_source(self.target_structure.adjacency,
+                                          embedding)
         try:
             nodelist = sorted(self.adjacency)
             edgelist = sorted(_adjacency_to_edges(self.adjacency))
@@ -302,54 +277,16 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         self.edgelist = edgelist
 
     nodelist = None
-    """list: Nodes available to the composed sampler.
-
-    Examples:
-        >>> fixedsampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
-        >>> fixedsampler.nodelist
-        ['a', 'b', 'c']
-    """
+    """list: Nodes available to the composed sampler."""
 
     edgelist = None
-    """list: Edges available to the composed sampler.
-
-    Examples:
-        >>> fixedsampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
-        >>> fixedsampler.edgelist
-        [('a', 'b'), ('a', 'c'), ('b', 'c')]
-    """
+    """list: Edges available to the composed sampler."""
 
     adjacency = None
-    """dict[variable, set]: Adjacency structure for the composed sampler.
-
-    Examples:
-        >>> fixedsampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
-        >>> fixedsampler.adjacency    # doctest: +SKIP
-        {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}}
-
-    """
-
-    children = None
-    """list: List containing the wrapped sampler.
-
-    See :obj:`.EmbeddingComposite.children` for detailed information.
-    """
-
-    parameters = None
-    """dict[str, list]: Parameters in the form of a dict.
-
-    See :obj:`.EmbeddingComposite.parameters` for detailed information.
-    """
-
-    properties = None
-    """dict: Properties in the form of a dict.
-
-    See :obj:`.EmbeddingComposite.properties` for detailed information.
-    """
+    """dict[variable, set]: Adjacency structure for the composed sampler."""
 
     @dimod.bqm_structured
-    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
-               chain_break_fraction=True, **parameters):
+    def sample(self, bqm, **parameters):
         """Sample from the provided binary quadratic model.
 
         Also set parameters for handling a chain, the set of vertices in a target graph that
@@ -398,28 +335,7 @@ class FixedEmbeddingComposite(dimod.ComposedSampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-
-        # solve the problem on the child system
-        child = self.child
-
-        # apply the embedding to the given problem to map it to the child sampler
-        __, __, target_adjacency = child.structure
-
-        # get the embedding
-        embedding = self.embedding
-
-        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency,
-                                 chain_strength=chain_strength,
-                                 smear_vartype=dimod.SPIN)
-
-        if 'initial_state' in parameters:
-            parameters['initial_state'] = _embed_state(embedding, parameters['initial_state'])
-
-        response = child.sample(bqm_embedded, **parameters)
-
-        return unembed_sampleset(response, embedding, source_bqm=bqm,
-                                 chain_break_method=chain_break_method,
-                                 chain_break_fraction=chain_break_fraction)
+        return super(FixedEmbeddingComposite, self).sample(bqm, **parameters)
 
 
 def _adjacency_to_edges(adjacency):
