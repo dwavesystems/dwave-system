@@ -265,9 +265,12 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
         # Check that graph related values have not been instantiated
         sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
         self.assertIsNone(sampler.embedding)
-        self.assertIsNone(sampler.nodelist)
-        self.assertIsNone(sampler.edgelist)
-        self.assertIsNone(sampler.adjacency)
+        with self.assertRaises(ValueError):
+            sampler.nodelist
+        with self.assertRaises(ValueError):
+            sampler.edgelist
+        with self.assertRaises(ValueError):
+            sampler.adjacency
 
         # Set up an and_gate BQM and sample
         Q = {('a', 'a'): 0.0, ('c', 'c'): 6.0, ('b', 'b'): 0.0, ('b', 'a'): 2.0, ('c', 'a'): -4.0, ('c', 'b'): -4.0}

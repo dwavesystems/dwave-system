@@ -14,6 +14,8 @@
 #    limitations under the License.
 #
 # =============================================================================
+import itertools
+
 from warnings import warn
 
 import dimod
@@ -214,7 +216,166 @@ class EmbeddingComposite(dimod.ComposedSampler):
                                  chain_break_fraction=chain_break_fraction)
 
 
-class FixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
+class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
+    """Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
+    for all following sample(..) calls.
+
+    Args:
+        sampler (dimod.Sampler):
+            Structured dimod sampler.
+
+    Examples:
+
+        >>> from dwave.system import LazyFixedEmbeddingComposite, DWaveSampler
+        ...
+        >>> sampler = LazyFixedEmbeddingComposite(DWaveSampler())
+        >>> sampler.nodelist is None  # no structure yet
+        True
+        >>> __ = sampler.sample_ising({}, {('a', 'b'): -1})
+        >>> sampler.nodelist  # has structure based on given problem
+        ['a', 'b']
+
+    """
+
+    @property
+    def nodelist(self):
+        """list: Nodes available to the composed sampler."""
+        try:
+            return self._nodelist
+        except AttributeError:
+            pass
+
+        self._nodelist = nodelist = list(self.adjacency)
+
+        # makes it a lot easier for the user if the list can be sorted, so we
+        # try
+        try:
+            nodelist.sort()
+        except TypeError:
+            # python3 cannot sort unlike types
+            pass
+
+        return nodelist
+
+    @property
+    def edgelist(self):
+        """list: Edges available to the composed sampler."""
+        try:
+            return self._edgelist
+        except AttributeError:
+            pass
+
+        adj = self.adjacency
+
+        # remove duplicates by putting into a set
+        edges = set()
+        for u in adj:
+            for v in adj[u]:
+                try:
+                    edge = (u, v) if u <= v else (v, u)
+                except TypeError:
+                    # Py3 does not allow sorting of unlike types
+                    if (v, u) in edges:
+                        continue
+                    edge = (u, v)
+
+                edges.add(edge)
+
+        self._edgelist = edgelist = list(edges)
+
+        # makes it a lot easier for the user if the list can be sorted, so we
+        # try
+        try:
+            edgelist.sort()
+        except TypeError:
+            # python3 cannot sort unlike types
+            pass
+
+        return edgelist
+
+    @property
+    def adjacency(self):
+        """dict[variable, set]: Adjacency structure for the composed sampler."""
+        try:
+            return self._adjacency
+        except AttributeError:
+            pass
+
+        if self.embedding is None:
+            raise ValueError("no embedding has been set, so structure cannot "
+                             "be determined")
+
+        self._adjacency = adj = target_to_source(self.target_structure.adjacency,
+                                                 self.embedding)
+
+        return adj
+
+    embedding = None
+    """todo"""
+
+    def _fix_embedding(self, embedding):
+        # save the embedding and overwrite the find_embedding function
+        self.embedding = embedding
+        self.properties.update(embedding=embedding)
+
+        def find_embedding(S, T):
+            return embedding
+
+        self.find_embedding = find_embedding
+
+    def sample(self, bqm, **parameters):
+        """Sample the binary quadratic model.
+
+        Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
+        before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
+
+        Args:
+            bqm (:obj:`dimod.BinaryQuadraticModel`):
+                Binary quadratic model to be sampled from.
+
+            chain_strength (float, optional, default=1.0):
+                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
+                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
+
+            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
+                Method used to resolve chain breaks during sample unembedding.
+                See :mod:`dwave.embedding.chain_breaks`.
+
+            chain_break_fraction (bool, optional, default=True):
+                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
+                what fraction of the chains were broken before unembedding.
+
+            **parameters:
+                Parameters for the sampling method, specified by the child sampler.
+        Returns:
+            :class:`dimod.SampleSet`
+        """
+        if self.embedding is None:
+            # get an embedding using the current find_embedding function
+            embedding_parameters = parameters.pop('embedding_parameters', None)
+
+            if embedding_parameters is None:
+                embedding_parameters = self.embedding_parameters
+            else:
+                # update the base parameters with the new ones provided
+                embedding_parameters.update((key, val)
+                                            for key, val in self.embedding_parameters
+                                            if key not in embedding_parameters)
+
+            source_edgelist = list(itertools.chain(bqm.quadratic,
+                                                   ((v, v) for v in bqm.linear)))
+
+            target_edgelist = self.target_structure.edgelist
+
+            embedding = self.find_embedding(source_edgelist, target_edgelist,
+                                            **embedding_parameters)
+
+            self._fix_embedding(embedding)
+
+        return super(LazyFixedEmbeddingComposite, self).sample(bqm, **parameters)
+
+
+class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
     """Composite that uses a specified minor-embedding to map problems to a structured sampler.
 
     Enables incorporation of the D-Wave system as a sampler, given a precalculated minor-embedding.
@@ -247,185 +408,14 @@ class FixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
 
 
     """
-
     def __init__(self, child_sampler, embedding):
-
-        # for the fixed embedding composite, the embedding is fixed, so we
-        # always returns the same embedding regardless of S, T
-        def find_embedding(S, T):
-            return embedding
-
-        super(FixedEmbeddingComposite, self).__init__(child_sampler,
-                                                      find_embedding=find_embedding)
-
-        # also save the embedding for API reasons
-        self.embedding = embedding
-        self.properties.update(embedding=embedding)
-
-        # need to set up the structured attributes
-        self.adjacency = target_to_source(self.target_structure.adjacency,
-                                          embedding)
-        try:
-            nodelist = sorted(self.adjacency)
-            edgelist = sorted(_adjacency_to_edges(self.adjacency))
-        except TypeError:
-            # python3 does not allow sorting of unlike types, so if nodes have
-            # different type names just choose an arbitrary order
-            nodelist = list(self.adjacency)
-            edgelist = list(_adjacency_to_edges(self.adjacency))
-        self.nodelist = nodelist
-        self.edgelist = edgelist
-
-    nodelist = None
-    """list: Nodes available to the composed sampler."""
-
-    edgelist = None
-    """list: Edges available to the composed sampler."""
-
-    adjacency = None
-    """dict[variable, set]: Adjacency structure for the composed sampler."""
-
-    @dimod.bqm_structured
-    def sample(self, bqm, **parameters):
-        """Sample from the provided binary quadratic model.
-
-        Also set parameters for handling a chain, the set of vertices in a target graph that
-        represents a source-graph vertex; when a D-Wave system is the sampler, it is a set
-        of qubits that together represent a variable of the binary quadratic model being
-        minor-embedded.
-
-        Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
-                Binary quadratic model to be sampled from.
-
-            chain_strength (float, optional, default=1.0):
-                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
-                chains. The energy penalty of chain breaks is 2 * `chain_strength`.
-
-            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
-                Method used to resolve chain breaks during sample unembedding.
-                See :mod:`dwave.embedding.chain_breaks`.
-
-            chain_break_fraction (bool, optional, default=True):
-                If True, the unembedded response contains a ‘chain_break_fraction’ field
-                that reports the fraction of chains broken before unembedding.
-
-            **parameters:
-                Parameters for the sampling method, specified by the child sampler.
-
-        Returns:
-            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
-
-        Examples:
-            This example submits an triangle-structured problem to a D-Wave solver, selected
-            by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
-            using a specified minor-embedding of the problem’s variables to physical qubits.
-
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import FixedEmbeddingComposite
-            >>> import dimod
-            ...
-            >>> sampler = FixedEmbeddingComposite(DWaveSampler(), {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]})
-            >>> response = sampler.sample_ising({}, {'ab': 0.5, 'bc': 0.5, 'ca': 0.5}, chain_strength=2)
-            >>> response.first    # doctest: +SKIP
-            Sample(sample={'a': 1, 'b': -1, 'c': 1}, energy=-0.5, num_occurrences=1, chain_break_fraction=0.0)
-
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-        for explanations of technical terms in descriptions of Ocean tools.
-
-        """
-        return super(FixedEmbeddingComposite, self).sample(bqm, **parameters)
-
-
-def _adjacency_to_edges(adjacency):
-    """determine from an adjacency the list of edges
-    if (u, v) in edges, then (v, u) should not be"""
-    edges = set()
-    for u in adjacency:
-        for v in adjacency[u]:
-            try:
-                edge = (u, v) if u <= v else (v, u)
-            except TypeError:
-                # Py3 does not allow sorting of unlike types
-                if (v, u) in edges:
-                    continue
-                edge = (u, v)
-
-            edges.add(edge)
-    return edges
+        super(FixedEmbeddingComposite, self).__init__(child_sampler)
+        self._fix_embedding(embedding)
 
 
 def _embed_state(embedding, state):
     """Embed a single state/sample by spreading it's values over the chains in the embedding"""
     return {u: state[v] for v, chain in embedding.items() for u in chain}
-
-
-class LazyFixedEmbeddingComposite(FixedEmbeddingComposite):
-    """Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
-    for all following sample(..) calls.
-
-    Args:
-        sampler (dimod.Sampler):
-            Structured dimod sampler.
-
-    Examples:
-
-        >>> from dwave.system import LazyFixedEmbeddingComposite, DWaveSampler
-        ...
-        >>> sampler = LazyFixedEmbeddingComposite(DWaveSampler())
-        >>> sampler.nodelist is None  # no structure yet
-        True
-        >>> __ = sampler.sample_ising({}, {('a', 'b'): -1})
-        >>> sampler.nodelist  # has structure based on given problem
-        ['a', 'b']
-
-    """
-    def __init__(self, sampler):
-        self._set_child_related_init(sampler)
-        self.embedding = None
-
-    def sample(self, bqm, chain_strength=1.0, chain_break_method=None,
-               chain_break_fraction=True, **parameters):
-        """Sample the binary quadratic model.
-
-        Note: At the initial sample(..) call, it will find a suitable embedding and initialize the remaining attributes
-        before sampling the bqm. All following sample(..) calls will reuse that initial embedding.
-
-        Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
-                Binary quadratic model to be sampled from.
-
-            chain_strength (float, optional, default=1.0):
-                Magnitude of the quadratic bias (in SPIN-space) applied between variables to create
-                chains. Note that the energy penalty of chain breaks is 2 * `chain_strength`.
-
-            chain_break_method (function, optional, default=dwave.embedding.majority_vote):
-                Method used to resolve chain breaks during sample unembedding.
-                See :mod:`dwave.embedding.chain_breaks`.
-
-            chain_break_fraction (bool, optional, default=True):
-                If True, a ‘chain_break_fraction’ field is added to the unembedded response which report
-                what fraction of the chains were broken before unembedding.
-
-            **parameters:
-                Parameters for the sampling method, specified by the child sampler.
-        Returns:
-            :class:`dimod.SampleSet`
-        """
-        if self.embedding is None:
-            # Find embedding
-            child = self.child   # Solve the problem on the child system
-            __, target_edgelist, target_adjacency = child.structure
-            source_edgelist = list(bqm.quadratic) + [(v, v) for v in bqm.linear]  # Add self-loops for single variables
-            embedding = minorminer.find_embedding(source_edgelist, target_edgelist)
-
-            # Initialize properties that need embedding
-            super(LazyFixedEmbeddingComposite, self)._set_graph_related_init(embedding=embedding)
-
-        return super(LazyFixedEmbeddingComposite, self).sample(
-            bqm, chain_strength=chain_strength, chain_break_method=chain_break_method,
-            chain_break_fraction=chain_break_fraction, **parameters)
 
 
 class ParamEmbeddingComposite(dimod.ComposedSampler):
