@@ -66,23 +66,3 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
                   'anneal_schedule': [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)]}
 
         sampler.sample(bqm, **kwargs).record  # sample and resolve future
-
-
-@unittest.skipUnless(_config_found, "no configuration found to connect to a system")
-class TestFixedEmbeddingComposite(unittest.TestCase):
-    def test_keyerror(self):
-        C16 = dnx.chimera_graph(16)
-        child_sampler = dimod.RandomSampler()
-        nodelist = sorted(C16.nodes)
-        edgelist = sorted(sorted(edge) for edge in C16.edges)
-        struc_sampler = dimod.StructureComposite(child_sampler, nodelist, edgelist)
-
-        embedding = {0: [391, 386], 1: [390], 2: [385]}
-
-        sampler = FixedEmbeddingComposite(struc_sampler, embedding)
-
-        with self.assertRaises(ValueError):
-            sampler.sample_qubo({(1, 4): 1})
-
-        sampler.sample_qubo({(1, 2): 1}).record  # sample and resolve future
-        sampler.sample_qubo({(1, 1): 1}).record  # sample and resolve future

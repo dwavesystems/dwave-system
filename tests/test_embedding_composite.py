@@ -20,6 +20,9 @@ from collections import Mapping
 
 import dimod
 import dimod.testing as dtest
+import dwave_networkx as dnx
+
+import dwave.embedding
 
 from dwave.system.composites import (EmbeddingComposite,
                                      FixedEmbeddingComposite,
@@ -251,6 +254,23 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
             # assert chain_break_method propagated to unembed_sampleset
             __, kwargs = mock_unembed.call_args
             self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
+
+    def test_keyer(self):
+        C4 = dnx.chimera_graph(4)
+        nodelist = sorted(C4.nodes)
+        edgelist = sorted(sorted(edge) for edge in C4.edges)
+
+        child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+
+        embedding = {0: [49, 53], 1: [52], 2: [50]}
+
+        sampler = FixedEmbeddingComposite(child, embedding)
+
+        with self.assertRaises(dwave.embedding.exceptions.MissingChainError):
+            sampler.sample_qubo({(1, 4): 1})
+
+        sampler.sample_qubo({(1, 2): 1}).record  # sample and resolve future
+        sampler.sample_qubo({(1, 1): 1}).record  # sample and resolve future
 
 
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
