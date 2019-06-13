@@ -244,6 +244,9 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         except AttributeError:
             pass
 
+        if self.adjacency is None:
+            return None
+
         self._nodelist = nodelist = list(self.adjacency)
 
         # makes it a lot easier for the user if the list can be sorted, so we
@@ -265,6 +268,9 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             pass
 
         adj = self.adjacency
+
+        if adj is None:
+            return None
 
         # remove duplicates by putting into a set
         edges = set()
@@ -301,8 +307,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             pass
 
         if self.embedding is None:
-            raise ValueError("no embedding has been set, so structure cannot "
-                             "be determined")
+            return None
 
         self._adjacency = adj = target_to_source(self.target_structure.adjacency,
                                                  self.embedding)
