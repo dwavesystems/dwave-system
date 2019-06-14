@@ -192,6 +192,12 @@ class TestEmbeddingComposite(unittest.TestCase):
         # nothing breaks
         sampler.sample_ising({0: -1}, {}, embedding_parameters={'a': -1})
 
+    def test_intermediate_composites(self):
+        child = dimod.StructureComposite(dimod.NullSampler(), [0, 1], [(0, 1)])
+        intermediate = dimod.TrackingComposite(child)
+        sampler = EmbeddingComposite(intermediate)
+        self.assertEqual(sampler.target_structure.nodelist, [0, 1])
+
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):
