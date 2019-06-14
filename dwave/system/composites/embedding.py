@@ -45,11 +45,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         find_embedding (function, default=:func:`minorminer.find_embedding`):
             A function `find_embedding(S, T, **kwargs)` where `S` and `T`
-            are edgelists. The function can accept addition keyword arguments.
+            are edgelists. The function can accept additional keyword arguments.
 
         embedding_parameters (dict, optional):
-            If provided, parameter are passed to the embedding method as keyword
-            arguments.
+            If provided, parameters are passed to the embedding method as
+            keyword arguments.
 
     Examples:
 
@@ -72,10 +72,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         # keep any embedding parameters around until later, because we might
         # want to overwrite them
-        if embedding_parameters is None:
-            self.embedding_parameters = {}
-        else:
-            self.embedding_parameters = embedding_parameters
+        self.embedding_parameters = embedding_parameters or {}
         self.find_embedding = find_embedding
 
         # set the parameters
@@ -134,7 +131,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 broken before unembedding.
 
             embedding_parameters (dict, optional):
-                If provided, parameter are passed to the embedding method as
+                If provided, parameters are passed to the embedding method as
                 keyword arguments. Overrides any `embedding_parameters` passed
                 to the constructor.
 
@@ -160,7 +157,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if embedding_parameters is None:
             embedding_parameters = self.embedding_parameters
         else:
-            # update the base parameters with the new ones provided
+            # we want the parameters provided to the constructor, updated with
+            # the ones provided to the sample method. To avoid the extra copy
+            # we do an update, avoiding the keys that would overwrite the
+            # sample-level embedding parameters
             embedding_parameters.update((key, val)
                                         for key, val in self.embedding_parameters
                                         if key not in embedding_parameters)
@@ -176,6 +176,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
                                  smear_vartype=dimod.SPIN)
 
         if 'initial_state' in parameters:
+            # if initial_state was provided in terms of the source BQM, we want
+            # to modify it to now provide the initial state for the target BQM.
+            # we do this by spreading the initial state values over the
+            # chains
             state = parameters['initial_state']
             parameters['initial_state'] = {u: state[v]
                                            for v, chain in embedding.items()
@@ -197,12 +201,12 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
 
         find_embedding (function, default=:func:`minorminer.find_embedding`):
             A function `find_embedding(S, T, **kwargs)` where `S` and `T`
-            are edgelists. The function can accept addition keyword arguments.
+            are edgelists. The function can accept additional keyword arguments.
             The function is used to find the embedding for the first problem
             solved.
 
         embedding_parameters (dict, optional):
-            If provided, parameter are passed to the embedding method as keyword
+            If provided, parameters are passed to the embedding method as keyword
             arguments.
 
     Examples:
@@ -335,7 +339,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 broken before unembedding.
 
             embedding_parameters (dict, optional):
-                If provided, parameter are passed to the embedding method as
+                If provided, parameters are passed to the embedding method as
                 keyword arguments. Overrides any `embedding_parameters` passed
                 to the constructor. Only used on the first call.
 
