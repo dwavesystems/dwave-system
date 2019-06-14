@@ -40,9 +40,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
     function each time one of its sampling methods is called.
 
     Args:
-        sampler (:class:`dimod.Sampler`):
-            Structured dimod sampler, such as a
-            :obj:`~dwave.system.samplers.DWaveSampler()`.
+        child_sampler (:class:`dimod.Sampler`):
+            A dimod sampler, such as a :obj:`.DWaveSampler`, that has a accepts
+            only binary quadratic models of a particular structure.
 
         find_embedding (function, default=:func:`minorminer.find_embedding`):
             A function `find_embedding(S, T, **kwargs)` where `S` and `T`
@@ -66,9 +66,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
                  find_embedding=minorminer.find_embedding,
                  embedding_parameters=None):
 
-        if not isinstance(child_sampler, dimod.Structured):
-            raise dimod.InvalidComposition("EmbeddingComposite should only be "
-                                           "applied to a Structured sampler")
         self.children = [child_sampler]
 
         # keep any embedding parameters around until later, because we might
@@ -87,8 +84,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
         # set the properties
         self.properties = dict(child_properties=child_sampler.properties.copy())
 
-        # track the child's structure
-        self.target_structure = child_sampler.structure
+        # track the child's structure. We use a dfs in case intermediate
+        # composites are not structured. We could expose multiple different
+        # searches but since (as of 14 june 2019) all composites have single
+        # children, just doing dfs seems safe for now.
+        self.target_structure = dimod.child_structure_dfs(child_sampler)
 
     parameters = None  # overwritten by init
     """dict[str, list]: Parameters in the form of a dict.
