@@ -27,7 +27,9 @@ import dwave.embedding
 from dwave.system.composites import (EmbeddingComposite,
                                      FixedEmbeddingComposite,
                                      LazyFixedEmbeddingComposite,
-                                     LazyEmbeddingComposite)
+                                     LazyEmbeddingComposite,
+                                     AutoEmbeddingComposite,
+                                     )
 
 from dwave.system.testing import MockDWaveSampler, mock
 from dwave.embedding import chain_breaks
@@ -384,3 +386,31 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
 
         # Check that at least one response was found
         self.assertGreaterEqual(len(response), 1)
+
+
+class TestAutoEmbeddingComposite(unittest.TestCase):
+    def test_broken_find_embedding(self):
+        nodelist = [0, 1, 2, 3]
+        edgelist = [(0, 1), (1, 2), (2, 3), (0, 3)]
+        child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+
+        def find_embedding(*args, **kwargs):
+            raise NotImplementedError
+
+        sampler = AutoEmbeddingComposite(child, find_embedding=find_embedding)
+
+        sampler.sample_ising({}, {(0, 1): -1})
+
+        with self.assertRaises(NotImplementedError):
+            sampler.sample_ising({}, {('a', 0): -1})
+
+    def test_smoke(self):
+        nodelist = [0, 1, 2, 3]
+        edgelist = [(0, 1), (1, 2), (2, 3), (0, 3)]
+        child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+
+        sampler = AutoEmbeddingComposite(child)
+
+        sampler.sample_ising({}, {(0, 1): -1})
+
+        sampler.sample_ising({}, {('a', 0): -1})

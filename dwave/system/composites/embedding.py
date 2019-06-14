@@ -27,6 +27,7 @@ __all__ = ('EmbeddingComposite',
            'FixedEmbeddingComposite',
            'LazyFixedEmbeddingComposite',
            'LazyEmbeddingComposite',  # deprecated
+           'AutoEmbeddingComposite',
            )
 
 
@@ -441,3 +442,43 @@ class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
     def __init__(self, child_sampler):
         super(LazyEmbeddingComposite, self).__init__(child_sampler)
         warn("'LazyEmbeddingComposite' has been renamed to 'LazyFixedEmbeddingComposite'.", DeprecationWarning)
+
+
+class AutoEmbeddingComposite(EmbeddingComposite):
+    """Composite that maps problems to a structured sampler.
+
+    Differs from :class:`.EmbeddingComposite` by not embedding binary quadratic
+    models that already match the child sampler.
+
+    Args:
+        sampler (:class:`dimod.Sampler`):
+            Structured dimod sampler, such as a
+            :obj:`~dwave.system.samplers.DWaveSampler()`.
+
+        find_embedding (function, default=:func:`minorminer.find_embedding`):
+            A function `find_embedding(S, T, **kwargs)` where `S` and `T`
+            are edgelists. The function can accept additional keyword arguments.
+
+        embedding_parameters (dict, optional):
+            If provided, parameters are passed to the embedding method as
+            keyword arguments.
+
+    """
+    def __init__(self, child_sampler,
+                 find_embedding=minorminer.find_embedding,
+                 **kwargs):
+
+        def auto_find_embedding(S, *args, **kw):
+            # check if the problem already matches the target, in which case
+            # don't embed
+            adj = self.target_structure.adjacency
+
+            if all(u in adj.get(v, []) if u != v else u in adj for u, v in S):
+                # identity embedding
+                return {v: [v] for pair in S for v in pair}
+
+            return find_embedding(S, *args, **kw)
+
+        super(AutoEmbeddingComposite, self).__init__(child_sampler,
+                                                     find_embedding=auto_find_embedding,
+                                                     **kwargs)

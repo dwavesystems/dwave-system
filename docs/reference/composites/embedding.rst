@@ -31,3 +31,35 @@ Methods
    EmbeddingComposite.sample
    EmbeddingComposite.sample_ising
    EmbeddingComposite.sample_qubo
+
+======================
+AutoEmbeddingComposite
+======================
+
+Class
+=====
+
+.. currentmodule:: dwave.system.composites
+.. autoclass:: AutoEmbeddingComposite
+
+Properties
+==========
+
+.. autosummary::
+   :toctree: generated/
+
+   AutoEmbeddingComposite.child
+   AutoEmbeddingComposite.children
+   AutoEmbeddingComposite.properties
+   AutoEmbeddingComposite.parameters
+
+
+Methods
+=======
+
+.. autosummary::
+   :toctree: generated/
+
+   AutoEmbeddingComposite.sample
+   AutoEmbeddingComposite.sample_ising
+   AutoEmbeddingComposite.sample_qubo
