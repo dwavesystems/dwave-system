@@ -58,6 +58,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
             paramter, the chain interactions will be passed to the child
             sampler.
 
+        child_structure_search (function, optional):
+            Defaults to :func:`dimod.child_structure_dfs`. Should be a function
+            that accepts a sampler and returns the
+            :attr:`dimod.Structured.structure`.
+
     Examples:
 
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
@@ -72,6 +77,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                  find_embedding=minorminer.find_embedding,
                  embedding_parameters=None,
                  scale_aware=False,
+                 child_structure_search=dimod.child_structure_dfs
                  ):
 
         self.children = [child_sampler]
@@ -96,7 +102,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         # composites are not structured. We could expose multiple different
         # searches but since (as of 14 june 2019) all composites have single
         # children, just doing dfs seems safe for now.
-        self.target_structure = dimod.child_structure_dfs(child_sampler)
+        self.target_structure = child_structure_search(child_sampler)
 
         self.scale_aware = bool(scale_aware)
 
@@ -472,8 +478,9 @@ class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
 class AutoEmbeddingComposite(EmbeddingComposite):
     """Composite that maps problems to a structured sampler.
 
-    Differs from :class:`.EmbeddingComposite` by not embedding binary quadratic
-    models that already match the child sampler.
+    Differs from :class:`.EmbeddingComposite` by first trying to solve the
+    binary quadratic model on the child sampler and only embedding if a
+    :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
 
     Args:
         sampler (:class:`dimod.Sampler`):
@@ -484,26 +491,36 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             A function `find_embedding(S, T, **kwargs)` where `S` and `T`
             are edgelists. The function can accept additional keyword arguments.
 
-        embedding_parameters (dict, optional):
-            If provided, parameters are passed to the embedding method as
-            keyword arguments.
+        kwargs:
+            See docs for :class:`.EmbeddingComposite` for additional keyword
+            arguments.
 
     """
-    def __init__(self, child_sampler,
-                 find_embedding=minorminer.find_embedding,
-                 **kwargs):
+    def __init__(self, child_sampler, **kwargs):
 
-        def auto_find_embedding(S, *args, **kw):
-            # check if the problem already matches the target, in which case
-            # don't embed
-            adj = self.target_structure.adjacency
+        child_search = kwargs.get('child_structure_search',
+                                  dimod.child_structure_dfs)
 
-            if all(u in adj.get(v, []) if u != v else u in adj for u, v in S):
-                # identity embedding
-                return {v: [v] for pair in S for v in pair}
-
-            return find_embedding(S, *args, **kw)
+        def permissive_child_structure(sampler):
+            try:
+                return child_search(sampler)
+            except (TypeError, AttributeError):
+                return None
 
         super(AutoEmbeddingComposite, self).__init__(child_sampler,
-                                                     find_embedding=auto_find_embedding,
+                                                     child_structure_search=permissive_child_structure,
                                                      **kwargs)
+
+    def sample(self, bqm, **parameters):
+        child = self.child
+
+        # we want to pass only the parameters relevent to the child sampler
+        subparameters = {key: val for key, val in parameters.items()
+                         if key in child.parameters}
+        try:
+            return child.sample(bqm, **subparameters)
+        except dimod.exceptions.BinaryQuadraticModelStructureError:
+            # does not match the structure so try embedding
+            pass
+
+        return super(AutoEmbeddingComposite, self).sample(bqm, **parameters)
