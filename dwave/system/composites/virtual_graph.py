@@ -216,6 +216,8 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
             if self.flux_biases is not None:
                 kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
+        kwargs.setdefault('chain_strength', self.chain_strength)
+
         return super(VirtualGraphComposite, self).sample(bqm, **kwargs)
 
 
