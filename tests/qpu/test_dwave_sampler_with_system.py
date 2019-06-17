@@ -12,59 +12,56 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 import unittest
-import itertools
-import random
 
-import numpy as np
 import dimod
 
 from dwave.cloud.exceptions import ConfigFileError
 
 from dwave.system.samplers import DWaveSampler
-from dwave.system.composites import EmbeddingComposite
-
-try:
-    DWaveSampler()
-    _config_found = True
-except (ValueError, ConfigFileError):
-    _config_found = False
 
 
-@unittest.skipUnless(_config_found, "no configuration found to connect to a system")
 class TestDWaveSamplerSystem(unittest.TestCase):
-    def test_typical_small(self):
-        h = [0, 0, 0, 0, 0]
-        J = {(0, 4): 1}
-        bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
 
-        response = DWaveSampler(solver={'qpu': True}).sample(bqm)
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.qpu = DWaveSampler(solver=dict(qpu=True))
+        except (ValueError, ConfigFileError):
+            cls.qpu = False
 
-        self.assertFalse(np.any(response.record.sample == 0))
-        self.assertIs(response.vartype, dimod.SPIN)
+    @classmethod
+    def tearDownClass(cls):
+        if cls.qpu:
+            cls.qpu.client.close()
 
-        rows, cols = response.record.sample.shape
+    def setUp(self):
+        if not self.qpu:
+            self.skipTest("no qpu available")
 
-        self.assertEqual(cols, 5)
+    def test_smoke_sample_ising(self):
+        sampler = self.qpu
 
-    def test_with_software_exact_solver(self):
+        h = {v: 0 for v in sampler.nodelist}
+        J = {interaction: 0 for interaction in sampler.edgelist}
 
-        sampler = DWaveSampler(solver={'software': True})
+        sampleset = sampler.sample_ising(h, J)
+        sampleset.resolve()
 
-        bqm = dimod.BinaryQuadraticModel.empty(dimod.SPIN)
+    def test_smoke_sample_qubo(self):
+        sampler = self.qpu
 
-        # plant a solution
+        Q = {interaction: 0 for interaction in sampler.edgelist}
 
-        for v in sampler.nodelist:
-            bqm.add_variable(v, .001)
+        sampleset = sampler.sample_qubo(Q)
+        sampleset.resolve()
 
-        for u, v in sampler.edgelist:
-            bqm.add_interaction(u, v, -1)
+    def test_mismatched_ising(self):
+        sampler = self.qpu
 
-        resp = sampler.sample(bqm, num_reads=100)
+        h = {len(sampler.nodelist)*100: 1}  # get a qubit we know isn't there
+        J = {}
 
-        # the ground solution should be all spin down
-        ground = dict(next(iter(resp)))
-
-        self.assertEqual(ground, {v: -1 for v in bqm})
+        with self.assertRaises(dimod.exceptions.BinaryQuadraticModelStructureError):
+            sampler.sample_ising(h, J).resolve()
