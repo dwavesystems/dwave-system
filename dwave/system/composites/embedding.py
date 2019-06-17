@@ -392,6 +392,10 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
             Deprecated. Dictionary to describe source graph. Ex. `{node:
             {node neighbours}}`.
 
+        kwargs:
+            See docs for :class:`.EmbeddingComposite` for additional keyword
+            arguments. Note that `find_embedding` and `embedding_parameters`
+            keyword arguments are ignored.
 
     Examples:
 
@@ -407,8 +411,9 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
         >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
 
     """
-    def __init__(self, child_sampler, embedding=None, source_adjacency=None):
-        super(FixedEmbeddingComposite, self).__init__(child_sampler)
+    def __init__(self, child_sampler, embedding=None, source_adjacency=None,
+                 **kwargs):
+        super(FixedEmbeddingComposite, self).__init__(child_sampler, **kwargs)
 
         # dev note: this entire block is to support a deprecated feature and can
         # be removed in the next major release
