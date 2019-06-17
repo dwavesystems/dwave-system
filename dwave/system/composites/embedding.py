@@ -21,7 +21,8 @@ from warnings import warn
 import dimod
 import minorminer
 
-from dwave.embedding import target_to_source, unembed_sampleset, embed_bqm
+from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
+                             chain_to_quadratic)
 
 __all__ = ('EmbeddingComposite',
            'FixedEmbeddingComposite',
@@ -52,6 +53,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
             If provided, parameters are passed to the embedding method as
             keyword arguments.
 
+        scale_aware (bool, optional, default=False):
+            If true, and if `child_sampler` accepts an `ignored_interactions`
+            paramter, the chain interactions will be passed to the child
+            sampler.
+
     Examples:
 
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
@@ -64,7 +70,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
     """
     def __init__(self, child_sampler,
                  find_embedding=minorminer.find_embedding,
-                 embedding_parameters=None):
+                 embedding_parameters=None,
+                 scale_aware=False,
+                 ):
 
         self.children = [child_sampler]
 
@@ -89,6 +97,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
         # searches but since (as of 14 june 2019) all composites have single
         # children, just doing dfs seems safe for now.
         self.target_structure = dimod.child_structure_dfs(child_sampler)
+
+        self.scale_aware = bool(scale_aware)
 
     parameters = None  # overwritten by init
     """dict[str, list]: Parameters in the form of a dict.
@@ -185,6 +195,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
             parameters['initial_state'] = {u: state[v]
                                            for v, chain in embedding.items()
                                            for u in chain}
+
+        if self.scale_aware and 'ignored_interactions' in child.parameters:
+
+            ignored = []
+            for chain in embedding.values():
+                # just use 0 as a null value because we don't actually need
+                # the biases, just the interactions
+                ignored.extend(chain_to_quadratic(chain, target_adjacency, 0))
+
+            parameters['ignored_interactions'] = ignored
 
         response = child.sample(bqm_embedded, **parameters)
 
