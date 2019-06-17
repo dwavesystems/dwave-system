@@ -25,6 +25,8 @@ from warnings import warn
 
 import dimod
 
+from dimod.exceptions import BinaryQuadraticModelStructureError
+
 from dwave.cloud import Client
 
 __all__ = ['DWaveSampler']
@@ -267,6 +269,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         except TypeError:
             active_variables = list(variables)
         num_variables = len(active_variables)
+
+        # developer note: in the future we should probably catch exceptions
+        # from the cloud client, but for now this is simpler/clearner.
+        if not self.solver.check_problem(h, J):
+            msg = "Problem graph incompatible with solver."
+            raise BinaryQuadraticModelStructureError(msg)
 
         future = self.solver.sample_ising(h, J, **kwargs)
 

@@ -441,3 +441,12 @@ class TestAutoEmbeddingComposite(unittest.TestCase):
         sampler.sample_ising({}, {(0, 1): -1})
 
         sampler.sample_ising({}, {('a', 0): -1})
+
+    def test_unstructured(self):
+        child = dimod.NullSampler()
+
+        sampler = AutoEmbeddingComposite(child)
+
+        sampler.sample_ising({}, {(0, 1): -1})
+
+        sampler.sample_ising({}, {('a', 0): -1}, embedding_parameters={})
