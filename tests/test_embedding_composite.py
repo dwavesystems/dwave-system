@@ -200,6 +200,27 @@ class TestEmbeddingComposite(unittest.TestCase):
         sampler = EmbeddingComposite(intermediate)
         self.assertEqual(sampler.target_structure.nodelist, [0, 1])
 
+    def test_scale_aware_scale_composite(self):
+
+        nodelist = [0, 1, 2]
+        edgelist = [(0, 1), (1, 2), (0, 2)]
+        embedding = {'a': [0], 'b': [1, 2]}
+
+        sampler = FixedEmbeddingComposite(
+            dimod.TrackingComposite(
+                dimod.ScaleComposite(
+                    dimod.StructureComposite(
+                        dimod.NullSampler(),
+                        nodelist, edgelist))),
+            embedding=embedding, scale_aware=True)
+
+        _ = sampler.sample_ising({'a': 100, 'b': -100}, {'ab': 300})
+
+        self.assertIn('ignored_interactions', sampler.child.input)
+        ignored = sampler.child.input['ignored_interactions']
+
+        self.assertTrue(ignored == [(1, 2)] or ignored == [(2, 1)])
+
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):
