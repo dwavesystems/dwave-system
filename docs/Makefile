@@ -18,7 +18,6 @@ clean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf reference/generated
 	-rm -rf reference/samplers/generated
-	-rm -rf reference/composites/generated
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

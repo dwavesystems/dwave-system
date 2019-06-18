@@ -45,9 +45,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
             A dimod sampler, such as a :obj:`.DWaveSampler`, that has a accepts
             only binary quadratic models of a particular structure.
 
-        find_embedding (function, default=:func:`minorminer.find_embedding`):
+        find_embedding (function, optional):
             A function `find_embedding(S, T, **kwargs)` where `S` and `T`
             are edgelists. The function can accept additional keyword arguments.
+            Defaults to :func:`minorminer.find_embedding`.
 
         embedding_parameters (dict, optional):
             If provided, parameters are passed to the embedding method as
@@ -59,9 +60,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
             sampler.
 
         child_structure_search (function, optional):
-            Defaults to :func:`dimod.child_structure_dfs`. Should be a function
-            that accepts a sampler and returns the
-            :attr:`dimod.Structured.structure`.
+            A function `child_structure_search(sampler)` that accepts a sampler
+            and returns the :attr:`dimod.Structured.structure`.
+            Defaults to :func:`dimod.child_structure_dfs`.
 
     Examples:
 
@@ -487,9 +488,10 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             Structured dimod sampler, such as a
             :obj:`~dwave.system.samplers.DWaveSampler()`.
 
-        find_embedding (function, default=:func:`minorminer.find_embedding`):
+        find_embedding (function, optional):
             A function `find_embedding(S, T, **kwargs)` where `S` and `T`
             are edgelists. The function can accept additional keyword arguments.
+            Defaults to :func:`minorminer.find_embedding`.
 
         kwargs:
             See docs for :class:`.EmbeddingComposite` for additional keyword
