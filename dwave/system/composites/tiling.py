@@ -84,41 +84,19 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
     """
     nodelist = None
-    """list: List of active qubits for the structured solver.
-
-    Examples:
-       >>> sampler_tile = TilingComposite(DWaveSampler(), 2, 1, 4)
-       >>> sampler_tile.nodelist   # doctest: +SKIP
-       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-
-    """
+    """list: List of active qubits for the structured solver."""
 
     edgelist = None
-    """list: List of active couplers for the D-Wave solver.
-
-    Examples:
-       >>> sampler_tile = TilingComposite(DWaveSampler(), 1, 2, 4)
-       >>> len(sampler_tile.edgelist)
-       36
-    """
+    """list: List of active couplers for the D-Wave solver."""
 
     parameters = None
-    """dict[str, list]: Parameters in the form of a dict.
-
-    See :obj:`.EmbeddingComposite.parameters` for detailed information.
-    """
+    """dict[str, list]: Parameters in the form of a dict."""
 
     properties = None
-    """dict: Properties in the form of a dict.
-
-    See :obj:`.EmbeddingComposite.properties` for detailed information.
-    """
+    """dict: Properties in the form of a dict."""
 
     children = None
-    """list: The single wrapped structured sampler.
-
-    See :obj:`.EmbeddingComposite.children` for detailed information.
-    """
+    """list: The single wrapped structured sampler."""
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
 

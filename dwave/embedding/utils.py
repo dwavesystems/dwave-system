@@ -49,7 +49,7 @@ def target_to_source(target_adjacency, embedding):
 
         >>> target_adjacency = {0: {1, 3}, 1: {0, 2}, 2: {1, 3}, 3: {0, 2}}  # a square graph
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
-        >>> source_adjacency = dimod.embedding.target_to_source(target_adjacency, embedding)
+        >>> source_adjacency = dwave.embedding.target_to_source(target_adjacency, embedding)
         >>> source_adjacency  # triangle
         {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}}
 
@@ -58,7 +58,7 @@ def target_to_source(target_adjacency, embedding):
         >>> import networkx as nx
         >>> target_graph = nx.complete_graph(5)
         >>> embedding = {'a': {0, 1, 2}, 'b': {3, 4}}
-        >>> dimod.embedding.target_to_source(target_graph, embedding)
+        >>> dwave.embedding.target_to_source(target_graph, embedding)
 
     """
     # the nodes in the source adjacency are just the keys of the embedding
@@ -116,6 +116,7 @@ def chain_to_quadratic(chain, target_adjacency, chain_strength):
         ValueError: If the variables in chain do not form a connected subgraph of target.
 
     Examples:
+
         >>> chain = {1, 2}
         >>> target_adjacency = {0: {1, 2}, 1: {0, 2}, 2: {0, 1}}
         >>> dimod.embedding.chain_to_quadratic(chain, target_adjacency, 1)
@@ -172,25 +173,13 @@ def chain_break_frequency(samples_like, embedding):
         and uses :func:`.chain_break_frequency` to show that out of two synthetic samples,
         one ([-1, +1]) represents a broken chain.
 
-        >>> import dimod
         >>> import numpy as np
+        ...
         >>> samples = np.array([[-1, +1], [+1, +1]])
         >>> embedding = {'a': {0, 1}}
-        >>> print(dimod.chain_break_frequency(samples, embedding)['a'])
+        >>> print(dwave.embedding.chain_break_frequency(samples, embedding)['a'])
         0.5
 
-
-        This example embeds a single source node (0) as a chain of two target nodes (a, b)
-        and uses :func:`.chain_break_frequency` to show that out of two samples in a
-        dimod response, one ({'a': 1, 'b': 0}) represents a broken chain.
-
-        >>> import dimod
-        ...
-        >>> response = dimod.SampleSet.from_samples([{'a': 1, 'b': 0}, {'a': 0, 'b': 0}],
-        ...                                        {'energy': [1, 0]}, {}, dimod.BINARY)
-        >>> embedding = {0: {'a', 'b'}}
-        >>> print(dimod.chain_break_frequency(response, embedding)[0])
-        0.5
 
     """
     if isinstance(samples_like, dimod.SampleSet):
@@ -224,8 +213,8 @@ def edgelist_to_adjacency(edgelist):
             An iterator over 2-tuples where each 2-tuple is an edge.
 
     Returns:
-        dict: The adjacency dict. A dict of the form {v: Nv, ...} where v is a node in a graph and
-        Nv is the neighbors of v as an set.
+        dict: The adjacency dict. A dict of the form `{v: Nv, ...}` where `v` is
+        a node in a graph and `Nv` is the neighbors of `v` as an set.
 
     """
     adjacency = dict()
