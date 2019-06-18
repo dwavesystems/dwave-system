@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 """
 A :std:doc:`dimod composite <dimod:reference/samplers>` that uses the D-Wave virtual
 graph feature for improved :std:doc:`minor-embedding <system:intro>`.
@@ -26,9 +26,6 @@ couplings.
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
 """
-
-from six import iteritems
-
 import dimod
 
 from dwave.system.composites.embedding import FixedEmbeddingComposite
@@ -40,7 +37,7 @@ FLUX_BIAS_KWARG = 'flux_biases'
 __all__ = ['VirtualGraphComposite']
 
 
-class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
+class VirtualGraphComposite(FixedEmbeddingComposite):
     """Composite to use the D-Wave virtual graph feature for minor-embedding.
 
     Inherits from :class:`dimod.ComposedSampler` and :class:`dimod.Structured`.
@@ -129,14 +126,8 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
                  flux_bias_num_reads=1000,
                  flux_bias_max_age=3600):
 
-        child, = self.children = [FixedEmbeddingComposite(sampler, embedding)]
-        self.nodelist, self.edgelist, self.adjacency = child.structure
-        self.embedding = child.embedding
-
-        self.parameters = parameters = {'apply_flux_bias_offsets': []}
-        parameters.update(child.parameters)
-
-        self.properties = child.properties.copy()  # shallow copy
+        super(VirtualGraphComposite, self).__init__(sampler, embedding)
+        self.parameters.update(apply_flux_bias_offsets=[])
 
         # Validate the chain strength, or obtain it from J-range if chain strength is not provided.
         self.chain_strength = _validate_chain_strength(sampler, chain_strength)
@@ -158,142 +149,6 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         self.flux_biases = [flux_biases.get(v, 0.0) for v in range(sampler.properties['num_qubits'])]
 
         return
-
-    # override the abstract properties
-    nodelist = None
-    """list:
-           Nodes available to the composed sampler.
-
-    Examples:
-       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
-       Because qubits 0, 1, 4, 5 are active on the selected D-Wave solver, the three nodes, x, y, and z,
-       specified by the embedding, are all available to problems using this composed sampler.
-
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
-       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
-       >>> sampler.nodelist  # doctest: +SKIP
-       ['x', 'y', 'z']
-
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-    for explanations of technical terms in descriptions of Ocean tools.
-
-    """
-
-    edgelist = None
-    """list:
-           Edges available to the composed sampler.
-
-    Examples:
-       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
-       Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
-       between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
-       composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
-       connected to the other four qubits, so node `a` does not share an edge with any other nodes.
-
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
-       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}, 'a': {8}}
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
-       >>> sampler.edgelist  # doctest: +SKIP
-       [('x', 'y'), ('x', 'z'), ('y', 'z')]
-
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-    for explanations of technical terms in descriptions of Ocean tools.
-
-    """
-
-    adjacency = None
-    """dict[variable, set]:
-           Adjacency structure for the composed sampler.
-
-    Examples:
-       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
-       Because qubits 0, 5, and coupled qubits {0, 4} are all coupled on the selected D-Wave solver, edges
-       between three nodes, x, y, and z, as specified by the embedding, are available to problems using this
-       composed sampler. However, qubit 8 is in an adjacent unit cell on the D-Wave solver and not directly
-       connected to the other four qubits, so node `a` does not share an edge with any other nodes.
-
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
-       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}, 'a': {8}}
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
-       >>> sampler.adjacency  # doctest: +SKIP
-       {'a': set(), 'x': {'y', 'z'}, 'y': {'x', 'z'}, 'z': {'x', 'y'}}
-
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-    for explanations of technical terms in descriptions of Ocean tools.
-
-    """
-
-    children = None
-    """list: List containing the FixedEmbeddingComposite-wrapped sampler."""
-
-    parameters = None
-    """dict[str, list]: Parameters in the form of a dict.
-
-    For an instantiated composed sampler, keys are the keyword parameters accepted by the child
-    sampler with an additional parameter, 'apply_flux_bias_offsets'.
-
-    Examples:
-       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`
-       and views the composed sampler's parameters.
-
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
-       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
-       >>> sampler.parameters  # doctest: +SKIP
-       {u'anneal_offsets': ['parameters'],
-        u'anneal_schedule': ['parameters'],
-        u'annealing_time': ['parameters'],
-        u'answer_mode': ['parameters'],
-        'apply_flux_bias_offsets': [],
-        u'auto_scale': ['parameters'],
-       >>>  # Snipped above response for brevity
-
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-    for explanations of technical terms in descriptions of Ocean tools.
-
-    """
-
-    properties = None
-    """dict: Properties in the form of a dict.
-
-    For an instantiated composed sampler, contains one key :code:`'child_properties'` that
-    has a copy of the child sampler's properties.
-
-    Examples:
-       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that uses a D-Wave solver selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`
-       and views the composed sampler's properties.
-
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
-       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding)  # doctest: +SKIP
-       >>> sampler.properties  # doctest: +SKIP
-       {'child_properties': {u'anneal_offset_ranges': [[-0.2197463755538704,
-           0.03821687759418928],
-          [-0.2242514597680286, 0.01718456460967399],
-          [-0.20860153999435985, 0.05511969218508182],
-          [-0.2108920134230625, 0.056392603743884134],
-       >>>  # Snipped above response for brevity
-
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-    for explanations of technical terms in descriptions of Ocean tools.
-
-    """
 
     @dimod.bqm_structured
     def sample(self, bqm, apply_flux_bias_offsets=True, **kwargs):
@@ -356,13 +211,14 @@ class VirtualGraphComposite(dimod.ComposedSampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        child = self.child
 
         if apply_flux_bias_offsets:
             if self.flux_biases is not None:
                 kwargs[FLUX_BIAS_KWARG] = self.flux_biases
 
-        return child.sample(bqm, **kwargs)
+        kwargs.setdefault('chain_strength', self.chain_strength)
+
+        return super(VirtualGraphComposite, self).sample(bqm, **kwargs)
 
 
 def _validate_chain_strength(sampler, chain_strength):
