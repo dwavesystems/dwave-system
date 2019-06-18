@@ -6,7 +6,7 @@ Reference Documentation
 .. toctree::
    :maxdepth: 2
 
-   samplers/index
+   samplers
    composites
    embedding
    utilities

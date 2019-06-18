@@ -1,20 +1,27 @@
-.. _dwave_sampler:
+.. _included_samplers:
 
-==============
-D-Wave Sampler
-==============
-
-.. automodule:: dwave.system.samplers.dwave_sampler
+========
+Samplers
+========
 
 .. currentmodule:: dwave.system.samplers
 
+.. contents::
+    :depth: 3
+
+QPU
+===
+
+DWaveSampler
+------------
+
 Class
-=====
+~~~~~
 
 .. autoclass:: DWaveSampler
 
-Sampler Properties
-==================
+Properties
+~~~~~~~~~~
 
 :std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>` lists and describes
 the parameters and properties of D-Wave systems.
@@ -29,8 +36,8 @@ the parameters and properties of D-Wave systems.
    DWaveSampler.adjacency
    DWaveSampler.structure
 
-Sample Methods
-==============
+Methods
+~~~~~~~
 
 .. autosummary::
    :toctree: generated/
@@ -38,11 +45,4 @@ Sample Methods
    DWaveSampler.sample
    DWaveSampler.sample_ising
    DWaveSampler.sample_qubo
-
-Methods
-=======
-
-.. autosummary::
-   :toctree: generated/
-
    DWaveSampler.validate_anneal_schedule
