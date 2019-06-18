@@ -12,10 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 __all__ = ['__version__', '__author__', '__authoremail__', '__description__']
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 __author__ = 'D-Wave Systems Inc.'
 __authoremail__ = 'acondello@dwavesys.com'
 __description__ = 'All things D-Wave System.'
