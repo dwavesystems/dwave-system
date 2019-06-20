@@ -64,20 +64,6 @@ class MockSolver():
                                  'chains': ""},
                   'chip_id': 'MockSolver'}
 
-    def check_problem(self, linear, quadratic):
-        for v in linear:
-            if v not in self.nodes:
-                return False
-        for u, v in quadratic:
-            if u not in self.nodes:
-                return False
-            if v not in self.nodes:
-                return False
-            if u != v:
-                if not ((u, v) in self.edges or (v, u) in self.edges):
-                    return False
-        return True
-
     def sample_ising(self, h, J, **kwargs):
         for key in kwargs:
             if key not in self.properties['parameters']:
