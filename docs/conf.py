@@ -94,6 +94,7 @@ modindex_common_prefix = ['dwave-system.']
 doctest_global_setup = """
 from __future__ import print_function, division
 
+import dimod
 import dwave.embedding
 import dwave.system
 
