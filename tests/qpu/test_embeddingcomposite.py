@@ -1,4 +1,4 @@
-# Copyright 2019 D-Wave Systems Inc.
+# Copyright 2018 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -15,17 +15,19 @@
 # =============================================================================
 import unittest
 
+import dimod
+
 from dwave.cloud.exceptions import ConfigFileError
 
-from dwave.system.schedules import ramp
-from dwave.system.samplers import DWaveSampler
+from dwave.system import DWaveSampler, EmbeddingComposite
 
 
-class TestRamp(unittest.TestCase):
+class TestEmbeddingCompositeExactSolver(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(qpu=True, h_gain_schedule=True))
+            cls.qpu = DWaveSampler(solver=dict(qpu=True, initial_state=True))
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 
@@ -33,14 +35,14 @@ class TestRamp(unittest.TestCase):
     def tearDownClass(cls):
         cls.qpu.client.close()
 
-    def test_with_h_gain_schedule(self):
-        sampler = self.qpu
+    def test_initial_state(self):
+        sampler = EmbeddingComposite(DWaveSampler())
 
-        schedule = ramp(.5, .2, sampler.properties['default_annealing_time'])
+        bqm = dimod.BinaryQuadraticModel.from_ising({'a': 2.0, 'b': -2.0},
+                                                    {('a', 'b'): -1})
 
-        sampler.validate_anneal_schedule(schedule)
+        kwargs = {'initial_state': {'a': 1, 'b': 1},
+                  'anneal_schedule': [(0, 1), (55.0, 0.45),
+                                      (155.0, 0.45), (210.0, 1)]}
 
-        h = {v: 1 for v in sampler.nodelist}
-
-        sampleset = sampler.sample_ising(h, {}, h_gain_schedule=schedule)
-        sampleset.record  # resolve the future
+        sampler.sample(bqm, **kwargs).resolve()

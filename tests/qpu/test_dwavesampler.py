@@ -22,23 +22,18 @@ from dwave.cloud.exceptions import ConfigFileError
 from dwave.system.samplers import DWaveSampler
 
 
-class TestDWaveSamplerSystem(unittest.TestCase):
+class TestDWaveSampler(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         try:
             cls.qpu = DWaveSampler(solver=dict(qpu=True))
         except (ValueError, ConfigFileError):
-            cls.qpu = False
+            raise unittest.SkipTest("no qpu available")
 
     @classmethod
     def tearDownClass(cls):
-        if cls.qpu:
-            cls.qpu.client.close()
-
-    def setUp(self):
-        if not self.qpu:
-            self.skipTest("no qpu available")
+        cls.qpu.client.close()
 
     def test_smoke_sample_ising(self):
         sampler = self.qpu
