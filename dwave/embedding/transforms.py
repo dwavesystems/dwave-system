@@ -79,7 +79,7 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         ...
         >>> target = nx.cycle_graph(4)
 
-        We use map the `c` variable in the source binary quadratic model to
+        We map the `c` variable in the source binary quadratic model to
         nodes `2` and `3` in the target graph.
 
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
@@ -201,7 +201,7 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
         ...
         >>> target = nx.cycle_graph(4)
 
-        We use map the `c` variable in the source binary quadratic model to
+        We map the `c` variable in the source binary quadratic model to
         nodes `2` and `3` in the target graph.
 
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
@@ -263,7 +263,7 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
         ...
         >>> target = nx.cycle_graph(4)
 
-        We use map the `c` variable in the source binary quadratic model to
+        We map the `c` variable in the source binary quadratic model to
         nodes `2` and `3` in the target graph.
 
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}

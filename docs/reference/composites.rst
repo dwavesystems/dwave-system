@@ -4,8 +4,8 @@
 Composites
 ==========
 
-`dwave~system` provides :std:doc:`dimod composites <dimod:reference/samplers>`
-for using the D~Wave system.
+`dwave-system` provides :std:doc:`dimod composites <dimod:reference/samplers>`
+for using the D-Wave system.
 
 .. currentmodule:: dwave.system.composites
 
