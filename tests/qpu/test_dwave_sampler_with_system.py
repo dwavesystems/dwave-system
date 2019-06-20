@@ -65,3 +65,12 @@ class TestDWaveSamplerSystem(unittest.TestCase):
 
         with self.assertRaises(dimod.exceptions.BinaryQuadraticModelStructureError):
             sampler.sample_ising(h, J).resolve()
+
+    def test_mismatched_qubo(self):
+        sampler = self.qpu
+
+        v = len(sampler.nodelist)*100
+        Q = {(v, v): -1}
+
+        with self.assertRaises(dimod.exceptions.BinaryQuadraticModelStructureError):
+            sampler.sample_qubo(Q).resolve()

@@ -319,6 +319,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             active_variables = list(variables)
         num_variables = len(active_variables)
 
+        # developer note: in the future we should probably catch exceptions
+        # from the cloud client, but for now this is simpler/clearner.
+        if not self.solver.check_problem({}, Q):
+            msg = "Problem graph incompatible with solver."
+            raise BinaryQuadraticModelStructureError(msg)
+
         future = self.solver.sample_qubo(Q, **kwargs)
 
         return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
