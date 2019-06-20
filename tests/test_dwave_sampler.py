@@ -64,10 +64,6 @@ class MockSolver():
                                  'chains': ""},
                   'chip_id': 'MockSolver'}
 
-    def check_problem(self, h, J):
-        return (all(v in self.nodes for v in h) and
-                all((u, v) in self.edges or (v, u) in self.edges for u, v in J))
-
     def sample_ising(self, h, J, **kwargs):
         for key in kwargs:
             if key not in self.properties['parameters']:

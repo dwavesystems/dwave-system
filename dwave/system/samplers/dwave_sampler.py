@@ -271,8 +271,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         num_variables = len(active_variables)
 
         # developer note: in the future we should probably catch exceptions
-        # from the cloud client, but for now this is simpler/clearner.
-        if not self.solver.check_problem(h, J):
+        # from the cloud client, but for now this is simpler/cleaner. We use
+        # the solver's nodes/edges because they are a set, so faster lookup
+        nodes = self.solver.nodes
+        edges = self.solver.edges
+        if not (all(v in nodes for v in h) and
+                all((u, v) in edges or (v, u) in edges for u, v in J)):
             msg = "Problem graph incompatible with solver."
             raise BinaryQuadraticModelStructureError(msg)
 
@@ -318,6 +322,16 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         except TypeError:
             active_variables = list(variables)
         num_variables = len(active_variables)
+
+        # developer note: in the future we should probably catch exceptions
+        # from the cloud client, but for now this is simpler/cleaner. We use
+        # the solver's nodes/edges because they are a set, so faster lookup
+        nodes = self.solver.nodes
+        edges = self.solver.edges
+        if not all(u in nodes if u == v else ((u, v) in edges or (v, u) in edges)
+                   for u, v in Q):
+            msg = "Problem graph incompatible with solver."
+            raise BinaryQuadraticModelStructureError(msg)
 
         future = self.solver.sample_qubo(Q, **kwargs)
 
