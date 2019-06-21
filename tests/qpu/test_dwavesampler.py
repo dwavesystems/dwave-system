@@ -69,3 +69,26 @@ class TestDWaveSampler(unittest.TestCase):
 
         with self.assertRaises(dimod.exceptions.BinaryQuadraticModelStructureError):
             sampler.sample_qubo(Q).resolve()
+
+
+class TestMissingQubits(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            # get a QPU with less than 100% yield
+            cls.qpu = DWaveSampler(solver=dict(qpu=True,
+                                               num_active_qubits__lt=2048))
+        except (ValueError, ConfigFileError):
+            raise unittest.SkipTest("no qpu available")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.qpu.client.close()
+
+    def test_sample_ising_h_list(self):
+        sampler = self.qpu
+
+        h = [0 for _ in range(2048)]
+        J = {edge: 0 for edge in sampler.edgelist}
+
+        sampler.sample_ising(h, J).resolve()
