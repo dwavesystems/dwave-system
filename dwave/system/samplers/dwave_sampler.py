@@ -238,9 +238,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Sample from the specified Ising model.
 
         Args:
-            h (list/dict):
-                Linear biases of the Ising model. If a list, the list's indices
-                are used as variable labels, ignoring 0 biases.
+            h (dict/list):
+                Linear biases of the Ising model. If a dict, should be of the
+                form `{v: bias, ...}` where `v` is a spin-valued variable and
+                `bias` is its associated bias. If a list, it is treated as a
+                list of biases where the indices are the variable labels,
+                except in the case of missing qubits in which case 0 biases are
+                ignored while a non-zero bias set on a missing qubit raises an
+                error.
 
             J (dict[(int, int): float]):
                 Quadratic biases of the Ising model.
@@ -269,15 +274,18 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
+        nodes = self.solver.nodes  # set rather than .nodelist which is a list
+
         if isinstance(h, list):
-            h = dict((v, b) for v, b in enumerate(h) if b)
+            # to be consistent with the cloud-client, we ignore the 0 biases
+            # on missing nodes.
+            h = dict((v, b) for v, b in enumerate(h) if b or v in nodes)
 
         variables = set(h).union(*J)
 
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
         # the solver's nodes/edges because they are a set, so faster lookup
-        nodes = self.solver.nodes
         edges = self.solver.edges
         if not (all(v in nodes for v in h) and
                 all((u, v) in edges or (v, u) in edges for u, v in J)):

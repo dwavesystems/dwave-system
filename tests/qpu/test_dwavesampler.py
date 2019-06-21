@@ -91,4 +91,7 @@ class TestMissingQubits(unittest.TestCase):
         h = [0 for _ in range(2048)]
         J = {edge: 0 for edge in sampler.edgelist}
 
-        sampler.sample_ising(h, J).resolve()
+        sampleset = sampler.sample_ising(h, J)
+
+        self.assertEqual(set(sampleset.variables), set(sampler.nodelist))
+        assert len(sampleset.variables) < 2048  # sanity check
