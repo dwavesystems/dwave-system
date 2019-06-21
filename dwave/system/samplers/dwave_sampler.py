@@ -114,9 +114,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # need to set up the nodelist and edgelist, properties, parameters
-        self._nodelist = sorted(self.solver.nodes)
-        self._edgelist = sorted(set(tuple(sorted(edge)) for edge in self.solver.edges))
+        # need to set up the properties, parameters
         self._properties = self.solver.properties.copy()  # shallow copy
         self._parameters = {param: ['parameters'] for param in self.solver.properties['parameters']}
 
@@ -200,7 +198,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._edgelist
+        # Assumption: cloud client nodes are always integer-labelled
+        try:
+            edgelist = self._edgelist
+        except AttributeError:
+            self._edgelist = edgelist = sorted(set((u, v) if u < v else (v, u)
+                                               for u, v in self.solver.edges))
+        return edgelist
 
     @property
     def nodelist(self):
@@ -223,7 +227,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._nodelist
+        # Assumption: cloud client nodes are always integer-labelled
+        try:
+            nodelist = self._nodelist
+        except AttributeError:
+            self._nodelist = nodelist = sorted(self.solver.nodes)
+        return nodelist
 
     def sample_ising(self, h, J, **kwargs):
         """Sample from the specified Ising model.
