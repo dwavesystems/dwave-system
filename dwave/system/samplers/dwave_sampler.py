@@ -273,11 +273,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             h = dict((v, b) for v, b in enumerate(h) if b)
 
         variables = set(h).union(*J)
-        try:
-            active_variables = sorted(variables)
-        except TypeError:
-            active_variables = list(variables)
-        num_variables = len(active_variables)
 
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
@@ -291,7 +286,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_ising(h, J, **kwargs)
 
-        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
+        hook = _result_to_response_hook(variables, dimod.SPIN)
+        return dimod.SampleSet.from_future(future, hook)
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the specified QUBO.
@@ -326,11 +322,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         """
         variables = set().union(*Q)
-        try:
-            active_variables = sorted(variables)
-        except TypeError:
-            active_variables = list(variables)
-        num_variables = len(active_variables)
 
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
@@ -344,7 +335,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_qubo(Q, **kwargs)
 
-        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
+        hook = _result_to_response_hook(variables, dimod.BINARY)
+        return dimod.SampleSet.from_future(future, hook)
 
     def validate_anneal_schedule(self, anneal_schedule):
         """Raise an exception if the specified schedule is invalid for the sampler.
@@ -459,6 +451,7 @@ def _result_to_response_hook(variables, vartype):
 
         return dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
                                             energy=result['energies'],
-                                            num_occurrences=result.get('num_occurrences', None))
+                                            num_occurrences=result.get('num_occurrences', None),
+                                            sort_labels=True)
 
     return _hook
