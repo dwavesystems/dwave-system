@@ -30,18 +30,13 @@ class TestVirtualGraphComposite(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(qpu=True))
+            cls.qpu = DWaveSampler(solver=dict(qpu=True, flux_biases=True))
         except (ValueError, ConfigFileError):
-            cls.qpu = False
+            raise unittest.SkipTest("no qpu available")
 
     @classmethod
     def tearDownClass(cls):
-        if cls.qpu:
-            cls.qpu.client.close()
-
-    def setUp(self):
-        if not self.qpu:
-            self.skipTest("no qpu available")
+        cls.qpu.client.close()
 
     def test_construction(self):
         child_sampler = self.qpu
