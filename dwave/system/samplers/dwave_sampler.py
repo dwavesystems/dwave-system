@@ -230,8 +230,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Args:
             h (list/dict):
-                Linear biases of the Ising model. If a list, the list's indices are
-                used as variable labels.
+                Linear biases of the Ising model. If a list, the list's indices
+                are used as variable labels, ignoring 0 biases.
 
             J (dict[(int, int): float]):
                 Quadratic biases of the Ising model.
@@ -261,7 +261,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         """
         if isinstance(h, list):
-            h = dict(enumerate(h))
+            h = dict((v, b) for v, b in enumerate(h) if b)
 
         variables = set(h).union(*J)
         try:
