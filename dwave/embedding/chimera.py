@@ -101,7 +101,7 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
         embedding = processor(target_edges, M=m, N=n, L=t).tightestNativeClique(len(nodes))
 
     if not embedding:
-        raise ValueError("cannot find a K{} embedding for given Chimera lattice".format(k))
+        raise ValueError("cannot find a K{} embedding for given Chimera lattice".format(len(nodes)))
 
     return dict(zip(nodes, embedding))
 
