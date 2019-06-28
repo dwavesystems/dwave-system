@@ -49,8 +49,10 @@ class TestBrokenChains(unittest.TestCase):
     def test_broken_chains_single_sample(self):
         S = [-1, 1, 1, 1]
         chains = [[0, 1], [2, 3]]
-        with self.assertRaises(ValueError):
-            dwave.embedding.broken_chains(S, chains)
+
+        broken = dwave.embedding.broken_chains(S, chains)
+
+        np.testing.assert_array_equal([[True, False]], broken)
 
     def test_matrix(self):
         samples_matrix = np.array([[-1, +1, -1, +1],
@@ -83,6 +85,17 @@ class TestChainBreakResolutionAPI():
                                        [0, 0, 1, 1, 1],
                                        [0, 0, 0, 1, 1],
                                        [0, 0, 0, 0, 1]]
+
+        ss0 = dimod.SampleSet.from_samples(np.triu(np.ones((5, 5))),
+                                           energy=0,
+                                           vartype=dimod.BINARY)
+        cases['sampleset_ordered'] = ss0
+
+        ss1 = dimod.SampleSet.from_samples((np.triu(np.ones((5, 5))),
+                                            [0, 4, 1, 3, 2]),
+                                           energy=0,
+                                           vartype=dimod.BINARY)
+        cases['sampleset_unordered'] = ss1
 
         for description, samples in cases.items():
             with self.subTest(description):
@@ -311,3 +324,24 @@ class TestMinimizeEnergy(TestChainBreakResolutionAPI, unittest.TestCase):
         unembedded, idx = cbm(solutions, [])
 
         np.testing.assert_array_equal(unembedded, [[], [], []])
+
+    def test_unordered_labels(self):
+        Q = {(0, 1): 1, (0, 2): 1, (0, 3): 1, (1, 2): 1, (1, 3): 1, (2, 3): 1,
+             (0, 0): 1, (1, 1): 1, (2, 2): 1, (3, 3): 1}
+        bqm = dimod.BinaryQuadraticModel.from_qubo(Q)
+
+        embedding = {0: [55], 1: [48], 2: [50, 53], 3: [52, 51]}
+
+        samples = (np.triu(np.ones(6)), [48, 50, 51, 52, 53, 55])
+        sampleset = dimod.SampleSet.from_samples(samples, energy=0,
+                                                 vartype=dimod.BINARY)
+
+        cbm = dwave.embedding.MinimizeEnergy(bqm, embedding)
+
+        unembedded, idx = cbm(sampleset, [[55], [48], [50, 53], [52, 51]])
+
+
+class TestWeightedRandom(TestChainBreakResolutionAPI, unittest.TestCase):
+    # for the API tests
+    def setUp(self):
+        self.chain_break_method = dwave.embedding.weighted_random
