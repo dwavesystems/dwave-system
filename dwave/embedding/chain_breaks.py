@@ -65,6 +65,8 @@ def broken_chains(samples, chains):
     if labels != range(len(labels)):
         relabel = {v: idx for idx, v in enumerate(labels)}
         chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     num_samples, num_variables = samples.shape
     num_chains = len(chains)
@@ -133,6 +135,8 @@ def discard(samples, chains):
     if labels != range(len(labels)):
         relabel = {v: idx for idx, v in enumerate(labels)}
         chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     num_samples, num_variables = samples.shape
     num_chains = len(chains)
@@ -194,6 +198,8 @@ def majority_vote(samples, chains):
     if labels != range(len(labels)):
         relabel = {v: idx for idx, v in enumerate(labels)}
         chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     num_samples, num_variables = samples.shape
     num_chains = len(chains)
@@ -260,6 +266,8 @@ def weighted_random(samples, chains):
     if labels != range(len(labels)):
         relabel = {v: idx for idx, v in enumerate(labels)}
         chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     # it sufficies to choose a random index from each chain and use that to construct the matrix
     idx = [np.random.choice(chain) for chain in chains]
@@ -341,7 +349,9 @@ class MinimizeEnergy(Callable):
 
         if labels != range(len(labels)):
             relabel = {v: idx for idx, v in enumerate(labels)}
-            chains = [np.array([relabel[v] for v in chain]) for chain in chains]
+            chains = [[relabel[v] for v in chain] for chain in chains]
+        else:
+            chains = list(map(list, chains))  # because we use them for indexing
 
         chain_to_var = self.chain_to_var
         variables = [chain_to_var[frozenset(labels[c] for c in chain)]
@@ -363,7 +373,6 @@ class MinimizeEnergy(Callable):
             broken = []
 
             for cidx, chain in enumerate(chains):
-
                 eq1 = (arr[chain] == 1)
                 if not np.bitwise_xor(eq1.all(), eq1.any()):
                     # not broken
