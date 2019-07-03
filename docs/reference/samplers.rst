@@ -4,27 +4,21 @@
 Samplers
 ========
 
+A :term:`sampler` is the component used to find variable values that minimize the binary
+quadratic model (BQM) representation of a problem.
+
 .. currentmodule:: dwave.system.samplers
 
-.. contents::
-    :depth: 3
-
-QPU
-===
-
 DWaveSampler
-------------
-
-Class
-~~~~~
+============
 
 .. autoclass:: DWaveSampler
 
 Properties
-~~~~~~~~~~
+----------
 
-:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>` lists and describes
-the parameters and properties of D-Wave systems.
+For parameters and properties of D-Wave systems, see
+:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>`.
 
 .. autosummary::
    :toctree: generated/
@@ -37,7 +31,7 @@ the parameters and properties of D-Wave systems.
    DWaveSampler.structure
 
 Methods
-~~~~~~~
+-------
 
 .. autosummary::
    :toctree: generated/

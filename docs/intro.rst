@@ -78,9 +78,6 @@ access to a D-Wave system.
 D-Wave system, its features, parameters, and properties. The documentation provides guidance
 on programming the D-Wave system, including how to formulate problems and configure parameters.
 
-Below one example attribute of the D-Wave system is described. For others and further
-information, see the :std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:index>`.
-
 .. _minorEmbedding:
 
 Minor-Embedding
