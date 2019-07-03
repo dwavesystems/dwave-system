@@ -34,6 +34,21 @@ to the D-Wave system's numerically indexed qubits, a mapping known as :term:`min
 >>> print(dnx.min_vertex_cover(s5, sampler))
 [0]
 
+Using the D-Wave System as a Sampler
+====================================
+
+The :std:doc:`dimod <dimod:index>` API makes it possible to easily interchange samplers
+in your code. For example, you might develop code using :std:doc:`dwave_neal <neal:index>`,
+Ocean's classical simulated annealing sampler, and then swap in a D-Wave system
+composed sampler.
+
+:std:doc:`Using a D-Wave System <oceandocs:overview/dwavesys>` explains how you set up
+access to a D-Wave system.
+
+:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:index>` describes the
+D-Wave system, its features, parameters, and properties. The documentation provides guidance
+on programming the D-Wave system, including how to formulate problems and configure parameters.
+
 .. _samplers:
 
 Samplers
@@ -63,51 +78,16 @@ Examples of composites are :class:`~dwave.system.composites.EmbeddingComposite()
 used in the example above, and :class:`~dwave.system.composites.VirtualGraphComposite()`,
 both of which handle the mapping known as :term:`minor-embedding`.
 
-Using the D-Wave System as a Sampler
-====================================
-
-The :std:doc:`dimod <dimod:index>` API makes it possible to easily interchange samplers
-in your code. For example, you might develop code using :std:doc:`dwave_neal <neal:index>`,
-Ocean's classical simulated annealing sampler, and then swap in a D-Wave system
-composed sampler.
-
-:std:doc:`Using a D-Wave System <oceandocs:overview/dwavesys>` explains how you set up
-access to a D-Wave system.
-
-:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:index>` describes the
-D-Wave system, its features, parameters, and properties. The documentation provides guidance
-on programming the D-Wave system, including how to formulate problems and configure parameters.
 
 .. _minorEmbedding:
 
-Minor-Embedding
----------------
-
-The D-Wave system is Chimera-structured. The Chimera architecture comprises sets of
-connected unit cells, each with four horizontal qubits connected to four vertical qubits
-via couplers (bipartite connectivity). Unit cells are tiled vertically and horizontally
-with adjacent qubits connected, creating a lattice of sparsely connected qubits. A unit
-cell is typically rendered as either a cross or a column.
-
-.. figure:: _static/ChimeraUnitCell.png
-	:align: center
-	:name: ChimeraUnitCell
-	:scale: 40 %
-	:alt: Chimera unit cell.
-
-	Chimera unit cell.
-
-.. figure:: _static/chimera.png
-  :name: chimera
-  :scale: 70 %
-  :alt: Chimera graph.  qubits are arranged in unit cells that form bipartite connections.
-
-  A :math:`3 {\rm x} 3`  Chimera graph, denoted C3. Qubits are arranged in 9 unit cells.
+Embedding
+=========
 
 To solve an arbitrarily posed binary quadratic problem on a D-Wave system requires mapping,
 called *minor embedding*, to a Chimera graph that represents the system's quantum processing unit.
 This preprocessing can be done by a composed sampler consisting of the
 :class:`~dwave.system.samplers.DWaveSampler()` and a composite that performs minor-embedding.
 
-In addition to composites that handle minor-embedding, dwave-system provides the related
-functionality described in :ref:`embedding`.
+See the :ref:`embedding` section for more information on :term:`minor-embedding` and the
+provided functionality.
