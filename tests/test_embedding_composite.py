@@ -301,6 +301,21 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         sampler.sample_qubo({(1, 2): 1}).record  # sample and resolve future
         sampler.sample_qubo({(1, 1): 1}).record  # sample and resolve future
 
+    def test_minimize_energy_chain_break_method(self):
+        # bug report https://github.com/dwavesystems/dwave-system/issues/206
+        Q = {(0, 1): 1, (0, 2): 1, (0, 3): 1, (1, 2): 1, (1, 3): 1, (2, 3): 1,
+             (0, 0): 1, (1, 1): 1, (2, 2): 1, (3, 3): 1}
+        S = {(0, 1): 1, (0, 2): 1, (0, 3): 1, (1, 2): 1, (1, 3): 1, (2, 3): 1}
+        bqm = dimod.BinaryQuadraticModel.from_qubo(Q)
+
+        G = dnx.chimera_graph(4)
+        sampler = dimod.StructureComposite(dimod.ExactSolver(), G.nodes, G.edges)
+        embedding = {0: [55], 1: [48], 2: [50, 53], 3: [52, 51]}
+        composite = FixedEmbeddingComposite(sampler, embedding)
+
+        cbm = chain_breaks.MinimizeEnergy(bqm, embedding)
+        composite.sample(bqm, chain_break_method=cbm).resolve()
+
 
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sample_instantiation(self):

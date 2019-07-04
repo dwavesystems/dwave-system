@@ -349,42 +349,24 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
     if chain_break_method is None:
         chain_break_method = majority_vote
 
-    variables = list(source_bqm)
+    variables = list(source_bqm)  # need this ordered
     try:
         chains = [embedding[v] for v in variables]
     except KeyError:
         raise ValueError("given bqm does not match the embedding")
 
-    chain_idxs = [[target_sampleset.variables.index[v] for v in chain] for chain in chains]
-
     record = target_sampleset.record
 
-    unembedded, idxs = chain_break_method(record.sample, chain_idxs)
-
-    # dev note: this is a bug in dimod that empty unembedded is not handled,
-    # in the future this try-except can be removed
-    try:
-        energies = source_bqm.energies((unembedded, variables))
-    except ValueError:
-        datatypes = [('sample', np.dtype(np.int8), (len(variables),)), ('energy', np.float)]
-        datatypes.extend((name, record[name].dtype, record[name].shape[1:])
-                         for name in record.dtype.names
-                         if name not in {'sample', 'energy'})
-        if chain_break_fraction:
-            datatypes.append(('chain_break_fraction', np.float64))
-        # there are no samples so everything is empty
-        data = np.rec.array(np.empty(0, dtype=datatypes))
-        return dimod.SampleSet(data, variables, target_sampleset.info.copy(), target_sampleset.vartype)
+    unembedded, idxs = chain_break_method(target_sampleset, chains)
 
     reserved = {'sample', 'energy'}
     vectors = {name: record[name][idxs]
                for name in record.dtype.names if name not in reserved}
 
     if chain_break_fraction:
-        vectors['chain_break_fraction'] = broken_chains(record.sample, chain_idxs).mean(axis=1)[idxs]
+        vectors['chain_break_fraction'] = broken_chains(target_sampleset, chains).mean(axis=1)[idxs]
 
-    return dimod.SampleSet.from_samples((unembedded, variables),
-                                        target_sampleset.vartype,
-                                        energy=energies,
-                                        info=target_sampleset.info.copy(),
-                                        **vectors)
+    return dimod.SampleSet.from_samples_bqm((unembedded, variables),
+                                            source_bqm,
+                                            info=target_sampleset.info.copy(),
+                                            **vectors)
