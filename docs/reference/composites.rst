@@ -4,8 +4,8 @@
 Composites
 ==========
 
-`dwave-system` provides :std:doc:`dimod composites <dimod:reference/samplers>`
-for using the D-Wave system.
+:std:doc:`dimod composites <dimod:reference/samplers>` that provide layers of pre- and
+post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system.
 
 .. currentmodule:: dwave.system.composites
 
@@ -15,11 +15,11 @@ for using the D-Wave system.
 CutOffs
 =======
 
+Remove low-valued interactions from the problem :term:`BQM`.
+
 CutOffComposite
 ---------------
 
-Class
-~~~~~
 .. autoclass:: CutOffComposite
 
 
@@ -47,9 +47,6 @@ Methods
 
 PolyCutOffComposite
 -------------------
-
-Class
-~~~~~
 
 .. autoclass:: PolyCutOffComposite
 
@@ -80,11 +77,10 @@ Methods
 Embedding
 =========
 
+:term:`Minor-embed` a problem :term:`BQM` into a D-Wave system.
+
 AutoEmbeddingComposite
 ----------------------
-
-Class
-~~~~~
 
 .. autoclass:: AutoEmbeddingComposite
 
@@ -112,9 +108,6 @@ Methods
 EmbeddingComposite
 ------------------
 
-Class
-~~~~~
-
 .. autoclass:: EmbeddingComposite
 
 Properties
@@ -140,9 +133,6 @@ Methods
 
 FixedEmbeddingComposite
 -----------------------
-
-Class
-~~~~~
 
 .. autoclass:: FixedEmbeddingComposite
 
@@ -175,9 +165,6 @@ Methods
 LazyFixedEmbeddingComposite
 ---------------------------
 
-Class
-~~~~~
-
 .. autoclass:: LazyFixedEmbeddingComposite
 
 Properties
@@ -206,9 +193,6 @@ Methods
 
 TilingComposite
 ---------------
-
-Class
-~~~~~
 
 .. autoclass:: TilingComposite
 
@@ -239,9 +223,6 @@ Methods
 
 VirtualGraphComposite
 ---------------------
-
-Class
-~~~~~
 
 .. autoclass:: VirtualGraphComposite
 
