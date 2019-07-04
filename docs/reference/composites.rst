@@ -15,7 +15,8 @@ post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system.
 CutOffs
 =======
 
-Remove low-valued interactions from the problem :term:`BQM`.
+Downsize the binary quadratic model (BQM) submitted to the child sampler by retaining
+only interactions with values commensurate with the sampler’s precision.
 
 CutOffComposite
 ---------------
@@ -47,6 +48,9 @@ Methods
 
 PolyCutOffComposite
 -------------------
+
+Downsize the polynomial submitted to the child sampler by retaining
+only interactions with values commensurate with the sampler’s precision.
 
 .. autoclass:: PolyCutOffComposite
 

@@ -35,14 +35,17 @@ __all__ = ('EmbeddingComposite',
 class EmbeddingComposite(dimod.ComposedSampler):
     """Composite that maps problems to a structured sampler.
 
-    Enables quick incorporation of the D-Wave system as a sampler by handling
-    minor-embedding of the problem into the D-Wave system's :term:`Chimera`
-    graph. A new minor-embedding is calculated using the given `find_embedding`
-    function each time one of its sampling methods is called.
+    Automatically minor-embeds a problem into a structured sampler such as a
+    D-Wave system. A new minor-embedding is calculated each time one of its
+    sampling methods is called.
+
+    See also the :class:`.AutoEmbeddingComposite`, which first tries to solve the
+    binary quadratic model on the child sampler and only embeds if a
+    :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
 
     Args:
         child_sampler (:class:`dimod.Sampler`):
-            A dimod sampler, such as a :obj:`.DWaveSampler`, that has a accepts
+            A dimod sampler, such as a :obj:`.DWaveSampler`, that accepts
             only binary quadratic models of a particular structure.
 
         find_embedding (function, optional):
@@ -55,9 +58,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             keyword arguments.
 
         scale_aware (bool, optional, default=False):
-            If true, and if `child_sampler` accepts an `ignored_interactions`
-            paramter, the chain interactions will be passed to the child
-            sampler.
+            Pass chain interactions to child samplers that accept an `ignored_interactions`
+            paramter.
 
         child_structure_search (function, optional):
             A function `child_structure_search(sampler)` that accepts a sampler
@@ -144,9 +146,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, the unembedded response contains a
-                ‘chain_break_fraction’ field that reports the fraction of chains
-                broken before unembedding.
+                Add a ‘chain_break_fraction’ field to the unembedded response with
+                the fraction of chains broken before unembedding.
 
             embedding_parameters (dict, optional):
                 If provided, parameters are passed to the embedding method as
@@ -159,6 +160,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         Returns:
             :obj:`dimod.SampleSet`
+
+        Examples:
+            See the example in :class:`EmbeddingComposite`.
 
         """
 
