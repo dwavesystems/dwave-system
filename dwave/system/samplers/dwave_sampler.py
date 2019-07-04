@@ -114,9 +114,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # need to set up the nodelist and edgelist, properties, parameters
-        self._nodelist = sorted(self.solver.nodes)
-        self._edgelist = sorted(set(tuple(sorted(edge)) for edge in self.solver.edges))
+        # need to set up the properties, parameters
         self._properties = self.solver.properties.copy()  # shallow copy
         self._parameters = {param: ['parameters'] for param in self.solver.properties['parameters']}
 
@@ -200,7 +198,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._edgelist
+        # Assumption: cloud client nodes are always integer-labelled
+        try:
+            edgelist = self._edgelist
+        except AttributeError:
+            self._edgelist = edgelist = sorted(set((u, v) if u < v else (v, u)
+                                               for u, v in self.solver.edges))
+        return edgelist
 
     @property
     def nodelist(self):
@@ -223,15 +227,25 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._nodelist
+        # Assumption: cloud client nodes are always integer-labelled
+        try:
+            nodelist = self._nodelist
+        except AttributeError:
+            self._nodelist = nodelist = sorted(self.solver.nodes)
+        return nodelist
 
     def sample_ising(self, h, J, **kwargs):
         """Sample from the specified Ising model.
 
         Args:
-            h (list/dict):
-                Linear biases of the Ising model. If a list, the list's indices
-                are used as variable labels, ignoring 0 biases.
+            h (dict/list):
+                Linear biases of the Ising model. If a dict, should be of the
+                form `{v: bias, ...}` where `v` is a spin-valued variable and
+                `bias` is its associated bias. If a list, it is treated as a
+                list of biases where the indices are the variable labels,
+                except in the case of missing qubits in which case 0 biases are
+                ignored while a non-zero bias set on a missing qubit raises an
+                error.
 
             J (dict[(int, int): float]):
                 Quadratic biases of the Ising model.
@@ -260,20 +274,18 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
+        nodes = self.solver.nodes  # set rather than .nodelist which is a list
+
         if isinstance(h, list):
-            h = dict((v, b) for v, b in enumerate(h) if b)
+            # to be consistent with the cloud-client, we ignore the 0 biases
+            # on missing nodes.
+            h = dict((v, b) for v, b in enumerate(h) if b or v in nodes)
 
         variables = set(h).union(*J)
-        try:
-            active_variables = sorted(variables)
-        except TypeError:
-            active_variables = list(variables)
-        num_variables = len(active_variables)
 
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
         # the solver's nodes/edges because they are a set, so faster lookup
-        nodes = self.solver.nodes
         edges = self.solver.edges
         if not (all(v in nodes for v in h) and
                 all((u, v) in edges or (v, u) in edges for u, v in J)):
@@ -282,7 +294,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_ising(h, J, **kwargs)
 
-        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
+        hook = _result_to_response_hook(variables, dimod.SPIN)
+        return dimod.SampleSet.from_future(future, hook)
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the specified QUBO.
@@ -317,11 +330,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         """
         variables = set().union(*Q)
-        try:
-            active_variables = sorted(variables)
-        except TypeError:
-            active_variables = list(variables)
-        num_variables = len(active_variables)
 
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
@@ -335,7 +343,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_qubo(Q, **kwargs)
 
-        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
+        hook = _result_to_response_hook(variables, dimod.BINARY)
+        return dimod.SampleSet.from_future(future, hook)
 
     def validate_anneal_schedule(self, anneal_schedule):
         """Raise an exception if the specified schedule is invalid for the sampler.
@@ -450,6 +459,7 @@ def _result_to_response_hook(variables, vartype):
 
         return dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
                                             energy=result['energies'],
-                                            num_occurrences=result.get('num_occurrences', None))
+                                            num_occurrences=result.get('num_occurrences', None),
+                                            sort_labels=True)
 
     return _hook
