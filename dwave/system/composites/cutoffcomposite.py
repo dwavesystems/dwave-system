@@ -273,10 +273,12 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
         isolated = list(original.variables.difference(new.variables))
 
         if isolated and len(new) == 0:
-            # in this case all variables are isolated, so we just put one back
-            # to serve as the basis
-            term = isolated.pop(),
-            new[term] = original[term]
+            # in this case all variables are isolated, so find the variable with
+            # the strongest bias and use that as the seed for putting the other
+            # variables back in
+            v = max(isolated, key=lambda v: original.get((v,), 0.0))
+            isolated.remove(v)
+            new[(v,)] = original.get((v,), 0)
 
         # get the samples from the child sampler and put them into the original vartype
         sampleset = child.sample_poly(new, **kwargs).change_vartype(poly.vartype, inplace=True)
@@ -310,7 +312,7 @@ def _restore_isolated_higherorder(sampleset, poly, isolated):
 
     # we don't let the isolated variables interact with eachother for now because
     # it will slow this down substantially
-    isolated_energies = {v: 0 for v in isolated}
+    isolated_energies = {v: 0. for v in isolated}
     for term, bias in poly.items():
 
         isolated_components = term.intersection(isolated)
