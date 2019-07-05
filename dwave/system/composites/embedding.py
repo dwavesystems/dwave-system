@@ -14,6 +14,16 @@
 #    limitations under the License.
 #
 # =============================================================================
+"""Embedding composites for various types of problems and application.
+For example:
+
+* :class:`EmbeddingComposite` for a problem with arbitrary structure that likely
+  requires hueristic embedding.
+* :class:`AutoEmbeddingComposite` can save unnecessary embedding for
+  problems that might have a structure similar to the child sampler.
+* :class:`LazyFixedEmbeddingComposite` can benefit applications that
+  resubmit a BQM with changes in some values.
+"""
 import itertools
 
 from warnings import warn
@@ -71,13 +81,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
        >>> J = {('a', 'b'): 1.5}
        >>> sampleset = sampler.sample_ising(h, J)
 
-    Select an embedding composite that best fits your problem and application.
-    For example, a problem with arbitrary structure likely requires hueristic
-    embedding such as provided by the :class:`EmbeddingComposite` class; the
-    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
-    problems with a structure similar to the child sampler; applications that
-    resubmit a BQM with variations to some values can benefit from the
-    :class:`LazyFixedEmbeddingComposite` class.
     """
     def __init__(self, child_sampler,
                  find_embedding=minorminer.find_embedding,
@@ -259,13 +262,6 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         >>> sampler.nodelist  # has structure based on given problem
         ['a', 'b']
 
-    Select an embedding composite that best fits your problem and application.
-    For example, a problem with arbitrary structure likely requires hueristic
-    embedding such as provided by the :class:`EmbeddingComposite` class; the
-    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
-    problems with a structure similar to the child sampler; applications that
-    resubmit a BQM with variations to some values can benefit from the
-    :class:`LazyFixedEmbeddingComposite` class.
     """
 
     @property
@@ -454,13 +450,6 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
         [('a', 'b'), ('a', 'c'), ('b', 'c')]
         >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
 
-    Select an embedding composite that best fits your problem and application.
-    For example, a problem with arbitrary structure likely requires hueristic
-    embedding such as provided by the :class:`EmbeddingComposite` class; the
-    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
-    problems with a structure similar to the child sampler; applications that
-    resubmit a BQM with variations to some values can benefit from the
-    :class:`LazyFixedEmbeddingComposite` class.
     """
     def __init__(self, child_sampler, embedding=None, source_adjacency=None,
                  **kwargs):
@@ -520,13 +509,6 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             See the :class:`EmbeddingComposite` class for additional keyword
             arguments.
 
-    Select an embedding composite that best fits your problem and application.
-    For example, a problem with arbitrary structure likely requires hueristic
-    embedding such as provided by the :class:`EmbeddingComposite` class; the
-    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
-    problems with a structure similar to the child sampler; applications that
-    resubmit a BQM with variations to some values can benefit from the
-    :class:`LazyFixedEmbeddingComposite` class.
     """
     def __init__(self, child_sampler, **kwargs):
 
