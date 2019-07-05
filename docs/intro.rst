@@ -39,7 +39,7 @@ Using the D-Wave System as a Sampler
 
 The :std:doc:`dimod <dimod:index>` API makes it possible to easily interchange samplers
 in your code. For example, you might develop code using :std:doc:`dwave_neal <neal:index>`,
-Ocean's classical simulated annealing sampler, and then swap in a D-Wave system
+Ocean's simulated annealing sampler, and then swap in a D-Wave system
 composed sampler.
 
 :std:doc:`Using a D-Wave System <oceandocs:overview/dwavesys>` explains how you set up

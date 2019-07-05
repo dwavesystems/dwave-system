@@ -29,11 +29,12 @@ __all__ = 'CutOffComposite', 'PolyCutOffComposite'
 class CutOffComposite(dimod.ComposedSampler):
     """Composite to remove interactions below a specified cutoff value.
 
-    Downsizes the binary quadratic model (BQM) submitted to the child sampler by retaining
-    only interactions with values commensurate with the sampler's precision. Also removes
-    variables isolated post- or pre-removal of these interactions from the BQM passed on to
-    the child sampler, setting these variables to values that minimize the original BQM's
-    energy for the returned samples.
+    Prunes the binary quadratic model (BQM) submitted to the child sampler by
+    retaining only interactions with values commensurate with the sampler's
+    precision as specified by the `cutoff` argument. Also removes variables
+    isolated post- or pre-removal of these interactions from the BQM passed
+    on to the child sampler, setting these variables to values that minimize
+    the original BQM's energy for the returned samples.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
@@ -62,7 +63,7 @@ class CutOffComposite(dimod.ComposedSampler):
         likely found and its energy recalculated by the composite.
 
         >>> import dimod
-        >>> sampler = DWaveSampler(solver={'qpu': True})    # doctest: +SKIP
+        >>> sampler = DWaveSampler(solver={'qpu': True})
         >>> bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},    # doctest: +SKIP
         ...                            {'ab': -0.8, 'ac': -0.7, 'bc': -1},
         ...                            0,
@@ -100,11 +101,12 @@ class CutOffComposite(dimod.ComposedSampler):
     def sample(self, bqm, **parameters):
         """Cut off interactions and sample from the provided binary quadratic model.
 
-        Downsizes the binary quadratic model (BQM) submitted to the child sampler by retaining
-        only interactions with values commensurate with the sampler's precision. Also removes
-        variables isolated post- or pre-removal of these interactions from the BQM passed on to
-        the child sampler, setting these variables to values that minimize the original BQM's
-        energy for the returned samples.
+        Prunes the binary quadratic model (BQM) submitted to the child sampler
+        by retaining only interactions with values commensurate with the
+        sampler's precision as specified by the `cutoff` argument. Also removes
+        variables isolated post- or pre-removal of these interactions from the
+        BQM passed on to the child sampler, setting these variables to values
+        that minimize the original BQM's energy for the returned samples.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -204,10 +206,11 @@ def _restore_isolated(sampleset, bqm, isolated):
 class PolyCutOffComposite(dimod.ComposedPolySampler):
     """Composite to remove polynomial interactions below a specified cutoff value.
 
-    Downsizes the binary polynomial submitted to the child sampler by retaining
-    only interactions with values commensurate with the sampler's precision. Also removes
-    variables isolated post- or pre-removal of these interactions from the polynomial
-    passed on to the child sampler, setting these variables to values that minimize the
+    Prunes the binary polynomial submitted to the child sampler by retaining
+    only interactions with values commensurate with the sampler's precision as
+    specified by the `cutoff` argument. Also removes variables isolated post-
+    or pre-removal of these interactions from the polynomial passed on to the
+    child sampler, setting these variables to values that minimize the
     original polynomial's energy for the returned samples.
 
     Args:
@@ -268,11 +271,12 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
     def sample_poly(self, poly, **kwargs):
         """Cutoff and sample from the provided binary polynomial.
 
-        Downsizes the binary polynomial submitted to the child sampler by retaining
-        only interactions with values commensurate with the sampler's precision. Also removes
-        variables isolated post- or pre-removal of these interactions from the polynomial
-        passed on to the child sampler, setting these variables to values that minimize the
-        original polynomial's energy for the returned samples.
+        Prunes the binary polynomial submitted to the child sampler by retaining
+        only interactions with values commensurate with the sampler's precision
+        as specified by the `cutoff` argument. Also removes variables isolated
+        post- or pre-removal of these interactions from the polynomial passed
+        on to the child sampler, setting these variables to values that minimize
+        the original polynomial's energy for the returned samples.
 
         Args:
             poly (:obj:`dimod.BinaryPolynomial`):

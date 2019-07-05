@@ -35,7 +35,9 @@ __all__ = ['DWaveSampler']
 class DWaveSampler(dimod.Sampler, dimod.Structured):
     """A class for using the D-Wave system as a sampler.
 
-    Uses parameters set in a configuration file, as environment variables, or explicitly as input arguments for selecting and communicating with a D-Wave system. For more information, see
+    Uses parameters set in a configuration file, as environment variables, or
+    explicitly as input arguments for selecting and communicating with a D-Wave
+    system. For more information, see
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_.
 
     Inherits from :class:`dimod.Sampler` and :class:`dimod.Structured`.
@@ -76,8 +78,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         >>> from dwave.system.samplers import DWaveSampler
         >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
-        >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
-        >>> for sample in response.samples():  # doctest: +SKIP
+        >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
+        >>> for sample in sampleset.samples():  # doctest: +SKIP
         ...    print(sample)
         ...
         {0: 1, 1: -1}
@@ -229,12 +231,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.DWaveSampler.parameters`.
-                `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
+                :attr:`.DWaveSampler.parameters`. D-Wave System Documentation's
+                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
                 describes the parameters and properties supported on the D-Wave system.
 
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
+            In it this sampler also provides timing information in the `info`
+            field as described in the D-Wave System Documentation's
+            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
@@ -242,8 +247,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
-            >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
-            >>> for sample in response.samples():    # doctest: +SKIP
+            >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
+            >>> for sample in sampleset.samples():    # doctest: +SKIP
             ...    print(sample)
             ...
             {0: 1, 1: -1}
@@ -284,12 +289,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.DWaveSampler.parameters`.
-                `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
+                :attr:`.DWaveSampler.parameters`. D-Wave System Documentation's
+                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
                 describes the parameters and properties supported on the D-Wave system.
 
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
+            In it this sampler also provides timing information in the `info`
+            field as described in the D-Wave System Documentation's
+            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
 
         Examples:
             This example submits a two-variable QUBO mapped directly to qubits
@@ -298,8 +306,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> Q = {(0, 0): -1, (4, 4): -1, (0, 4): 2}
-            >>> response = sampler.sample_qubo(Q)
-            >>> for sample in response.samples():    # doctest: +SKIP
+            >>> sampleset = sampler.sample_qubo(Q)
+            >>> for sample in sampleset.samples():    # doctest: +SKIP
             ...    print(sample)
             ...
             {0: 0, 4: 1}

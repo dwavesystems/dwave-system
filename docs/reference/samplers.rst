@@ -4,8 +4,9 @@
 Samplers
 ========
 
-A :term:`sampler` is the component used to find variable values that minimize the binary
-quadratic model (BQM) representation of a problem.
+A :term:`sampler` accepts a binary quadratic model (BQM) and returns variable assignments.
+Samplers generally try to find minimizing values but can also sample from distributions 
+defined by the BQM.
 
 .. currentmodule:: dwave.system.samplers
 

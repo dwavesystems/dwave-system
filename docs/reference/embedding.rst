@@ -64,8 +64,8 @@ target graph: two nodes (qubits) are chained to represent a single node.
   system's graph are chained to represent the single node :math:`z` of the
   source graph.
 
-Tools
-=====
+Generators
+==========
 
 Tools for finding embeddings.
 

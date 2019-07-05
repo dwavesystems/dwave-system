@@ -39,10 +39,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
     D-Wave system. A new minor-embedding is calculated each time one of its
     sampling methods is called.
 
-    See also the :class:`.AutoEmbeddingComposite` class, which first tries to submit
-    the binary quadratic model directly to the child sampler and only embeds if a
-    :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
-
     Args:
         child_sampler (:class:`dimod.Sampler`):
             A dimod sampler, such as a :obj:`.DWaveSampler`, that accepts
@@ -59,7 +55,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         scale_aware (bool, optional, default=False):
             Pass chain interactions to child samplers that accept an `ignored_interactions`
-            paramter.
+            parameter.
 
         child_structure_search (function, optional):
             A function `child_structure_search(sampler)` that accepts a sampler
@@ -75,6 +71,13 @@ class EmbeddingComposite(dimod.ComposedSampler):
        >>> J = {('a', 'b'): 1.5}
        >>> sampleset = sampler.sample_ising(h, J)
 
+    Select an embedding composite that best fits your problem and application.
+    For example, a problem with arbitrary structure likely requires hueristic
+    embedding such as provided by the :class:`EmbeddingComposite` class; the
+    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
+    problems with a structure similar to the child sampler; applications that
+    resubmit a BQM with variations to some values can benefit from the
+    :class:`LazyFixedEmbeddingComposite` class.
     """
     def __init__(self, child_sampler,
                  find_embedding=minorminer.find_embedding,
@@ -227,9 +230,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     """Maps problems to the structure of its first given problem.
 
-    Differs from the :class:`.EmbeddingComposite` class by reusing the
-    minor-embedding found for its first given problem rather than recalculating
-    a new minor-embedding each time one of its sampling methods is called.
+    This composite reuses the minor-embedding found for its first given problem
+    without recalculating a new minor-embedding for subsequent calls of its
+    sampling methods.
 
     Args:
         sampler (dimod.Sampler):
@@ -256,6 +259,13 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         >>> sampler.nodelist  # has structure based on given problem
         ['a', 'b']
 
+    Select an embedding composite that best fits your problem and application.
+    For example, a problem with arbitrary structure likely requires hueristic
+    embedding such as provided by the :class:`EmbeddingComposite` class; the
+    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
+    problems with a structure similar to the child sampler; applications that
+    resubmit a BQM with variations to some values can benefit from the
+    :class:`LazyFixedEmbeddingComposite` class.
     """
 
     @property
@@ -427,7 +437,7 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
             {node neighbours}}`.
 
         kwargs:
-            See the :class:`.EmbeddingComposite` class for additional keyword
+            See the :class:`EmbeddingComposite` class for additional keyword
             arguments. Note that `find_embedding` and `embedding_parameters`
             keyword arguments are ignored.
 
@@ -444,6 +454,13 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
         [('a', 'b'), ('a', 'c'), ('b', 'c')]
         >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
 
+    Select an embedding composite that best fits your problem and application.
+    For example, a problem with arbitrary structure likely requires hueristic
+    embedding such as provided by the :class:`EmbeddingComposite` class; the
+    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
+    problems with a structure similar to the child sampler; applications that
+    resubmit a BQM with variations to some values can benefit from the
+    :class:`LazyFixedEmbeddingComposite` class.
     """
     def __init__(self, child_sampler, embedding=None, source_adjacency=None,
                  **kwargs):
@@ -473,10 +490,6 @@ class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
 
     This class is deprecated; use the :class:`LazyFixedEmbeddingComposite` class instead.
 
-    Differs from the :class:`.EmbeddingComposite` class by reusing the minor-embedding
-    found for its first given problem rather than recalculating a new minor-embedding
-    each time one of its sampling methods is called.
-
     Args:
         sampler (dimod.Sampler):
             Structured dimod sampler.
@@ -489,8 +502,8 @@ class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
 class AutoEmbeddingComposite(EmbeddingComposite):
     """Maps problems to a structured sampler, embedding if needed.
 
-    Differs from the :class:`.EmbeddingComposite` class by first trying to submit
-    the binary quadratic model directly to the child sampler and only embedding if a
+    This composite first tries to submit the binary quadratic model directly
+    to the child sampler and only embeds if a
     :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
 
     Args:
@@ -504,9 +517,16 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             Defaults to :func:`minorminer.find_embedding`.
 
         kwargs:
-            See the :class:`.EmbeddingComposite` class for additional keyword
+            See the :class:`EmbeddingComposite` class for additional keyword
             arguments.
 
+    Select an embedding composite that best fits your problem and application.
+    For example, a problem with arbitrary structure likely requires hueristic
+    embedding such as provided by the :class:`EmbeddingComposite` class; the
+    :class:`AutoEmbeddingComposite` class might save unnecessary embedding for
+    problems with a structure similar to the child sampler; applications that
+    resubmit a BQM with variations to some values can benefit from the
+    :class:`LazyFixedEmbeddingComposite` class.
     """
     def __init__(self, child_sampler, **kwargs):
 
