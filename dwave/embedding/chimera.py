@@ -27,15 +27,15 @@ __all__ = ['find_clique_embedding', 'find_biclique_embedding']
 def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
     """Find an embedding for a clique in a Chimera graph.
 
-    Given a target :term:`Chimera` graph size, and a clique (fully connect graph),
+    Given the sizes of a clique (fully connect graph) and target :term:`Chimera` graph,
     attempts to find an embedding.
 
     Args:
         k (int/iterable):
-            Clique to embed. If k is an integer, generates an embedding for a clique of size k
-            labelled [0,k-1].
-            If k is an iterable, generates an embedding for a clique of size len(k), where
-            iterable k is the variable labels.
+            Clique to embed. If k is an integer, generates an embedding for a
+            clique of size k labelled [0,k-1]. If k is an iterable of nodes,
+            generates an embedding for a clique of size len(k) labelled
+            for the given nodes.
 
         m (int):
             Number of rows in the Chimera lattice.
