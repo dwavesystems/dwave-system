@@ -14,6 +14,16 @@
 #    limitations under the License.
 #
 # =============================================================================
+"""Embedding composites for various types of problems and application.
+For example:
+
+* :class:`EmbeddingComposite` for a problem with arbitrary structure that likely
+  requires hueristic embedding.
+* :class:`AutoEmbeddingComposite` can save unnecessary embedding for
+  problems that might have a structure similar to the child sampler.
+* :class:`LazyFixedEmbeddingComposite` can benefit applications that
+  resubmit a BQM with changes in some values.
+"""
 import itertools
 
 from warnings import warn
@@ -33,16 +43,15 @@ __all__ = ('EmbeddingComposite',
 
 
 class EmbeddingComposite(dimod.ComposedSampler):
-    """Composite that maps problems to a structured sampler.
+    """Maps problems to a structured sampler.
 
-    Enables quick incorporation of the D-Wave system as a sampler by handling
-    minor-embedding of the problem into the D-Wave system's :term:`Chimera`
-    graph. A new minor-embedding is calculated using the given `find_embedding`
-    function each time one of its sampling methods is called.
+    Automatically minor-embeds a problem into a structured sampler such as a
+    D-Wave system. A new minor-embedding is calculated each time one of its
+    sampling methods is called.
 
     Args:
         child_sampler (:class:`dimod.Sampler`):
-            A dimod sampler, such as a :obj:`.DWaveSampler`, that has a accepts
+            A dimod sampler, such as a :obj:`.DWaveSampler`, that accepts
             only binary quadratic models of a particular structure.
 
         find_embedding (function, optional):
@@ -55,9 +64,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             keyword arguments.
 
         scale_aware (bool, optional, default=False):
-            If true, and if `child_sampler` accepts an `ignored_interactions`
-            paramter, the chain interactions will be passed to the child
-            sampler.
+            Pass chain interactions to child samplers that accept an `ignored_interactions`
+            parameter.
 
         child_structure_search (function, optional):
             A function `child_structure_search(sampler)` that accepts a sampler
@@ -144,9 +152,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, the unembedded response contains a
-                ‘chain_break_fraction’ field that reports the fraction of chains
-                broken before unembedding.
+                Add a ‘chain_break_fraction’ field to the unembedded response with
+                the fraction of chains broken before unembedding.
 
             embedding_parameters (dict, optional):
                 If provided, parameters are passed to the embedding method as
@@ -159,6 +166,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         Returns:
             :obj:`dimod.SampleSet`
+
+        Examples:
+            See the example in :class:`EmbeddingComposite`.
 
         """
 
@@ -221,7 +231,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
 
 class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
-    """Fixes itself to the structure of the first problem it samples.
+    """Maps problems to the structure of its first given problem.
+
+    This composite reuses the minor-embedding found for its first given problem
+    without recalculating a new minor-embedding for subsequent calls of its
+    sampling methods.
 
     Args:
         sampler (dimod.Sampler):
@@ -242,7 +256,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         >>> from dwave.system import LazyFixedEmbeddingComposite, DWaveSampler
         ...
         >>> sampler = LazyFixedEmbeddingComposite(DWaveSampler())
-        >>> sampler.nodelist is None  # no structure yet
+        >>> sampler.nodelist is None  # no structure prior to first sampling
         True
         >>> __ = sampler.sample_ising({}, {('a', 'b'): -1})
         >>> sampler.nodelist  # has structure based on given problem
@@ -329,7 +343,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         return adj
 
     embedding = None
-    """The embedding used to map bqms to the child sampler."""
+    """Embedding used to map binary quadratic models to the child sampler."""
 
     def _fix_embedding(self, embedding):
         # save the embedding and overwrite the find_embedding function
@@ -344,9 +358,9 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     def sample(self, bqm, **parameters):
         """Sample the binary quadratic model.
 
-        Note: At the initial sample(..) call, it will find a suitable embedding
-        and initialize the remaining attributes before sampling the bqm. All
-        following sample(..) calls will reuse that initial embedding.
+        On the first call of a sampling method, finds a :term:`minor-embedding`
+        for the given binary quadratic model (BQM). All subsequent calls to its
+        sampling methods reuse this embedding.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -362,9 +376,8 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                If True, the unembedded response contains a
-                ‘chain_break_fraction’ field that reports the fraction of chains
-                broken before unembedding.
+                Add a ‘chain_break_fraction’ field to the unembedded response with
+                the fraction of chains broken before unembedding.
 
             embedding_parameters (dict, optional):
                 If provided, parameters are passed to the embedding method as
@@ -405,7 +418,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
 
 
 class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
-    """Uses a specified minor-embedding to map problems to a structured sampler.
+    """Maps problems to a structured sampler with the specified minor-embedding.
 
     Args:
         sampler (dimod.Sampler):
@@ -420,7 +433,7 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
             {node neighbours}}`.
 
         kwargs:
-            See docs for :class:`.EmbeddingComposite` for additional keyword
+            See the :class:`EmbeddingComposite` class for additional keyword
             arguments. Note that `find_embedding` and `embedding_parameters`
             keyword arguments are ignored.
 
@@ -462,10 +475,9 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
 
 
 class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
-    """Deprecated Class. 'LazyEmbeddingComposite' has been deprecated and renamed to 'LazyFixedEmbeddingComposite'.
+    """Deprecated. Maps problems to the structure of its first given problem.
 
-    Takes an unstructured problem and maps it to a structured problem. This mapping is stored and gets reused
-    for all following sample(..) calls.
+    This class is deprecated; use the :class:`LazyFixedEmbeddingComposite` class instead.
 
     Args:
         sampler (dimod.Sampler):
@@ -477,10 +489,10 @@ class LazyEmbeddingComposite(LazyFixedEmbeddingComposite):
 
 
 class AutoEmbeddingComposite(EmbeddingComposite):
-    """Composite that maps problems to a structured sampler.
+    """Maps problems to a structured sampler, embedding if needed.
 
-    Differs from :class:`.EmbeddingComposite` by first trying to solve the
-    binary quadratic model on the child sampler and only embedding if a
+    This composite first tries to submit the binary quadratic model directly
+    to the child sampler and only embeds if a
     :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
 
     Args:
@@ -494,7 +506,7 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             Defaults to :func:`minorminer.find_embedding`.
 
         kwargs:
-            See docs for :class:`.EmbeddingComposite` for additional keyword
+            See the :class:`EmbeddingComposite` class for additional keyword
             arguments.
 
     """

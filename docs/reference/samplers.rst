@@ -4,27 +4,22 @@
 Samplers
 ========
 
+A :term:`sampler` accepts a binary quadratic model (BQM) and returns variable assignments.
+Samplers generally try to find minimizing values but can also sample from distributions 
+defined by the BQM.
+
 .. currentmodule:: dwave.system.samplers
 
-.. contents::
-    :depth: 3
-
-QPU
-===
-
 DWaveSampler
-------------
-
-Class
-~~~~~
+============
 
 .. autoclass:: DWaveSampler
 
 Properties
-~~~~~~~~~~
+----------
 
-:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>` lists and describes
-the parameters and properties of D-Wave systems.
+For parameters and properties of D-Wave systems, see
+:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>`.
 
 .. autosummary::
    :toctree: generated/
@@ -37,7 +32,7 @@ the parameters and properties of D-Wave systems.
    DWaveSampler.structure
 
 Methods
-~~~~~~~
+-------
 
 .. autosummary::
    :toctree: generated/

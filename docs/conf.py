@@ -95,8 +95,8 @@ doctest_global_setup = """
 from __future__ import print_function, division
 
 import dimod
-import dwave.embedding
-import dwave.system
+from dwave.embedding import *
+from dwave.system import *
 
 """
 

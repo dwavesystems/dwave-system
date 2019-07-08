@@ -4,8 +4,8 @@
 Composites
 ==========
 
-`dwave-system` provides :std:doc:`dimod composites <dimod:reference/samplers>`
-for using the D-Wave system.
+:std:doc:`dimod composites <dimod:reference/samplers>` that provide layers of pre- and
+post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system.
 
 .. currentmodule:: dwave.system.composites
 
@@ -15,11 +15,12 @@ for using the D-Wave system.
 CutOffs
 =======
 
+Prunes the binary quadratic model (BQM) submitted to the child sampler by retaining
+only interactions with values commensurate with the sampler’s precision.
+
 CutOffComposite
 ---------------
 
-Class
-~~~~~
 .. autoclass:: CutOffComposite
 
 
@@ -48,8 +49,8 @@ Methods
 PolyCutOffComposite
 -------------------
 
-Class
-~~~~~
+Prunes the polynomial submitted to the child sampler by retaining
+only interactions with values commensurate with the sampler’s precision.
 
 .. autoclass:: PolyCutOffComposite
 
@@ -80,11 +81,14 @@ Methods
 Embedding
 =========
 
+:term:`Minor-embed` a problem :term:`BQM` into a D-Wave system.
+
+.. automodule:: dwave.system.composites.embedding
+
+.. currentmodule:: dwave.system.composites
+
 AutoEmbeddingComposite
 ----------------------
-
-Class
-~~~~~
 
 .. autoclass:: AutoEmbeddingComposite
 
@@ -112,9 +116,6 @@ Methods
 EmbeddingComposite
 ------------------
 
-Class
-~~~~~
-
 .. autoclass:: EmbeddingComposite
 
 Properties
@@ -140,9 +141,6 @@ Methods
 
 FixedEmbeddingComposite
 -----------------------
-
-Class
-~~~~~
 
 .. autoclass:: FixedEmbeddingComposite
 
@@ -175,9 +173,6 @@ Methods
 LazyFixedEmbeddingComposite
 ---------------------------
 
-Class
-~~~~~
-
 .. autoclass:: LazyFixedEmbeddingComposite
 
 Properties
@@ -206,9 +201,6 @@ Methods
 
 TilingComposite
 ---------------
-
-Class
-~~~~~
 
 .. autoclass:: TilingComposite
 
@@ -239,9 +231,6 @@ Methods
 
 VirtualGraphComposite
 ---------------------
-
-Class
-~~~~~
 
 .. autoclass:: VirtualGraphComposite
 
