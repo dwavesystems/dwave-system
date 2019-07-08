@@ -30,8 +30,8 @@ def diagnose_embedding(emb, source, target):
     Args:
         emb (dict):
             A mapping of source nodes to arrays of target nodes as a dict
-            of form {s: [t, ...], ...}, where s is a source graph variable and t
-            is a target graph.
+            of form {s: [t, ...], ...}, where s is a source-graph variable and t
+            is a target-graph variable.
 
         source (list/:obj:`networkx.Graph`):
             Graph to be embedded as a NetworkX graph or a list of edges.
@@ -122,8 +122,8 @@ def is_valid_embedding(emb, source, target):
 
     Args:
         emb (dict): A mapping of source nodes to arrays of target nodes as a dict
-            of form {s: [t, ...], ...}, where s is a source graph variable and t
-            is a target graph.
+            of form {s: [t, ...], ...}, where s is a source-graph variable and t
+            is a target-graph variable.
         source (graph or edgelist): Graph to be embedded.
         target (graph or edgelist): Graph being embedded into.
 
@@ -143,8 +143,8 @@ def verify_embedding(emb, source, target, ignore_errors=()):
 
     Args:
         emb (dict): A mapping of source nodes to arrays of target nodes as a dict
-            of form {s: [t, ...], ...}, where s is a source graph variable and t
-            is a target graph.
+            of form {s: [t, ...], ...}, where s is a source-graph variable and t
+            is a target-graph variable.
         source (graph or edgelist): Graph to be embedded
         target (graph or edgelist): Graph being embedded into
 

@@ -131,7 +131,7 @@ Diagnostics
 Chain-Break Resolution
 ======================
 
-Configuring how samples with broken chains are unembedded.
+Handling samples with broken chains when unembedding.
 
 Generators
 ----------
