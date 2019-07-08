@@ -23,25 +23,33 @@ import networkx as nx
 
 @nx.utils.decorators.nodes_or_number(0)
 def find_clique_embedding(k, m=None, target_graph=None):
-    """Find an embedding of a k-sized clique on a Pegasus graph (target_graph).
+    """Find an embedding for a clique in a Pegasus graph.
 
-    This clique is found by transforming the Pegasus graph into a K2,2 Chimera graph and then
-    applying a Chimera clique finding algorithm. The results are then converted back in terms of
-    Pegasus coordinates.
-
-    Note: If target_graph is None, m will be used to generate a m-by-m Pegasus graph. Hence m and
-    target_graph cannot both be None.
+    Given a clique (fully connected graph) and target Pegasus graph, attempts
+    to find an embedding by transforming the Pegasus graph into a :math:`K_{2,2}`
+    Chimera graph and then applying a Chimera clique-finding algorithm. Results
+    are converted back to Pegasus coordinates.
 
     Args:
-        k (int/iterable/:obj:`networkx.Graph`): Number of members in the requested clique; list of nodes;
-          a complete graph that you want to embed onto the target_graph
-        m (int): Number of tiles in a row of a square Pegasus graph
-        target_graph (:obj:`networkx.Graph`): A Pegasus graph
+        k (int/iterable/:obj:`networkx.Graph`): A complete graph to embed,
+            formatted as a number of nodes, node labels, or a NetworkX graph.
+        m (int): Number of tiles in a row of a square Pegasus graph. Required to
+            generate an m-by-m Pegasus graph when `target_graph` is None.
+        target_graph (:obj:`networkx.Graph`): A Pegasus graph. Required when `m`
+            is None.
 
     Returns:
-        dict: A dictionary representing target_graphs's clique embedding. Each dictionary key
-        represents a node in said clique. Each corresponding dictionary value is a list of pegasus
-        coordinates that should be chained together to represent said node.
+        dict: An embedding as a dict, where keys represent the clique's nodes and
+        values, formatted as lists, represent chains of pegasus coordinates.
+
+    Examples:
+        This example finds an embedding for a :math:`K_3` complete graph in a
+        2-by-2 Pegaus graph.
+
+        >>> from dwave.embedding.pegasus import find_clique_embedding
+        ...
+        >>> print(find_clique_embedding(3, 2))    # doctest: +SKIP
+        {0: [10, 34], 1: [35, 11], 2: [32, 12]}
 
     """
     # Organize parameter values

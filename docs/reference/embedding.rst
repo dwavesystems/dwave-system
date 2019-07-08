@@ -30,11 +30,12 @@ cell is typically rendered as either a cross or a column.
 Example
 =======
 
-A sampler may not natively support a given problem graph. For example, the D-Wave
+As described in more detail in the :std:doc:`Boolean AND Gate <oceandocs:examples/and>`
+example, a sampler may not natively support a given problem graph. For example, the D-Wave
 system does not natively support :math:`K_3` graphs. The Boolean
 AND gate (:math:`x_3 \Leftrightarrow x_1 \wedge x_2` where :math:`x_3` is the
-AND gate's output and :math:`x_1, x_2` the inputs) may be represented as
-penalty model
+AND gate's output and :math:`x_1, x_2` the inputs) may be
+represented as penalty model
 
 .. math::
 

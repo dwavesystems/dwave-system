@@ -27,8 +27,8 @@ __all__ = ['find_clique_embedding', 'find_biclique_embedding']
 def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
     """Find an embedding for a clique in a Chimera graph.
 
-    Given the sizes of a clique (fully connect graph) and target :term:`Chimera` graph,
-    attempts to find an embedding.
+    Given the node labels or size of a clique (fully connected graph) and size or
+    edges of the target :term:`Chimera` graph, attempts to find an embedding.
 
     Args:
         k (int/iterable):
@@ -111,21 +111,24 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
 def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
     """Find an embedding for a biclique in a Chimera graph.
 
-    Given a target :term:`Chimera` graph size, and a biclique (a bipartite graph where every
-    vertex in a set in connected to all vertices in the other set), attempts to find an embedding.
+    Given a biclique (a bipartite graph where every vertex in a set in connected
+    to all vertices in the other set) and a target :term:`Chimera` graph size or
+    edges, attempts to find an embedding.
 
     Args:
         a (int/iterable):
-            Left shore of the biclique to embed. If a is an integer, generates an embedding
-            for a biclique with the left shore of size a labelled [0,a-1].
-            If a is an iterable, generates an embedding for a biclique with the left shore of size
-            len(a), where iterable a is the variable labels.
+            Left shore of the biclique to embed. If a is an integer, generates
+            an embedding for a biclique with the left shore of size a labelled
+            [0,a-1]. If a is an iterable of nodes, generates an embedding for a
+            biclique with the left shore of size len(a) labelled for the given
+            nodes.
 
         b (int/iterable):
-            Right shore of the biclique to embed.If b is an integer, generates an embedding
-            for a biclique with the right shore of size b labelled [0,b-1].
-            If b is an iterable, generates an embedding for a biclique with the right shore of
-            size len(b), where iterable b provides the variable labels.
+            Right shore of the biclique to embed.If b is an integer, generates
+            an embedding for a biclique with the right shore of size b labelled
+            [0,b-1]. If b is an iterable of nodes, generates an embedding for a
+            biclique with the right shore of size len(b) labelled for the given
+            nodes.
 
         m (int):
             Number of rows in the Chimera lattice.
@@ -143,9 +146,11 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
     Returns:
         tuple: A 2-tuple containing:
 
-            dict: An embedding mapping the left shore of the biclique to the Chimera lattice.
+            dict: An embedding mapping the left shore of the biclique to
+            the Chimera lattice.
 
-            dict: An embedding mapping the right shore of the biclique to the Chimera lattice
+            dict: An embedding mapping the right shore of the biclique to
+            the Chimera lattice.
 
     Examples:
         This example finds an embedding for an alphanumerically labeled biclique in a single
@@ -174,7 +179,8 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
 def find_grid_embedding(dim, m, n=None, t=4):
     """Find an embedding for a grid in a Chimera graph.
 
-    Given a target :term:`Chimera` graph size, and grid dimensions, attempts to find an embedding.
+    Given grid dimensions and a target :term:`Chimera` graph size,
+    attempts to find an embedding.
 
     Args:
         dim (iterable[int]):
