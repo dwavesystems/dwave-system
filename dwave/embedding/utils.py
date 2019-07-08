@@ -165,7 +165,7 @@ def chain_break_frequency(samples_like, embedding):
 
     Returns:
         dict: Frequency of chain breaks as a dict in the form {s: f, ...},  where s
-        is a variable in the source graph, and frequency, a float, is the fraction
+        is a variable in the source graph and float f the fraction
         of broken chains.
 
     Examples:

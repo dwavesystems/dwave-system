@@ -6,7 +6,7 @@ Embedding
 
 Provides functions that map binary quadratic models and samples between a source graph and a target graph.
 
-The D-Wave system is Chimera-structured. The Chimera architecture comprises sets of
+The D-Wave 2000Q is Chimera-structured. The Chimera architecture comprises sets of
 connected unit cells, each with four horizontal qubits connected to four vertical qubits
 via couplers (bipartite connectivity). Unit cells are tiled vertically and horizontally
 with adjacent qubits connected, creating a lattice of sparsely connected qubits. A unit
@@ -30,11 +30,12 @@ cell is typically rendered as either a cross or a column.
 Example
 =======
 
-A sampler may not natively support a given problem graph. For example, the D-Wave
+As described in more detail in the :std:doc:`Boolean AND Gate <oceandocs:examples/and>`
+example, a sampler may not natively support a given problem graph. For example, the D-Wave
 system does not natively support :math:`K_3` graphs. The Boolean
 AND gate (:math:`x_3 \Leftrightarrow x_1 \wedge x_2` where :math:`x_3` is the
-AND gate's output and :math:`x_1, x_2` the inputs) may be represented as
-penalty model
+AND gate's output and :math:`x_1, x_2` the inputs) may be
+represented as penalty model
 
 .. math::
 
@@ -130,7 +131,7 @@ Diagnostics
 Chain-Break Resolution
 ======================
 
-Configuring how samples with broken chains are unembedded.
+Handling samples with broken chains when unembedding.
 
 Generators
 ----------

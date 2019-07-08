@@ -61,11 +61,10 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        t (int, optional, default=4): Size of the shore within each Chimera unit cell.
 
     Examples:
-       This example submits a two-variable QUBO problem representing a logical NOT gate
-       to a D-Wave system selected by the user's default
-       :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
-       The QUBO---two nodes with biases of -1 that are coupled with strength 2---needs
-       only any two coupled qubits and so is easily minor-embedded in a single unit cell.
+       This example submits a two-variable QUBO problem representing a logical
+       NOT gate to a D-Wave system. The QUBO---two nodes with biases of -1 that
+       are coupled with strength 2---needs only any two coupled qubits and so is
+       easily minor-embedded in a single unit cell.
        Composite :class:`.TilingComposite` tiles it multiple times for parallel solution:
        the two nodes should typically have opposite values.
 
@@ -189,8 +188,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
         Examples:
             This example submits a simple Ising problem of just two variables on a
-            D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
+            D-Wave system.
             Because the problem fits in a single :term:`Chimera` unit cell, it is tiled
             across the solver's entire Chimera graph, resulting in multiple samples
             (the exact number depends on the working Chimera graph of the D-Wave system).

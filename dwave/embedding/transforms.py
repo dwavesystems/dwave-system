@@ -52,42 +52,36 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
             where t is a variable in the target graph and Nt is its set of neighbours.
 
         chain_strength (float, optional):
-            Magnitude of the quadratic bias (in SPIN-space) applied between variables to create chains. Note
-            that the energy penalty of chain breaks is 2 * `chain_strength`.
+            Magnitude of the quadratic bias (in SPIN-space) applied between
+            variables to create chains, with the energy penalty of chain breaks
+            set to 2 * `chain_strength`.
 
         smear_vartype (:class:`.Vartype`, optional, default=None):
-            When a single variable is embedded, it's linear bias is 'smeared' evenly over the
-            chain. This parameter determines whether the variable is smeared in SPIN or BINARY
-            space. By default the embedding is done according to the given source_bqm.
+            Determines whether the linear bias of embedded variables is smeared
+            (the specified value is evenly divided as biases of a chain in the
+            target graph) in SPIN or BINARY space. Defaults to the
+            :class:`.Vartype` of `source_bqm`.
 
     Returns:
         :obj:`.BinaryQuadraticModel`: Target binary quadratic model.
 
     Examples:
-
-        We start with a :math:`K_3` binary quadratic model
-
-        >>> # Binary quadratic model for a triangular source graph
-        >>> h = {'a': 0, 'b': 0, 'c': 0}
-        >>> J = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
-        >>> bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
-
-        We wish to embed this triangular binary quadratic model onto
-        a square target graph.
+        This example embeds a triangular binary quadratic model representing
+        a :math:`K_3` clique into a square target graph by mapping variable `c`
+        in the source to nodes `2` and `3` in the target.
 
         >>> import networkx as nx
         ...
         >>> target = nx.cycle_graph(4)
-
-        We map the `c` variable in the source binary quadratic model to
-        nodes `2` and `3` in the target graph.
-
+        >>> # Binary quadratic model for a triangular source graph
+        >>> h = {'a': 0, 'b': 0, 'c': 0}
+        >>> J = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
+        >>> bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
+        >>> # Variable c is a chain
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
-
-        We are now ready to embed.
-
+        >>> # Embed and show the chain strength
         >>> target_bqm = dwave.embedding.embed_bqm(bqm, embedding, target)
-        >>> target_bqm.quadratic[(2, 3)]  # chain strength
+        >>> target_bqm.quadratic[(2, 3)]
         -1.0
         >>> print(target_bqm.quadratic)  # doctest: +SKIP
         {(0, 1): 1.0, (0, 3): 1.0, (1, 2): 1.0, (2, 3): -1.0}
@@ -177,8 +171,9 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             where t is a target-graph variable and Nt is its set of neighbours.
 
         chain_strength (float, optional):
-            Magnitude of the quadratic bias (in SPIN-space) applied between variables to form a chain. Note
-            that the energy penalty of chain breaks is 2 * `chain_strength`.
+            Magnitude of the quadratic bias (in SPIN-space) applied between
+            variables to form a chain, with the energy penalty of chain breaks
+            set to 2 * `chain_strength`.
 
     Returns:
         tuple: A 2-tuple:
@@ -188,26 +183,19 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             dict[(variable, variable), bias]: Quadratic biases of the target Ising problem.
 
     Examples:
-
-        We start with a :math:`K_3` Ising problem
-
-        >>> h = {'a': 0, 'b': 0, 'c': 0}
-        >>> J = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
-
-        We wish to embed this triangular binary quadratic model onto
-        a square target graph.
+        This example embeds a triangular Ising problem representing
+        a :math:`K_3` clique into a square target graph by mapping variable `c`
+        in the source to nodes `2` and `3` in the target.
 
         >>> import networkx as nx
         ...
         >>> target = nx.cycle_graph(4)
-
-        We map the `c` variable in the source binary quadratic model to
-        nodes `2` and `3` in the target graph.
-
+        >>> # Ising problem biases
+        >>> h = {'a': 0, 'b': 0, 'c': 0}
+        >>> J = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
+        >>> # Variable c is a chain
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
-
-        We are now ready to embed.
-
+        >>> # Embed and show the resulting biases
         >>> th, tJ = dwave.embedding.embed_ising(h, J, embedding, target)
         >>> th  # doctest: +SKIP
         {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
@@ -241,35 +229,26 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
             where t is a target-graph variable and Nt is its set of neighbours.
 
         chain_strength (float, optional):
-            Magnitude of the quadratic bias (in SPIN-space) applied between variables to form a chain. Note
-            that the energy penalty of chain breaks is 2 * `chain_strength`.
+            Magnitude of the quadratic bias (in SPIN-space) applied between
+            variables to form a chain, with the energy penalty of chain breaks
+            set to 2 * `chain_strength`.
 
     Returns:
         dict[(variable, variable), bias]: Quadratic biases of the target QUBO.
 
     Examples:
-        This example embeds a square source graph onto fully connected :math:`K_5` graph.
-        Embedding is accomplished by an edge deletion operation on the target graph: target-node
-        0 is not used.
-
-        We start with a :math:`K_3` QUBO
-
-        >>> Q = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
-
-        We wish to embed this triangular binary quadratic model onto
-        a square target graph.
+        This example embeds a triangular QUBO representing a :math:`K_3` clique
+        into a square target graph by mapping variable `c` in the source to nodes
+        `2` and `3` in the target.
 
         >>> import networkx as nx
         ...
         >>> target = nx.cycle_graph(4)
-
-        We map the `c` variable in the source binary quadratic model to
-        nodes `2` and `3` in the target graph.
-
+        >>> # QUBO
+        >>> Q = {('a', 'b'): 1, ('b', 'c'): 1, ('a', 'c'): 1}
+        >>> # Variable c is a chain
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
-
-        We are now ready to embed.
-
+        >>> # Embed and show the resulting biases
         >>> tQ = dwave.embedding.embed_qubo(Q, embedding, target)
         >>> tQ  # doctest: +SKIP
         {(0, 1): 1.0,
@@ -293,14 +272,14 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
 
 def unembed_sampleset(target_sampleset, embedding, source_bqm,
                       chain_break_method=None, chain_break_fraction=False):
-    """Unembed the samples set.
+    """Unembed a samples set.
 
-    Construct a sample set for the source binary quadratic model (BQM) by
-    unembedding the given samples from the target BQM.
+    Given samples from a target binary quadratic model (BQM), construct a sample
+    set for a source BQM by unembedding.
 
     Args:
         target_sampleset (:obj:`dimod.SampleSet`):
-            SampleSet from the target BQM.
+            Sample set from the target BQM.
 
         embedding (dict):
             Mapping from source graph to target graph as a dict of form
@@ -308,37 +287,33 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
             variable.
 
         source_bqm (:obj:`dimod.BinaryQuadraticModel`):
-            Source binary quadratic model.
+            Source BQM.
 
         chain_break_method (function, optional):
             Method used to resolve chain breaks.
             See :mod:`dwave.embedding.chain_breaks`.
 
         chain_break_fraction (bool, optional, default=False):
-            If True, a 'chain_break_fraction' field is added to the unembedded
-            samples which report what fraction of the chains were broken before
-            unembedding.
+            Add a `chain_break_fraction` field to the unembedded :obj:`dimod.SampleSet`
+            with the fraction of chains broken before unembedding.
 
     Returns:
-        :obj:`.SampleSet`:
+        :obj:`.SampleSet`: Sample set in the source BQM.
 
     Examples:
+       This example unembeds from a square target graph samples of a triangular
+       source BQM.
 
-        Say that we have a triangular binary quadratic model and an embedding
-
+        >>> # Triangular binary quadratic model and an embedding
         >>> J = {('a', 'b'): -1, ('b', 'c'): -1, ('a', 'c'): -1}
         >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, J)
         >>> embedding = {'a': [0, 1], 'b': [2], 'c': [3]}
-
-        We also have some samples from the embedded binary quadratic model
-
+        >>> # Samples from the embedded binary quadratic model
         >>> samples = [{0: -1, 1: -1, 2: -1, 3: -1},  # [0, 1] is unbroken
         ...            {0: -1, 1: +1, 2: +1, 3: +1}]  # [0, 1] is broken
         >>> energies = [-3, 1]
         >>> embedded = dimod.SampleSet.from_samples(samples, dimod.SPIN, energies)
-
-        We can unembed
-
+        >>> # Unembed
         >>> samples = dwave.embedding.unembed_sampleset(embedded, embedding, bqm)
         >>> samples.record.sample   # doctest: +SKIP
         array([[-1, -1, -1],

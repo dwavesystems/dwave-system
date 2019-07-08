@@ -21,21 +21,17 @@ from dwave.embedding.exceptions import InvalidNodeError, MissingEdgeError
 
 
 def diagnose_embedding(emb, source, target):
-    """A detailed diagnostic for minor embeddings.
+    """Diagnose a minor embedding.
 
-    This diagnostic produces a generator, which lists all issues with `emb`. The errors
-    are yielded in the form
-
-        ExceptionClass, arg1, arg2,...
-
-    where the arguments following the class are used to construct the exception object.
-    User-friendly variants of this function are :func:`is_valid_embedding`, which returns a
-    bool, and :func:`verify_embedding` which raises the first observed error.  All exceptions
-    are subclasses of :exc:`.EmbeddingError`.
+    Produces a generator that lists all issues with the embedding. User-friendly
+    variants of this function are :func:`is_valid_embedding`, which returns a
+    bool, and :func:`verify_embedding`, which raises the first observed error.
 
     Args:
         emb (dict):
-            Dictionary mapping source nodes to arrays of target nodes.
+            A mapping of source nodes to arrays of target nodes as a dict
+            of form {s: [t, ...], ...}, where s is a source-graph variable and t
+            is a target-graph variable.
 
         source (list/:obj:`networkx.Graph`):
             Graph to be embedded as a NetworkX graph or a list of edges.
@@ -44,16 +40,39 @@ def diagnose_embedding(emb, source, target):
             Graph being embedded into as a NetworkX graph or a list of edges.
 
     Yields:
-        One of:
-            :exc:`.MissingChainError`, snode: a source node label that does not occur as a key of `emb`, or for which emb[snode] is empty
+        Errors yielded in the form `ExceptionClass, arg1, arg2,...`, where the
+        arguments following the class are used to construct the exception object,
+        which are subclasses of :exc:`.EmbeddingError`.
 
-            :exc:`.ChainOverlapError`, tnode, snode0, snode0: a target node which occurs in both `emb[snode0]` and `emb[snode1]`
+            :exc:`.MissingChainError`, snode: a source node label that does not
+            occur as a key of `emb`, or for which emb[snode] is empty.
 
-            :exc:`.DisconnectedChainError`, snode: a source node label whose chain is not a connected subgraph of `target`
+            :exc:`.ChainOverlapError`, tnode, snode0, snode0: a target node which
+            occurs in both `emb[snode0]` and `emb[snode1]`.
 
-            :exc:`.InvalidNodeError`, tnode, snode: a source node label and putative target node label which is not a node of `target`
+            :exc:`.DisconnectedChainError`, snode: a source node label whose chain
+            is not a connected subgraph of `target`.
 
-            :exc:`.MissingEdgeError`, snode0, snode1: a pair of source node labels defining an edge which is not present between their chains
+            :exc:`.InvalidNodeError`, tnode, snode: a source node label and putative
+            target node label that is not a node of `target`.
+
+            :exc:`.MissingEdgeError`, snode0, snode1: a pair of source node labels
+            defining an edge that is not present between their chains.
+
+    Examples:
+        This example diagnoses an invalid embedding from a triangular source graph
+        to a square target graph. A valid embedding, such as
+        `emb = {0: [1], 1: [0], 2: [2, 3]}`, yields no errors.
+
+         >>> import networkx as nx
+         >>> source = nx.complete_graph(3)
+         >>> target = nx.cycle_graph(4)
+         >>> embedding = {0: [2], 1: [1, 'a'], 2: [2, 3]}
+         >>> diagnosis = diagnose_embedding(embedding, source, target)
+         >>> for problem in diagnosis:
+         ...     print(problem)
+         (<class 'dwave.embedding.exceptions.InvalidNodeError'>, 1, 'a')
+         (<class 'dwave.embedding.exceptions.ChainOverlapError'>, 2, 2, 0)
     """
 
     if not hasattr(source, 'edges'):
@@ -99,12 +118,14 @@ def diagnose_embedding(emb, source, target):
 def is_valid_embedding(emb, source, target):
     """A simple (bool) diagnostic for minor embeddings.
 
-    See :func:`diagnose_embedding` for a more detailed diagnostic / more information.
+    See :func:`diagnose_embedding` for a more detailed diagnostic and more information.
 
     Args:
-        emb (dict): a dictionary mapping source nodes to arrays of target nodes
-        source (graph or edgelist): the graph to be embedded
-        target (graph or edgelist): the graph being embedded into
+        emb (dict): A mapping of source nodes to arrays of target nodes as a dict
+            of form {s: [t, ...], ...}, where s is a source-graph variable and t
+            is a target-graph variable.
+        source (graph or edgelist): Graph to be embedded.
+        target (graph or edgelist): Graph being embedded into.
 
     Returns:
         bool: True if `emb` is valid.
@@ -118,24 +139,30 @@ def is_valid_embedding(emb, source, target):
 def verify_embedding(emb, source, target, ignore_errors=()):
     """A simple (exception-raising) diagnostic for minor embeddings.
 
-    See :func:`diagnose_embedding` for a more detailed diagnostic / more information.
+    See :func:`diagnose_embedding` for a more detailed diagnostic and more information.
 
     Args:
-        emb (dict): a dictionary mapping source nodes to arrays of target nodes
-        source (graph or edgelist): the graph to be embedded
-        target (graph or edgelist): the graph being embedded into
+        emb (dict): A mapping of source nodes to arrays of target nodes as a dict
+            of form {s: [t, ...], ...}, where s is a source-graph variable and t
+            is a target-graph variable.
+        source (graph or edgelist): Graph to be embedded
+        target (graph or edgelist): Graph being embedded into
 
     Raises:
-        EmbeddingError: a catch-all class for the below
+        EmbeddingError: A catch-all class for the following errors:
 
-        MissingChainError: in case a key is missing from `emb`, or the associated chain is empty
-        ChainOverlapError: in case two chains contain the same target node
-        DisconnectedChainError: in case a chain is disconnected
-        InvalidNodeError: in case a chain contains a node label not found in `target`
-        MissingEdgeError: in case a source edge is not represented by any target edges
+            MissingChainError: A key is missing from `emb` or the associated chain is empty.
+
+            ChainOverlapError: Two chains contain the same target node.
+
+            DisconnectedChainError: A chain is disconnected.
+
+            InvalidNodeError: A chain contains a node label not found in `target`.
+
+            MissingEdgeError: A source edge is not represented by any target edges.
 
     Returns:
-        bool: True (if no exception is raised)
+        bool: True if no exception is raised.
     """
 
     for error in diagnose_embedding(emb, source, target):

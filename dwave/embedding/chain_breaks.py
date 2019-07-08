@@ -97,21 +97,21 @@ def discard(samples, chains):
 
     Args:
         samples (samples_like):
-            A collection of samples. See :func:`dimod.as_samples` for a
-            description of samples-like.
+            A collection of samples. `samples_like` is an extension of NumPy's
+            array_like. See :func:`dimod.as_samples`.
 
         chains (list[array_like]):
-            List of chains of length nC where nC is the number of chains.
-            Each chain should be an array_like collection of variables in
+            List of chains, where each chain is an array_like collection of
+            the variables in the same order as their represention in the given
             samples.
 
     Returns:
         tuple: A 2-tuple containing:
 
-            :obj:`numpy.ndarray`: An array of unembedded samples. Broken chains
-            are discarded. The array has dtype 'int8'.
+            :obj:`numpy.ndarray`: Unembedded samples as an array of dtype 'int8'.
+            Broken chains are discarded.
 
-            :obj:`numpy.ndarray`: The indicies of the rows with unbroken chains.
+            :obj:`numpy.ndarray`: Indicies of rows with unbroken chains.
 
     Examples:
         This example unembeds two samples that chains nodes 0 and 1 to represent
@@ -153,27 +153,29 @@ def discard(samples, chains):
 
 
 def majority_vote(samples, chains):
-    """Use the most common element in broken chains.
+    """Unembed samples using the most common value for broken chains.
 
     Args:
         samples (samples_like):
-            A collection of samples. See :func:`dimod.as_samples` for a
-            description of samples-like.
+            A collection of samples. `samples_like` is an extension of NumPy's
+            array_like. See :func:`dimod.as_samples`.
 
         chains (list[array_like]):
-            List of chains of length nC where nC is the number of chains.
-            Each chain should be an array_like collection of variables in
+            List of chains, where each chain is an array_like collection of
+            the variables in the same order as their represention in the given
             samples.
 
     Returns:
         tuple: A 2-tuple containing:
 
-            :obj:`numpy.ndarray`: A nS x nC array of unembedded samples. The array has dtype 'int8'.
-            Where there is a chain break, the value is chosen to match the most common value in the
-            chain. For broken chains without a majority, the value is chosen arbitrarily.
+            :obj:`numpy.ndarray`: Unembedded samples as an nS-by-nC array of
+            dtype 'int8', where nC is the number of chains and nS the number
+            of samples. Broken chains are resolved by setting the sample value to
+            that of most the chain's elements or, for chains without a majority,
+            an arbitrary value.
 
-            :obj:`numpy.ndarray`: Equivalent to :code:`np.arange(nS)` because all samples are kept
-            and no samples are added.
+            :obj:`numpy.ndarray`: Indicies of the samples. Equivalent to
+            :code:`np.arange(nS)` because all samples are kept and none added.
 
     Examples:
         This example unembeds samples from a target graph that chains nodes 0 and 1 to
@@ -222,26 +224,28 @@ def majority_vote(samples, chains):
 
 
 def weighted_random(samples, chains):
-    """Determine the sample values of chains by weighed random choice.
+    """Unembed samples using weighed random choice for broken chains.
 
     Args:
         samples (samples_like):
-            A collection of samples. See :func:`dimod.as_samples` for a
-            description of samples-like.
+            A collection of samples. `samples_like` is an extension of NumPy's
+            array_like. See :func:`dimod.as_samples`.
 
         chains (list[array_like]):
-            List of chains of length nC where nC is the number of chains.
-            Each chain should be an array_like collection of variables in
+            List of chains, where each chain is an array_like collection of
+            the variables in the same order as their represention in the given
             samples.
 
     Returns:
         tuple: A 2-tuple containing:
 
-            :obj:`numpy.ndarray`: A nS x nC array of unembedded samples. The array has dtype 'int8'.
-            Where there is a chain break, the value is chosen randomly, weighted by frequency of the
-            chain's value.
+            :obj:`numpy.ndarray`: Unembedded samples as an nS-by-nC array of
+            dtype 'int8', where nC is the number of chains and nS the number
+            of samples. Broken chains are resolved by setting the sample value to
+            a random value weighted by frequency of the value in the chain.
 
-            :obj:`numpy.ndarray`: Equivalent to :code:`np.arange(nS)` because all samples are kept
+            :obj:`numpy.ndarray`: Indicies of the samples. Equivalent to
+            :code:`np.arange(nS)` because all samples are kept
             and no samples are added.
 
     Examples:
@@ -277,11 +281,11 @@ def weighted_random(samples, chains):
 
 
 class MinimizeEnergy(Callable):
-    """Determine the sample values of broken chains by minimizing local energy.
+    """Unembed samples by minimizing local energy for broken chains.
 
     Args:
         bqm (:obj:`.BinaryQuadraticModel`).
-            The binary quadratic model associated with the source graph.
+            Binary quadratic model associated with the source graph.
 
         embedding (dict):
             Mapping from source graph to target graph as a dict of form {s: [t, ...], ...},
@@ -327,22 +331,23 @@ class MinimizeEnergy(Callable):
         """
         Args:
             samples (samples_like):
-                A collection of samples. See :func:`dimod.as_samples` for a
-                description of samples-like.
+                A collection of samples. `samples_like` is an extension of NumPy's
+                array_like. See :func:`dimod.as_samples`.
 
             chains (list[array_like]):
-                List of chains of length nC where nC is the number of chains.
-                Each chain should be an array_like collection of variables in
+                List of chains, where each chain is an array_like collection of
+                the variables in the same order as their represention in the given
                 samples.
 
         Returns:
             tuple: A 2-tuple containing:
 
-                :obj:`numpy.ndarray`: A nS x nC array of unembedded samples. The array has dtype 'int8'.
-                Where there is a chain break, the value is chosen by greedy energy descent.
+                :obj:`numpy.ndarray`: Unembedded samples as an nS-by-nC array of
+                dtype 'int8', where nC is the number of chains and nS the number
+                of samples. Broken chains are resolved by greedy energy descent.
 
-                :obj:`numpy.ndarray`: Equivalent to :code:`np.arange(nS)` because all samples are kept
-                and no samples are added.
+                :obj:`numpy.ndarray`: Indicies of the samples. Equivalent to
+                :code:`np.arange(nS)` because all samples are kept and none added.
 
         """
         samples, labels = dimod.as_samples(samples)

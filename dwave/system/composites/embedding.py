@@ -152,7 +152,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                Add a ‘chain_break_fraction’ field to the unembedded response with
+                Add a `chain_break_fraction` field to the unembedded response with
                 the fraction of chains broken before unembedding.
 
             embedding_parameters (dict, optional):

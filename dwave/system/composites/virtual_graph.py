@@ -40,10 +40,10 @@ __all__ = ['VirtualGraphComposite']
 class VirtualGraphComposite(FixedEmbeddingComposite):
     """Composite to use the D-Wave virtual graph feature for minor-embedding.
 
-    Inherits from :class:`dimod.ComposedSampler` and :class:`dimod.Structured`.
-
     Calibrates qubits in chains to compensate for the effects of biases and enables easy
     creation, optimization, use, and reuse of an embedding for a given working graph.
+
+    Inherits from :class:`dimod.ComposedSampler` and :class:`dimod.Structured`.
 
     Args:
         sampler (:class:`.DWaveSampler`):
@@ -68,7 +68,8 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
             If None, flux biases are pulled from the database or calculated empirically.
 
         flux_bias_num_reads (int, optional, default=1000):
-            Number of samples to collect per flux bias value.
+            Number of samples to collect per flux bias value to calculate calibration
+            information.
 
         flux_bias_max_age (int, optional, default=3600):
             Maximum age (in seconds) allowed for a previously calculated flux bias offset to
@@ -81,8 +82,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that submits a QUBO problem to a D-Wave solver selected by the user's
-       default :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
+       that submits a QUBO problem to a D-Wave solver.
        The problem represents a logical
        AND gate using penalty function :math:`P = xy - 2(x+y)z +3z`, where variables x and y
        are the gate's inputs and z the output. This simple three-variable problem is manually
@@ -171,9 +171,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
 
         Examples:
            This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-           that submits an Ising problem to a D-Wave solver selected by the user's
-           default
-           :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
+           that submits an Ising problem to a D-Wave solver.
            The problem represents a logical
            NOT gate using penalty function :math:`P = xy`, where variable x is the gate's input
            and y the output. This simple two-variable problem is manually minor-embedded
