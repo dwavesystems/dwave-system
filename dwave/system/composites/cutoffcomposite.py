@@ -14,8 +14,8 @@
 #
 # =============================================================================
 """
-Composites that remove interactions with biases smaller than a cutoff. Isolated
-variables (after the cutoff) are also removed.
+Composites that remove any interactions below a cutoff value. Isolated
+variables are then also removed.
 """
 import operator
 
@@ -27,32 +27,50 @@ __all__ = 'CutOffComposite', 'PolyCutOffComposite'
 
 
 class CutOffComposite(dimod.ComposedSampler):
-    """Composite to cut off small interactions.
+    """Composite to remove interactions below a specified cutoff value.
 
-    Removes interactions smaller than a given cutoff. Isolated
-    variables (after the cutoff) are also removed.
-
-    Note that if the problem had isolated variables before the cutoff, they
-    will also be affected.
+    Prunes the binary quadratic model (BQM) submitted to the child sampler by
+    retaining only interactions with values commensurate with the sampler's
+    precision as specified by the `cutoff` argument. Also removes variables
+    isolated post- or pre-removal of these interactions from the BQM passed
+    on to the child sampler, setting these variables to values that minimize
+    the original BQM's energy for the returned samples.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
-            A dimod sampler
+            A dimod sampler.
 
-        cutoff (number):
-            The lower bound for interaction bias magnitudes. Interactions
-            with biases less than cutoff are removed. Isolated variables
-            are also not sent to the child sampler.
+       cutoff (number):
+            Lower bound for absolute value of interactions. Interactions
+            with absolute values lower than `cutoff` are removed. Isolated variables
+            are also not passed on to the child sampler.
 
-        cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
-            Variable space to do the cutoff in. Accepted input values:
+       cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
+            Variable space to execute the removal in. Accepted input values:
 
             * :class:`.Vartype.SPIN`, ``'SPIN'``, ``{-1, 1}``
             * :class:`.Vartype.BINARY`, ``'BINARY'``, ``{0, 1}``
 
-        comparison (function, optional):
-            A comparison operator for comparing the bias magnitude to the cutoff
+       comparison (function, optional):
+            A comparison operator for comparing interaction values to the cutoff
             value. Defaults to :func:`operator.lt`.
+
+    Examples:
+        This example removes one interaction, `'ac': -0.7`, before embedding
+        on a D-Wave system. Note that the lowest-energy sample for the embedded problem
+        is `{'a': 1, 'b': -1, 'c': -1}` but with a large enough number of samples
+        (here `num_reads=1000`), the lowest-energy solution to the complete BQM is
+        likely found and its energy recalculated by the composite.
+
+        >>> import dimod
+        >>> sampler = DWaveSampler(solver={'qpu': True})
+        >>> bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},    # doctest: +SKIP
+        ...                            {'ab': -0.8, 'ac': -0.7, 'bc': -1},
+        ...                            0,
+        ...                            dimod.SPIN)
+        >>> CutOffComposite(AutoEmbeddingComposite(sampler), 0.75).sample(bqm,
+        ...                 num_reads=1000).first.sample # doctest: +SKIP
+        {'a': -1, 'b': -1, 'c': -1}
 
     """
 
@@ -66,24 +84,29 @@ class CutOffComposite(dimod.ComposedSampler):
 
     @property
     def children(self):
+        """List of child samplers that that are used by this composite."""
         return self._children
 
     @property
     def parameters(self):
+        """A dict where keys are the keyword parameters accepted by the sampler methods
+        and values are lists of the properties relevent to each parameter."""
         return self.child.parameters.copy()
 
     @property
     def properties(self):
+        """A dict containing any additional information about the sampler."""
         return {'child_properties': self.child.properties.copy()}
 
     def sample(self, bqm, **parameters):
-        """Cutoff and sample from the provided binary quadratic model.
+        """Cut off interactions and sample from the provided binary quadratic model.
 
-        Removes interactions smaller than a given cutoff. Isolated
-        variables (after the cutoff) are also removed.
-
-        Note that if the problem had isolated variables before the cutoff, they
-        will also be affected.
+        Prunes the binary quadratic model (BQM) submitted to the child sampler
+        by retaining only interactions with values commensurate with the
+        sampler's precision as specified by the `cutoff` argument. Also removes
+        variables isolated post- or pre-removal of these interactions from the
+        BQM passed on to the child sampler, setting these variables to values
+        that minimize the original BQM's energy for the returned samples.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -94,6 +117,9 @@ class CutOffComposite(dimod.ComposedSampler):
 
         Returns:
             :obj:`dimod.SampleSet`
+
+        Examples:
+            See the example in :class:`CutOffComposite`.
 
         """
         child = self.child
@@ -178,32 +204,43 @@ def _restore_isolated(sampleset, bqm, isolated):
 
 
 class PolyCutOffComposite(dimod.ComposedPolySampler):
-    """Composite to cut off small interactions.
+    """Composite to remove polynomial interactions below a specified cutoff value.
 
-    Removes interactions smaller than a given cutoff. Isolated
-    variables (after the cutoff) are also removed.
-
-    Note that if the problem had isolated variables before the cutoff, they
-    will also be affected.
+    Prunes the binary polynomial submitted to the child sampler by retaining
+    only interactions with values commensurate with the sampler's precision as
+    specified by the `cutoff` argument. Also removes variables isolated post-
+    or pre-removal of these interactions from the polynomial passed on to the
+    child sampler, setting these variables to values that minimize the
+    original polynomial's energy for the returned samples.
 
     Args:
        sampler (:obj:`dimod.PolySampler`):
-            A dimod binary polynomial sampler
+            A dimod binary polynomial sampler.
 
-        cutoff (number):
-            The lower bound for interaction bias magnitudes. Interactions
-            with biases less than cutoff are removed. Isolated variables
-            are also not sent to the child sampler.
+       cutoff (number):
+            Lower bound for absolute value of interactions. Interactions
+            with absolute values lower than `cutoff` are removed. Isolated variables
+            are also not passed on to the child sampler.
 
-        cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
+       cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
             Variable space to do the cutoff in. Accepted input values:
 
             * :class:`.Vartype.SPIN`, ``'SPIN'``, ``{-1, 1}``
             * :class:`.Vartype.BINARY`, ``'BINARY'``, ``{0, 1}``
 
-        comparison (function, optional):
-            A comparison operator for comparing the bias magnitude to the cutoff
+       comparison (function, optional):
+            A comparison operator for comparing the interaction value to the cutoff
             value. Defaults to :func:`operator.lt`.
+
+    Examples:
+        This example removes one interaction, `'ac': 0.2`, before submitting
+        the polynomial to child sampler ExactSolver().
+
+        >>> import dimod
+        >>> sampler = dimod.HigherOrderComposite(dimod.ExactSolver())
+        >>> poly = dimod.BinaryPolynomial({'a': 3, 'abc':-4, 'ac': 0.2}, dimod.SPIN)
+        >>> PolyCutOffComposite(sampler, 1).sample_poly(poly).first.sample['a']
+        -1
 
     """
     @dimod.decorators.vartype_argument('cutoff_vartype')
@@ -218,24 +255,28 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
 
     @property
     def children(self):
+        """List of child samplers that that are used by this composite."""
         return self._children
 
     @property
     def parameters(self):
+        """A dict where keys are the keyword parameters accepted by the sampler methods and values are lists of the properties relevent to each parameter."""
         return self.child.parameters.copy()
 
     @property
     def properties(self):
+        """A dict containing any additional information about the sampler."""
         return {'child_properties': self.child.properties.copy()}
 
     def sample_poly(self, poly, **kwargs):
         """Cutoff and sample from the provided binary polynomial.
 
-        Removes interactions smaller than a given cutoff. Isolated
-        variables (after the cutoff) are also removed.
-
-        Note that if the problem had isolated variables before the cutoff, they
-        will also be affected.
+        Prunes the binary polynomial submitted to the child sampler by retaining
+        only interactions with values commensurate with the sampler's precision
+        as specified by the `cutoff` argument. Also removes variables isolated
+        post- or pre-removal of these interactions from the polynomial passed
+        on to the child sampler, setting these variables to values that minimize
+        the original polynomial's energy for the returned samples.
 
         Args:
             poly (:obj:`dimod.BinaryPolynomial`):
@@ -246,6 +287,9 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
 
         Returns:
             :obj:`dimod.SampleSet`
+
+        Examples:
+            See the example in :class:`PolyCutOffComposite`.
 
         """
         child = self.child
@@ -273,10 +317,12 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
         isolated = list(original.variables.difference(new.variables))
 
         if isolated and len(new) == 0:
-            # in this case all variables are isolated, so we just put one back
-            # to serve as the basis
-            term = isolated.pop(),
-            new[term] = original[term]
+            # in this case all variables are isolated, so find the variable with
+            # the strongest bias and use that as the seed for putting the other
+            # variables back in
+            v = max(isolated, key=lambda v: original.get((v,), 0.0))
+            isolated.remove(v)
+            new[(v,)] = original.get((v,), 0)
 
         # get the samples from the child sampler and put them into the original vartype
         sampleset = child.sample_poly(new, **kwargs).change_vartype(poly.vartype, inplace=True)
@@ -310,7 +356,7 @@ def _restore_isolated_higherorder(sampleset, poly, isolated):
 
     # we don't let the isolated variables interact with eachother for now because
     # it will slow this down substantially
-    isolated_energies = {v: 0 for v in isolated}
+    isolated_energies = {v: 0. for v in isolated}
     for term, bias in poly.items():
 
         isolated_components = term.intersection(isolated)

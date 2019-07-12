@@ -94,8 +94,9 @@ modindex_common_prefix = ['dwave-system.']
 doctest_global_setup = """
 from __future__ import print_function, division
 
-import dwave.embedding
-import dwave.system
+import dimod
+from dwave.embedding import *
+from dwave.system import *
 
 """
 
@@ -119,6 +120,10 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+def setup(app):
+    app.add_stylesheet('cookie_notice.css')
+    app.add_javascript('cookie_notice.js')
 
 # -- Options for HTMLHelp output ------------------------------------------
 

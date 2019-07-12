@@ -1,4 +1,4 @@
-# Copyright 2018 D-Wave Systems Inc.
+# Copyright 2019 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,24 +13,19 @@
 #    limitations under the License.
 #
 # =============================================================================
-import itertools
 import unittest
-
-import minorminer
-import dimod.testing as dtest
 
 from dwave.cloud.exceptions import ConfigFileError
 
-from dwave.system.composites import VirtualGraphComposite
+from dwave.system.schedules import ramp
 from dwave.system.samplers import DWaveSampler
 
 
-class TestVirtualGraphComposite(unittest.TestCase):
-
+class TestRamp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(qpu=True, flux_biases=True))
+            cls.qpu = DWaveSampler(solver=dict(qpu=True, h_gain_schedule=True))
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 
@@ -38,22 +33,14 @@ class TestVirtualGraphComposite(unittest.TestCase):
     def tearDownClass(cls):
         cls.qpu.client.close()
 
-    def test_construction(self):
-        child_sampler = self.qpu
+    def test_with_h_gain_schedule(self):
+        sampler = self.qpu
 
-        # get an embedding
-        K10_edges = list(itertools.combinations(range(10), 2))
-        embedding = minorminer.find_embedding(K10_edges, child_sampler.edgelist)
+        schedule = ramp(.5, .2, sampler.properties['default_annealing_time'])
 
-        sampler = VirtualGraphComposite(child_sampler, embedding)
+        sampler.validate_anneal_schedule(schedule)
 
-        dtest.assert_sampler_api(sampler)
+        h = {v: 1 for v in sampler.nodelist}
 
-        h = {}
-        J = {edge: -1 for edge in K10_edges}
-
-        # run with fbo
-        sampler.sample_ising(h, J).resolve()
-
-        # and again without
-        sampler.sample_ising(h, J, apply_flux_bias_offsets=False).resolve()
+        sampleset = sampler.sample_ising(h, {}, h_gain_schedule=schedule)
+        sampleset.record  # resolve the future

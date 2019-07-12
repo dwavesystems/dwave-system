@@ -13,24 +13,21 @@
 #    limitations under the License.
 #
 # =============================================================================
-import itertools
 import unittest
 
-import minorminer
-import dimod.testing as dtest
+import dimod
 
 from dwave.cloud.exceptions import ConfigFileError
 
-from dwave.system.composites import VirtualGraphComposite
-from dwave.system.samplers import DWaveSampler
+from dwave.system import DWaveSampler, EmbeddingComposite
 
 
-class TestVirtualGraphComposite(unittest.TestCase):
+class TestEmbeddingCompositeExactSolver(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(qpu=True, flux_biases=True))
+            cls.qpu = DWaveSampler(solver=dict(qpu=True, initial_state=True))
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 
@@ -38,22 +35,14 @@ class TestVirtualGraphComposite(unittest.TestCase):
     def tearDownClass(cls):
         cls.qpu.client.close()
 
-    def test_construction(self):
-        child_sampler = self.qpu
+    def test_initial_state(self):
+        sampler = EmbeddingComposite(DWaveSampler())
 
-        # get an embedding
-        K10_edges = list(itertools.combinations(range(10), 2))
-        embedding = minorminer.find_embedding(K10_edges, child_sampler.edgelist)
+        bqm = dimod.BinaryQuadraticModel.from_ising({'a': 2.0, 'b': -2.0},
+                                                    {('a', 'b'): -1})
 
-        sampler = VirtualGraphComposite(child_sampler, embedding)
+        kwargs = {'initial_state': {'a': 1, 'b': 1},
+                  'anneal_schedule': [(0, 1), (55.0, 0.45),
+                                      (155.0, 0.45), (210.0, 1)]}
 
-        dtest.assert_sampler_api(sampler)
-
-        h = {}
-        J = {edge: -1 for edge in K10_edges}
-
-        # run with fbo
-        sampler.sample_ising(h, J).resolve()
-
-        # and again without
-        sampler.sample_ising(h, J, apply_flux_bias_offsets=False).resolve()
+        sampler.sample(bqm, **kwargs).resolve()

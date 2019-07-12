@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 import unittest
 import random
 import warnings
@@ -157,7 +157,7 @@ class TestDwaveSampler(unittest.TestCase):
 
         self.assertEqual(cols, 2)
 
-        response = sampler.sample_ising({}, {(0, 1): 1})
+        response = sampler.sample_ising({}, {(0, 4): 1})
 
         rows, cols = response.record.sample.shape
 

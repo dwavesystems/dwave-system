@@ -1,4 +1,4 @@
-# Copyright 2018 D-Wave Systems Inc.
+# Copyright 2019 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,12 +13,22 @@
 #    limitations under the License.
 #
 # =============================================================================
-import dwave.system.flux_bias_offsets
 
-from dwave.system.samplers import *
-import dwave.system.samplers
+import unittest
 
-from dwave.system.composites import *
-import dwave.system.composites
+from dwave.system.schedules import ramp
 
-from dwave.system.utilities import *
+class TestRamp(unittest.TestCase):
+    def test_typical(self):
+        schedule = ramp(.5, .2, 1)
+        self.assertEqual(schedule, [(0, 0), (.4, 0), (.6, 1), (1, 1)])
+
+    def test_width_exception(self):
+        with self.assertRaises(ValueError):
+            ramp(.1, .2, 1)  # curve would begin at (0, 0)
+    
+    def test_s_exception(self):
+        with self.assertRaises(ValueError):
+            ramp(-1, 0, 1)
+
+

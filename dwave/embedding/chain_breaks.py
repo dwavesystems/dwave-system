@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
+# =============================================================================
 from __future__ import division
 
 from collections import Callable
@@ -20,7 +20,7 @@ from heapq import heapify, heappop
 
 import numpy as np
 
-from dimod.vartypes import SPIN
+import dimod
 
 __all__ = ['broken_chains',
            'discard',
@@ -60,9 +60,13 @@ def broken_chains(samples, chains):
                [ True,  True]])
 
     """
-    samples = np.asarray(samples)
-    if samples.ndim != 2:
-        raise ValueError("expected samples to be a numpy 2D array")
+    samples, labels = dimod.as_samples(samples)
+
+    if labels != range(len(labels)):
+        relabel = {v: idx for idx, v in enumerate(labels)}
+        chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     num_samples, num_variables = samples.shape
     num_chains = len(chains)
@@ -92,25 +96,27 @@ def discard(samples, chains):
     """Discard broken chains.
 
     Args:
-        samples (array_like):
-            Samples as a nS x nV array_like object where nS is the number of samples and nV is the
-            number of variables. The values should all be 0/1 or -1/+1.
+        samples (samples_like):
+            A collection of samples. `samples_like` is an extension of NumPy's
+            array_like. See :func:`dimod.as_samples`.
 
         chains (list[array_like]):
-            List of chains of length nC where nC is the number of chains.
-            Each chain should be an array_like collection of column indices in samples.
+            List of chains, where each chain is an array_like collection of
+            the variables in the same order as their represention in the given
+            samples.
 
     Returns:
         tuple: A 2-tuple containing:
 
-            :obj:`numpy.ndarray`: An array of unembedded samples. Broken chains are discarded. The
-            array has dtype 'int8'.
+            :obj:`numpy.ndarray`: Unembedded samples as an array of dtype 'int8'.
+            Broken chains are discarded.
 
-            :obj:`numpy.ndarray`: The indicies of the rows with unbroken chains.
+            :obj:`numpy.ndarray`: Indicies of rows with unbroken chains.
 
     Examples:
-        This example unembeds two samples that chains nodes 0 and 1 to represent a single source
-        node. The first sample has an unbroken chain, the second a broken chain.
+        This example unembeds two samples that chains nodes 0 and 1 to represent
+        a single source node. The first sample has an unbroken chain, the second
+        a broken chain.
 
         >>> import dimod
         >>> import numpy as np
@@ -124,9 +130,13 @@ def discard(samples, chains):
         array([0])
 
     """
-    samples = np.asarray(samples)
-    if samples.ndim != 2:
-        raise ValueError("expected samples to be a numpy 2D array")
+    samples, labels = dimod.as_samples(samples)
+
+    if labels != range(len(labels)):
+        relabel = {v: idx for idx, v in enumerate(labels)}
+        chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     num_samples, num_variables = samples.shape
     num_chains = len(chains)
@@ -143,26 +153,29 @@ def discard(samples, chains):
 
 
 def majority_vote(samples, chains):
-    """Use the most common element in broken chains.
+    """Unembed samples using the most common value for broken chains.
 
     Args:
-        samples (array_like):
-            Samples as a nS x nV array_like object where nS is the number of samples and nV is the
-            number of variables. The values should all be 0/1 or -1/+1.
+        samples (samples_like):
+            A collection of samples. `samples_like` is an extension of NumPy's
+            array_like. See :func:`dimod.as_samples`.
 
         chains (list[array_like]):
-            List of chains of length nC where nC is the number of chains.
-            Each chain should be an array_like collection of column indices in samples.
+            List of chains, where each chain is an array_like collection of
+            the variables in the same order as their represention in the given
+            samples.
 
     Returns:
         tuple: A 2-tuple containing:
 
-            :obj:`numpy.ndarray`: A nS x nC array of unembedded samples. The array has dtype 'int8'.
-            Where there is a chain break, the value is chosen to match the most common value in the
-            chain. For broken chains without a majority, the value is chosen arbitrarily.
+            :obj:`numpy.ndarray`: Unembedded samples as an nS-by-nC array of
+            dtype 'int8', where nC is the number of chains and nS the number
+            of samples. Broken chains are resolved by setting the sample value to
+            that of most the chain's elements or, for chains without a majority,
+            an arbitrary value.
 
-            :obj:`numpy.ndarray`: Equivalent to :code:`np.arange(nS)` because all samples are kept
-            and no samples are added.
+            :obj:`numpy.ndarray`: Indicies of the samples. Equivalent to
+            :code:`np.arange(nS)` because all samples are kept and none added.
 
     Examples:
         This example unembeds samples from a target graph that chains nodes 0 and 1 to
@@ -182,9 +195,13 @@ def majority_vote(samples, chains):
         array([0, 1])
 
     """
-    samples = np.asarray(samples)
-    if samples.ndim != 2:
-        raise ValueError("expected samples to be a numpy 2D array")
+    samples, labels = dimod.as_samples(samples)
+
+    if labels != range(len(labels)):
+        relabel = {v: idx for idx, v in enumerate(labels)}
+        chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     num_samples, num_variables = samples.shape
     num_chains = len(chains)
@@ -207,25 +224,28 @@ def majority_vote(samples, chains):
 
 
 def weighted_random(samples, chains):
-    """Determine the sample values of chains by weighed random choice.
+    """Unembed samples using weighed random choice for broken chains.
 
     Args:
-        samples (array_like):
-            Samples as a nS x nV array_like object where nS is the number of samples and nV is the
-            number of variables. The values should all be 0/1 or -1/+1.
+        samples (samples_like):
+            A collection of samples. `samples_like` is an extension of NumPy's
+            array_like. See :func:`dimod.as_samples`.
 
         chains (list[array_like]):
-            List of chains of length nC where nC is the number of chains.
-            Each chain should be an array_like collection of column indices in samples.
+            List of chains, where each chain is an array_like collection of
+            the variables in the same order as their represention in the given
+            samples.
 
     Returns:
         tuple: A 2-tuple containing:
 
-            :obj:`numpy.ndarray`: A nS x nC array of unembedded samples. The array has dtype 'int8'.
-            Where there is a chain break, the value is chosen randomly, weighted by frequency of the
-            chain's value.
+            :obj:`numpy.ndarray`: Unembedded samples as an nS-by-nC array of
+            dtype 'int8', where nC is the number of chains and nS the number
+            of samples. Broken chains are resolved by setting the sample value to
+            a random value weighted by frequency of the value in the chain.
 
-            :obj:`numpy.ndarray`: Equivalent to :code:`np.arange(nS)` because all samples are kept
+            :obj:`numpy.ndarray`: Indicies of the samples. Equivalent to
+            :code:`np.arange(nS)` because all samples are kept
             and no samples are added.
 
     Examples:
@@ -245,9 +265,13 @@ def weighted_random(samples, chains):
         array([0, 1])
 
     """
-    samples = np.asarray(samples)
-    if samples.ndim != 2:
-        raise ValueError("expected samples to be a numpy 2D array")
+    samples, labels = dimod.as_samples(samples)
+
+    if labels != range(len(labels)):
+        relabel = {v: idx for idx, v in enumerate(labels)}
+        chains = [[relabel[v] for v in chain] for chain in chains]
+    else:
+        chains = list(map(list, chains))  # because we use them for indexing
 
     # it sufficies to choose a random index from each chain and use that to construct the matrix
     idx = [np.random.choice(chain) for chain in chains]
@@ -257,11 +281,11 @@ def weighted_random(samples, chains):
 
 
 class MinimizeEnergy(Callable):
-    """Determine the sample values of broken chains by minimizing local energy.
+    """Unembed samples by minimizing local energy for broken chains.
 
     Args:
         bqm (:obj:`.BinaryQuadraticModel`).
-            The binary quadratic model associated with the source graph.
+            Binary quadratic model associated with the source graph.
 
         embedding (dict):
             Mapping from source graph to target graph as a dict of form {s: [t, ...], ...},
@@ -306,38 +330,44 @@ class MinimizeEnergy(Callable):
     def __call__(self, samples, chains):
         """
         Args:
-            samples (array_like):
-                Samples as a nS x nV array_like object where nS is the number of samples and nV is the
-                number of variables. The values should all be 0/1 or -1/+1.
+            samples (samples_like):
+                A collection of samples. `samples_like` is an extension of NumPy's
+                array_like. See :func:`dimod.as_samples`.
 
             chains (list[array_like]):
-                List of chains of length nC where nC is the number of chains.
-                Each chain should be an array_like collection of column indices in samples.
+                List of chains, where each chain is an array_like collection of
+                the variables in the same order as their represention in the given
+                samples.
 
         Returns:
             tuple: A 2-tuple containing:
 
-                :obj:`numpy.ndarray`: A nS x nC array of unembedded samples. The array has dtype 'int8'.
-                Where there is a chain break, the value is chosen by greedy energy descent.
+                :obj:`numpy.ndarray`: Unembedded samples as an nS-by-nC array of
+                dtype 'int8', where nC is the number of chains and nS the number
+                of samples. Broken chains are resolved by greedy energy descent.
 
-                :obj:`numpy.ndarray`: Equivalent to :code:`np.arange(nS)` because all samples are kept
-                and no samples are added.
+                :obj:`numpy.ndarray`: Indicies of the samples. Equivalent to
+                :code:`np.arange(nS)` because all samples are kept and none added.
 
         """
-        samples = np.asarray(samples)
-        if samples.ndim != 2:
-            raise ValueError("expected samples to be a numpy 2D array")
+        samples, labels = dimod.as_samples(samples)
+
+        if labels != range(len(labels)):
+            relabel = {v: idx for idx, v in enumerate(labels)}
+            chains = [[relabel[v] for v in chain] for chain in chains]
+        else:
+            chains = list(map(list, chains))  # because we use them for indexing
 
         chain_to_var = self.chain_to_var
-        variables = [chain_to_var[frozenset(chain)] for chain in chains]
-        chains = [np.asarray(list(chain)) if isinstance(chain, set) else np.array(chain) for chain in chains]
+        variables = [chain_to_var[frozenset(labels[c] for c in chain)]
+                     for chain in chains]
 
         # we want the bqm by index
         bqm = self.bqm.relabel_variables({v: idx for idx, v in enumerate(variables)}, inplace=False)
 
         num_chains = len(chains)
 
-        if bqm.vartype is SPIN:
+        if bqm.vartype is dimod.SPIN:
             ZERO = -1
         else:
             ZERO = 0
@@ -348,7 +378,6 @@ class MinimizeEnergy(Callable):
             broken = []
 
             for cidx, chain in enumerate(chains):
-
                 eq1 = (arr[chain] == 1)
                 if not np.bitwise_xor(eq1.all(), eq1.any()):
                     # not broken

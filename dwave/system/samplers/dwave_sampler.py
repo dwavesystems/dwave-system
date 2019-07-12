@@ -25,6 +25,8 @@ from warnings import warn
 
 import dimod
 
+from dimod.exceptions import BinaryQuadraticModelStructureError
+
 from dwave.cloud import Client
 
 __all__ = ['DWaveSampler']
@@ -33,25 +35,17 @@ __all__ = ['DWaveSampler']
 class DWaveSampler(dimod.Sampler, dimod.Structured):
     """A class for using the D-Wave system as a sampler.
 
+    Uses parameters set in a configuration file, as environment variables, or
+    explicitly as input arguments for selecting and communicating with a D-Wave
+    system. For more information, see
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_.
+
     Inherits from :class:`dimod.Sampler` and :class:`dimod.Structured`.
-
-    Enables quick incorporation of the D-Wave system as a sampler in
-    the D-Wave Ocean software stack. Also enables optional customizing of input
-    parameters to :std:doc:`D-Wave Cloud Client <cloud-client:index>`
-    (the stack's communication-manager package).
-
-    Typically you store the parameters used to identify and communicate with your
-    D-Wave system in a configuration file, the
-    :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`,
-    which may include more than one profile, and are selected when not overridden by
-    explicit input arguments or environment variables. For more information, see
-    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_\ .
 
     Args:
         config_file (str, optional):
-            Path to a
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`
-            that identifies a D-Wave system and provides connection information.
+            Path to a configuration file that identifies a D-Wave system and provides
+            connection information.
 
         profile (str, optional):
             Profile to select from the configuration file.
@@ -66,7 +60,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Solver (a D-Wave system on which to run submitted problems) to select given
             as a set of required features. Supported features and values are described in
             :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
-            compatibility, solver name, formatted as a string, is accepted.
+            compatibility, a solver name, formatted as a string, is accepted.
 
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API.
@@ -76,21 +70,16 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Examples:
         This example submits a two-variable Ising problem mapped directly to qubits 0
-        and 1 on the example system.
-
-        Example configuration file /home/susan/.config/dwave/dwave.conf::
-
-          [defaults]
-          endpoint = https://url.of.some.dwavesystem.com/sapi
-          client = qpu
-          [2000q]
-          solver = {"num_qubits__gte": 2000}
-          token = ABC-123456789123456789123456789
+        and 1 on a D-Wave system selected by explicitly requiring that it have these two
+        active qubits. Other required parameters for communication with the system, such
+        as its URL and an autentication token, are implicitly set in a configuration file
+        or as environment variables, as described in
+        `Configuring a D-Wave System <https://docs.ocean.dwavesys.com/en/latest/overview/dwavesys.html>`_.
 
         >>> from dwave.system.samplers import DWaveSampler
-        >>> sampler = DWaveSampler()
-        >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
-        >>> for sample in response.samples():  # doctest: +SKIP
+        >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
+        >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
+        >>> for sample in sampleset.samples():  # doctest: +SKIP
         ...    print(sample)
         ...
         {0: 1, 1: -1}
@@ -112,9 +101,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # need to set up the nodelist and edgelist, properties, parameters
-        self._nodelist = sorted(self.solver.nodes)
-        self._edgelist = sorted(set(tuple(sorted(edge)) for edge in self.solver.edges))
+        # need to set up the properties, parameters
         self._properties = self.solver.properties.copy()  # shallow copy
         self._parameters = {param: ['parameters'] for param in self.solver.properties['parameters']}
 
@@ -124,11 +111,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Solver properties are dependent on the selected D-Wave solver and subject to change;
         for example, new released features may add properties.
+        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
+        describes the parameters and properties supported on the D-Wave system.
 
         Examples:
-            This example prints properties retrieved from a D-Wave system selected by
-            the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -152,11 +138,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Solver parameters are dependent on the selected D-Wave solver and subject to change;
         for example, new released features may add parameters.
+        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
+        describes the parameters and properties supported on the D-Wave system.
 
         Examples:
-            This example prints the parameters retrieved
-            from a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -179,9 +164,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active couplers for the D-Wave solver.
 
         Examples:
-            This example prints the active couplers retrieved
-            from a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -198,16 +180,19 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._edgelist
+        # Assumption: cloud client nodes are always integer-labelled
+        try:
+            edgelist = self._edgelist
+        except AttributeError:
+            self._edgelist = edgelist = sorted(set((u, v) if u < v else (v, u)
+                                               for u, v in self.solver.edges))
+        return edgelist
 
     @property
     def nodelist(self):
         """list: List of active qubits for the D-Wave solver.
 
         Examples:
-            This example prints the active qubits retrieved from a D-Wave system selected
-            by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -221,35 +206,49 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._nodelist
+        # Assumption: cloud client nodes are always integer-labelled
+        try:
+            nodelist = self._nodelist
+        except AttributeError:
+            self._nodelist = nodelist = sorted(self.solver.nodes)
+        return nodelist
 
     def sample_ising(self, h, J, **kwargs):
         """Sample from the specified Ising model.
 
         Args:
-            h (list/dict):
-                Linear biases of the Ising model. If a list, the list's indices are
-                used as variable labels.
+            h (dict/list):
+                Linear biases of the Ising model. If a dict, should be of the
+                form `{v: bias, ...}` where `v` is a spin-valued variable and
+                `bias` is its associated bias. If a list, it is treated as a
+                list of biases where the indices are the variable labels,
+                except in the case of missing qubits in which case 0 biases are
+                ignored while a non-zero bias set on a missing qubit raises an
+                error.
 
             J (dict[(int, int): float]):
                 Quadratic biases of the Ising model.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.DWaveSampler.parameters`
+                :attr:`.DWaveSampler.parameters`. D-Wave System Documentation's
+                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
+                describes the parameters and properties supported on the D-Wave system.
 
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
+            In it this sampler also provides timing information in the `info`
+            field as described in the D-Wave System Documentation's
+            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
-            0 and 1 on a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
+            0 and 1 on a D-Wave system.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
-            >>> response = sampler.sample_ising({0: -1, 1: 1}, {})
-            >>> for sample in response.samples():    # doctest: +SKIP
+            >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
+            >>> for sample in sampleset.samples():    # doctest: +SKIP
             ...    print(sample)
             ...
             {0: 1, 1: -1}
@@ -258,19 +257,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
+        nodes = self.solver.nodes  # set rather than .nodelist which is a list
+
         if isinstance(h, list):
-            h = dict(enumerate(h))
+            # to be consistent with the cloud-client, we ignore the 0 biases
+            # on missing nodes.
+            h = dict((v, b) for v, b in enumerate(h) if b or v in nodes)
 
         variables = set(h).union(*J)
-        try:
-            active_variables = sorted(variables)
-        except TypeError:
-            active_variables = list(variables)
-        num_variables = len(active_variables)
+
+        # developer note: in the future we should probably catch exceptions
+        # from the cloud client, but for now this is simpler/cleaner. We use
+        # the solver's nodes/edges because they are a set, so faster lookup
+        edges = self.solver.edges
+        if not (all(v in nodes for v in h) and
+                all((u, v) in edges or (v, u) in edges for u, v in J)):
+            msg = "Problem graph incompatible with solver."
+            raise BinaryQuadraticModelStructureError(msg)
 
         future = self.solver.sample_ising(h, J, **kwargs)
 
-        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.SPIN))
+        hook = _result_to_response_hook(variables, dimod.SPIN)
+        return dimod.SampleSet.from_future(future, hook)
 
     def sample_qubo(self, Q, **kwargs):
         """Sample from the specified QUBO.
@@ -281,21 +289,25 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.DWaveSampler.parameters`
+                :attr:`.DWaveSampler.parameters`. D-Wave System Documentation's
+                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
+                describes the parameters and properties supported on the D-Wave system.
 
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
+            In it this sampler also provides timing information in the `info`
+            field as described in the D-Wave System Documentation's
+            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
 
         Examples:
-            This example submits a two-variable Ising problem mapped directly to qubits
-            0 and 4 on a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
+            This example submits a two-variable QUBO mapped directly to qubits
+            0 and 4 on a D-Wave system.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> Q = {(0, 0): -1, (4, 4): -1, (0, 4): 2}
-            >>> response = sampler.sample_qubo(Q)
-            >>> for sample in response.samples():    # doctest: +SKIP
+            >>> sampleset = sampler.sample_qubo(Q)
+            >>> for sample in sampleset.samples():    # doctest: +SKIP
             ...    print(sample)
             ...
             {0: 0, 4: 1}
@@ -305,15 +317,21 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         """
         variables = set().union(*Q)
-        try:
-            active_variables = sorted(variables)
-        except TypeError:
-            active_variables = list(variables)
-        num_variables = len(active_variables)
+
+        # developer note: in the future we should probably catch exceptions
+        # from the cloud client, but for now this is simpler/cleaner. We use
+        # the solver's nodes/edges because they are a set, so faster lookup
+        nodes = self.solver.nodes
+        edges = self.solver.edges
+        if not all(u in nodes if u == v else ((u, v) in edges or (v, u) in edges)
+                   for u, v in Q):
+            msg = "Problem graph incompatible with solver."
+            raise BinaryQuadraticModelStructureError(msg)
 
         future = self.solver.sample_qubo(Q, **kwargs)
 
-        return dimod.SampleSet.from_future(future, _result_to_response_hook(active_variables, dimod.BINARY))
+        hook = _result_to_response_hook(variables, dimod.BINARY)
+        return dimod.SampleSet.from_future(future, hook)
 
     def validate_anneal_schedule(self, anneal_schedule):
         """Raise an exception if the specified schedule is invalid for the sampler.
@@ -333,7 +351,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 if it does not have `annealing_time_range` or `max_anneal_schedule_points`
                 properties.
 
-        An anneal schedule must satisfy the following conditions:
+        As described in
+        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_,
+        an anneal schedule must satisfy the following conditions:
 
             * Time t must increase for all points in the schedule.
             * For forward annealing, the first point must be (0,0) and the anneal fraction s must
@@ -347,8 +367,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
               number given by this property.
 
         Examples:
-            This example sets a quench schedule on a D-Wave system selected by the user's default
-            :std:doc:`D-Wave Cloud Client configuration file <cloud-client:intro>`.
+            This example sets a quench schedule on a D-Wave system.
 
             >>> from dwave.system.samplers import DWaveSampler
             >>> sampler = DWaveSampler()
@@ -428,6 +447,7 @@ def _result_to_response_hook(variables, vartype):
 
         return dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
                                             energy=result['energies'],
-                                            num_occurrences=result.get('num_occurrences', None))
+                                            num_occurrences=result.get('num_occurrences', None),
+                                            sort_labels=True)
 
     return _hook

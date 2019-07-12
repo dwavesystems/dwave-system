@@ -109,3 +109,10 @@ class TestSampleHising(unittest.TestCase):
 
         # 'c' was isolated, should be 1 when restored with the ground state
         self.assertEqual(samples.first.sample['c'], 1)
+
+
+class TestSamplePoly(unittest.TestCase):
+    def test_isolated(self):
+        poly = dimod.BinaryPolynomial({'a': 3, 'abc': 4, 'ac': 0.2}, dimod.SPIN)
+        sampler = dimod.HigherOrderComposite(dimod.ExactSolver())
+        sampleset = PolyCutOffComposite(sampler, 4.1).sample_poly(poly)

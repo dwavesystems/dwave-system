@@ -3,12 +3,10 @@
 Reference Documentation
 ***********************
 
-   :Release: |release|
-   :Date: |today|
-
 .. toctree::
    :maxdepth: 2
 
-   samplers/index
-   composites/index
+   samplers
+   composites
    embedding
+   utilities
