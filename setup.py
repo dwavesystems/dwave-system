@@ -33,7 +33,7 @@ else:
 
 
 install_requires = ['dimod>=0.8.13,<0.9.0',
-                    'dwave-cloud-client>=0.5.0,<0.6.0',
+                    'dwave-cloud-client>=0.5.0,<0.7.0',
                     'dwave-networkx>=0.8.0',
                     'networkx>=2.0,<3.0',
                     'homebase>=1.0.0,<2.0.0',

@@ -36,7 +36,7 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
         cls.qpu.client.close()
 
     def test_initial_state(self):
-        sampler = EmbeddingComposite(DWaveSampler())
+        sampler = EmbeddingComposite(self.qpu)
 
         bqm = dimod.BinaryQuadraticModel.from_ising({'a': 2.0, 'b': -2.0},
                                                     {('a', 'b'): -1})
