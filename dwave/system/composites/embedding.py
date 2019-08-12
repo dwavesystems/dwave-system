@@ -518,7 +518,9 @@ class AutoEmbeddingComposite(EmbeddingComposite):
         def permissive_child_structure(sampler):
             try:
                 return child_search(sampler)
-            except (TypeError, AttributeError):
+            except ValueError:
+                return None
+            except (AttributeError, TypeError):  # support legacy dimod
                 return None
 
         super(AutoEmbeddingComposite, self).__init__(child_sampler,
