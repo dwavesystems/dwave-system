@@ -45,7 +45,8 @@ class TestVirtualGraphComposite(unittest.TestCase):
         K10_edges = list(itertools.combinations(range(10), 2))
         embedding = minorminer.find_embedding(K10_edges, child_sampler.edgelist)
 
-        sampler = VirtualGraphComposite(child_sampler, embedding)
+        sampler = VirtualGraphComposite(child_sampler, embedding,
+                                        flux_bias_num_reads=10)
 
         dtest.assert_sampler_api(sampler)
 
