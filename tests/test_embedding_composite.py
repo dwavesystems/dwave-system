@@ -221,6 +221,19 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         self.assertTrue(ignored == [(1, 2)] or ignored == [(2, 1)])
 
+    def test_return_embedding(self):
+        nodelist = [0, 1, 2]
+        edgelist = [(0, 1), (1, 2), (0, 2)]
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist))
+
+        sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
+
+        self.assertIn('embedding', sampleset.info)
+        embedding = sampleset.info['embedding']
+        self.assertEqual(set(embedding), {'a', 'c'})
+
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):

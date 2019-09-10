@@ -135,6 +135,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                chain_break_method=None,
                chain_break_fraction=True,
                embedding_parameters=None,
+               return_embedding=True,
                **parameters):
         """Sample from the provided binary quadratic model.
 
@@ -159,6 +160,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 If provided, parameters are passed to the embedding method as
                 keyword arguments. Overrides any `embedding_parameters` passed
                 to the constructor.
+
+            return_embedding (bool, optional, default=True):
+                If True, the embedding is added to :attr:`dimod.SampleSet.info`
+                of the returned sample set.
 
             **parameters:
                 Parameters for the sampling method, specified by the child
@@ -227,7 +232,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         return unembed_sampleset(response, embedding, source_bqm=bqm,
                                  chain_break_method=chain_break_method,
-                                 chain_break_fraction=chain_break_fraction)
+                                 chain_break_fraction=chain_break_fraction,
+                                 return_embedding=return_embedding)
 
 
 class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
