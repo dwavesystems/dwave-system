@@ -228,11 +228,15 @@ class TestEmbeddingComposite(unittest.TestCase):
         sampler = EmbeddingComposite(
             dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist))
 
-        sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
+        sampleset = sampler.sample_ising({'a': -1}, {'ac': 1}, return_embedding=True)
 
         self.assertIn('embedding', sampleset.info)
         embedding = sampleset.info['embedding']
         self.assertEqual(set(embedding), {'a', 'c'})
+
+        # default False
+        sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
+        self.assertNotIn('embedding', sampleset.info)
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
