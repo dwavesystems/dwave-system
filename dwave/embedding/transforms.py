@@ -272,7 +272,7 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
 
 def unembed_sampleset(target_sampleset, embedding, source_bqm,
                       chain_break_method=None, chain_break_fraction=False,
-                      return_embedding=True):
+                      return_embedding=False):
     """Unembed a samples set.
 
     Given samples from a target binary quadratic model (BQM), construct a sample
@@ -298,7 +298,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
             Add a `chain_break_fraction` field to the unembedded :obj:`dimod.SampleSet`
             with the fraction of chains broken before unembedding.
 
-        return_embedding (bool, optional, default=True):
+        return_embedding (bool, optional, default=False):
             If True, the embedding is added to :attr:`dimod.SampleSet.info`
             of the returned sample set. Note that if an `embedding` key
             already exists in the sample set then it is overwritten.
