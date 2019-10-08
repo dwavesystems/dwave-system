@@ -14,6 +14,11 @@
 #
 # ================================================================================================
 
+try:
+    import collections.abc as abc
+except ImportError:
+    import collections as abc
+
 import dwave_networkx as dnx
 import networkx as nx
 
@@ -90,9 +95,9 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
     elif len(nodes) == 2:
         # If k == 2 we simply return two one-qubit chains that are the endpoints of a randomly sampled coupler.
 
-        if not isinstance(target_edges, list):
-            edges = list(target_edges)
-        edge = edges[random.randrange(len(edges))]
+        if not isinstance(target_edges, abc.Sequence):
+            target_edges = list(target_edges)
+        edge = random.choice(target_edges)
         embedding = [[edge[0]], [edge[1]]]
 
     else:
