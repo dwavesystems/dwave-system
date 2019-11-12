@@ -71,6 +71,9 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         """
         child = self.child
 
+        if schedules is None:
+            return child.sample(bqm, **parameters)
+
         vartype_values = list(bqm.vartype.value)
         if 'initial_state' not in parameters:
             initial_state = dict(zip(list(bqm.variables), np.random.choice(vartype_values, len(bqm))))
@@ -79,7 +82,9 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
 
         if 'reinitialize_state' not in parameters:
             parameters['reinitialize_state'] = True
-            parameters['answer_mode'] = 'histogram'
+
+        # there is gonna be way too much data generated - better to histogram them
+        parameters['answer_mode'] = 'histogram'
 
         # prepare data fields for the new sampleset object
         samples = []
@@ -149,7 +154,7 @@ class BatchReverseComposite(dimod.ComposedSampler):
     def properties(self):
         return {'child_properties': self.child.properties.copy()}
 
-    def sample(self, bqm, schedules=None, **parameters):
+    def sample(self, bqm, **parameters):
         """ Composite that accepts multiple initial states to reverse annealing from
 
         Args:
@@ -166,9 +171,10 @@ class BatchReverseComposite(dimod.ComposedSampler):
         """
         child = self.child
 
-        vartype_values = list(bqm.vartype.value)
         if 'initial_states' not in parameters:
             return child.sample(bqm, **parameters)
+
+        initial_states = parameters.pop('initial_states')
 
         # there is gonna be way too much data generated - better to histogram them
         parameters['answer_mode'] = 'histogram'
@@ -177,7 +183,7 @@ class BatchReverseComposite(dimod.ComposedSampler):
         samples = []
         energy = []
         num_occurrences = []
-        initial_states = []
+        initial_states_array = []
 
         datatypes = [('sample', np.int8, (len(bqm),)),
                      ('energy', np.float16),
@@ -196,12 +202,12 @@ class BatchReverseComposite(dimod.ComposedSampler):
             num_occurrences = [*num_occurrences, *sampleset.record.num_occurrences]
 
             initial_state, _ = dimod.as_samples(initial_state)
-            initial_states = [*initial_states, *[initial_state] * len(sampleset.record.energy)]
+            initial_states_array = [*initial_states_array, *[initial_state] * len(sampleset.record.energy)]
 
         record = np.rec.array(np.zeros(len(energy), dtype=datatypes))
         record['sample'] = samples
         record['energy'] = energy
         record['num_occurrences'] = num_occurrences
-        record['initial_state'] = initial_states
+        record['initial_state'] = initial_states_array
 
         return dimod.SampleSet(record, bqm.variables, {}, bqm.vartype)
