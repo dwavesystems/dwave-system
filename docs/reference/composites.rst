@@ -258,3 +258,69 @@ Methods
    VirtualGraphComposite.sample
    VirtualGraphComposite.sample_ising
    VirtualGraphComposite.sample_qubo
+
+Reverse
+=======
+
+Composites that do batch reverse annealing. Can accept batch initial states or a set
+of schedules.
+
+BatchReverseComposite
+---------------------
+
+Accepts multiple initial states to initialize from.
+
+.. autoclass:: BatchReverseComposite
+
+
+Properties
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   BatchReverseComposite.child
+   BatchReverseComposite.children
+   BatchReverseComposite.properties
+   BatchReverseComposite.parameters
+
+
+Methods
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   BatchReverseComposite.sample
+   BatchReverseComposite.sample_ising
+   BatchReverseComposite.sample_qubo
+
+ReverseAdvanceComposite
+-----------------------
+
+Advances an initial state using reverse annealing along a
+given set of anneal schedules.
+
+.. autoclass:: ReverseAdvanceComposite
+
+Properties
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   ReverseAdvanceComposite.child
+   ReverseAdvanceComposite.children
+   ReverseAdvanceComposite.properties
+   ReverseAdvanceComposite.parameters
+
+
+Methods
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   ReverseAdvanceComposite.sample
+   ReverseAdvanceComposite.sample_ising
+   ReverseAdvanceComposite.sample_qubo
