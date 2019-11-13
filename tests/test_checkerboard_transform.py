@@ -47,6 +47,7 @@ class TestCheckerboardTransformComposite(unittest.TestCase):
 
         dit.assert_response_energies(response, dimod.BinaryQuadraticModel.from_ising(h,J))
 
+    @unittest.skipUnless(_dnx, "No dwave_networkx package")
     def test_transform_embedded(self):
         C = dnx.chimera_graph(1)
         nodelist = list(C.nodes())

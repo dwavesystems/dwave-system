@@ -76,6 +76,7 @@ class CheckerboardTransformComposite(Sampler, Composite, Structured):
 
         child.properties['graph'] = target_graph_dnx.graph
         self.properties = {"child_properties": child.properties}
+        # self.graph = target_graph_dnx.graph
 
         # Parses dwave_networkx target graph.
         # NOTE: A better way would be to just get that same dict ('graph') from
@@ -83,6 +84,7 @@ class CheckerboardTransformComposite(Sampler, Composite, Structured):
         # self.coordinates = coordinates(**child.properties['graph'])
 
         self.coordinates = coordinates(**target_graph_dnx.graph)
+        # self.coordinates = self.get_coordinates_method()
 
     def sample(self, bqm, **kwargs):
         """Sample from the binary quadratic model.
@@ -156,6 +158,58 @@ class CheckerboardTransformComposite(Sampler, Composite, Structured):
             return concatenate(responses).aggregate()
         else:
             return concatenate(responses)
+
+
+    def get_shore(self, v):
+        labels = child.properties['graph']['labels']
+
+        getattr(dnx,(family + '_coordinates'))
+        # get_from = 'linear' if labels=='int' else 'nice' if labels=='nice'
+
+        # "{}_to_{}".format( 'nice' if
+        # getattr(coordinates,
+
+
+    def get_tile(self, v):
+        pass
+
+    def get_coordinates_method(self):
+        """
+        Provides a coordinate converter that is architecture-agnostic.
+
+        Parameter
+        ---------
+        graph : dict
+            family : | chimera | pegasus |
+            columns : int
+            rows : int
+            tile : int
+            labels : | int | coordinate | nice |
+        """
+
+
+        graph = self.child.properties['graph']
+        try:
+            family = graph["family"]
+            kwargs = {'m':graph["columns"],'n':graph["rows"],'t':graph["tile"]}
+            # labels = graph["labels"]
+        except:
+            raise ValueError("Target graph needs to have family, columns, \
+            rows, tile, and labels attributes.")
+
+        # It is possible to get coordinates method knowing the family of graph
+        try:
+            coordinates = getattr(dnx,(family + '_coordinates'))
+        except:
+            raise ValueError("Target graph needs to have compatible family. \
+            See dwave_networkx.generators for examples")
+
+        # Match the list of arguments of the coordinates method with the graph
+        varnames = kwargs.keys() & coordinates.__init__.__code__.co_varnames
+
+        self.coordinates = coordinates({var:kwargs[var] for var in varnames})
+
+
 
 
 class coordinates:
