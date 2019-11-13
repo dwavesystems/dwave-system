@@ -191,14 +191,14 @@ def _update_data_vector(vectors, sampleset,additional_parameters=None):
     var_names = sampleset.record.dtype.names
     for name in var_names:
         try:
-            vectors[name] = [*vectors[name], *sampleset.record[name]]
+            vectors[name] = vectors[name] + list(sampleset.record[name])
         except KeyError:
-            vectors[name] = sampleset.record[name]
+            vectors[name] = list(sampleset.record[name])
 
     for key,val in additional_parameters.items():
         if key not in var_names:
             try:
-                vectors[key] = [*vectors[key], *val]
+                vectors[key] = vectors[key] + list(val)
             except KeyError:
-                vectors[key] = val
+                vectors[key] = list(val)
     return vectors
