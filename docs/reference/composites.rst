@@ -268,9 +268,6 @@ states or anneal schedules.
 ReverseBatchStatesComposite
 ---------------------------
 
-Accepts multiple initial states to initialize from. Each submission is independent from
-one another.
-
 .. autoclass:: ReverseBatchStatesComposite
 
 
@@ -298,9 +295,6 @@ Methods
 
 ReverseAdvanceComposite
 -----------------------
-
-Advances an initial state using reverse annealing along a given set of anneal schedules.
-Initial states are chosen from the previous submission.
 
 .. autoclass:: ReverseAdvanceComposite
 

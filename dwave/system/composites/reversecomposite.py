@@ -24,11 +24,12 @@ __all__ = 'ReverseAdvanceComposite', 'ReverseBatchStatesComposite'
 
 
 class ReverseAdvanceComposite(dimod.ComposedSampler):
-    """Composite that advances a sample using reverse annealing along a given set of anneal
-        schedules. if reinitialize_state = False is sent in as an argument, the composite will
-        select the last sample returned as the initial_state of the next submission. if not, the
-        composite selects the most probable (highest occurence) lowest energy sample as the
-        initial_state.
+    """Composite that reverse anneals an initial sample through a sequence of anneal
+     schedules. If you don not specify an initial sample, a random sample is used for the first
+     submission. By default, each subsequent submission selects the most-found lowest-energy
+     sample as its initial state. If you set reinitialize_state to False, which makes each submission
+     behave like a random walk, the subsequent submission selects the last returned sample as
+     its initial state.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
