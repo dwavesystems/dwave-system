@@ -33,6 +33,7 @@ import minorminer
 
 from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
                              chain_to_quadratic)
+from dwave.system.warnings import WarningHandler
 
 __all__ = ('EmbeddingComposite',
            'FixedEmbeddingComposite',
@@ -141,6 +142,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                chain_break_fraction=True,
                embedding_parameters=None,
                return_embedding=None,
+               warnings=None,
                **parameters):
         """Sample from the provided binary quadratic model.
 
@@ -211,6 +213,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
         embedding = self.find_embedding(source_edgelist, target_edgelist,
                                         **embedding_parameters)
 
+        warninghandler = WarningHandler(warnings)
+
+        warninghandler.chain_length(embedding)
+
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
@@ -249,6 +255,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
             sampleset.info['embedding_context'].update(
                 embedding_parameters=embedding_parameters,
                 chain_strength=chain_strength)
+
+        if chain_break_fraction and len(sampleset):
+            warninghandler.issue("all samples had broken chains",
+                                 lambda: sampleset.record.chain_break_fraction.all())
+
+        if warninghandler.saved:
+            # we're done with the warning handler so we can just pass the list
+            # off, if later we want to pass in a handler or similar we should
+            # do a copy
+            sampleset.info['warnings'] = warninghandler.saved
 
         return sampleset
 
