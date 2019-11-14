@@ -246,6 +246,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         response = child.sample(bqm_embedded, **parameters)
 
+        warninghandler.chain_break(response, embedding)
+
         sampleset = unembed_sampleset(response, embedding, source_bqm=bqm,
                                       chain_break_method=chain_break_method,
                                       chain_break_fraction=chain_break_fraction,

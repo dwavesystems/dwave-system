@@ -280,7 +280,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         G = dnx.chimera_graph(12)
 
         sampler = EmbeddingComposite(
-            dimod.StructureComposite(dimod.NullSampler(), G.nodes, G.edges))
+            dimod.StructureComposite(dimod.RandomSampler(), G.nodes, G.edges))
 
         # this will need chains lengths > 7
         J = {uv: -1 for uv in itertools.combinations(range(40), 2)}
@@ -288,7 +288,6 @@ class TestEmbeddingComposite(unittest.TestCase):
         ss = sampler.sample_ising({}, J, warnings='SAVE')
 
         self.assertIn('warnings', ss.info)
-        self.assertIn('chain length greater than 7', ss.info['warnings'])
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
