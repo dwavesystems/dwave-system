@@ -13,6 +13,7 @@
 #    limitations under the License.
 #
 # =============================================================================
+import itertools
 import unittest
 import warnings
 
@@ -274,6 +275,20 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         # restore the default
         EmbeddingComposite.return_embedding_default = False
+
+    def test_warnings(self):
+        G = dnx.chimera_graph(12)
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.NullSampler(), G.nodes, G.edges))
+
+        # this will need chains lengths > 7
+        J = {uv: -1 for uv in itertools.combinations(range(40), 2)}
+
+        ss = sampler.sample_ising({}, J, warnings='SAVE')
+
+        self.assertIn('warnings', ss.info)
+        self.assertIn('chain length greater than 7', ss.info['warnings'])
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
