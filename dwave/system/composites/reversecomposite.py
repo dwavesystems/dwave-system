@@ -14,21 +14,25 @@
 #
 # =============================================================================
 """
-Composite that do batch operations on initial samples provided for reverse annealing.
+Composites that do batch operations for reverse annealing.
 """
+
 import dimod
 import numpy as np
 
-__all__ = 'ReverseAdvanceComposite', 'BatchReverseComposite'
+__all__ = 'ReverseAdvanceComposite', 'ReverseBatchStatesComposite'
 
 
 class ReverseAdvanceComposite(dimod.ComposedSampler):
-    """ Composite that advances a sample using reverse annealing along a
-        given set of anneal schedules.
+    """Composite that advances a sample using reverse annealing along a given set of anneal
+        schedules. if reinitialize_state = False is sent in as an argument, the composite will
+        select the last sample returned as the initial_state of the next submission. if not, the
+        composite selects the most probable (highest occurence) lowest energy sample as the
+        initial_state.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
-            A dimod sampler
+            A dimod sampler.
 
     """
 
@@ -50,23 +54,20 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         return {'child_properties': self.child.properties.copy()}
 
     def sample(self, bqm, anneal_schedules=None, **parameters):
-        """ Composite that advances a sample using reverse annealing along a
-        given set of anneal schedules. Always selects the most probable lowest energy sample out of
-        the previous steps return
+        """Sample the binary quadratic model using reverse annealing along a given set of anneal schedules.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            schedules (list): an ordered list of anneal schedules. The first element of the
-                list should correspond to the first anneal schedule.
+            anneal_schedules (list of lists): Anneal schedules in order of submission. Each schedule is
+                formatted as a list of [time, s] pairs
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :obj:`dimod.SampleSet` that has initial_state and schedule_index fields in addition to
-            'energy' and 'num_occurrences'
+            :obj:`dimod.SampleSet` that has initial_state and schedule_index fields.
 
         """
         child = self.child
@@ -80,8 +81,8 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         else:
             initial_state = parameters.pop('initial_state')
 
-        if not isinstance(initial_state,dict):
-            raise TypeError("initial state provided must be a dict, received {}".format(initial_state))
+        if not isinstance(initial_state, dict):
+            raise TypeError("initial state provided must be a dict, but received {}".format(initial_state))
 
         if 'reinitialize_state' not in parameters:
             parameters['reinitialize_state'] = True
@@ -89,37 +90,38 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
 
         vectors = {}
         for schedule_idx, anneal_schedule in enumerate(anneal_schedules):
-            sampleset = child.sample(bqm, anneal_schedule=anneal_schedule,initial_state = initial_state,
+            sampleset = child.sample(bqm, anneal_schedule=anneal_schedule, initial_state=initial_state,
                                      **parameters)
 
-            initial_state,_ = dimod.as_samples(initial_state)
-            vectors = _update_data_vector(vectors,sampleset,
-                                           {'initial_state':[initial_state[0]]*len(sampleset.record.energy),
-                                            'schedule_index':[schedule_idx]*len(sampleset.record.energy)})
+            initial_state, _ = dimod.as_samples(initial_state)
+            vectors = _update_data_vector(vectors, sampleset,
+                                          {'initial_state': [initial_state[0]] * len(sampleset.record.energy),
+                                           'schedule_index': [schedule_idx] * len(sampleset.record.energy)})
 
             if parameters['reinitialize_state']:
                 # if reinitialize is on, choose the lowest energy, most probable state for next iteration
-                gse = sampleset.first.energy
-                b = sampleset.record[sampleset.record.energy == gse]
-                b.sort(order='num_occurrences')
-                initial_state = dict(zip(sampleset.variables, b[-1].sample))
+                ground_state_energy = sampleset.first.energy
+                lowest_energy_samples = sampleset.record[sampleset.record.energy == ground_state_energy]
+                lowest_energy_samples.sort(order='num_occurrences')
+                initial_state = dict(zip(sampleset.variables, lowest_energy_samples[-1].sample))
             else:
                 # if not reinitialized, take the last state as the next initial state
                 initial_state = dict(zip(sampleset.variables, sampleset.record.sample[-1]))
 
         samples = vectors.pop('sample')
         return dimod.SampleSet.from_samples((samples, bqm.variables),
-                                bqm.vartype,
-                                info={'anneal_schedules': anneal_schedules},
-                                **vectors)
+                                            bqm.vartype,
+                                            info={'anneal_schedules': anneal_schedules},
+                                            **vectors)
 
 
-class BatchReverseComposite(dimod.ComposedSampler):
-    """ Composite that accepts multiple samples to initialize from.
+class ReverseBatchStatesComposite(dimod.ComposedSampler):
+    """Composite that reverse anneals from multiple initial samples. Each submission is independent
+    from one another.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
-            A dimod sampler
+            A dimod sampler.
 
     """
 
@@ -141,7 +143,7 @@ class BatchReverseComposite(dimod.ComposedSampler):
         return {'child_properties': self.child.properties.copy()}
 
     def sample(self, bqm, **parameters):
-        """ Composite that accepts multiple initial states to reverse annealing from
+        """Sample the binary quadratic model using reverse annealing from multiple initial states.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -151,8 +153,7 @@ class BatchReverseComposite(dimod.ComposedSampler):
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :obj:`dimod.SampleSet` that has initial_state and schedule_index fields in addition to
-            'energy' and 'num_occurrences'
+            :obj:`dimod.SampleSet` that has initial_state field.
 
         """
         child = self.child
@@ -181,13 +182,12 @@ class BatchReverseComposite(dimod.ComposedSampler):
         samples = vectors.pop('sample')
 
         return dimod.SampleSet.from_samples((samples, bqm.variables),
-                                bqm.vartype,
-                                info={},
-                                **vectors)
+                                            bqm.vartype,
+                                            info={},
+                                            **vectors)
 
 
-def _update_data_vector(vectors, sampleset,additional_parameters=None):
-
+def _update_data_vector(vectors, sampleset, additional_parameters=None):
     var_names = sampleset.record.dtype.names
     for name in var_names:
         try:
@@ -195,7 +195,7 @@ def _update_data_vector(vectors, sampleset,additional_parameters=None):
         except KeyError:
             vectors[name] = list(sampleset.record[name])
 
-    for key,val in additional_parameters.items():
+    for key, val in additional_parameters.items():
         if key not in var_names:
             try:
                 vectors[key] = vectors[key] + list(val)

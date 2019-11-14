@@ -20,7 +20,7 @@ import dimod.testing as dtest
 import dwave_networkx
 from dimod import ExactSolver
 
-from dwave.system import BatchReverseComposite, ReverseAdvanceComposite
+from dwave.system import ReverseBatchStatesComposite, ReverseAdvanceComposite
 
 C4 = dwave_networkx.chimera_graph(4, 4, 4)
 
@@ -66,13 +66,13 @@ class TestConstruction(unittest.TestCase):
         dtest.assert_sampler_api(sampler)
 
     def test_instantiation_smoketest_batch(self):
-        sampler = BatchReverseComposite(dimod.ExactSolver())
+        sampler = ReverseBatchStatesComposite(dimod.ExactSolver())
         dtest.assert_sampler_api(sampler)
 
 
 class TestReverseIsing(unittest.TestCase):
     def test_sample_ising_batch(self):
-        sampler = BatchReverseComposite(MockReverseSampler())
+        sampler = ReverseBatchStatesComposite(MockReverseSampler())
 
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
@@ -94,7 +94,7 @@ class TestReverseIsing(unittest.TestCase):
         self.assertGreaterEqual(len(response), 2)
 
     def test_batch_correct_states(self):
-        sampler = BatchReverseComposite(MockReverseSampler())
+        sampler = ReverseBatchStatesComposite(MockReverseSampler())
 
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
@@ -167,7 +167,7 @@ class TestReverseIsing(unittest.TestCase):
                 self.assertListEqual([-1, 1], list(datum.initial_state))
 
     def test_combination(self):
-        sampler = BatchReverseComposite(ReverseAdvanceComposite(MockReverseSampler()))
+        sampler = ReverseBatchStatesComposite(ReverseAdvanceComposite(MockReverseSampler()))
 
         h = {0: -1., 4: 2}
         J = {(0, 4): 1.5}
@@ -191,7 +191,7 @@ class TestReverseIsing(unittest.TestCase):
 
 class TestReverseBinary(unittest.TestCase):
     def test_sample_qubo_batch(self):
-        sampler = BatchReverseComposite(MockReverseSampler())
+        sampler = ReverseBatchStatesComposite(MockReverseSampler())
 
         Q = {(0, 4): 1.5}
 
