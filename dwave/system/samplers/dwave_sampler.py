@@ -21,15 +21,18 @@ for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
 
+import functools
+import time
+
 from warnings import warn
 
 import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
-
+from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 from dwave.cloud import Client
 
-__all__ = ['DWaveSampler']
+__all__ = ['DWaveSampler', 'DWaveFailoverSampler']
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
@@ -101,10 +104,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # need to set up the properties, parameters
-        self._properties = self.solver.properties.copy()  # shallow copy
-        self._parameters = {param: ['parameters'] for param in self.solver.properties['parameters']}
-
     @property
     def properties(self):
         """dict: D-Wave solver properties as returned by a SAPI query.
@@ -128,7 +127,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._properties
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
 
     @property
     def parameters(self):
@@ -157,7 +160,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._parameters
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            self._parameters = parameters
+            return parameters
 
     @property
     def edgelist(self):
@@ -451,3 +460,78 @@ def _result_to_response_hook(variables, vartype):
                                             sort_labels=True)
 
     return _hook
+
+
+def failover(f):
+    @functools.wraps(f)
+    def wrapper(sampler, *args, **kwargs):
+        while True:
+            try:
+                return f(sampler, *args, **kwargs)
+            except SolverOfflineError:
+                pass
+
+            try:
+                # the requested features are saved on the client object, so
+                # we just need to request a new solver
+                sampler.solver = sampler.client.get_solver()
+
+                # delete the lazily-constructed attributes
+                try:
+                    del sampler._edgelist
+                except AttributeError:
+                    pass
+
+                try:
+                    del sampler._nodelist
+                except AttributeError:
+                    pass
+
+                try:
+                    del sampler._parameters
+                except AttributeError:
+                    pass
+
+                try:
+                    del sampler._properties
+                except AttributeError:
+                    pass
+
+            except SolverNotFoundError as err:
+                if sampler.retry_interval < 0:
+                    raise err
+
+                time.sleep(sampler.retry_interval)
+    return wrapper
+
+
+class DWaveFailoverSampler(DWaveSampler):
+    """Sampler that will recover from a QPU going offline by switching to a new
+    solver.
+
+    In the case that :exc:`~dwave.cloud.exceptions.SolverOfflineError` is raised
+    a new solver is requested.
+    If a :exc:`~dwave.cloud.exceptions.SolverNotFoundError` is also raised, the
+    sampler will wait `retry_interval` seconds before trying again.
+
+    Args:
+        retry_interval (number, optional, default=10):
+            The amount of time (in seconds) to wait to poll for a solver in
+            the case that no solver is found. If `retry_interval` is negative
+            then it will instead propogate the `SolverNotFoundError` to the
+            user.
+
+        **config: See :class:`.DWaveSampler`.
+
+    """
+    def __init__(self, retry_interval=10, **config):
+        super(DWaveFailoverSampler, self).__init__(**config)
+        self.retry_interval = retry_interval
+
+    @failover
+    def sample_ising(self, *args, **kwargs):
+        return super(DWaveFailoverSampler, self).sample_ising(*args, **kwargs)
+
+    @failover
+    def sample_qubo(self, *args, **kwargs):
+        return super(DWaveFailoverSampler, self).sample_qubo(*args, **kwargs)

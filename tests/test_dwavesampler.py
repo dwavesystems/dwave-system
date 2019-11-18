@@ -25,7 +25,7 @@ import numpy as np
 import dimod
 import dwave_networkx as dnx
 
-from dwave.system.samplers import DWaveSampler
+from dwave.system.samplers import DWaveSampler, DWaveFailoverSampler
 
 try:
     # py3
@@ -203,3 +203,55 @@ class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
                 pass
 
         DWaveSampler.validate_anneal_schedule(MockScheduleSampler(), [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])
+
+
+class TestDWaveFailoverSampler(unittest.TestCase):
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_failover_offline(self, MockClient):
+
+        from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
+
+        sampler = DWaveFailoverSampler()
+
+        mocksolver = sampler.solver
+        edgelist = sampler.edgelist
+
+        # call once
+        ss = sampler.sample_ising({}, {})
+
+        self.assertIs(mocksolver, sampler.solver)  # still same solver
+
+        # one of the sample methods was called
+        self.assertEqual(sampler.solver.sample_ising.call_count
+                         + sampler.solver.sample_qubo.call_count, 1)
+
+        # add a side-effect
+        sampler.solver.sample_ising.side_effect = SolverOfflineError
+        sampler.solver.sample_qubo.side_effect = SolverOfflineError
+
+        # and make sure get_solver makes a new mock solver
+        sampler.client.get_solver.reset_mock(return_value=True)
+
+        ss = sampler.sample_ising({}, {})
+
+        self.assertIsNot(mocksolver, sampler.solver)  # new solver
+        self.assertIsNot(edgelist, sampler.edgelist)  # also should be new
+
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_failover_notfound_noretry(self, MockClient):
+
+        from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
+
+        sampler = DWaveFailoverSampler(retry_interval=-1)
+
+        mocksolver = sampler.solver
+
+        # add a side-effect
+        sampler.solver.sample_ising.side_effect = SolverOfflineError
+        sampler.solver.sample_qubo.side_effect = SolverOfflineError
+
+        # and make sure get_solver makes a new mock solver
+        sampler.client.get_solver.side_effect = SolverNotFoundError
+
+        with self.assertRaises(SolverNotFoundError):
+            sampler.sample_ising({}, {})

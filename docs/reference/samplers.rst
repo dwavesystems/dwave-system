@@ -41,3 +41,9 @@ Methods
    DWaveSampler.sample_ising
    DWaveSampler.sample_qubo
    DWaveSampler.validate_anneal_schedule
+
+
+DWaveFailoverSampler
+====================
+
+.. autoclass:: DWaveFailoverSampler
