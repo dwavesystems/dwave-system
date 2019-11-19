@@ -28,7 +28,7 @@ import dwave_networkx as dnx
 
 from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
-from dwave.system.samplers import DWaveSampler, DWaveFailoverSampler
+from dwave.system.samplers import DWaveSampler
 
 try:
     # py3
@@ -194,27 +194,22 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
 
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_failover_false(self, MockClient):
+        sampler = DWaveSampler(failover=False)
 
-class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
-    def test_typical(self):
-        class MockScheduleSampler(DWaveSampler):
-            parameters = {'anneal_schedule': ''}
-            properties = {'max_anneal_schedule_points': 4,
-                          'annealing_time_range': [1, 2000]}
+        sampler.solver.sample_ising.side_effect = SolverOfflineError
+        sampler.solver.sample_qubo.side_effect = SolverOfflineError
 
-            def __init__(self):
-                pass
+        with self.assertRaises(SolverOfflineError):
+            sampler.sample_ising({}, {})
 
-        DWaveSampler.validate_anneal_schedule(MockScheduleSampler(), [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])
-
-
-class TestDWaveFailoverSampler(unittest.TestCase):
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_failover_offline(self, MockClient):
         if sys.version_info.major <= 2 or sys.version_info.minor < 6:
             raise unittest.SkipTest("need mock features only available in 3.6+")
 
-        sampler = DWaveFailoverSampler()
+        sampler = DWaveSampler(failover=True)
 
         mocksolver = sampler.solver
         edgelist = sampler.edgelist
@@ -243,7 +238,7 @@ class TestDWaveFailoverSampler(unittest.TestCase):
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_failover_notfound_noretry(self, MockClient):
 
-        sampler = DWaveFailoverSampler(retry_interval=-1)
+        sampler = DWaveSampler(failover=True, retry_interval=-1)
 
         mocksolver = sampler.solver
 
@@ -256,3 +251,16 @@ class TestDWaveFailoverSampler(unittest.TestCase):
 
         with self.assertRaises(SolverNotFoundError):
             sampler.sample_ising({}, {})
+
+
+class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
+    def test_typical(self):
+        class MockScheduleSampler(DWaveSampler):
+            parameters = {'anneal_schedule': ''}
+            properties = {'max_anneal_schedule_points': 4,
+                          'annealing_time_range': [1, 2000]}
+
+            def __init__(self):
+                pass
+
+        DWaveSampler.validate_anneal_schedule(MockScheduleSampler(), [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])
