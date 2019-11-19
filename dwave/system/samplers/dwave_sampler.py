@@ -515,7 +515,7 @@ class DWaveFailoverSampler(DWaveSampler):
     sampler will wait `retry_interval` seconds before trying again.
 
     Args:
-        retry_interval (number, optional, default=10):
+        retry_interval (number, optional, default=-1):
             The amount of time (in seconds) to wait to poll for a solver in
             the case that no solver is found. If `retry_interval` is negative
             then it will instead propogate the `SolverNotFoundError` to the
@@ -524,7 +524,7 @@ class DWaveFailoverSampler(DWaveSampler):
         **config: See :class:`.DWaveSampler`.
 
     """
-    def __init__(self, retry_interval=10, **config):
+    def __init__(self, retry_interval=-1, **config):
         super(DWaveFailoverSampler, self).__init__(**config)
         self.retry_interval = retry_interval
 
