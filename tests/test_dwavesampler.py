@@ -13,6 +13,7 @@
 #    limitations under the License.
 #
 # =============================================================================
+import sys
 import unittest
 import random
 import warnings
@@ -24,6 +25,8 @@ import numpy as np
 
 import dimod
 import dwave_networkx as dnx
+
+from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.samplers import DWaveSampler, DWaveFailoverSampler
 
@@ -208,8 +211,8 @@ class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
 class TestDWaveFailoverSampler(unittest.TestCase):
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_failover_offline(self, MockClient):
-
-        from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
+        if sys.version_info.major <= 2 or sys.version_info.minor < 6:
+            raise unittest.SkipTest("need mock features only available in 3.6+")
 
         sampler = DWaveFailoverSampler()
 
@@ -239,8 +242,6 @@ class TestDWaveFailoverSampler(unittest.TestCase):
 
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_failover_notfound_noretry(self, MockClient):
-
-        from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
         sampler = DWaveFailoverSampler(retry_interval=-1)
 
