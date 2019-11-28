@@ -1,6 +1,7 @@
 from dwave.embedding.pegasus import find_clique_embedding
 from dwave.embedding.diagnostic import is_valid_embedding
 from dwave_networkx.generators.pegasus import pegasus_graph
+from random import shuffle
 import networkx as nx
 import unittest
 
@@ -113,6 +114,27 @@ class TestFindClique(unittest.TestCase):
         # See if clique embedding is found
         embedding = find_clique_embedding(k, target_graph=incomplete_pg)
         self.assertTrue(is_valid_embedding(embedding, nx.complete_graph(k), incomplete_pg))
+
+    def test_clique_missing_edges(self):
+        k = 9
+        m = 2
+
+        pg = pegasus_graph(m)
+
+        #pick a random ordering of the edges
+        edges = list(pg).edges()
+        shuffle(edges)
+
+        K = nx.complete_graph(k)
+
+        #now delete edges, one at a time, until we can no longer embed K
+        with self.assertRaises(ValueError):
+            (u, v) = edges.pop()
+            incomplete_pg.remove_edge(u, v)
+
+            # See if clique embedding is found
+            embedding = find_clique_embedding(k, target_graph=incomplete_pg)
+            self.assertTrue(is_valid_embedding(embedding, K, incomplete_pg))
 
 
 if __name__ == "__main__":
