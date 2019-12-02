@@ -21,15 +21,62 @@ for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
 
+import functools
+import time
+
 from warnings import warn
 
 import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
-
+from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 from dwave.cloud import Client
 
 __all__ = ['DWaveSampler']
+
+
+def _failover(f):
+    @functools.wraps(f)
+    def wrapper(sampler, *args, **kwargs):
+        while True:
+            try:
+                return f(sampler, *args, **kwargs)
+            except SolverOfflineError as err:
+                if not sampler.failover:
+                    raise err
+
+            try:
+                # the requested features are saved on the client object, so
+                # we just need to request a new solver
+                sampler.solver = sampler.client.get_solver()
+
+                # delete the lazily-constructed attributes
+                try:
+                    del sampler._edgelist
+                except AttributeError:
+                    pass
+
+                try:
+                    del sampler._nodelist
+                except AttributeError:
+                    pass
+
+                try:
+                    del sampler._parameters
+                except AttributeError:
+                    pass
+
+                try:
+                    del sampler._properties
+                except AttributeError:
+                    pass
+
+            except SolverNotFoundError as err:
+                if sampler.retry_interval < 0:
+                    raise err
+
+                time.sleep(sampler.retry_interval)
+    return wrapper
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
@@ -43,6 +90,19 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     Inherits from :class:`dimod.Sampler` and :class:`dimod.Structured`.
 
     Args:
+        failover (bool, optional, default=False):
+            Switch to a new QPU in the rare event that the currently connected
+            system goes offline. Note that different QPUs may have different
+            hardware graphs and a failover will result in a regenerated
+            :attr:`.nodelist`, :attr:`.edgelist`, :attr:`.properties` and
+            :attr:`.parameters`.
+
+        retry_interval (number, optional, default=-1):
+            The amount of time (in seconds) to wait to poll for a solver in
+            the case that no solver is found. If `retry_interval` is negative
+            then it will instead propogate the `SolverNotFoundError` to the
+            user.
+
         config_file (str, optional):
             Path to a configuration file that identifies a D-Wave system and provides
             connection information.
@@ -88,7 +148,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
-    def __init__(self, **config):
+    def __init__(self, failover=False, retry_interval=-1, **config):
 
         if config.get('solver_features') is not None:
             warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
@@ -101,9 +161,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # need to set up the properties, parameters
-        self._properties = self.solver.properties.copy()  # shallow copy
-        self._parameters = {param: ['parameters'] for param in self.solver.properties['parameters']}
+        self.failover = failover
+        self.retry_interval = retry_interval
 
     @property
     def properties(self):
@@ -128,7 +187,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._properties
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
 
     @property
     def parameters(self):
@@ -157,7 +220,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        return self._parameters
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            self._parameters = parameters
+            return parameters
 
     @property
     def edgelist(self):
@@ -213,6 +282,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             self._nodelist = nodelist = sorted(self.solver.nodes)
         return nodelist
 
+    @_failover
     def sample_ising(self, h, J, **kwargs):
         """Sample from the specified Ising model.
 
@@ -280,6 +350,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         hook = _result_to_response_hook(variables, dimod.SPIN)
         return dimod.SampleSet.from_future(future, hook)
 
+    @_failover
     def sample_qubo(self, Q, **kwargs):
         """Sample from the specified QUBO.
 
