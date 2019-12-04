@@ -16,7 +16,7 @@
 
 from dwave_networkx.generators.chimera import chimera_graph
 from dwave_networkx.generators.pegasus import (get_tuple_defragmentation_fn, fragmented_edges,
-    pegasus_coordinates, pegasus_graph, get_pegasus_to_nice_fn)
+    pegasus_coordinates, pegasus_graph)
 from dwave.embedding.polynomialembedder import processor
 import networkx as nx
 
@@ -63,21 +63,21 @@ def find_clique_embedding(k, m=None, target_graph=None):
 
     # Deal with differences in ints vs coordinate target_graphs
     if target_graph.graph['labels'] == 'nice':
-        back_converter = get_pegasus_to_nice_fn()
-        back_translate = lambda embedding: {key: [back_converter(*p) for p in chain]
+        back_converter = pegasus_coordinates.pegasus_to_nice
+        back_translate = lambda embedding: {key: [back_converter(p) for p in chain]
                                       for key, chain in embedding.items()}
     elif target_graph.graph['labels'] == 'int':
         # Convert nodes in terms of Pegasus coordinates
         coord_converter = pegasus_coordinates(m)
 
         # A function to convert our final coordinate embedding to an ints embedding
-        back_translate = lambda embedding: {key: list(coord_converter.ints(chain))
+        back_translate = lambda embedding: {key: list(coord_converter.iter_pegasus_to_linear(chain))
                                       for key, chain in embedding.items()}
     else:
         back_translate = lambda embedding: embedding
 
     # collect edges of the graph produced by splitting each Pegasus qubit into six pieces
-    fragment_edges = fragmented_edges(target_graph)
+    fragment_edges = list(fragmented_edges(target_graph))
 
     # Find clique embedding in K2,2 Chimera graph
     embedding_processor = processor(fragment_edges, M=m*6, N=m*6, L=2, linear=False)

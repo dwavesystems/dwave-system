@@ -122,19 +122,20 @@ class TestFindClique(unittest.TestCase):
         pg = pegasus_graph(m)
 
         #pick a random ordering of the edges
-        edges = list(pg).edges()
+        edges = list(pg.edges())
         shuffle(edges)
 
         K = nx.complete_graph(k)
 
         #now delete edges, one at a time, until we can no longer embed K
         with self.assertRaises(ValueError):
-            (u, v) = edges.pop()
-            incomplete_pg.remove_edge(u, v)
+            while 1:
+                (u, v) = edges.pop()
+                pg.remove_edge(u, v)
 
-            # See if clique embedding is found
-            embedding = find_clique_embedding(k, target_graph=incomplete_pg)
-            self.assertTrue(is_valid_embedding(embedding, K, incomplete_pg))
+                # See if clique embedding is found
+                embedding = find_clique_embedding(k, target_graph=pg)
+                self.assertTrue(is_valid_embedding(embedding, K, pg))
 
 
 if __name__ == "__main__":

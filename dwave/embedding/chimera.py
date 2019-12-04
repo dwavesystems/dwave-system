@@ -241,7 +241,8 @@ def find_grid_embedding(dim, m, n=None, t=4):
                "is {}x{}x{}; given grid is {}x{}x{}").format(m, n, t, m, n, t, rows, cols, aisles)
         raise ValueError(msg)
 
-    return {_key(row, col, aisle): [indexer.int((row, col, 0, aisle)), indexer.int((row, col, 1, aisle))]
+    return {_key(row, col, aisle): [indexer.chimera_to_linear((row, col, 0, aisle)),
+                                     indexer.chimera_to_linear((row, col, 1, aisle))]
             for row in range(dim[0]) for col in range(dim[1]) for aisle in range(dim[2])}
 
 
