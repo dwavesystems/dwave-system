@@ -163,6 +163,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         self.failover = failover
         self.retry_interval = retry_interval
+    def __del__(self):
+        self.client.close()
 
     @property
     def properties(self):
