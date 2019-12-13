@@ -79,7 +79,7 @@ def _failover(f):
     return wrapper
 
 
-class DWaveSampler2(dimod.Sampler, dimod.Structured):
+class DWaveSampler(dimod.Sampler, dimod.Structured):
     """A class for using the D-Wave system as a sampler.
 
     Uses parameters set in a configuration file, as environment variables, or
