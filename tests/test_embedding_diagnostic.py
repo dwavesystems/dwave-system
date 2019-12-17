@@ -47,6 +47,21 @@ class TestEmbeddingDiagnostic(unittest.TestCase):
             etypes.add(err[0])
         self.assertEqual(etypes, {ChainOverlapError})
 
+    def test_chain_overlap_with_edges(self):
+        #this is made for compatibility with minorminer; to verify that "overlapped
+        #embeddings" don't report spurious MissingEdgeErrors
+        k5 = nx.complete_graph(5)
+        k4 = nx.complete_graph(4)
+        emb = {i:[i%4, (i+1)%4] for i in k5}
+
+        self.assertRaises(ChainOverlapError, lambda: verify_embedding(emb, k5, k4))
+        self.assertFalse(is_valid_embedding(emb, k5, k4))
+
+        etypes = set()
+        for err in diagnose_embedding(emb, k5, k4):
+            etypes.add(err[0])
+        self.assertEqual(etypes, {ChainOverlapError})
+
     def test_chain_disconnect(self):
         k2 = nx.complete_graph(2)
         p3 = nx.path_graph(3)
