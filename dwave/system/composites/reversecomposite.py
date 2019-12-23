@@ -17,6 +17,7 @@
 Composites that do batch operations for reverse annealing.
 """
 
+import collections
 import dimod
 import numpy as np
 
@@ -25,7 +26,9 @@ __all__ = 'ReverseAdvanceComposite', 'ReverseBatchStatesComposite'
 
 class ReverseAdvanceComposite(dimod.ComposedSampler):
     """Composite that reverse anneals an initial sample through a sequence of anneal
-     schedules. If you don not specify an initial sample, a random sample is used for the first
+     schedules.
+
+     If you do not specify an initial sample, a random sample is used for the first
      submission. By default, each subsequent submission selects the most-found lowest-energy
      sample as its initial state. If you set reinitialize_state to False, which makes each submission
      behave like a random walk, the subsequent submission selects the last returned sample as
@@ -64,6 +67,9 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
             anneal_schedules (list of lists): Anneal schedules in order of submission. Each schedule is
                 formatted as a list of [time, s] pairs
 
+            initial_state (dict, optional): the state to reverse anneal from. If not provided, it will
+                be randomly generated
+
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
 
@@ -82,23 +88,31 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         else:
             initial_state = parameters.pop('initial_state')
 
-        if not isinstance(initial_state, dict):
+        if not isinstance(initial_state, collections.abc.Mapping):
             raise TypeError("initial state provided must be a dict, but received {}".format(initial_state))
 
         if 'reinitialize_state' not in parameters:
             parameters['reinitialize_state'] = True
-            parameters['answer_mode'] = 'histogram'
+
+            if "answer_mode" in child.parameters:
+                parameters['answer_mode'] = 'histogram'
 
         vectors = {}
         for schedule_idx, anneal_schedule in enumerate(anneal_schedules):
             sampleset = child.sample(bqm, anneal_schedule=anneal_schedule, initial_state=initial_state,
                                      **parameters)
 
+            # update vectors
             initial_state, _ = dimod.as_samples(initial_state)
             vectors = _update_data_vector(vectors, sampleset,
                                           {'initial_state': [initial_state[0]] * len(sampleset.record.energy),
                                            'schedule_index': [schedule_idx] * len(sampleset.record.energy)})
 
+            if schedule_idx+1 == len(anneal_schedules):
+                # no need to create the next initial state - last iteration
+                break
+
+            # prepare the initial state for the next iteration
             if parameters['reinitialize_state']:
                 # if reinitialize is on, choose the lowest energy, most probable state for next iteration
                 ground_state_energy = sampleset.first.energy
@@ -164,8 +178,9 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
 
         initial_states = parameters.pop('initial_states')
 
-        # there is gonna be way too much data generated - better to histogram them
-        parameters['answer_mode'] = 'histogram'
+        # there is gonna be way too much data generated - better to histogram them if possible
+        if "answer_mode" in child.parameters:
+            parameters['answer_mode'] = 'histogram'
 
         # prepare data fields for the new sampleset object
 
