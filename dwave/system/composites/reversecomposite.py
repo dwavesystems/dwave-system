@@ -17,7 +17,11 @@
 Composites that do batch operations for reverse annealing.
 """
 
-import collections
+try:
+    import collections.abc as abc
+except ImportError:
+    import collections as abc
+
 import dimod
 import numpy as np
 
@@ -88,7 +92,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         else:
             initial_state = parameters.pop('initial_state')
 
-        if not isinstance(initial_state, collections.abc.Mapping):
+        if not isinstance(initial_state, abc.Mapping):
             raise TypeError("initial state provided must be a dict, but received {}".format(initial_state))
 
         if 'reinitialize_state' not in parameters:
