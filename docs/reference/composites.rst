@@ -4,7 +4,7 @@
 Composites
 ==========
 
-:std:doc:`dimod composites <dimod:reference/samplers>` that provide layers of pre- and
+:std:doc:`dimod composites <dimod:introduction>` that provide layers of pre- and
 post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system.
 
 .. currentmodule:: dwave.system.composites

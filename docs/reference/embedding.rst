@@ -12,7 +12,7 @@ via couplers (bipartite connectivity). Unit cells are tiled vertically and horiz
 with adjacent qubits connected, creating a lattice of sparsely connected qubits. A unit
 cell is typically rendered as either a cross or a column.
 
-.. figure:: ../_static/ChimeraUnitCell.png
+.. figure:: ../_images/ChimeraUnitCell.png
 	:align: center
 	:name: ChimeraUnitCell
 	:scale: 20 %
@@ -20,7 +20,7 @@ cell is typically rendered as either a cross or a column.
 
 	Chimera unit cell.
 
-.. figure:: ../_static/chimera.png
+.. figure:: ../_images/chimera.png
   :name: chimera
   :scale: 70 %
   :alt: Chimera graph.  qubits are arranged in unit cells that form bipartite connections.
@@ -53,7 +53,7 @@ Sampling this problem on a D-Wave system, therefore, requires minor-embedding.
 Embedding in this case is accomplished by an edge contraction operation on the
 target graph: two nodes (qubits) are chained to represent a single node.
 
-.. figure:: ../_static/Embedding_Chimera_AND.png
+.. figure:: ../_images/Embedding_Chimera_AND.png
   :name: Embedding_Chimera_AND
   :scale: 60 %
   :alt: Embedding a :math:`K_3` graph onto the D-Wave system's graph.
