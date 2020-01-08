@@ -21,6 +21,7 @@ from __future__ import division
 
 import functools
 import time
+import numpy as np
 
 from warnings import warn
 
@@ -76,6 +77,7 @@ class LeapHybridSampler(dimod.Sampler):
         >>> import dimod
         >>> import networkx as nx
         >>> import dwave_networkx as dnx
+        >>> import numpy as np
         ...
         >>> # Create a maximum-independent set problem from a random graph
         >>> problem_node_count = 300
@@ -87,13 +89,16 @@ class LeapHybridSampler(dimod.Sampler):
         >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
         >>> sampleset = sampler.sample(bqm, time_limit=1)           # doctest: +SKIP
         >>> print("Found solution with {} nodes at energy {}.".format(
-                  np.sum(result.record.sample), result.first.energy))     # doctest: +SKIP
-
+                  np.sum(sampleset["sampleset"].record.sample),
+                         sampleset["sampleset"].first.energy))     # doctest: +SKIP
     """
+
     def __init__(self, **config):
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
+        self.minimum_time_limit = [(1, 1.0), (1024, 1.0), (4096, 10.0),
+                                   (10000, 40.0)]
 
     @property
     def properties(self):
@@ -123,7 +128,7 @@ class LeapHybridSampler(dimod.Sampler):
             self._parameters = parameters
             return parameters
 
-    def sample(self, bqm, time_limit, **kwargs):
+    def sample(self, bqm, time_limit=None, **kwargs):
         """Sample from the specified binary quadratic model.
 
         Args:
@@ -131,8 +136,11 @@ class LeapHybridSampler(dimod.Sampler):
                 The binary quadratic model.
 
             time_limit (int):
-                Maximum run time to allow the solver to work on the problem.
-                <<NEED MOTE INFO HERE>>
+                Maximum run time, in seconds, to allow the solver to work on the problem.
+                Must be a least the minimum required for the number of problem variables,
+                which is set by default.
+                To do: provide the final formula and remember to update in the
+                __init__.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
@@ -151,6 +159,7 @@ class LeapHybridSampler(dimod.Sampler):
             >>> import dimod
             >>> import networkx as nx
             >>> import dwave_networkx as dnx
+            >>> import numpy as np
             ...
             >>> # Create a maximum-independent set problem from a random graph
             >>> problem_node_count = 300
@@ -162,9 +171,19 @@ class LeapHybridSampler(dimod.Sampler):
             >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
             >>> sampleset = sampler.sample(bqm, time_limit=1)           # doctest: +SKIP
             >>> print("Found solution with {} nodes at energy {}.".format(
-                      np.sum(result.record.sample), result.first.energy))     # doctest: +SKIP
-
+                      np.sum(sampleset["sampleset"].record.sample),
+                             sampleset["sampleset"].first.energy))     # doctest: +SKIP
         """
+
+        xx, yy = zip(*self.minimum_time_limit)
+        min_time_limit = np.interp([len(bqm.variables)], xx, yy)[0]
+
+        if time_limit is None:
+            time_limit = self.min_time_limit
+        if time_limit < min_time_limit:
+            msg = ("time limit for problem size {} must be at least {}"
+                   ).format(len(bqm.variables), min_time_limit)
+            raise ValueError(msg)
 
         sapi_problem_id = self.solver.upload_bqm(bqm).result()
         return self.solver.sample_bqm(sapi_problem_id, time_limit=time_limit).result()
