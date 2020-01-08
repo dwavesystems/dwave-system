@@ -14,3 +14,4 @@
 #
 # ================================================================================================
 from dwave.system.samplers.dwave_sampler import *
+from dwave.system.samplers.leap_hybrid_sampler import *

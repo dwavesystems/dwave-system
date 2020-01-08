@@ -32,7 +32,7 @@ from dwave.cloud import Client
 
 from dwave.cloud.solver import UnstructuredSolver
 
-__all__ = ['DWaveSampler']
+__all__ = ['LeapHybridSampler']
 
 
 class LeapHybridSampler(dimod.Sampler):
@@ -167,4 +167,4 @@ class LeapHybridSampler(dimod.Sampler):
         """
 
         sapi_problem_id = self.solver.upload_bqm(bqm).result()
-        return self.solver.sample_bqm(sapi_problem_id, **kwargs).result()
+        return self.solver.sample_bqm(sapi_problem_id, time_limit=time_limit).result()
