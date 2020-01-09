@@ -18,23 +18,12 @@ A :std:doc:`dimod sampler <dimod:reference/samplers>` for Leap's hybrid solvers.
 
 """
 from __future__ import division
-
-import functools
-import time
 import numpy as np
 
-from warnings import warn
-
 import dimod
-
-from dimod.exceptions import BinaryQuadraticModelStructureError
-from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 from dwave.cloud import Client
 
-from dwave.cloud.solver import UnstructuredSolver
-
 __all__ = ['LeapHybridSampler']
-
 
 class LeapHybridSampler(dimod.Sampler):
     """A class for using the Leap's cloud-based hybrid solvers.
@@ -97,6 +86,7 @@ class LeapHybridSampler(dimod.Sampler):
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
+        # Ideally this would be pulled in from a solver attribute:
         self.minimum_time_limit = [(1, 1.0), (1024, 1.0), (4096, 10.0),
                                    (10000, 40.0)]
 
@@ -149,8 +139,7 @@ class LeapHybridSampler(dimod.Sampler):
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
             <<MAYBE>> In it this sampler also provides timing information in the `info`
-            field as described in the D-Wave System Documentation's
-            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
+            field.
 
         Examples:
             This example builds a random sparse graph and uses a hybrid solver to find a

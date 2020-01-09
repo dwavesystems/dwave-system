@@ -13,22 +13,12 @@
 #    limitations under the License.
 #
 # =============================================================================
-import sys
 import unittest
-import random
-import warnings
-
-from collections import namedtuple
 from concurrent.futures import Future
-
 import numpy as np
 
 import dimod
-import dwave_networkx as dnx
 from tabu import TabuSampler
-
-from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
-
 from dwave.system.samplers import LeapHybridSampler
 
 try:
@@ -84,7 +74,6 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertIs(response.vartype, dimod.SPIN)
         self.assertIn('num_occurrences', response.record.dtype.fields)
 
-
     def test_sample_ising_variables(self):
 
         sampler = self.sampler
@@ -102,11 +91,10 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertFalse(np.any(response.record.sample == 0))
         self.assertIs(response.vartype, dimod.SPIN)
 
-
     def test_sample_qubo_variables(self):
 
         sampler = self.sampler
-    
+
         response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
 
         rows, cols = response.record.sample.shape
