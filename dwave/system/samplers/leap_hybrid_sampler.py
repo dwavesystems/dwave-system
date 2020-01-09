@@ -179,7 +179,7 @@ class LeapHybridSampler(dimod.Sampler):
         min_time_limit = np.interp([len(bqm.variables)], xx, yy)[0]
 
         if time_limit is None:
-            time_limit = self.min_time_limit
+            time_limit = min_time_limit
         if time_limit < min_time_limit:
             msg = ("time limit for problem size {} must be at least {}"
                    ).format(len(bqm.variables), min_time_limit)
