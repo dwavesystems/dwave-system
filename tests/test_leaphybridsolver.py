@@ -40,12 +40,16 @@ except ImportError:
 
 class MockSolver():
 
-    def upload_bqm(bqm):
-        return bqm
+    def upload_bqm(self, bqm, **parameters):
+        future = Future()
+        future.set_result(bqm)
+        return future
 
-    def sample_bqm(sapi_problem_id, time_limit):
-        return TabuSampler.sample(sapi_problem_id, timelimit=time_limit)
-
+    def sample_bqm(self, sapi_problem_id, time_limit):
+        result = TabuSampler().sample(sapi_problem_id, timeout=1000*int(time_limit))
+        future = Future()
+        future.set_result(result)
+        return future
 
 class TestLeapHybridSampler(unittest.TestCase):
     @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
@@ -53,18 +57,33 @@ class TestLeapHybridSampler(unittest.TestCase):
 
         # using the mock
         self.sampler = LeapHybridSampler()
-
         self.sampler.solver = MockSolver()
 
     @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
     def test_solver_init(self, MockClient):
-        """..."""
 
         MockClient.reset_mock()
         solver = {'qpu': False}
         sampler = LeapHybridSampler(solver=solver)
 
         MockClient.from_config.assert_called_once_with(solver=solver)
+
+    def test_sample_bqm(self):
+
+        sampler = self.sampler
+
+        bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},
+                    {'ab': -0.8, 'ac': -0.7, 'bc': -1}, 0, dimod.SPIN)
+
+        response = sampler.sample(bqm)
+
+        rows, cols = response.record.sample.shape
+
+        self.assertEqual(cols, 3)
+        self.assertFalse(np.any(response.record.sample == 0))
+        self.assertIs(response.vartype, dimod.SPIN)
+        self.assertIn('num_occurrences', response.record.dtype.fields)
+
 
     def test_sample_ising_variables(self):
 
@@ -79,9 +98,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         response = sampler.sample_ising({}, {(0, 4): 1})
 
         rows, cols = response.record.sample.shape
-
         self.assertEqual(cols, 2)
-
         self.assertFalse(np.any(response.record.sample == 0))
         self.assertIs(response.vartype, dimod.SPIN)
 
@@ -89,7 +106,7 @@ class TestLeapHybridSampler(unittest.TestCase):
     def test_sample_qubo_variables(self):
 
         sampler = self.sampler
-
+    
         response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
 
         rows, cols = response.record.sample.shape
@@ -101,6 +118,5 @@ class TestLeapHybridSampler(unittest.TestCase):
         rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 2)
-
         self.assertTrue(np.all(response.record.sample >= 0))
         self.assertIs(response.vartype, dimod.BINARY)
