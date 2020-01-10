@@ -19,6 +19,7 @@ A :std:doc:`dimod sampler <dimod:reference/samplers>` for Leap's hybrid solvers.
 """
 from __future__ import division
 import numpy as np
+from warnings import warn
 
 import dimod
 from dwave.cloud import Client
@@ -76,7 +77,7 @@ class LeapHybridSampler(dimod.Sampler):
         ...
         >>> # Find a good solution
         >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
-        >>> sampleset = sampler.sample(bqm, time_limit=1)           # doctest: +SKIP
+        >>> sampleset = sampler.sample(bqm, time_limit=10)           # doctest: +SKIP
         >>> print("Found solution with {} nodes at energy {}.".format(
                   np.sum(sampleset["sampleset"].record.sample),
                          sampleset["sampleset"].first.energy))     # doctest: +SKIP
@@ -84,11 +85,28 @@ class LeapHybridSampler(dimod.Sampler):
 
     def __init__(self, **config):
 
+        if config.get('solver_features') is not None:
+            warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
+
+            if config.get('solver') is not None:
+                raise ValueError("cannot combine 'solver' and 'solver_features'")
+
+            config['solver'] = config.pop('solver_features')
+
+        # Non-hybrid named solvers are caught post client.get_solver() resolution
+        if not isinstance(config['solver'], str):
+            if 'category' not in config['solver'].keys():
+                config['solver']['category'] = 'hybrid'
+            elif config['solver']['category'] is not 'hybrid':
+                raise ValueError("The only 'category' this sampler supports is 'hybrid'.")
+
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
-        # Ideally this would be pulled in from a solver attribute:
-        self.minimum_time_limit = [(1, 1.0), (1024, 1.0), (4096, 10.0),
-                                   (10000, 40.0)]
+
+        if ('category' not in self.properties.keys()) or (
+                      not self.properties['category'] == 'hybrid'):
+            msg = "Solver {} is not a hybrid solver.".format(self.solver.name)
+            raise ValueError(msg)
 
     @property
     def properties(self):
@@ -128,9 +146,18 @@ class LeapHybridSampler(dimod.Sampler):
             time_limit (int):
                 Maximum run time, in seconds, to allow the solver to work on the problem.
                 Must be a least the minimum required for the number of problem variables,
-                which is set by default.
-                To do: provide the final formula and remember to update in the
-                __init__.
+                which is calculated and set by default.
+                The minimum time for a hybrid solver is specified as a piecewise-linear
+                curve defined by a set of floating-point pairs, the `minimum_time_limit`
+                field under :attr:`.LeapHybridSampler.properties`. The first element in each
+                pair is the number of problem variables; the second is the minimum
+                required time. The minimum time for any particular number of variables
+                is a linear interpolation calculated on two pairs that represent the
+                relevant range for the given number of variables.
+                For example, if `LeapHybridSampler().properties["minimum_time_limit"]`
+                returns `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, then the minimum time
+                for a 50-variable problem is 5 seconds, the linear interpolation of the
+                first two pairs that represent problems with between 1 to 100 variables.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
@@ -158,13 +185,13 @@ class LeapHybridSampler(dimod.Sampler):
             ...
             >>> # Find a good solution
             >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
-            >>> sampleset = sampler.sample(bqm, time_limit=1)           # doctest: +SKIP
+            >>> sampleset = sampler.sample(bqm, time_limit=10)           # doctest: +SKIP
             >>> print("Found solution with {} nodes at energy {}.".format(
                       np.sum(sampleset["sampleset"].record.sample),
                              sampleset["sampleset"].first.energy))     # doctest: +SKIP
         """
 
-        xx, yy = zip(*self.minimum_time_limit)
+        xx, yy = zip(*self.properties["minimum_time_limit"])
         min_time_limit = np.interp([len(bqm.variables)], xx, yy)[0]
 
         if time_limit is None:
@@ -175,4 +202,4 @@ class LeapHybridSampler(dimod.Sampler):
             raise ValueError(msg)
 
         sapi_problem_id = self.solver.upload_bqm(bqm).result()
-        return self.solver.sample_bqm(sapi_problem_id, time_limit=time_limit).result()
+        return self.solver.sample_bqm(sapi_problem_id, time_limit=time_limit).sampleset
