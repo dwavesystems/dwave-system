@@ -84,39 +84,43 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertIs(response.vartype, dimod.SPIN)
         self.assertIn('num_occurrences', response.record.dtype.fields)
 
-    # @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
-    # def test_sample_ising_variables(self):
-    #
-    #     mock_get_solver.return_value = MockSolver()
-    #
-    #     sampler = LeapHybridSampler(solver = {'category': 'hybrid'})
-    #
-    #     response = sampler.sample_ising({0: -1, 1: 1}, {})
-    #
-    #     rows, cols = response.record.sample.shape
-    #
-    #     self.assertEqual(cols, 2)
-    #
-    #     response = sampler.sample_ising({}, {(0, 4): 1})
-    #
-    #     rows, cols = response.record.sample.shape
-    #     self.assertEqual(cols, 2)
-    #     self.assertFalse(np.any(response.record.sample == 0))
-    #     self.assertIs(response.vartype, dimod.SPIN)
+    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
+    def test_sample_ising_variables(self, mock_get_solver):
 
-    # @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
-    # def test_sample_qubo_variables(self):
-    #
-    #     response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
-    #
-    #     rows, cols = response.record.sample.shape
-    #
-    #     self.assertEqual(cols, 2)
-    #
-    #     response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
-    #
-    #     rows, cols = response.record.sample.shape
-    #
-    #     self.assertEqual(cols, 2)
-    #     self.assertTrue(np.all(response.record.sample >= 0))
-    #     self.assertIs(response.vartype, dimod.BINARY)
+        mock_get_solver.return_value = MockSolver()
+
+        sampler = LeapHybridSampler(solver = {'category': 'hybrid'})
+
+        response = sampler.sample_ising({0: -1, 1: 1}, {})
+
+        rows, cols = response.record.sample.shape
+
+        self.assertEqual(cols, 2)
+
+        response = sampler.sample_ising({}, {(0, 4): 1})
+
+        rows, cols = response.record.sample.shape
+        self.assertEqual(cols, 2)
+        self.assertFalse(np.any(response.record.sample == 0))
+        self.assertIs(response.vartype, dimod.SPIN)
+
+    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
+    def test_sample_qubo_variables(self, mock_get_solver):
+
+        mock_get_solver.return_value = MockSolver()
+
+        sampler = LeapHybridSampler(solver = {'QPU': False})
+
+        response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
+
+        rows, cols = response.record.sample.shape
+
+        self.assertEqual(cols, 2)
+    
+        response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
+
+        rows, cols = response.record.sample.shape
+
+        self.assertEqual(cols, 2)
+        self.assertTrue(np.all(response.record.sample >= 0))
+        self.assertIs(response.vartype, dimod.BINARY)
