@@ -5,7 +5,7 @@ Samplers
 ========
 
 A :term:`sampler` accepts a binary quadratic model (BQM) and returns variable assignments.
-Samplers generally try to find minimizing values but can also sample from distributions 
+Samplers generally try to find minimizing values but can also sample from distributions
 defined by the BQM.
 
 .. currentmodule:: dwave.system.samplers
@@ -41,3 +41,30 @@ Methods
    DWaveSampler.sample_ising
    DWaveSampler.sample_qubo
    DWaveSampler.validate_anneal_schedule
+
+LeapHybridSampler
+=================
+
+.. autoclass:: LeapHybridSampler
+
+Properties
+----------
+
+To do: write some stuff here
+
+.. autosummary::
+   :toctree: generated/
+
+   LeapHybridSampler.properties
+   LeapHybridSampler.parameters
+
+
+Methods
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   LeapHybridSampler.sample
+   LeapHybridSampler.sample_ising
+   LeapHybridSampler.sample_qubo
