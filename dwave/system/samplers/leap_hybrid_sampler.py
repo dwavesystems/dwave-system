@@ -105,8 +105,7 @@ class LeapHybridSampler(dimod.Sampler):
 
         if ('category' not in self.properties.keys()) or (
                       not self.properties['category'] == 'hybrid'):
-            msg = "Solver {} is not a hybrid solver.".format(self.solver.name)
-            raise ValueError(msg)
+            raise ValueError("Selected solver is not a hybrid solver.")
 
     @property
     def properties(self):

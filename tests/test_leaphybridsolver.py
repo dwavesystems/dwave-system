@@ -30,7 +30,7 @@ except ImportError:
     # py2
     import mock
 
-class MockSolver():
+class MockLeapHybridSolver():
 
     properties = {'supported_problem_types': ['bqm'],
                   'minimum_time_limit': [[1, 1.0], [1024, 1.0],
@@ -50,25 +50,31 @@ class MockSolver():
         future._result = {'sampleset': result, 'problem_type': 'bqm'}
         return future
 
+class MockBadLeapHybridSolver():
+
+    properties = {'category': 'not hybrid'}
+
+@mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver', return_value = MockLeapHybridSolver())
 class TestLeapHybridSampler(unittest.TestCase):
 
-    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
     def test_solver_init(self, mock_get_solver):
-
-        mock_get_solver.return_value = MockSolver()
 
         mock_get_solver.reset_mock()
         LeapHybridSampler(solver="any name")
         mock_get_solver.assert_called_once()
 
-        solver = {'category': 'not hybrid'}
         with self.assertRaises(ValueError):
-            LeapHybridSampler(solver=solver)
+            LeapHybridSampler(solver={'category': 'not hybrid'})
 
-    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
+        with self.assertRaises(ValueError):
+            LeapHybridSampler(solver={'category': 'not hybrid'},
+                              solver_features={'QPU': False})
+
+        mock_get_solver.return_value = MockBadLeapHybridSolver()
+        with self.assertRaises(ValueError):
+            LeapHybridSampler(solver={'QPU': False})
+
     def test_sample_bqm(self, mock_get_solver):
-
-        mock_get_solver.return_value = MockSolver()
 
         bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},
                     {'ab': -0.8, 'ac': -0.7, 'bc': -1}, 0, dimod.SPIN)
@@ -84,10 +90,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertIs(response.vartype, dimod.SPIN)
         self.assertIn('num_occurrences', response.record.dtype.fields)
 
-    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
     def test_sample_ising_variables(self, mock_get_solver):
-
-        mock_get_solver.return_value = MockSolver()
 
         sampler = LeapHybridSampler(solver = {'category': 'hybrid'})
 
@@ -104,10 +107,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertFalse(np.any(response.record.sample == 0))
         self.assertIs(response.vartype, dimod.SPIN)
 
-    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver')
     def test_sample_qubo_variables(self, mock_get_solver):
-
-        mock_get_solver.return_value = MockSolver()
 
         sampler = LeapHybridSampler(solver = {'QPU': False})
 
@@ -116,7 +116,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         rows, cols = response.record.sample.shape
 
         self.assertEqual(cols, 2)
-    
+
         response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
 
         rows, cols = response.record.sample.shape
