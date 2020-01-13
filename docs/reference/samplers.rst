@@ -50,8 +50,6 @@ LeapHybridSampler
 Properties
 ----------
 
-To do: write some stuff here
-
 .. autosummary::
    :toctree: generated/
 

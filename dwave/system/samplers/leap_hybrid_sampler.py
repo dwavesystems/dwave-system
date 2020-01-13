@@ -98,14 +98,14 @@ class LeapHybridSampler(dimod.Sampler):
             if 'category' not in config['solver'].keys():
                 config['solver']['category'] = 'hybrid'
             elif config['solver']['category'] is not 'hybrid':
-                raise ValueError("The only 'category' this sampler supports is 'hybrid'.")
+                raise ValueError("the only 'category' this sampler supports is 'hybrid'.")
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
         if ('category' not in self.properties.keys()) or (
                       not self.properties['category'] == 'hybrid'):
-            raise ValueError("Selected solver is not a hybrid solver.")
+            raise ValueError("selected solver is not a hybrid solver.")
 
     @property
     def properties(self):
@@ -164,8 +164,8 @@ class LeapHybridSampler(dimod.Sampler):
 
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
-            <<MAYBE>> In it this sampler also provides timing information in the `info`
-            field.
+            <<TOD DO: add once I have input:>> In it this sampler also provides
+            timing information in the `info` field.
 
         Examples:
             This example builds a random sparse graph and uses a hybrid solver to find a

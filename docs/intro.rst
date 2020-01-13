@@ -12,6 +12,11 @@ quadratic model (BQM) representing a problem---in the typical Ocean
 1. Formulate the problem as a BQM.
 2. Solve the BQM with a sampler.
 
+You can incorporate the D-Wave system in either a hybrid quantum-classical solution,
+using :class:`~dwave.system.samplers.LeapHybridSampler()` or
+:std:doc:`dwave-hybrid <hybrid:index>` samplers such as :code:`KerberosSampler()`,
+or directly using :class:`~dwave.system.samplers.DWaveSampler()`.
+
 Example
 =======
 This example solves a small example of a known graph problem, minimum
@@ -64,6 +69,17 @@ all support ‘sample_qubo’ and ‘sample_ising’ methods as well as the gene
 In addition to :class:`~dwave.system.samplers.DWaveSampler()`, classical solvers, which run on CPU or GPU, are available and
 useful for developing code or on a small versions of a problem to verify code.
 
+Hybrid Quantum-Classical Samplers
+---------------------------------
+
+Quantum-classical hybrid is the use of both classical and quantum resources to solve problems, exploiting the complementary strengths that each provides.
+
+D-Wave's `Leap Quantum Application Environment <https://cloud.dwavesys.com/leap>`_
+provides state-of-the-art hybrid solvers you can submit arbitrary BQMs to.
+:std:doc:`dwave-hybrid <hybrid:index>` provides you with a Python framework for
+building a variety of flexible hybrid workflows that use quantum and classical
+resources together to find good solutions to your problem.
+
 .. _composites:
 
 Composites
@@ -78,16 +94,17 @@ Examples of composites are :class:`~dwave.system.composites.EmbeddingComposite()
 used in the example above, and :class:`~dwave.system.composites.VirtualGraphComposite()`,
 both of which handle the mapping known as :term:`minor-embedding`.
 
-
 .. _minorEmbedding:
 
 Embedding
 =========
 
-To solve an arbitrarily posed binary quadratic problem on a D-Wave system requires mapping,
+To solve an arbitrarily posed binary quadratic problem directly on a D-Wave system requires mapping,
 called *minor embedding*, to a Chimera graph that represents the system's quantum processing unit.
 This preprocessing can be done by a composed sampler consisting of the
 :class:`~dwave.system.samplers.DWaveSampler()` and a composite that performs minor-embedding.
+(This step is handled automatically by :class:`~dwave.system.samplers.LeapHybridSampler()`
+and :std:doc:`dwave-hybrid <hybrid:index>` reference samplers.)
 
 See the :ref:`embedding_system` section for more information on :term:`minor-embedding` and the
 provided functionality.
