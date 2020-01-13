@@ -94,7 +94,7 @@ class LeapHybridSampler(dimod.Sampler):
             config['solver'] = config.pop('solver_features')
 
         # Non-hybrid named solvers are caught post client.get_solver() resolution
-        if not isinstance(config['solver'], str):
+        if (config.get('solver') is not None) and (not isinstance(config['solver'], str)):
             if 'category' not in config['solver'].keys():
                 config['solver']['category'] = 'hybrid'
             elif config['solver']['category'] is not 'hybrid':
