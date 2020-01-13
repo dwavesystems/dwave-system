@@ -79,8 +79,8 @@ class LeapHybridSampler(dimod.Sampler):
         >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
         >>> sampleset = sampler.sample(bqm, time_limit=10)           # doctest: +SKIP
         >>> print("Found solution with {} nodes at energy {}.".format(
-                  np.sum(sampleset["sampleset"].record.sample),
-                         sampleset["sampleset"].first.energy))     # doctest: +SKIP
+                  np.sum(sampleset.record.sample),
+                  sampleset.first.energy))     # doctest: +SKIP
     """
 
     def __init__(self, **config):
@@ -186,8 +186,8 @@ class LeapHybridSampler(dimod.Sampler):
             >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
             >>> sampleset = sampler.sample(bqm, time_limit=10)           # doctest: +SKIP
             >>> print("Found solution with {} nodes at energy {}.".format(
-                      np.sum(sampleset["sampleset"].record.sample),
-                             sampleset["sampleset"].first.energy))     # doctest: +SKIP
+                      np.sum(sampleset.record.sample),
+                      sampleset.first.energy))     # doctest: +SKIP
         """
 
         xx, yy = zip(*self.properties["minimum_time_limit"])
