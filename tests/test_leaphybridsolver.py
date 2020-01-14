@@ -22,6 +22,7 @@ from tabu import TabuSampler
 from dwave.system.samplers import LeapHybridSampler
 
 from dwave.cloud.computation import Future as cloud_future
+from dwave.cloud import Client
 
 try:
     # py3
@@ -54,13 +55,36 @@ class MockBadLeapHybridSolver():
 
     properties = {'category': 'not hybrid'}
 
+def MockFromConfig():
+
+    return Client.from_config()
+
 @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver', return_value = MockLeapHybridSolver())
 class TestLeapHybridSampler(unittest.TestCase):
 
-    def test_solver_init(self, mock_get_solver):
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client.from_config', return_value = MockFromConfig())
+    def test_solver_init1(self, mock_from_config, mock_get_solver):
+
+        mock_from_config.reset_mock()
+        mock_get_solver.return_value = MockLeapHybridSolver()
+        LeapHybridSampler(solver={'qpu': True})
+        mock_from_config.assert_called_once_with(solver={'qpu': True, 'category': 'hybrid'})
+
+        mock_from_config.reset_mock()
+        mock_get_solver.return_value = MockLeapHybridSolver()
+        LeapHybridSampler(solver={'qpu': True, 'anneal_schedule' :False})
+        mock_from_config.assert_called_once_with(solver={'anneal_schedule' :False, 'qpu': True,
+                                                         'category': 'hybrid'})
+
+        mock_from_config.reset_mock()
+        mock_get_solver.return_value = MockLeapHybridSolver()
+        LeapHybridSampler(solver="Named_Solver")
+        mock_from_config.assert_called_once_with(solver="Named_Solver")
+
+    def test_solver_init2(self, mock_get_solver):
 
         mock_get_solver.reset_mock()
-        LeapHybridSampler(solver="any name")
+        LeapHybridSampler(solver="Named_Solver")
         mock_get_solver.assert_called_once()
 
         with self.assertRaises(ValueError):
@@ -68,11 +92,11 @@ class TestLeapHybridSampler(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             LeapHybridSampler(solver={'category': 'not hybrid'},
-                              solver_features={'QPU': False})
+                              solver_features={'qpu': False})
 
         mock_get_solver.return_value = MockBadLeapHybridSolver()
         with self.assertRaises(ValueError):
-            LeapHybridSampler(solver={'QPU': False})
+            LeapHybridSampler(solver={'qpu': False})
 
     def test_sample_bqm(self, mock_get_solver):
 
