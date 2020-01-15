@@ -162,7 +162,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 to the constructor.
 
             return_embedding (bool, optional, default=False):
-                If True, the embedding is added to :attr:`dimod.SampleSet.info`
+                If True, the embedding, chain strength, chain break method and
+                embedding parameters are added to :attr:`dimod.SampleSet.info`
                 of the returned sample set.
 
             **parameters:
@@ -230,10 +231,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        return unembed_sampleset(response, embedding, source_bqm=bqm,
-                                 chain_break_method=chain_break_method,
-                                 chain_break_fraction=chain_break_fraction,
-                                 return_embedding=return_embedding)
+        sampleset = unembed_sampleset(response, embedding, source_bqm=bqm,
+                                      chain_break_method=chain_break_method,
+                                      chain_break_fraction=chain_break_fraction,
+                                      return_embedding=return_embedding)
+
+        if return_embedding:
+            sampleset.info.update(embedding_parameters=embedding_parameters,
+                                  chain_strength=chain_strength)
+
+        return sampleset
 
 
 class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
