@@ -350,7 +350,8 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
     info = target_sampleset.info.copy()
 
     if return_embedding:
-        info.update(embedding=embedding)
+        info.update(embedding=embedding,
+                    chain_break_method=chain_break_method.__name__)
 
     return dimod.SampleSet.from_samples_bqm((unembedded, variables),
                                             source_bqm,
