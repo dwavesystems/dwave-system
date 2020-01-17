@@ -237,8 +237,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
                                       return_embedding=return_embedding)
 
         if return_embedding:
-            sampleset.info.update(embedding_parameters=embedding_parameters,
-                                  chain_strength=chain_strength)
+            sampleset.info['embedding_context'].update(
+                embedding_parameters=embedding_parameters,
+                chain_strength=chain_strength)
 
         return sampleset
 
