@@ -131,11 +131,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
     Contains the properties of the child sampler.
     """
 
+    return_embedding_default = False
+    """Defines the default behaviour for :meth:`.sample`'s `return_embedding`
+    kwarg.
+    """
+
     def sample(self, bqm, chain_strength=1.0,
                chain_break_method=None,
                chain_break_fraction=True,
                embedding_parameters=None,
-               return_embedding=False,
+               return_embedding=None,
                **parameters):
         """Sample from the provided binary quadratic model.
 
@@ -161,10 +166,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 keyword arguments. Overrides any `embedding_parameters` passed
                 to the constructor.
 
-            return_embedding (bool, optional, default=False):
+            return_embedding (bool, optional):
                 If True, the embedding, chain strength, chain break method and
                 embedding parameters are added to :attr:`dimod.SampleSet.info`
-                of the returned sample set.
+                of the returned sample set. The default behaviour is defined
+                by :attr:`return_embedding_default`, which itself defaults to
+                False.
 
             **parameters:
                 Parameters for the sampling method, specified by the child
@@ -177,6 +184,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             See the example in :class:`EmbeddingComposite`.
 
         """
+        if return_embedding is None:
+            return_embedding = self.return_embedding_default
 
         # solve the problem on the child system
         child = self.child

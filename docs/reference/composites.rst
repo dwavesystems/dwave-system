@@ -127,6 +127,7 @@ Properties
    EmbeddingComposite.child
    EmbeddingComposite.parameters
    EmbeddingComposite.properties
+   EmbeddingComposite.return_embedding_default
 
 Methods
 ~~~~~~~
