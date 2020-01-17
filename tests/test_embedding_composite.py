@@ -230,25 +230,22 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1}, return_embedding=True)
 
-        self.assertIn('embedding', sampleset.info)
-        embedding = sampleset.info['embedding']
+        self.assertIn('embedding', sampleset.info['embedding_context'])
+        embedding = sampleset.info['embedding_context']['embedding']
         self.assertEqual(set(embedding), {'a', 'c'})
 
-        self.assertIn('chain_break_method', sampleset.info)
-        self.assertEqual(sampleset.info['chain_break_method'], 'majority_vote')  # the default
+        self.assertIn('chain_break_method', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
 
-        self.assertIn('embedding_parameters', sampleset.info)
-        self.assertEqual(sampleset.info['embedding_parameters'], {})  # the default
+        self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
-        self.assertIn('chain_strength', sampleset.info)
-        self.assertEqual(sampleset.info['chain_strength'], 1.0)  # the default
+        self.assertIn('chain_strength', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.0)  # the default
 
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
-        self.assertNotIn('embedding', sampleset.info)
-        self.assertNotIn('chain_break_method', sampleset.info)
-        self.assertNotIn('chain_strength', sampleset.info)
-        self.assertNotIn('embedding_parameters', sampleset.info)
+        self.assertNotIn('embedding_context', sampleset.info)
 
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
