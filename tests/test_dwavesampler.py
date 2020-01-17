@@ -20,6 +20,7 @@ import warnings
 
 from collections import namedtuple
 from concurrent.futures import Future
+from uuid import uuid4
 
 import numpy as np
 
@@ -90,6 +91,7 @@ class MockSolver():
         result['samples'] = result['solutions']
         result['energies'] = [dimod.ising_energy(sample, h, J) for sample in result['samples']]
         future = Future()
+        future.id = uuid4()
         future.set_result(result)
         return future
 
@@ -116,6 +118,7 @@ class MockSolver():
         result['samples'] = result['solutions']
         result['energies'] = [dimod.qubo_energy(sample, Q) for sample in result['samples']]
         future = Future()
+        future.id = uuid4()
         future.set_result(result)
         return future
 
@@ -171,6 +174,7 @@ class TestDwaveSampler(unittest.TestCase):
 
         self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
+        self.assertIn('problem_id', response.info)
 
     def test_sample_qubo_variables(self):
 
@@ -193,6 +197,7 @@ class TestDwaveSampler(unittest.TestCase):
 
         self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
+        self.assertIn('problem_id', response.info)
 
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_failover_false(self, MockClient):

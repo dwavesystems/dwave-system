@@ -509,12 +509,12 @@ def _result_to_response_hook(variables, vartype):
         # get the samples. The future will return all spins so filter for the ones in variables
         samples = [[sample[v] for v in variables] for sample in result.get('solutions')]
 
-        # finally put the timing information (if present) into the misc info. We ignore everything
-        # else
+        # construct the info field (add timing, problem id)
+        info = {}
         if 'timing' in result:
-            info = {'timing': result['timing']}
-        else:
-            info = {}
+            info.update(timing=result['timing'])
+        if hasattr(computation, 'id'):
+            info.update(problem_id=computation.id)
 
         return dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
                                             energy=result['energies'],
