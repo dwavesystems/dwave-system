@@ -144,7 +144,7 @@ class LeapHybridSampler(dimod.Sampler):
 
             time_limit (int):
                 Maximum run time, in seconds, to allow the solver to work on the problem.
-                Must be a least the minimum required for the number of problem variables,
+                Must be at least the minimum required for the number of problem variables,
                 which is calculated and set by default.
                 The minimum time for a hybrid solver is specified as a piecewise-linear
                 curve defined by a set of floating-point pairs, the `minimum_time_limit`
