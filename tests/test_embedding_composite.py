@@ -289,6 +289,23 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         self.assertIn('warnings', ss.info)
 
+    def test_warnings_as_class_variable(self):
+        G = dnx.chimera_graph(12)
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.RandomSampler(), G.nodes, G.edges))
+
+        # this will need chains lengths > 7
+        J = {uv: -1 for uv in itertools.combinations(range(40), 2)}
+
+        EmbeddingComposite.warnings_default = 'SAVE'
+
+        ss = sampler.sample_ising({}, J)
+
+        self.assertIn('warnings', ss.info)
+
+        EmbeddingComposite.warnings_default = 'IGNORE'  # restore default
+
 
 class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_without_embedding_and_adjacency(self):
