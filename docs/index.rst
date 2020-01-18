@@ -1,10 +1,16 @@
 ..  -*- coding: utf-8 -*-
 
-.. _contents:
+.. ifconfig:: target=="sdk"
 
-.. include:: ../README.rst
-  :start-after: index-start-marker
-  :end-before: index-end-marker
+   .. include:: /readmes/system.rst
+     :start-after: index-start-marker
+     :end-before: index-end-marker
+
+.. ifconfig:: target=="repo"
+
+   .. include:: ../README.rst
+       :start-after: index-start-marker
+       :end-before: index-end-marker
 
 Documentation
 -------------
