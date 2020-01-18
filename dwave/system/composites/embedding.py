@@ -33,7 +33,7 @@ import minorminer
 
 from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
                              chain_to_quadratic)
-from dwave.system.warnings import WarningHandler
+from dwave.system.warnings import WarningHandler, WarningAction
 
 __all__ = ('EmbeddingComposite',
            'FixedEmbeddingComposite',
@@ -137,6 +137,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
     kwarg.
     """
 
+    warnings_default = WarningAction.IGNORE
+    """Defines the default behabior for :meth:`.sample`'s `warnings` kwarg.
+    """
+
     def sample(self, bqm, chain_strength=1.0,
                chain_break_method=None,
                chain_break_fraction=True,
@@ -175,6 +179,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 by :attr:`return_embedding_default`, which itself defaults to
                 False.
 
+            warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
+                Defines what warning action to take, if any. See
+                :mod:`~dwave.system.warnings`. The default behaviour is defined
+                by :attr:`warnings_default`, which itself defaults to
+                :class:`~dwave.system.warnings.IGNORE`
+
             **parameters:
                 Parameters for the sampling method, specified by the child
                 sampler.
@@ -212,6 +222,9 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         embedding = self.find_embedding(source_edgelist, target_edgelist,
                                         **embedding_parameters)
+
+        if warnings is None:
+            warnings = self.warnings_default
 
         warninghandler = WarningHandler(warnings)
 

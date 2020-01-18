@@ -128,6 +128,7 @@ Properties
    EmbeddingComposite.parameters
    EmbeddingComposite.properties
    EmbeddingComposite.return_embedding_default
+   EmbeddingComposite.warnings_default
 
 Methods
 ~~~~~~~
