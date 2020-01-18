@@ -1,8 +1,8 @@
 .. _sdk_index_system:
 
-============
-dwave-system
-============
+.. include:: /readmes/system.rst
+   :start-after: index-start-marker
+   :end-before: index-end-marker
 
 .. include:: index.rst
    :start-after: sdk-start-marker
