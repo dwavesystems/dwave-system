@@ -1,4 +1,4 @@
-.. _intro:
+.. _intro_system:
 
 ============
 Introduction
@@ -89,5 +89,5 @@ called *minor embedding*, to a Chimera graph that represents the system's quantu
 This preprocessing can be done by a composed sampler consisting of the
 :class:`~dwave.system.samplers.DWaveSampler()` and a composite that performs minor-embedding.
 
-See the :ref:`embedding` section for more information on :term:`minor-embedding` and the
+See the :ref:`embedding_system` section for more information on :term:`minor-embedding` and the
 provided functionality.

@@ -1,4 +1,4 @@
-.. _embedding:
+.. _embedding_system:
 
 =========
 Embedding
