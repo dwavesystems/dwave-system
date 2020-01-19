@@ -273,7 +273,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         if chain_break_fraction and len(sampleset):
             warninghandler.issue("all samples had broken chains",
-                                 lambda: sampleset.record.chain_break_fraction.all())
+                                 func=lambda: (sampleset.record.chain_break_fraction.all(), None))
 
         if warninghandler.saved:
             # we're done with the warning handler so we can just pass the list

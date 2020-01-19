@@ -146,5 +146,6 @@ class WarningHandler(object):
                            category=ChainBreakWarning,
                            level=logging.ERROR,
                            data=dict(target_variables=chain,
-                                     source_variables=[variables[nc]]),
+                                     source_variables=[variables[nc]],
+                                     sample_index=row),
                            )
