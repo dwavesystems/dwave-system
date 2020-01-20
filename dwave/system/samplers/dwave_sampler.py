@@ -94,8 +94,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Switch to a new QPU in the rare event that the currently connected
             system goes offline. Note that different QPUs may have different
             hardware graphs and a failover will result in a regenerated
-            :attr:`DWaveSampler.nodelist`, :attr:`DWaveSampler.edgelist`, :attr:`DWaveSampler.properties` and
-            :attr:`DWaveSampler.parameters`.
+            :attr:`.nodelist`, :attr:`.edgelist`, :attr:`.properties` and
+            :attr:`.parameters`.
 
         retry_interval (number, optional, default=-1):
             The amount of time (in seconds) to wait to poll for a solver in
