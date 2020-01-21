@@ -21,12 +21,16 @@ from __future__ import division
 import numpy as np
 from warnings import warn
 
-import dimod
+from dimod.serialization.fileview import FileView
+from dimod.bqm import AdjArrayBQM
+from dimod.binary_quadratic_model import BinaryQuadraticModel
+from dimod import Sampler
+
 from dwave.cloud import Client
 
 __all__ = ['LeapHybridSampler']
 
-class LeapHybridSampler(dimod.Sampler):
+class LeapHybridSampler(Sampler):
     """A class for using the Leap's cloud-based hybrid solvers.
 
     Uses parameters set in a configuration file, as environment variables, or
@@ -139,7 +143,7 @@ class LeapHybridSampler(dimod.Sampler):
         """Sample from the specified binary quadratic model.
 
         Args:
-            bqm (:obj:`.BinaryQuadraticModel`):
+            bqm (:obj:`.BinaryQuadraticModel` or :obj:`FileView`):
                 The binary quadratic model.
 
             time_limit (int):
@@ -190,14 +194,21 @@ class LeapHybridSampler(dimod.Sampler):
                       sampleset.first.energy))     # doctest: +SKIP
         """
 
+        if isinstance(bqm, BinaryQuadraticModel):
+            bqm = FileView(AdjArrayBQM(bqm))
+
+        if not isinstance(bqm, FileView):
+            raise TypeError("BQM formats supported are currently only BQM and FileView.")
+
+        num_vars = len(bqm.bqm.variables)
         xx, yy = zip(*self.properties["minimum_time_limit"])
-        min_time_limit = np.interp([len(bqm.variables)], xx, yy)[0]
+        min_time_limit = np.interp([num_vars], xx, yy)[0]
 
         if time_limit is None:
             time_limit = min_time_limit
         if time_limit < min_time_limit:
             msg = ("time limit for problem size {} must be at least {}"
-                   ).format(len(bqm.variables), min_time_limit)
+                   ).format(num_vars, min_time_limit)
             raise ValueError(msg)
 
         sapi_problem_id = self.solver.upload_bqm(bqm).result()
