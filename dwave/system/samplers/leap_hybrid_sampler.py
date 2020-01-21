@@ -89,14 +89,6 @@ class LeapHybridSampler(Sampler):
 
     def __init__(self, **config):
 
-        if config.get('solver_features') is not None:
-            warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
-
-            if config.get('solver') is not None:
-                raise ValueError("cannot combine 'solver' and 'solver_features'")
-
-            config['solver'] = config.pop('solver_features')
-
         # Non-hybrid named solvers are caught post client.get_solver() resolution
         if (config.get('solver') is not None) and (not isinstance(config['solver'], str)):
             if 'category' not in config['solver'].keys():
@@ -143,8 +135,9 @@ class LeapHybridSampler(Sampler):
         """Sample from the specified binary quadratic model.
 
         Args:
-            bqm (:obj:`.BinaryQuadraticModel` or :obj:`FileView`):
+            bqm (:obj:`.BinaryQuadraticModel`):
                 The binary quadratic model.
+                TEMPORARY NOTE:  also accepts :obj:`FileView`
 
             time_limit (int):
                 Maximum run time, in seconds, to allow the solver to work on the problem.
@@ -194,7 +187,7 @@ class LeapHybridSampler(Sampler):
                       sampleset.first.energy))     # doctest: +SKIP
         """
 
-        if isinstance(bqm, BinaryQuadraticModel):
+        if isinstance(bqm, BinaryQuadraticModel):   # TEMPORARY FOR TESTING
             bqm = FileView(AdjArrayBQM(bqm))
         elif isinstance(bqm, AdjArrayBQM):
             bqm = FileView(bqm)
