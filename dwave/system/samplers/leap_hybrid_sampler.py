@@ -196,9 +196,10 @@ class LeapHybridSampler(Sampler):
 
         if isinstance(bqm, BinaryQuadraticModel):
             bqm = FileView(AdjArrayBQM(bqm))
-
-        if not isinstance(bqm, FileView):
-            raise TypeError("BQM formats supported are currently only BQM and FileView.")
+        elif isinstance(bqm, AdjArrayBQM):
+            bqm = FileView(bqm)
+        else:
+            raise TypeError("BQM formats supported are currently only BQM and AdjArrayBQM.")
 
         num_vars = len(bqm.bqm.variables)
         xx, yy = zip(*self.properties["minimum_time_limit"])

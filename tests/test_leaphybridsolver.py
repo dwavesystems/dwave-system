@@ -46,6 +46,11 @@ class MockLeapHybridSolver():
         return future
 
     def sample_bqm(self, sapi_problem_id, time_limit):
+        #Workaround until TabuSampler supports C BQMs
+        sapi_problem_id = dimod.BQM(sapi_problem_id.bqm.linear,
+                                    sapi_problem_id.bqm.quadratic,
+                                    sapi_problem_id.bqm.offset,
+                                    sapi_problem_id.bqm.vartype)
         result = TabuSampler().sample(sapi_problem_id, timeout=1000*int(time_limit))
         future = cloud_future('fake_solver', None)
         future._result = {'sampleset': result, 'problem_type': 'bqm'}
