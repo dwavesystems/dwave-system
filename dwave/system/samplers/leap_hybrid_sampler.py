@@ -160,9 +160,10 @@ class LeapHybridSampler(Sampler):
                 :attr:`.LeapHybridSampler.parameters`.
 
         Returns:
-            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
-            <<TOD DO: add once I have input:>> In it this sampler also provides
-            timing information in the `info` field.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object
+            and timing information.
+            TO DO: I will update the sample() method to return the timing information
+            in the info field.
 
         Examples:
             This example builds a random sparse graph and uses a hybrid solver to find a
@@ -187,14 +188,9 @@ class LeapHybridSampler(Sampler):
                       sampleset.first.energy))     # doctest: +SKIP
         """
 
-        if isinstance(bqm, BinaryQuadraticModel):   # TEMPORARY FOR TESTING
-            bqm = FileView(AdjArrayBQM(bqm))
-        elif isinstance(bqm, AdjArrayBQM):
-            bqm = FileView(bqm)
-        else:
-            raise TypeError("BQM formats supported are currently only BQM and AdjArrayBQM.")
+        bqm = AdjArrayBQM(bqm) if not isinstance(bqm, AdjArrayBQM) else bqm  # TEMPORARY FOR TESTING
 
-        num_vars = len(bqm.bqm.variables)
+        num_vars = len(bqm.variables)
         xx, yy = zip(*self.properties["minimum_time_limit"])
         min_time_limit = np.interp([num_vars], xx, yy)[0]
 
@@ -205,5 +201,6 @@ class LeapHybridSampler(Sampler):
                    ).format(num_vars, min_time_limit)
             raise ValueError(msg)
 
-        sapi_problem_id = self.solver.upload_bqm(bqm).result()
+        with FileView(bqm) as fv:
+            sapi_problem_id = self.solver.upload_bqm(fv).result()
         return self.solver.sample_bqm(sapi_problem_id, time_limit=time_limit).sampleset
