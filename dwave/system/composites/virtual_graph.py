@@ -14,8 +14,8 @@
 #
 # =============================================================================
 """
-A :std:doc:`dimod composite <dimod:reference/samplers>` that uses the D-Wave virtual
-graph feature for improved :std:doc:`minor-embedding <system:intro>`.
+A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that uses the D-Wave virtual
+graph feature for improved :std:doc:`minor-embedding <oceandocs:docs_system/intro>`.
 
 D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you to more
 easily create, optimize, use, and reuse an embedding for a given working graph. When you submit an
@@ -86,7 +86,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
        The problem represents a logical
        AND gate using penalty function :math:`P = xy - 2(x+y)z +3z`, where variables x and y
        are the gate's inputs and z the output. This simple three-variable problem is manually
-       minor-embedded to a single :std:doc:`Chimera <system:intro>` unit cell:
+       minor-embedded to a single :std:doc:`Chimera <oceandocs:docs_system/intro>` unit cell:
        variables x and y are represented by qubits 1 and 5, respectively, and z by a
        two-qubit chain consisting of qubits 0 and 4.
        The chain strength is set to the maximum allowed found from querying the solver's extended
@@ -175,7 +175,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
            The problem represents a logical
            NOT gate using penalty function :math:`P = xy`, where variable x is the gate's input
            and y the output. This simple two-variable problem is manually minor-embedded
-           to a single :std:doc:`Chimera <system:intro>` unit cell: each variable
+           to a single :std:doc:`Chimera <oceandocs:docs_system/intro>` unit cell: each variable
            is represented by a chain of half the cell's qubits, x as qubits 0, 1, 4, 5,
            and y as qubits 2, 3, 6, 7.
            The chain strength is set to half the maximum allowed found from querying the solver's extended

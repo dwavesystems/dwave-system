@@ -16,7 +16,7 @@ Example
 =======
 This example solves a small example of a known graph problem, minimum
 `vertex cover <https://en.wikipedia.org/wiki/Vertex_cover>`_\ . It uses the NetworkX
-graphic package to create the problem, Ocean's :std:doc:`dwave_networkx <networkx:index>`
+graphic package to create the problem, Ocean's :std:doc:`dwave_networkx <oceandocs:docs_dnx/index>`
 to formulate the graph problem as a BQM, and dwave-system's
 :class:`~dwave.system.samplers.DWaveSampler()` to use a D-Wave system as the sampler.
 (Access to a D-Wave system has been :std:doc:`set up <oceandocs:overview/dwavesys>` in
@@ -37,8 +37,8 @@ to the D-Wave system's numerically indexed qubits, a mapping known as :term:`min
 Using the D-Wave System as a Sampler
 ====================================
 
-The :std:doc:`dimod <dimod:index>` API makes it possible to easily interchange samplers
-in your code. For example, you might develop code using :std:doc:`dwave_neal <neal:index>`,
+The :std:doc:`dimod <oceandocs:docs_dimod/index>` API makes it possible to easily interchange samplers
+in your code. For example, you might develop code using :std:doc:`dwave_neal <oceandocs:docs_neal/index>`,
 Ocean's simulated annealing sampler, and then swap in a D-Wave system
 composed sampler.
 
@@ -59,7 +59,7 @@ A BQM sampler samples from low energy states in models such as those
 defined by an Ising equation or a Quadratic Unconstrained Binary Optimization (QUBO) problem
 and returns an iterable of samples, in order of increasing energy.
 
-Ocean software provides a variety of :std:doc:`dimod samplers <dimod:introduction>`, which
+Ocean software provides a variety of :std:doc:`dimod samplers <oceandocs:docs_dimod/introduction>`, which
 all support ‘sample_qubo’ and ‘sample_ising’ methods as well as the generic BQM sampler method.
 In addition to :class:`~dwave.system.samplers.DWaveSampler()`, classical solvers, which run on CPU or GPU, are available and
 useful for developing code or on a small versions of a problem to verify code.

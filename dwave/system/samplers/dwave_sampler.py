@@ -14,7 +14,7 @@
 #
 # ================================================================================================
 """
-A :std:doc:`dimod sampler <dimod:reference/samplers>` for the D-Wave system.
+A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for the D-Wave system.
 
 See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
