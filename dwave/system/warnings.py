@@ -119,7 +119,7 @@ class WarningHandler(object):
             if len(chain) <= length:
                 continue
 
-            self.issue("chain length greater than {}".format(length),
+            self.issue("Chain length greater than {}".format(length),
                        category=ChainLengthWarning,
                        data=dict(target_variables=chain,
                                  source_variables=[v]),
@@ -142,7 +142,7 @@ class WarningHandler(object):
                 if not broken[row, nc]:
                     continue
 
-                self.issue("a chain is broken in the lowest energy samples found",
+                self.issue("A chain is broken in the lowest energy samples found",
                            category=ChainBreakWarning,
                            level=logging.ERROR,
                            data=dict(target_variables=chain,
