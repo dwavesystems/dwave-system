@@ -16,7 +16,7 @@ Example
 =======
 This example solves a small example of a known graph problem, minimum
 `vertex cover <https://en.wikipedia.org/wiki/Vertex_cover>`_\ . It uses the NetworkX
-graphic package to create the problem, Ocean's :std:doc:`dwave_networkx <oceandocs:docs_dnx/index>`
+graphic package to create the problem, Ocean's :std:doc:`dwave_networkx <oceandocs:docs_dnx/sdk_index>`
 to formulate the graph problem as a BQM, and dwave-system's
 :class:`~dwave.system.samplers.DWaveSampler()` to use a D-Wave system as the sampler.
 (Access to a D-Wave system has been :std:doc:`set up <oceandocs:overview/dwavesys>` in
@@ -37,8 +37,8 @@ to the D-Wave system's numerically indexed qubits, a mapping known as :term:`min
 Using the D-Wave System as a Sampler
 ====================================
 
-The :std:doc:`dimod <oceandocs:docs_dimod/index>` API makes it possible to easily interchange samplers
-in your code. For example, you might develop code using :std:doc:`dwave_neal <oceandocs:docs_neal/index>`,
+The :std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` API makes it possible to easily interchange samplers
+in your code. For example, you might develop code using :std:doc:`dwave_neal <oceandocs:docs_neal/sdk_index>`,
 Ocean's simulated annealing sampler, and then swap in a D-Wave system
 composed sampler.
 
