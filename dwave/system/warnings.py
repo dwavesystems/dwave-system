@@ -37,6 +37,15 @@ SAVE = WarningAction.SAVE
 # RAISE = WarningAction.RAISE
 
 
+def as_action(action):
+    if isinstance(action, WarningAction):
+        return action
+    elif isinstance(action, six.string_types):
+        return WarningAction[action.upper()]
+    else:
+        raise TypeError('unknown warning action provided')
+
+
 class ChainBreakWarning(UserWarning):
     pass
 
@@ -59,18 +68,11 @@ class WarningHandler(object):
     def __init__(self, action=None):
         self.saved = []
 
-        if action is None:
-            action = self.default_action
-        elif isinstance(action, WarningAction):
-            pass
-        elif isinstance(action, six.string_types):
-            action = WarningAction[action.upper()]
-        else:
-            raise TypeError('unknown warning action provided')
+        if action is not None:
+            # promote from class attribute to object attribute
+            self.action = as_action(action)
 
-        self.action = action
-
-    default_action = WarningAction.IGNORE
+    action = WarningAction.IGNORE  # the default
 
     # todo: let user override __init__ parameters with kwargs
     def issue(self, msg, category=None, func=None, level=logging.WARNING,
