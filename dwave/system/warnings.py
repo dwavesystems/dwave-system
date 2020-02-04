@@ -102,7 +102,9 @@ class WarningHandler(object):
 
         """
 
-        if self.action is IGNORE:
+        action = as_action(self.action)  # user may have overwritten
+
+        if action is IGNORE:
             return
 
         if func is not None:
@@ -116,7 +118,7 @@ class WarningHandler(object):
         if data is None:
             data = {}
 
-        if self.action is SAVE:
+        if action is SAVE:
             self.saved.append(dict(type=category,
                                    message=msg,
                                    level=level,
@@ -127,7 +129,7 @@ class WarningHandler(object):
     # some hard-coded warnings for convenience or for expensive operations
 
     def chain_length(self, embedding, length=7):
-        if self.action is IGNORE:
+        if as_action(self.action) is IGNORE:
             return
 
         for v, chain in embedding.items():
@@ -141,7 +143,7 @@ class WarningHandler(object):
                        )
 
     def chain_break(self, sampleset, embedding):
-        if self.action is IGNORE:
+        if as_action(self.action) is IGNORE:
             return
 
         ground = sampleset.lowest()
@@ -168,7 +170,7 @@ class WarningHandler(object):
     def chain_strength(self, bqm, chain_strength):
         """Issues a warning when any quadratic biases are greater than the given
         chain strength."""
-        if self.action is IGNORE:
+        if as_action(self.action) is IGNORE:
             return
 
         interactions = [uv for uv, bias in bqm.quadratic.items()
@@ -191,7 +193,7 @@ class WarningHandler(object):
                 `h` and `J` are Ising problem dictionaries.
 
         """
-        if self.action is IGNORE:
+        if as_action(self.action) is IGNORE:
             return
 
         if isinstance(bqm, tuple):
