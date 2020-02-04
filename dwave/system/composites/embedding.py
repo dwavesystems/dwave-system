@@ -103,6 +103,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                           chain_break_method=[],
                           chain_break_fraction=[],
                           embedding_parameters=[],
+                          return_embedding=[],
+                          warnings=[],
                           )
 
         # set the properties
@@ -225,9 +227,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         if warnings is None:
             warnings = self.warnings_default
+        elif 'warnings' in child.parameters:
+            parameters.update(warnings=warnings)
 
         warninghandler = WarningHandler(warnings)
 
+        warninghandler.chain_strength(bqm, chain_strength)
         warninghandler.chain_length(embedding)
 
         if bqm and not embedding:
@@ -275,11 +280,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
             warninghandler.issue("all samples had broken chains",
                                  func=lambda: (sampleset.record.chain_break_fraction.all(), None))
 
-        if warninghandler.saved:
+        if warninghandler.action is WarningAction.SAVE:
             # we're done with the warning handler so we can just pass the list
             # off, if later we want to pass in a handler or similar we should
             # do a copy
-            sampleset.info['warnings'] = warninghandler.saved
+            sampleset.info.setdefault('warnings', []).extend(warninghandler.saved)
 
         return sampleset
 

@@ -17,6 +17,7 @@ import enum
 import logging
 
 import six
+import dimod
 
 from dwave.embedding import broken_chains
 
@@ -44,12 +45,22 @@ class ChainLengthWarning(UserWarning):
     pass
 
 
+class ChainStrengthWarning(UserWarning):
+    """Base category for warnings about the embedding chain strength."""
+    pass
+
+
+class EnergyScaleWarning(UserWarning):
+    """Base category for warnings about the relative bias strengths."""
+    pass
+
+
 class WarningHandler(object):
     def __init__(self, action=None):
         self.saved = []
 
         if action is None:
-            action = WarningAction.IGNORE
+            action = self.default_action
         elif isinstance(action, WarningAction):
             pass
         elif isinstance(action, six.string_types):
@@ -58,6 +69,8 @@ class WarningHandler(object):
             raise TypeError('unknown warning action provided')
 
         self.action = action
+
+    default_action = WarningAction.IGNORE
 
     # todo: let user override __init__ parameters with kwargs
     def issue(self, msg, category=None, func=None, level=logging.WARNING,
@@ -149,3 +162,64 @@ class WarningHandler(object):
                                      source_variables=[variables[nc]],
                                      sample_index=row),
                            )
+
+    def chain_strength(self, bqm, chain_strength):
+        """Issues a warning when any quadratic biases are greater than the given
+        chain strength."""
+        if self.action is IGNORE:
+            return
+
+        interactions = [uv for uv, bias in bqm.quadratic.items()
+                        if abs(bias) >= chain_strength]
+
+        if interactions:
+            self.issue("Some quadratic biases are stronger than the given "
+                       "chain strength",
+                       category=ChainStrengthWarning,
+                       level=logging.WARNING,
+                       data=dict(source_interactions=interactions))
+
+    def energy_scale(self, bqm):
+        """Issues a warning if some biases are 10^3 times stronger than others.
+
+        Args:
+            bqm (:class:`dimod.BinaryQuadraticModel`/tuple):
+                A binary quadratic model, a tuple of the form `(Q)` where `Q`
+                is a QUBO-dictionary, or a tuple of the form `(h, J)` where
+                `h` and `J` are Ising problem dictionaries.
+
+        """
+        if self.action is IGNORE:
+            return
+
+        if isinstance(bqm, tuple):
+            if len(bqm) == 1:
+                bqm = dimod.BinaryQuadraticModel.from_qubo(*bqm)
+            elif len(bqm) == 2:
+                bqm = dimod.BinaryQuadraticModel.from_ising(*bqm)
+            else:
+                raise TypeError("bqm should be a binary quadratic model, a "
+                                "1-tuple or a 2-tuple")
+
+        max_bias = max(map(abs, bqm.linear.values()))
+        if bqm.quadratic:
+            max_bias = max(max_bias, max(map(abs, bqm.quadratic.values())))
+
+        max_bias *= 10**-3
+
+        variables = [v for v, bias in bqm.linear.items()
+                     if abs(bias) < max_bias]
+        interactions = [uv for uv, bias in bqm.quadratic.items()
+                        if abs(bias) < max_bias]
+
+        data = dict()
+        if variables:
+            data.update(source_variables=variables)
+        if interactions:
+            data.update(source_interactions=interactions)
+
+        if data:
+            self.issue("Some biases are 10^3 times stronger than others",
+                       category=EnergyScaleWarning,
+                       level=logging.WARNING,
+                       data=data)
