@@ -160,10 +160,7 @@ class LeapHybridSampler(Sampler):
                 :attr:`.LeapHybridSampler.parameters`.
 
         Returns:
-            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object
-            and timing information.
-            TO DO: I will update the sample() method to return the timing information
-            in the info field.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
 
         Examples:
             This example builds a random sparse graph and uses a hybrid solver to find a
@@ -196,6 +193,8 @@ class LeapHybridSampler(Sampler):
 
         if time_limit is None:
             time_limit = min_time_limit
+        if not isinstance(time_limit, int) and not isinstance(time_limit, float):
+            raise TypeError("time limit must be a number")
         if time_limit < min_time_limit:
             msg = ("time limit for problem size {} must be at least {}"
                    ).format(num_vars, min_time_limit)
