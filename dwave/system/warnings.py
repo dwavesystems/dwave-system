@@ -15,6 +15,7 @@
 # =============================================================================
 import enum
 import logging
+import numpy as np
 
 import six
 
@@ -41,6 +42,9 @@ class ChainBreakWarning(UserWarning):
 
 
 class ChainLengthWarning(UserWarning):
+    pass
+
+class TooFewSamplesWarning(UserWarning):
     pass
 
 
@@ -149,3 +153,20 @@ class WarningHandler(object):
                                      source_variables=[variables[nc]],
                                      sample_index=row),
                            )
+
+    def too_few_samples(self, sampleset):
+        if self.action is IGNORE:
+            return
+
+        ground = sampleset.lowest(atol=1e-3)
+        total_ground = np.sum(ground.record.num_occurrences)
+        total_samples = np.sum(sampleset.record.num_occurrences)
+
+        if total_ground <= np.sqrt(total_samples):
+            self.issue("Number of ground states found is within sampling error",
+                       category=TooFewSamplesWarning,
+                       level=logging.WARNING,
+                       data=dict(number_of_ground_states = total_ground,
+                                 num_reads = total_samples,
+                                 sampling_error_rate=np.sqrt(total_samples)),
+                       )
