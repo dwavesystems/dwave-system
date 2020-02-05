@@ -20,6 +20,7 @@ A :std:doc:`dimod sampler <dimod:reference/samplers>` for Leap's hybrid solvers.
 from __future__ import division
 import numpy as np
 from warnings import warn
+from numbers import Number
 
 from dimod.serialization.fileview import FileView
 from dimod.bqm import AdjArrayBQM
@@ -193,7 +194,7 @@ class LeapHybridSampler(Sampler):
 
         if time_limit is None:
             time_limit = min_time_limit
-        if not isinstance(time_limit, int) and not isinstance(time_limit, float):
+        if not isinstance(time_limit, Number):
             raise TypeError("time limit must be a number")
         if time_limit < min_time_limit:
             msg = ("time limit for problem size {} must be at least {}"
