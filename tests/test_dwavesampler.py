@@ -30,6 +30,7 @@ import dwave_networkx as dnx
 from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.samplers import DWaveSampler
+from dwave.system.warnings import EnergyScaleWarning
 
 try:
     # py3
@@ -256,6 +257,27 @@ class TestDwaveSampler(unittest.TestCase):
 
         with self.assertRaises(SolverNotFoundError):
             sampler.sample_ising({}, {})
+
+    def test_warnings_energy_range(self):
+        sampler = self.sampler
+
+        response = sampler.sample_ising({0: 10**-4, 1: 1}, {},
+                                        warnings='SAVE')
+
+        self.assertIn('warnings', response.info)
+        count = 0
+        for warning in response.info['warnings']:
+            if issubclass(warning['type'], EnergyScaleWarning):
+                count += 1
+        self.assertEqual(count, 1)
+
+        response = sampler.sample_qubo({(0, 4): -1}, warnings='SAVE')
+
+        count = 0
+        for warning in response.info['warnings']:
+            if issubclass(warning['type'], EnergyScaleWarning):
+                count += 1
+        self.assertEqual(count, 1)
 
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
