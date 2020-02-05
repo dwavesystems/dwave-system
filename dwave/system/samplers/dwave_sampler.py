@@ -29,8 +29,8 @@ from warnings import warn
 import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
-from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 from dwave.cloud import Client
+from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.warnings import WarningHandler, WarningAction
 
@@ -262,7 +262,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             edgelist = self._edgelist
         except AttributeError:
             self._edgelist = edgelist = sorted(set((u, v) if u < v else (v, u)
-                                               for u, v in self.solver.edges))
+                                                   for u, v in self.solver.edges))
         return edgelist
 
     @property
@@ -371,7 +371,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         if warninghandler.action is WarningAction.SAVE:
             info = dict(warnings=warninghandler.saved)
         else:
-            info = None
+            info = dict(warnings=self.warnings_default)
 
         hook = _result_to_response_hook(variables, dimod.SPIN, info)
         return dimod.SampleSet.from_future(future, hook)
@@ -562,9 +562,15 @@ def _result_to_response_hook(variables, vartype, info=None):
         if hasattr(computation, 'id'):
             info.update(problem_id=computation.id)
 
-        return dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
-                                            energy=result['energies'],
-                                            num_occurrences=result.get('num_occurrences', None),
-                                            sort_labels=True)
+        sampleset = dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
+                                                 energy=result['energies'],
+                                                 num_occurrences=result.get('num_occurrences', None),
+                                                 sort_labels=True)
+
+        warnings = info.get('warnings', None)
+        warninghandler = WarningHandler(warnings)
+        warninghandler.too_few_samples(sampleset)
+
+        return sampleset
 
     return _hook
