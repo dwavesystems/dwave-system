@@ -32,6 +32,8 @@ from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 from dwave.cloud import Client
 
+from dwave.system.warnings import WarningHandler, WarningAction
+
 __all__ = ['DWaveSampler']
 
 
@@ -164,6 +166,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.failover = failover
         self.retry_interval = retry_interval
 
+    warnings_default = WarningAction.IGNORE
+    """Defines the default behabior for :meth:`.sample_ising`'s  and
+    :meth:`sample_qubo`'s `warnings` kwarg.
+    """
+
     @property
     def properties(self):
         """dict: D-Wave solver properties as returned by a SAPI query.
@@ -225,6 +232,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         except AttributeError:
             parameters = {param: ['parameters']
                           for param in self.properties['parameters']}
+            parameters.update(warnings=[])
             self._parameters = parameters
             return parameters
 
@@ -283,7 +291,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return nodelist
 
     @_failover
-    def sample_ising(self, h, J, **kwargs):
+    def sample_ising(self, h, J, warnings=None, **kwargs):
         """Sample from the specified Ising model.
 
         Args:
@@ -298,6 +306,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             J (dict[(int, int): float]):
                 Quadratic biases of the Ising model.
+
+            warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
+                Defines what warning action to take, if any. See
+                :mod:`~dwave.system.warnings`. The default behaviour is defined
+                by :attr:`warnings_default`, which itself defaults to
+                :class:`~dwave.system.warnings.IGNORE`
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
@@ -334,8 +348,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             # on missing nodes.
             h = dict((v, b) for v, b in enumerate(h) if b or v in nodes)
 
-        variables = set(h).union(*J)
-
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
         # the solver's nodes/edges because they are a set, so faster lookup
@@ -347,16 +359,36 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_ising(h, J, **kwargs)
 
-        hook = _result_to_response_hook(variables, dimod.SPIN)
+        # do as much as possible after the future is returned
+
+        variables = set(h).union(*J)
+
+        if warnings is None:
+            warnings = self.warnings_default
+        warninghandler = WarningHandler(warnings)
+        warninghandler.energy_scale((h, J))
+
+        if warninghandler.action is WarningAction.SAVE:
+            info = dict(warnings=warninghandler.saved)
+        else:
+            info = None
+
+        hook = _result_to_response_hook(variables, dimod.SPIN, info)
         return dimod.SampleSet.from_future(future, hook)
 
     @_failover
-    def sample_qubo(self, Q, **kwargs):
+    def sample_qubo(self, Q, warnings=None, **kwargs):
         """Sample from the specified QUBO.
 
         Args:
             Q (dict):
                 Coefficients of a quadratic unconstrained binary optimization (QUBO) model.
+
+            warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
+                Defines what warning action to take, if any. See
+                :mod:`~dwave.system.warnings`. The default behaviour is defined
+                by :attr:`warnings_default`, which itself defaults to
+                :class:`~dwave.system.warnings.IGNORE`
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
@@ -387,7 +419,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        variables = set().union(*Q)
 
         # developer note: in the future we should probably catch exceptions
         # from the cloud client, but for now this is simpler/cleaner. We use
@@ -401,7 +432,21 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         future = self.solver.sample_qubo(Q, **kwargs)
 
-        hook = _result_to_response_hook(variables, dimod.BINARY)
+        # do as much as possible after the future is returned
+
+        variables = set().union(*Q)
+
+        if warnings is None:
+            warnings = self.warnings_default
+        warninghandler = WarningHandler(warnings)
+        warninghandler.energy_scale((Q,))
+
+        if warninghandler.action is WarningAction.SAVE:
+            info = dict(warnings=warninghandler.saved)
+        else:
+            info = None
+
+        hook = _result_to_response_hook(variables, dimod.BINARY, info)
         return dimod.SampleSet.from_future(future, hook)
 
     def validate_anneal_schedule(self, anneal_schedule):
@@ -502,7 +547,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
 
-def _result_to_response_hook(variables, vartype):
+def _result_to_response_hook(variables, vartype, info=None):
+    info = {} if info is None else info
+
     def _hook(computation):
         result = computation.result()
 
@@ -510,7 +557,6 @@ def _result_to_response_hook(variables, vartype):
         samples = [[sample[v] for v in variables] for sample in result.get('solutions')]
 
         # construct the info field (add timing, problem id)
-        info = {}
         if 'timing' in result:
             info.update(timing=result['timing'])
         if hasattr(computation, 'id'):

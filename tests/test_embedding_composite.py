@@ -34,6 +34,7 @@ from dwave.system.composites import (EmbeddingComposite,
 
 from dwave.system.testing import MockDWaveSampler, mock
 from dwave.embedding import chain_breaks
+from dwave.system.warnings import ChainStrengthWarning
 
 
 class TestEmbeddingComposite(unittest.TestCase):
@@ -288,6 +289,23 @@ class TestEmbeddingComposite(unittest.TestCase):
         ss = sampler.sample_ising({}, J, warnings='SAVE')
 
         self.assertIn('warnings', ss.info)
+
+    def test_warning_chain_strength(self):
+        G = dnx.chimera_graph(12)
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.RandomSampler(), G.nodes, G.edges))
+
+        J = {(0, 1): 100}
+
+        ss = sampler.sample_ising({}, J, warnings='SAVE')
+        self.assertIn('warnings', ss.info)
+
+        count = 0
+        for warning in ss.info['warnings']:
+            if issubclass(warning['type'], ChainStrengthWarning):
+                count += 1
+        self.assertEqual(count, 1)
 
     def test_warnings_as_class_variable(self):
         G = dnx.chimera_graph(12)
