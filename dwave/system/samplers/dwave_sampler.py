@@ -371,9 +371,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         if warninghandler.action is WarningAction.SAVE:
             info = dict(warnings=warninghandler.saved)
         else:
-            info = dict(warnings=self.warnings_default)
+            info = None
 
-        hook = _result_to_response_hook(variables, dimod.SPIN, info)
+        hook = _result_to_response_hook(variables, dimod.SPIN, info, warninghandler)
         return dimod.SampleSet.from_future(future, hook)
 
     @_failover
@@ -446,7 +446,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         else:
             info = None
 
-        hook = _result_to_response_hook(variables, dimod.BINARY, info)
+        hook = _result_to_response_hook(variables, dimod.BINARY, info, warninghandler)
         return dimod.SampleSet.from_future(future, hook)
 
     def validate_anneal_schedule(self, anneal_schedule):
@@ -547,7 +547,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
 
-def _result_to_response_hook(variables, vartype, info=None):
+def _result_to_response_hook(variables, vartype, info=None, warninghandler=None):
     info = {} if info is None else info
 
     def _hook(computation):
@@ -567,9 +567,11 @@ def _result_to_response_hook(variables, vartype, info=None):
                                                  num_occurrences=result.get('num_occurrences', None),
                                                  sort_labels=True)
 
-        warnings = info.get('warnings', None)
-        warninghandler = WarningHandler(warnings)
-        warninghandler.too_few_samples(sampleset)
+        if warninghandler is not None:
+            warninghandler.too_few_samples(sampleset)
+
+            if warninghandler.action is WarningAction.SAVE:
+                sampleset.info['warnings'] = warninghandler.saved
 
         return sampleset
 
