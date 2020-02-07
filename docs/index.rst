@@ -14,6 +14,12 @@ Documentation
   :Release: |version|
   :Date: |today|
 
+.. note:: This documentation is for the latest version of
+   `dwave-system <https://github.com/dwavesystems/dwave-system>`_.
+   Documentation for the version currently installed by
+   `dwave-ocean-sdk <https://github.com/dwavesystems/dwave-ocean-sdk>`_
+   is here: :std:doc:`dwave-system <oceandocs:docs_system/sdk_index>`.
+
 .. sdk-start-marker
 
 .. toctree::
