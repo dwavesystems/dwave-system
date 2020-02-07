@@ -368,12 +368,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         warninghandler = WarningHandler(warnings)
         warninghandler.energy_scale((h, J))
 
-        if warninghandler.action is WarningAction.SAVE:
-            info = dict(warnings=warninghandler.saved)
-        else:
-            info = None
-
-        hook = _result_to_response_hook(variables, dimod.SPIN, info, warninghandler)
+        hook = _result_to_response_hook(variables, dimod.SPIN, warninghandler)
         return dimod.SampleSet.from_future(future, hook)
 
     @_failover
@@ -441,12 +436,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         warninghandler = WarningHandler(warnings)
         warninghandler.energy_scale((Q,))
 
-        if warninghandler.action is WarningAction.SAVE:
-            info = dict(warnings=warninghandler.saved)
-        else:
-            info = None
-
-        hook = _result_to_response_hook(variables, dimod.BINARY, info, warninghandler)
+        hook = _result_to_response_hook(variables, dimod.BINARY, warninghandler)
         return dimod.SampleSet.from_future(future, hook)
 
     def validate_anneal_schedule(self, anneal_schedule):
@@ -547,8 +537,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
 
-def _result_to_response_hook(variables, vartype, info=None, warninghandler=None):
-    info = {} if info is None else info
+def _result_to_response_hook(variables, vartype, warninghandler=None):
 
     def _hook(computation):
         result = computation.result()
@@ -557,12 +546,13 @@ def _result_to_response_hook(variables, vartype, info=None, warninghandler=None)
         samples = [[sample[v] for v in variables] for sample in result.get('solutions')]
 
         # construct the info field (add timing, problem id)
+        info = {}
         if 'timing' in result:
             info.update(timing=result['timing'])
         if hasattr(computation, 'id'):
             info.update(problem_id=computation.id)
 
-        sampleset = dimod.SampleSet.from_samples((samples, variables), info=info, vartype=vartype,
+        sampleset = dimod.SampleSet.from_samples((samples, variables), info =info, vartype=vartype,
                                                  energy=result['energies'],
                                                  num_occurrences=result.get('num_occurrences', None),
                                                  sort_labels=True)
