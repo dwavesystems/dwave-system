@@ -14,7 +14,7 @@
 #
 # ================================================================================================
 """
-A :std:doc:`dimod composite <dimod:reference/samplers>` that tiles small problems
+A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that tiles small problems
 multiple times to a Chimera-structured sampler.
 
 The :class:`.TilingComposite` takes a problem that can fit on a small
