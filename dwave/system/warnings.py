@@ -16,8 +16,9 @@
 import enum
 import logging
 
-import six
 import dimod
+import numpy as np
+import six
 
 from dwave.embedding import broken_chains
 
@@ -33,6 +34,8 @@ class WarningAction(enum.Enum):
 
 IGNORE = WarningAction.IGNORE
 SAVE = WarningAction.SAVE
+
+
 # LOG = WarningAction.LOG
 # RAISE = WarningAction.RAISE
 
@@ -51,6 +54,10 @@ class ChainBreakWarning(UserWarning):
 
 
 class ChainLengthWarning(UserWarning):
+    pass
+
+
+class TooFewSamplesWarning(UserWarning):
     pass
 
 
@@ -209,7 +216,7 @@ class WarningHandler(object):
         if bqm.quadratic:
             max_bias = max(max_bias, max(map(abs, bqm.quadratic.values())))
 
-        max_bias *= 10**-3
+        max_bias *= 10 ** -3
 
         variables = [v for v, bias in bqm.linear.items()
                      if abs(bias) < max_bias]
@@ -227,3 +234,21 @@ class WarningHandler(object):
                        category=EnergyScaleWarning,
                        level=logging.WARNING,
                        data=data)
+
+    def too_few_samples(self, sampleset):
+        """Issues a warning when the number ground states found is within the sampling error threshold."""
+        if self.action is IGNORE:
+            return
+
+        ground = sampleset.lowest()
+        total_ground = np.sum(ground.record.num_occurrences)
+        total_samples = np.sum(sampleset.record.num_occurrences)
+
+        if total_ground <= np.sqrt(total_samples):
+            self.issue("Number of ground states found is within sampling error",
+                       category=TooFewSamplesWarning,
+                       level=logging.WARNING,
+                       data=dict(number_of_ground_states=total_ground,
+                                 num_reads=total_samples,
+                                 sampling_error_rate=np.sqrt(total_samples)),
+                       )
