@@ -64,6 +64,11 @@ setup(
     url='https://github.com/dwavesystems/dwave-system',
     license='Apache 2.0',
     packages=packages,
+    entry_points={
+        'dwave_contrib': [
+            'dwave-system = dwave.system.package_info:contrib'
+        ]
+    },
     install_requires=install_requires,
     extras_require=extras_require,
     zip_safe=False
