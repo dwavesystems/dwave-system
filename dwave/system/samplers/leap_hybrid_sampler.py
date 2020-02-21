@@ -29,12 +29,12 @@ from dwave.cloud import Client
 __all__ = ['LeapHybridSampler']
 
 class LeapHybridSampler(dimod.Sampler):
-    """A class for using the Leap's cloud-based hybrid solvers.
+    """A class for using Leap's cloud-based hybrid solvers.
 
     Uses parameters set in a configuration file, as environment variables, or
     explicitly as input arguments for selecting and communicating with a hybrid solver.
     For more information, see
-    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_.
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/latest/docs_cloud/sdk_index.html>`_.
 
     Inherits from :class:`dimod.Sampler`.
 
@@ -78,7 +78,7 @@ class LeapHybridSampler(dimod.Sampler):
         >>> bqm = dimod.BQM.from_qubo(qubo)
         ...
         >>> # Find a good solution
-        >>> sampler = LeapHybridSampler(solver="hybrid_v1")    # doctest: +SKIP
+        >>> sampler = LeapHybridSampler()    # doctest: +SKIP
         >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
         >>> print("Found solution with {} nodes at energy {}.".format(
                   np.sum(sampleset.record.sample),
@@ -178,7 +178,7 @@ class LeapHybridSampler(dimod.Sampler):
             >>> bqm = dimod.BQM.from_qubo(qubo)
             ...
             >>> # Find a good solution
-            >>> sampler = LeapHybridSampler(solver="hybrid_v1")    # doctest: +SKIP
+            >>> sampler = LeapHybridSampler()    # doctest: +SKIP
             >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
             >>> print("Found solution with {} nodes at energy {}.".format(
                       np.sum(sampleset.record.sample),
