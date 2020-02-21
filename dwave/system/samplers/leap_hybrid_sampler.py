@@ -87,12 +87,14 @@ class LeapHybridSampler(dimod.Sampler):
 
     def __init__(self, **config):
 
-        # Non-hybrid named solvers are caught post client.get_solver() resolution
         if (config.get('solver') is not None) and (not isinstance(config['solver'], str)):
             if 'category' not in config['solver'].keys():
                 config['solver']['category'] = 'hybrid'
             elif config['solver']['category'] is not 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'.")
+
+        if (config.get('solver') is None):
+            config['solver'] = dict(category = 'hybrid')
 
         if config.get('connection_close') is None:
             config['connection_close'] = True
@@ -100,6 +102,7 @@ class LeapHybridSampler(dimod.Sampler):
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
+        # For explicitly named solvers:
         if ('category' not in self.properties.keys()) or (
                       not self.properties['category'] == 'hybrid'):
             raise ValueError("selected solver is not a hybrid solver.")
