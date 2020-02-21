@@ -20,6 +20,7 @@ from __future__ import division
 import numpy as np
 from warnings import warn
 from numbers import Number
+from collections import abc
 
 import dimod
 from dimod.serialization.fileview import FileView
@@ -85,21 +86,16 @@ class LeapHybridSampler(dimod.Sampler):
                   sampleset.first.energy))     # doctest: +SKIP
     """
 
-    def __init__(self, **config):
+    def __init__(self, solver=None, connection_close=True, **config):
 
-        if (config.get('solver') is not None) and (not isinstance(config['solver'], str)):
-            if 'category' not in config['solver'].keys():
-                config['solver']['category'] = 'hybrid'
-            elif config['solver']['category'] is not 'hybrid':
-                raise ValueError("the only 'category' this sampler supports is 'hybrid'.")
+        if solver is None:
+            solver = {}
 
-        if (config.get('solver') is None):
-            config['solver'] = dict(category = 'hybrid')
+        if isinstance(solver, abc.Mapping):
+            if solver.setdefault('category', 'hybrid') != 'hybrid':
+                raise ValueError("the only 'category' this sampler supports is 'hybrid'")
 
-        if config.get('connection_close') is None:
-            config['connection_close'] = True
-
-        self.client = Client.from_config(**config)
+        self.client = Client.from_config(solver=solver, connection_close=connection_close, **config)
         self.solver = self.client.get_solver()
 
         # For explicitly named solvers:
