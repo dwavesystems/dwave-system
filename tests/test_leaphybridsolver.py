@@ -91,6 +91,18 @@ class TestLeapHybridSampler(unittest.TestCase):
         mock_from_config.assert_called_once_with(connection_close=True,
                                                  solver="Named_Solver")
 
+        mock_from_config.reset_mock()
+        mock_get_solver.return_value = MockLeapHybridSolver()
+        LeapHybridSampler(connection_close=False)
+        mock_from_config.assert_called_once_with(connection_close=False,
+                                                 solver={'category': 'hybrid'})
+
+        mock_from_config.reset_mock()
+        mock_get_solver.return_value = MockLeapHybridSolver()
+        LeapHybridSampler()
+        mock_from_config.assert_called_once_with(connection_close=True,
+                                                 solver={'category': 'hybrid'})
+
     def test_solver_init2(self, mock_get_solver):
 
         mock_get_solver.reset_mock()
@@ -113,7 +125,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},
                     {'ab': -0.8, 'ac': -0.7, 'bc': -1}, 0, dimod.SPIN)
 
-        sampler = LeapHybridSampler(solver = {'category': 'hybrid'})
+        sampler = LeapHybridSampler()
 
         response = sampler.sample(bqm)
 
@@ -126,7 +138,7 @@ class TestLeapHybridSampler(unittest.TestCase):
 
     def test_sample_ising_variables(self, mock_get_solver):
 
-        sampler = LeapHybridSampler(solver = {'category': 'hybrid'})
+        sampler = LeapHybridSampler()
 
         response = sampler.sample_ising({0: -1, 1: 1}, {})
 
@@ -143,7 +155,7 @@ class TestLeapHybridSampler(unittest.TestCase):
 
     def test_sample_qubo_variables(self, mock_get_solver):
 
-        sampler = LeapHybridSampler(solver = {'QPU': False})
+        sampler = LeapHybridSampler()
 
         response = sampler.sample_qubo({(0, 0): -1, (1, 1): 1})
 
