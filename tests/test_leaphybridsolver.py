@@ -74,18 +74,22 @@ class TestLeapHybridSampler(unittest.TestCase):
         mock_from_config.reset_mock()
         mock_get_solver.return_value = MockLeapHybridSolver()
         LeapHybridSampler(solver={'qpu': True})
-        mock_from_config.assert_called_once_with(solver={'qpu': True, 'category': 'hybrid'})
+        mock_from_config.assert_called_once_with(connection_close=True,
+                                                 solver={'qpu': True, 'category': 'hybrid'})
 
         mock_from_config.reset_mock()
         mock_get_solver.return_value = MockLeapHybridSolver()
         LeapHybridSampler(solver={'qpu': True, 'anneal_schedule' :False})
-        mock_from_config.assert_called_once_with(solver={'anneal_schedule' :False, 'qpu': True,
+        mock_from_config.assert_called_once_with(connection_close=True,
+                                                 solver={'anneal_schedule' :False,
+                                                         'qpu': True,
                                                          'category': 'hybrid'})
 
         mock_from_config.reset_mock()
         mock_get_solver.return_value = MockLeapHybridSolver()
         LeapHybridSampler(solver="Named_Solver")
-        mock_from_config.assert_called_once_with(solver="Named_Solver")
+        mock_from_config.assert_called_once_with(connection_close=True,
+                                                 solver="Named_Solver")
 
     def test_solver_init2(self, mock_get_solver):
 
