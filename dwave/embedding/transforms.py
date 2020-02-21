@@ -343,7 +343,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
     if chain_break_method is None:
         chain_break_method = majority_vote
 
-    variables = list(source_bqm)  # need this ordered
+    variables = list(source_bqm.variables)  # need this ordered
     try:
         chains = [embedding[v] for v in variables]
     except KeyError:
