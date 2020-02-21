@@ -99,7 +99,11 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
                          chain_strength=chain_strength, smear_vartype=None).spin
 
     # create a new empty binary quadratic model with the same class as source_bqm
-    target_bqm = source_bqm.empty(source_bqm.vartype)
+    try:
+        target_bqm = source_bqm.base.empty(source_bqm.vartype)
+    except AttributeError:
+        # dimod < 0.9.0
+        target_bqm = source_bqm.empty(source_bqm.vartype)
 
     # add the offset
     target_bqm.add_offset(source_bqm.offset)
@@ -142,7 +146,16 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
             continue
 
         quadratic_chain_biases = chain_to_quadratic(chain, target_adjacency, chain_strength)
-        target_bqm.add_interactions_from(quadratic_chain_biases, vartype=dimod.SPIN)  # these are spin
+        # this is in spin, but we need to respect the vartype
+        if target_bqm.vartype is dimod.SPIN:
+            target_bqm.add_interactions_from(quadratic_chain_biases)
+        else:
+            # do the vartype converstion
+            for (u, v), bias in quadratic_chain_biases.items():
+                target_bqm.add_interaction(u, v, 4*bias)
+                target_bqm.add_variable(u, -2*bias)
+                target_bqm.add_variable(v, -2*bias)
+                target_bqm.add_offset(bias)
 
         # add the energy for satisfied chains to the offset
         energy_diff = -sum(itervalues(quadratic_chain_biases))
