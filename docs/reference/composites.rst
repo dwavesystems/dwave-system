@@ -4,7 +4,7 @@
 Composites
 ==========
 
-:std:doc:`dimod composites <oceandocs:docs_dimoc/introduction>` that provide layers of pre- and
+:std:doc:`dimod composites <oceandocs:docs_dimod/introduction>` that provide layers of pre- and
 post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system.
 
 .. currentmodule:: dwave.system.composites
