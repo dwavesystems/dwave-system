@@ -255,7 +255,10 @@ class TestEmbedBQM(unittest.TestCase):
         bqm = dimod.BinaryQuadraticModel({'a': -1}, {(0, 1): .5, (1, 'a'): -1.}, 1.0, dimod.BINARY)
 
         embedding = {v: {v} for v in bqm.linear}  # identity embedding
-        target_adj = bqm.to_networkx_graph()  # identity target graph
+
+        target_adj = nx.Graph()
+        target_adj.add_nodes_from(bqm.linear)
+        target_adj.add_edges_from(bqm.quadratic)
 
         embedded_bqm = dwave.embedding.embed_bqm(bqm, embedding, target_adj)
 
