@@ -78,7 +78,7 @@ class LeapHybridSampler(dimod.Sampler):
         >>> bqm = dimod.BQM.from_qubo(qubo)
         ...
         >>> # Find a good solution
-        >>> sampler = LeapHybridSampler(solver={'category': 'hybrid'})    # doctest: +SKIP
+        >>> sampler = LeapHybridSampler(solver="hybrid_v1")    # doctest: +SKIP
         >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
         >>> print("Found solution with {} nodes at energy {}.".format(
                   np.sum(sampleset.record.sample),
@@ -94,7 +94,10 @@ class LeapHybridSampler(dimod.Sampler):
             elif config['solver']['category'] is not 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'.")
 
-        self.client = Client.from_config(connection_close=True, **config)
+        if config.get('connection_close') is None:
+            config['connection_close'] = True
+
+        self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
         if ('category' not in self.properties.keys()) or (
@@ -176,7 +179,7 @@ class LeapHybridSampler(dimod.Sampler):
             >>> bqm = dimod.BQM.from_qubo(qubo)
             ...
             >>> # Find a good solution
-            >>> sampler = LeapHybridSampler(solver={'category': 'hybrid'})    # doctest: +SKIP
+            >>> sampler = LeapHybridSampler(solver="hybrid_v1")    # doctest: +SKIP
             >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
             >>> print("Found solution with {} nodes at energy {}.".format(
                       np.sum(sampleset.record.sample),
