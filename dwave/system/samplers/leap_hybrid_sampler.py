@@ -15,23 +15,20 @@
 # ================================================================================================
 """
 A :std:doc:`dimod sampler <dimod:reference/samplers>` for Leap's hybrid solvers.
-
 """
 from __future__ import division
 import numpy as np
 from warnings import warn
 from numbers import Number
 
+import dimod
 from dimod.serialization.fileview import FileView
-from dimod.bqm import AdjArrayBQM
-from dimod.binary_quadratic_model import BinaryQuadraticModel
-from dimod import Sampler
 
 from dwave.cloud import Client
 
 __all__ = ['LeapHybridSampler']
 
-class LeapHybridSampler(Sampler):
+class LeapHybridSampler(dimod.Sampler):
     """A class for using the Leap's cloud-based hybrid solvers.
 
     Uses parameters set in a configuration file, as environment variables, or
@@ -81,8 +78,8 @@ class LeapHybridSampler(Sampler):
         >>> bqm = dimod.BQM.from_qubo(qubo)
         ...
         >>> # Find a good solution
-        >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
-        >>> sampleset = sampler.sample(bqm, time_limit=10)           # doctest: +SKIP
+        >>> sampler = LeapHybridSampler(solver={'category': 'hybrid'})    # doctest: +SKIP
+        >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
         >>> print("Found solution with {} nodes at energy {}.".format(
                   np.sum(sampleset.record.sample),
                   sampleset.first.energy))     # doctest: +SKIP
@@ -97,7 +94,7 @@ class LeapHybridSampler(Sampler):
             elif config['solver']['category'] is not 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'.")
 
-        self.client = Client.from_config(**config)
+        self.client = Client.from_config(connection_close=True, **config)
         self.solver = self.client.get_solver()
 
         if ('category' not in self.properties.keys()) or (
@@ -136,9 +133,8 @@ class LeapHybridSampler(Sampler):
         """Sample from the specified binary quadratic model.
 
         Args:
-            bqm (:obj:`.BinaryQuadraticModel`):
+            bqm (:obj:`dimod.BinaryQuadraticModel`):
                 The binary quadratic model.
-                TEMPORARY NOTE:  also accepts :obj:`FileView`
 
             time_limit (int):
                 Maximum run time, in seconds, to allow the solver to work on the problem.
@@ -161,7 +157,8 @@ class LeapHybridSampler(Sampler):
                 :attr:`.LeapHybridSampler.parameters`.
 
         Returns:
-            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
+            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object
+            and timing information.
 
         Examples:
             This example builds a random sparse graph and uses a hybrid solver to find a
@@ -179,14 +176,14 @@ class LeapHybridSampler(Sampler):
             >>> bqm = dimod.BQM.from_qubo(qubo)
             ...
             >>> # Find a good solution
-            >>> sampler = LeapHybridSampler(solver="hybrid-solver1")    # doctest: +SKIP
-            >>> sampleset = sampler.sample(bqm, time_limit=10)           # doctest: +SKIP
+            >>> sampler = LeapHybridSampler(solver={'category': 'hybrid'})    # doctest: +SKIP
+            >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
             >>> print("Found solution with {} nodes at energy {}.".format(
                       np.sum(sampleset.record.sample),
                       sampleset.first.energy))     # doctest: +SKIP
         """
 
-        bqm = AdjArrayBQM(bqm) if not isinstance(bqm, AdjArrayBQM) else bqm  # TEMPORARY FOR TESTING
+        bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM, dimod.AdjMapBQM, dimod.AdjVectorBQM])
 
         num_vars = len(bqm.variables)
         xx, yy = zip(*self.properties["minimum_time_limit"])
@@ -194,8 +191,6 @@ class LeapHybridSampler(Sampler):
 
         if time_limit is None:
             time_limit = min_time_limit
-        if not isinstance(time_limit, Number):
-            raise TypeError("time limit must be a number")
         if time_limit < min_time_limit:
             msg = ("time limit for problem size {} must be at least {}"
                    ).format(num_vars, min_time_limit)
