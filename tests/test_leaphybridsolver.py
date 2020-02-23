@@ -31,7 +31,7 @@ except ImportError:
     # py2
     import mock
 
-class MockLeapHybridSolver():
+class MockLeapHybridSolver:
 
     properties = {'supported_problem_types': ['bqm'],
                   'minimum_time_limit': [[1, 1.0], [1024, 1.0],
@@ -58,11 +58,11 @@ class MockLeapHybridSolver():
         return future
 
 # Called only for named solver
-class MockBadLeapHybridSolver():
+class MockBadLeapHybridSolver:
 
     properties = {'category': 'not hybrid'}
 
-class MockClient():
+class MockClient:
 
     def __init__(self, **kwargs):
 
