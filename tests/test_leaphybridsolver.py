@@ -31,7 +31,7 @@ except ImportError:
     # py2
     import mock
 
-class MockLeapHybridSolver():
+class MockLeapHybridSolver:
 
     properties = {'supported_problem_types': ['bqm'],
                   'minimum_time_limit': [[1, 1.0], [1024, 1.0],
@@ -57,70 +57,90 @@ class MockLeapHybridSolver():
         future._result = {'sampleset': result, 'problem_type': 'bqm'}
         return future
 
-class MockBadLeapHybridSolver():
+# Called only for named solver
+class MockBadLeapHybridSolver:
 
     properties = {'category': 'not hybrid'}
 
-def MockFromConfig():
+class MockClient:
 
-    return Client.from_config()
+    def __init__(self, **kwargs):
 
-@mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client.get_solver', return_value = MockLeapHybridSolver())
+        self.args = kwargs
+
+    def get_solver(self):
+
+        if isinstance(self.args['solver'], str) and self.args['solver'] == 'not_hybrid_solver':
+            return MockBadLeapHybridSolver()
+
+        return MockLeapHybridSolver()
+
 class TestLeapHybridSampler(unittest.TestCase):
 
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client.from_config', return_value = MockFromConfig())
-    def test_solver_init1(self, mock_from_config, mock_get_solver):
+    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_solver_init(self, mock_client):
 
-        mock_from_config.reset_mock()
-        mock_get_solver.return_value = MockLeapHybridSolver()
+        mock_client.from_config.side_effect = MockClient
+
+        # Default call
+        mock_client.reset_mock()
+        LeapHybridSampler()
+        mock_client.from_config.assert_called_once_with(connection_close=True,
+                                                 solver={'category': 'hybrid'})
+
+        # Explicitly set category to hybrid
+        mock_client.reset_mock()
+        LeapHybridSampler(solver={'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(connection_close=True,
+                                                 solver={'category': 'hybrid'})
+
+        # Explicitly set category to not hybrid
+        with self.assertRaises(ValueError):
+            LeapHybridSampler(solver={'category': 'not hybrid'})
+
+        # Set irrelevant paremeters
+        mock_client.reset_mock()
         LeapHybridSampler(solver={'qpu': True})
-        mock_from_config.assert_called_once_with(connection_close=True,
+        mock_client.from_config.assert_called_once_with(connection_close=True,
                                                  solver={'qpu': True, 'category': 'hybrid'})
 
-        mock_from_config.reset_mock()
-        mock_get_solver.return_value = MockLeapHybridSolver()
+        mock_client.reset_mock()
         LeapHybridSampler(solver={'qpu': True, 'anneal_schedule' :False})
-        mock_from_config.assert_called_once_with(connection_close=True,
+        mock_client.from_config.assert_called_once_with(connection_close=True,
                                                  solver={'anneal_schedule' :False,
                                                          'qpu': True,
                                                          'category': 'hybrid'})
 
-        mock_from_config.reset_mock()
-        mock_get_solver.return_value = MockLeapHybridSolver()
-        LeapHybridSampler(solver="Named_Solver")
-        mock_from_config.assert_called_once_with(connection_close=True,
-                                                 solver="Named_Solver")
+        # Named solver: hybrid
+        mock_client.reset_mock()
+        LeapHybridSampler(solver="hybrid_solver")
+        mock_client.from_config.assert_called_once_with(connection_close=True,
+                                                 solver="hybrid_solver")
 
-        mock_from_config.reset_mock()
-        mock_get_solver.return_value = MockLeapHybridSolver()
+        mock_client.reset_mock()
+        LeapHybridSampler(connection_close=False, solver="hybrid_solver")
+        mock_client.from_config.assert_called_once_with(connection_close=False,
+                                                 solver="hybrid_solver")
+
+        # Named solver: non-hybrid
+        with self.assertRaises(ValueError):
+            LeapHybridSampler(solver="not_hybrid_solver")
+
+        # Set connection_close to False
+        mock_client.reset_mock()
         LeapHybridSampler(connection_close=False)
-        mock_from_config.assert_called_once_with(connection_close=False,
+        mock_client.from_config.assert_called_once_with(connection_close=False,
                                                  solver={'category': 'hybrid'})
 
-        mock_from_config.reset_mock()
-        mock_get_solver.return_value = MockLeapHybridSolver()
-        LeapHybridSampler()
-        mock_from_config.assert_called_once_with(connection_close=True,
+        mock_client.reset_mock()
+        LeapHybridSampler(connection_close=False, solver={'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(connection_close=False,
                                                  solver={'category': 'hybrid'})
 
-    def test_solver_init2(self, mock_get_solver):
+    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_sample_bqm(self, mock_client):
 
-        mock_get_solver.reset_mock()
-        LeapHybridSampler(solver="Named_Solver")
-        mock_get_solver.assert_called_once()
-
-        with self.assertRaises(ValueError):
-            LeapHybridSampler(solver={'category': 'not hybrid'})
-
-        with self.assertRaises(ValueError):
-            LeapHybridSampler(solver={'category': 'not hybrid'},
-                              solver_features={'qpu': False})
-
-        mock_get_solver.return_value = MockBadLeapHybridSolver()
-        with self.assertRaises(ValueError):
-            LeapHybridSampler(solver={'qpu': False})
-
-    def test_sample_bqm(self, mock_get_solver):
+        mock_client.from_config.side_effect = MockClient
 
         bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},
                     {'ab': -0.8, 'ac': -0.7, 'bc': -1}, 0, dimod.SPIN)
@@ -136,7 +156,10 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertIs(response.vartype, dimod.SPIN)
         self.assertIn('num_occurrences', response.record.dtype.fields)
 
-    def test_sample_ising_variables(self, mock_get_solver):
+    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_sample_ising_variables(self, mock_client):
+
+        mock_client.from_config.side_effect = MockClient
 
         sampler = LeapHybridSampler()
 
@@ -153,7 +176,10 @@ class TestLeapHybridSampler(unittest.TestCase):
         self.assertFalse(np.any(response.record.sample == 0))
         self.assertIs(response.vartype, dimod.SPIN)
 
-    def test_sample_qubo_variables(self, mock_get_solver):
+    @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_sample_qubo_variables(self, mock_client):
+
+        mock_client.from_config.side_effect = MockClient
 
         sampler = LeapHybridSampler()
 
