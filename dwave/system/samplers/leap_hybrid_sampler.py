@@ -71,6 +71,7 @@ class LeapHybridSampler(dimod.Sampler):
         >>> import networkx as nx
         >>> import dwave_networkx as dnx
         >>> import numpy as np
+        >>> from dwave.system import LeapHybridSampler
         ...
         >>> # Create a maximum-independent set problem from a random graph
         >>> problem_node_count = 300
@@ -81,9 +82,7 @@ class LeapHybridSampler(dimod.Sampler):
         >>> # Find a good solution
         >>> sampler = LeapHybridSampler()    # doctest: +SKIP
         >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
-        >>> print("Found solution with {} nodes at energy {}.".format(
-                  np.sum(sampleset.record.sample),
-                  sampleset.first.energy))     # doctest: +SKIP
+
     """
 
     def __init__(self, solver=None, connection_close=True, **config):
@@ -179,9 +178,7 @@ class LeapHybridSampler(dimod.Sampler):
             >>> # Find a good solution
             >>> sampler = LeapHybridSampler()    # doctest: +SKIP
             >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
-            >>> print("Found solution with {} nodes at energy {}.".format(
-                      np.sum(sampleset.record.sample),
-                      sampleset.first.energy))     # doctest: +SKIP
+
         """
 
         bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM, dimod.AdjMapBQM, dimod.AdjVectorBQM])
