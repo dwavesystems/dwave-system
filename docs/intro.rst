@@ -14,7 +14,7 @@ quadratic model (BQM) representing a problem---in the typical Ocean
 
 You can incorporate the D-Wave system in either a hybrid quantum-classical solution,
 using :class:`~dwave.system.samplers.LeapHybridSampler()` or
-:std:doc:`dwave-hybrid <hybrid:index>` samplers such as :code:`KerberosSampler()`,
+:std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` samplers such as :code:`KerberosSampler()`,
 or directly using :class:`~dwave.system.samplers.DWaveSampler()`.
 
 Example
@@ -76,7 +76,7 @@ Quantum-classical hybrid is the use of both classical and quantum resources to s
 
 D-Wave's `Leap Quantum Application Environment <https://cloud.dwavesys.com/leap>`_
 provides state-of-the-art hybrid solvers you can submit arbitrary BQMs to.
-:std:doc:`dwave-hybrid <hybrid:index>` provides you with a Python framework for
+:std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` provides you with a Python framework for
 building a variety of flexible hybrid workflows that use quantum and classical
 resources together to find good solutions to your problem.
 

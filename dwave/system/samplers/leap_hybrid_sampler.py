@@ -14,7 +14,7 @@
 #
 # ================================================================================================
 """
-A :std:doc:`dimod sampler <dimod:reference/samplers>` for Leap's hybrid solvers.
+A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's hybrid solvers.
 """
 from __future__ import division
 import numpy as np
