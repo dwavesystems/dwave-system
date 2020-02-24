@@ -69,10 +69,11 @@ def diagnose_embedding(emb, source, target):
          >>> target = nx.cycle_graph(4)
          >>> embedding = {0: [2], 1: [1, 'a'], 2: [2, 3]}
          >>> diagnosis = diagnose_embedding(embedding, source, target)
-         >>> for problem in diagnosis:
+         >>> for problem in diagnosis:  # doctest: +SKIP
          ...     print(problem)
          (<class 'dwave.embedding.exceptions.InvalidNodeError'>, 1, 'a')
          (<class 'dwave.embedding.exceptions.ChainOverlapError'>, 2, 2, 0)
+
     """
 
     if not hasattr(source, 'edges'):
