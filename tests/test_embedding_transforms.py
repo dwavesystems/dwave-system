@@ -399,8 +399,15 @@ class TestEmbedBQM(unittest.TestCase):
 
         target_Q = dwave.embedding.embed_qubo(Q, embedding, nx.cycle_graph(4), chain_strength=1)
 
-        self.assertEqual(target_Q, {(0, 0): 0.0, (1, 1): 0.0, (2, 2): 2.0, (3, 3): 2.0,
-                                    (0, 1): -1.0, (1, 2): -1.0, (2, 3): -4.0})
+        test_Q = {(0, 0): 0.0, (1, 1): 0.0, (2, 2): 2.0, (3, 3): 2.0,
+                  (0, 1): -1.0, (1, 2): -1.0, (2, 3): -4.0}
+
+        self.assertEqual(len(target_Q), len(test_Q))
+        for (u, v), bias in target_Q.items():
+            if (u, v) in test_Q:
+                self.assertEqual(bias, test_Q[(u, v)])
+            else:
+                self.assertEqual(bias, test_Q[(v, u)])
 
     def test_embedding_with_extra_chains(self):
         embedding = {0: [0, 1], 1: [2], 2: [3]}

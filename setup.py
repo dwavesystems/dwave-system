@@ -13,28 +13,21 @@
 #    limitations under the License.
 #
 # ================================================================================================
-from __future__ import absolute_import
-
-import sys
 import os
+
 from setuptools import setup
 
-# add __version__, __author__, __authoremail__, __description__ to this namespace
-_PY2 = sys.version_info.major == 2
 
 # change directories so this works when called from other locations. Useful in build systems.
 setup_folder_loc = os.path.dirname(os.path.abspath(__file__))
 os.chdir(setup_folder_loc)
 
-if _PY2:
-    execfile(os.path.join(".", "dwave", "system", "package_info.py"))
-else:
-    exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
+exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.8.20',
+install_requires = ['dimod>=0.9.0,<0.10.0',
                     'dwave-cloud-client>=0.6.0,<0.7.0',
-                    'dwave-networkx>=0.8.3',
+                    'dwave-networkx>=0.8.4',
                     'networkx>=2.0,<3.0',
                     'homebase>=1.0.0,<2.0.0',
                     'minorminer>=0.1.3,<0.2.0',
@@ -46,8 +39,9 @@ install_requires = ['dimod>=0.8.20',
 # and the exact requirements for `drivers` contrib package are defined in
 # `dwave.system.package_info`, the `contrib` dict.
 extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
-                  ':python_version <= "3.3"': ['enum34>=1.1.6,<2.0.0'],
                   }
+
+python_requires = '>=3.5'
 
 packages = ['dwave',
             'dwave.embedding',
@@ -74,5 +68,6 @@ setup(
     },
     install_requires=install_requires,
     extras_require=extras_require,
+    python_requires=python_requires,
     zip_safe=False
 )
