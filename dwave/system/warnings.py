@@ -166,7 +166,7 @@ class WarningHandler(object):
                 if not broken[row, nc]:
                     continue
 
-                self.issue("A chain is broken in the lowest energy samples found",
+                self.issue("Lowest-energy samples contain a broken chain",
                            category=ChainBreakWarning,
                            level=logging.ERROR,
                            data=dict(target_variables=chain,
