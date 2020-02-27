@@ -285,21 +285,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return nodelist
 
     @_failover
-    def sample_ising(self, h, J, warnings=None, **kwargs):
+    def sample(self, bqm, warnings=None, **kwargs):
         """Sample from the specified Ising model.
 
         Args:
-            h (dict/list):
-                Linear biases of the Ising model. If a dict, should be of the
-                form `{v: bias, ...}` where `v` is a spin-valued variable and
-                `bias` is its associated bias. If a list, it is treated as a
-                list of biases where the indices are the variable labels,
-                except in the case of missing qubits in which case 0 biases are
-                ignored while a non-zero bias set on a missing qubit raises an
-                error.
-
-            J (dict[(int, int): float]):
-                Quadratic biases of the Ising model.
+            bqm (:class:`~dimod.BinaryQuadraticModel`):
+                The binary quadratic model. Must match :attr:`.nodelist` and
+                :attr:`.edgelist`.
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
                 Defines what warning action to take, if any. See
@@ -335,104 +327,49 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
-        nodes = self.solver.nodes  # set rather than .nodelist which is a list
 
+        solver = self.solver
+
+        if not (solver.nodes.issuperset(bqm.linear) and
+                solver.edges.issuperset(bqm.quadratic)):
+            msg = "Problem graph incompatible with solver."
+            raise BinaryQuadraticModelStructureError(msg)
+
+        future = solver.sample_bqm(bqm, **kwargs)
+
+        if warnings is None:
+            warnings = self.warnings_default
+        warninghandler = WarningHandler(warnings)
+        warninghandler.energy_scale(bqm)
+
+        # need a hook so that we can check the sampleset (lazily) for
+        # warnings
+        def _hook(computation):
+            sampleset = computation.sampleset
+
+            if warninghandler is not None:
+                warninghandler.too_few_samples(sampleset)
+                if warninghandler.action is WarningAction.SAVE:
+                    sampleset.info['warnings'] = warninghandler.saved
+
+            # probably this should be propagated up to the cloud-client
+            sampleset.info.update(problem_id=computation.id)
+
+            return sampleset
+
+        return dimod.SampleSet.from_future(future, _hook)
+
+    def sample_ising(self, h, *args, **kwargs):
+        # to be consistent with the cloud-client, we ignore the 0 biases
+        # on missing nodes for lists
         if isinstance(h, list):
-            # to be consistent with the cloud-client, we ignore the 0 biases
-            # on missing nodes.
-            h = dict((v, b) for v, b in enumerate(h) if b or v in nodes)
+            if len(h) > self.solver.num_qubits:
+                msg = "Problem graph incompatible with solver."
+                raise BinaryQuadraticModelStructureError(msg)
+            nodes = self.solver.nodes
+            h = dict((v, b) for v, b in enumerate(h) if b and v in nodes)
 
-        # developer note: in the future we should probably catch exceptions
-        # from the cloud client, but for now this is simpler/cleaner. We use
-        # the solver's nodes/edges because they are a set, so faster lookup
-        edges = self.solver.edges
-        if not (all(v in nodes for v in h) and
-                all((u, v) in edges or (v, u) in edges for u, v in J)):
-            msg = "Problem graph incompatible with solver."
-            raise BinaryQuadraticModelStructureError(msg)
-
-        future = self.solver.sample_ising(h, J, **kwargs)
-
-        # do as much as possible after the future is returned
-
-        variables = set(h).union(*J)
-
-        if warnings is None:
-            warnings = self.warnings_default
-        warninghandler = WarningHandler(warnings)
-        warninghandler.energy_scale((h, J))
-
-        hook = _result_to_response_hook(variables, dimod.SPIN, warninghandler)
-        return dimod.SampleSet.from_future(future, hook)
-
-    @_failover
-    def sample_qubo(self, Q, warnings=None, **kwargs):
-        """Sample from the specified QUBO.
-
-        Args:
-            Q (dict):
-                Coefficients of a quadratic unconstrained binary optimization (QUBO) model.
-
-            warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
-                Defines what warning action to take, if any. See
-                :mod:`~dwave.system.warnings`. The default behaviour is defined
-                by :attr:`warnings_default`, which itself defaults to
-                :class:`~dwave.system.warnings.IGNORE`
-
-            **kwargs:
-                Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.DWaveSampler.parameters`. D-Wave System Documentation's
-                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
-                describes the parameters and properties supported on the D-Wave system.
-
-        Returns:
-            :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
-            In it this sampler also provides timing information in the `info`
-            field as described in the D-Wave System Documentation's
-            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
-
-        Examples:
-            This example submits a two-variable QUBO mapped directly to qubits
-            0 and 4 on a D-Wave system. Given sufficient reads (here 100), the quantum
-            computer should return the best solutions, :math:`{0, 1}` or
-            :math:`{1, 0}` on qubits 0 and 4, respectively, as its first sample
-            (samples are ordered from lowest energy).
-
-            >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> Q = {(0, 0): -1, (4, 4): -1, (0, 4): 2}
-            >>> sampleset = sampler.sample_qubo(Q, num_reads=100)
-            >>> sampleset.first.sample[0] != sampleset.first.sample[4]
-            True
-
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
-        for explanations of technical terms in descriptions of Ocean tools.
-
-        """
-
-        # developer note: in the future we should probably catch exceptions
-        # from the cloud client, but for now this is simpler/cleaner. We use
-        # the solver's nodes/edges because they are a set, so faster lookup
-        nodes = self.solver.nodes
-        edges = self.solver.edges
-        if not all(u in nodes if u == v else ((u, v) in edges or (v, u) in edges)
-                   for u, v in Q):
-            msg = "Problem graph incompatible with solver."
-            raise BinaryQuadraticModelStructureError(msg)
-
-        future = self.solver.sample_qubo(Q, **kwargs)
-
-        # do as much as possible after the future is returned
-
-        variables = set().union(*Q)
-
-        if warnings is None:
-            warnings = self.warnings_default
-        warninghandler = WarningHandler(warnings)
-        warninghandler.energy_scale((Q,))
-
-        hook = _result_to_response_hook(variables, dimod.BINARY, warninghandler)
-        return dimod.SampleSet.from_future(future, hook)
+        return super().sample_ising(h, *args, **kwargs)
 
     def validate_anneal_schedule(self, anneal_schedule):
         """Raise an exception if the specified schedule is invalid for the sampler.
@@ -530,34 +467,3 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
             if abs((s0 - s1) / (t0 - t1)) > max_slope:
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
-
-
-def _result_to_response_hook(variables, vartype, warninghandler=None):
-
-    def _hook(computation):
-        result = computation.result()
-
-        # get the samples. The future will return all spins so filter for the ones in variables
-        samples = [[sample[v] for v in variables] for sample in result.get('solutions')]
-
-        # construct the info field (add timing, problem id)
-        info = {}
-        if 'timing' in result:
-            info.update(timing=result['timing'])
-        if hasattr(computation, 'id'):
-            info.update(problem_id=computation.id)
-
-        sampleset = dimod.SampleSet.from_samples((samples, variables), info =info, vartype=vartype,
-                                                 energy=result['energies'],
-                                                 num_occurrences=result.get('num_occurrences', None),
-                                                 sort_labels=True)
-
-        if warninghandler is not None:
-            warninghandler.too_few_samples(sampleset)
-
-            if warninghandler.action is WarningAction.SAVE:
-                sampleset.info['warnings'] = warninghandler.saved
-
-        return sampleset
-
-    return _hook

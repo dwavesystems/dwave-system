@@ -69,6 +69,31 @@ class MockSolver():
                                  'chains': ""},
                   'chip_id': 'MockSolver'}
 
+    def sample_bqm(self, bqm, num_reads=1, **kwargs):
+        info = dict(timing={'total_real_time': 11511, 'anneal_time_per_run': 20,
+                            'post_processing_overhead_time': 2042,
+                            'qpu_sampling_time': 164,
+                            'readout_time_per_run': 123,
+                            'qpu_delay_time_per_sample': 21,
+                            'qpu_anneal_time_per_sample': 20,
+                            'total_post_processing_time': 2042,
+                            'qpu_programming_time': 8740,
+                            'run_time_chip': 164,
+                            'qpu_access_time': 11511,
+                            'qpu_readout_time_per_sample': 123})
+
+        samples = np.random.choice(tuple(bqm.vartype.value),
+                                   size=(num_reads, len(bqm)))
+
+        future = Future()
+        ss = dimod.SampleSet.from_samples_bqm((samples, bqm.variables), bqm,
+                                              info=info)
+        future.sampleset = ss
+        future.id = uuid4()
+        future.set_result = {}  # not actually needed
+
+        return future
+
     def sample_ising(self, h, J, **kwargs):
         for key in kwargs:
             if key not in self.properties['parameters']:
@@ -206,6 +231,7 @@ class TestDwaveSampler(unittest.TestCase):
 
         sampler.solver.sample_ising.side_effect = SolverOfflineError
         sampler.solver.sample_qubo.side_effect = SolverOfflineError
+        sampler.solver.sample_bqm.side_effect = SolverOfflineError
 
         with self.assertRaises(SolverOfflineError):
             sampler.sample_ising({}, {})
@@ -227,11 +253,13 @@ class TestDwaveSampler(unittest.TestCase):
 
         # one of the sample methods was called
         self.assertEqual(sampler.solver.sample_ising.call_count
-                         + sampler.solver.sample_qubo.call_count, 1)
+                         + sampler.solver.sample_qubo.call_count
+                         + sampler.solver.sample_bqm.call_count, 1)
 
         # add a side-effect
         sampler.solver.sample_ising.side_effect = SolverOfflineError
         sampler.solver.sample_qubo.side_effect = SolverOfflineError
+        sampler.solver.sample_bqm.side_effect = SolverOfflineError
 
         # and make sure get_solver makes a new mock solver
         sampler.client.get_solver.reset_mock(return_value=True)
@@ -251,6 +279,7 @@ class TestDwaveSampler(unittest.TestCase):
         # add a side-effect
         sampler.solver.sample_ising.side_effect = SolverOfflineError
         sampler.solver.sample_qubo.side_effect = SolverOfflineError
+        sampler.solver.sample_bqm.side_effect = SolverOfflineError
 
         # and make sure get_solver makes a new mock solver
         sampler.client.get_solver.side_effect = SolverNotFoundError
