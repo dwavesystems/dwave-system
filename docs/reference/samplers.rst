@@ -4,7 +4,7 @@
 Samplers
 ========
 
-A :term:`sampler` accepts a binary quadratic model (BQM) and returns variable assignments.
+A :term:`sampler` accepts a :term:`binary quadratic model` (BQM) and returns variable assignments.
 Samplers generally try to find minimizing values but can also sample from distributions
 defined by the BQM.
 

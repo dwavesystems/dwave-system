@@ -10,6 +10,10 @@ in either a hybrid quantum-classical solution, using
 :std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` samplers such as
 :code:`KerberosSampler()`, or directly using :class:`~dwave.system.samplers.DWaveSampler()`.
 
+.. note:: For applications that require detailed control on communication with the remote
+    compute resource (a D-Wave QPU or Leap's hybrid solvers), see
+    :std:doc:`dwave-cloud-client <oceandocs:docs_cloud/sdk_index>`.
+
 :std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:index>` describes
 D-Wave quantum computers and `Leap <https://cloud.dwavesys.com/leap/>`_ hybrid solvers,
 including features, parameters, and properties. It also provides guidance
@@ -20,12 +24,11 @@ Example
 This example solves a small example of a known graph problem, minimum
 `vertex cover <https://en.wikipedia.org/wiki/Vertex_cover>`_\ . It uses the NetworkX
 graphic package to create the problem, Ocean's :std:doc:`dwave_networkx <oceandocs:docs_dnx/sdk_index>`
-to formulate the graph problem as a BQM, and dwave-system's
+to formulate the graph problem as a :term:`BQM`, and dwave-system's
 :class:`~dwave.system.samplers.DWaveSampler()` to use a D-Wave system as the sampler.
-(Access to a D-Wave system has been :std:doc:`set up <oceandocs:overview/dwavesys>` in
-a configuration file that is used implicitly.) dwave-system's
-:class:`~dwave.system.composites.EmbeddingComposite()` handles mapping between the problem graph
-to the D-Wave system's numerically indexed qubits, a mapping known as :term:`minor-embedding`.
+dwave-system's :class:`~dwave.system.composites.EmbeddingComposite()` handles mapping
+between the problem graph to the D-Wave system's numerically indexed qubits,
+a mapping known as :term:`minor-embedding`.
 
 >>> import networkx as nx
 >>> import dwave_networkx as dnx
