@@ -93,15 +93,14 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
        J range. In this example, the ten returned samples all represent valid states of
        the AND gate.
 
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> from dwave.system import DWaveSampler, VirtualGraphComposite
        >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
        >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
        [-2.0, 1.0]
        >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=2) # doctest: +SKIP
        >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
-       >>> response = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
-       >>> for sample in response.samples():    # doctest: +SKIP
+       >>> sampleset = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
+       >>> for sample in sampleset.samples():    # doctest: +SKIP
        ...     print(sample)
        ...
        {'y': 0, 'x': 1, 'z': 0}
@@ -190,8 +189,8 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
            >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=1) # doctest: +SKIP
            >>> h = {}
            >>> J = {('x', 'y'): 1}
-           >>> response = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
-           >>> for sample in response.samples():    # doctest: +SKIP
+           >>> sampleset = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
+           >>> for sample in sampleset.samples():    # doctest: +SKIP
            ...     print(sample)
            ...
            {'y': -1, 'x': 1}
