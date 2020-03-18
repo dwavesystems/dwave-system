@@ -50,7 +50,8 @@ def target_to_source(target_adjacency, embedding):
         >>> target_adjacency = {0: {1, 3}, 1: {0, 2}, 2: {1, 3}, 3: {0, 2}}  # a square graph
         >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
         >>> source_adjacency = dwave.embedding.target_to_source(target_adjacency, embedding)
-        >>> source_adjacency  # triangle
+        >>> # triangle graph:
+        >>> source_adjacency   # doctest: +SKIP
         {'a': {'b', 'c'}, 'b': {'a', 'c'}, 'c': {'a', 'b'}}
 
         This function also works with networkx graphs.
@@ -58,7 +59,8 @@ def target_to_source(target_adjacency, embedding):
         >>> import networkx as nx
         >>> target_graph = nx.complete_graph(5)
         >>> embedding = {'a': {0, 1, 2}, 'b': {3, 4}}
-        >>> dwave.embedding.target_to_source(target_graph, embedding)
+        >>> dwave.embedding.target_to_source(target_graph, embedding)   # doctest: +SKIP
+        {'a': {'b'}, 'b': {'a'}}
 
     """
     # the nodes in the source adjacency are just the keys of the embedding
