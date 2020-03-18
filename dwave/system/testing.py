@@ -42,7 +42,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     properties = None
     parameters = None
 
-    def __init__(self, broken_nodes=None):
+    def __init__(self, broken_nodes=None, **config):
         if broken_nodes is None:
             self.nodelist = sorted(C4.nodes)
             self.edgelist = sorted(sorted(edge) for edge in C4.edges)
@@ -62,6 +62,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['h_range'] = [-2.0, 2.0]
         properties['num_reads_range'] = [1, 10000]
         properties['num_qubits'] = len(C4)
+        properties['category'] = 'qpu'
+        properties['quota_conversion_rate'] = 1
+        properties['topology'] = {'type': 'chimera', 'shape': [16, 16, 4]}
+        properties['chip_id'] = 'MockDWaveSampler'
+        properties['annealing_time_range'] = [1, 2000]
+        properties['num_qubits'] = len(self.nodelist)
+
 
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[]):
