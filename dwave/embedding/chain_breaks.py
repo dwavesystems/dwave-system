@@ -126,8 +126,8 @@ def discard(samples, chains):
         >>> unembedded, idx = dwave.embedding.discard(samples, chains)
         >>> unembedded
         array([[1, 0]], dtype=int8)
-        >>> idx
-        array([0])
+        >>> print(idx)
+        [0]
 
     """
     samples, labels = dimod.as_samples(samples)
