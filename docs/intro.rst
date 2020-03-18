@@ -4,30 +4,31 @@
 Introduction
 ============
 
-*dwave-system* enables easy incorporation of the D-Wave system as a
-:term:`sampler`---the component used to find variable values that minimize the binary
-quadratic model (BQM) representing a problem---in the typical Ocean
-:std:doc:`problem-solving procedure <oceandocs:overview/solving_problems>`\ :
+*dwave-system* enables easy incorporation of the D-Wave system as a :term:`sampler`
+in either a hybrid quantum-classical solution, using
+:class:`~dwave.system.samplers.LeapHybridSampler()` or
+:std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` samplers such as
+:code:`KerberosSampler()`, or directly using :class:`~dwave.system.samplers.DWaveSampler()`.
 
-1. Formulate the problem as a BQM.
-2. Solve the BQM with a sampler.
+.. note:: For applications that require detailed control on communication with the remote
+    compute resource (a D-Wave QPU or Leap's hybrid solvers), see
+    :std:doc:`dwave-cloud-client <oceandocs:docs_cloud/sdk_index>`.
 
-You can incorporate the D-Wave system in either a hybrid quantum-classical solution,
-using :class:`~dwave.system.samplers.LeapHybridSampler()` or
-:std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` samplers such as :code:`KerberosSampler()`,
-or directly using :class:`~dwave.system.samplers.DWaveSampler()`.
+:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:index>` describes
+D-Wave quantum computers and `Leap <https://cloud.dwavesys.com/leap/>`_ hybrid solvers,
+including features, parameters, and properties. It also provides guidance
+on programming the D-Wave system, including how to formulate problems and configure parameters.
 
 Example
 =======
 This example solves a small example of a known graph problem, minimum
 `vertex cover <https://en.wikipedia.org/wiki/Vertex_cover>`_\ . It uses the NetworkX
 graphic package to create the problem, Ocean's :std:doc:`dwave_networkx <oceandocs:docs_dnx/sdk_index>`
-to formulate the graph problem as a BQM, and dwave-system's
+to formulate the graph problem as a :term:`BQM`, and dwave-system's
 :class:`~dwave.system.samplers.DWaveSampler()` to use a D-Wave system as the sampler.
-(Access to a D-Wave system has been :std:doc:`set up <oceandocs:overview/dwavesys>` in
-a configuration file that is used implicitly.) dwave-system's
-:class:`~dwave.system.composites.EmbeddingComposite()` handles mapping between the problem graph
-to the D-Wave system's numerically indexed qubits, a mapping known as :term:`minor-embedding`.
+dwave-system's :class:`~dwave.system.composites.EmbeddingComposite()` handles mapping
+between the problem graph to the D-Wave system's numerically indexed qubits,
+a mapping known as :term:`minor-embedding`.
 
 >>> import networkx as nx
 >>> import dwave_networkx as dnx
@@ -38,73 +39,3 @@ to the D-Wave system's numerically indexed qubits, a mapping known as :term:`min
 >>> sampler = EmbeddingComposite(DWaveSampler())
 >>> print(dnx.min_vertex_cover(s5, sampler))
 [0]
-
-Using the D-Wave System as a Sampler
-====================================
-
-The :std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` API makes it possible to easily interchange samplers
-in your code. For example, you might develop code using :std:doc:`dwave_neal <oceandocs:docs_neal/sdk_index>`,
-Ocean's simulated annealing sampler, and then swap in a D-Wave system
-composed sampler.
-
-:std:doc:`Using a D-Wave System <oceandocs:overview/dwavesys>` explains how you set up
-access to a D-Wave system.
-
-:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:index>` describes the
-D-Wave system, its features, parameters, and properties. The documentation provides guidance
-on programming the D-Wave system, including how to formulate problems and configure parameters.
-
-.. _samplers:
-
-Samplers
-========
-
-*Samplers* are processes that sample from low energy states of a problem’s :term:`objective function`.
-A BQM sampler samples from low energy states in models such as those
-defined by an Ising equation or a Quadratic Unconstrained Binary Optimization (QUBO) problem
-and returns an iterable of samples, in order of increasing energy.
-
-Ocean software provides a variety of :std:doc:`dimod samplers <oceandocs:docs_dimod/introduction>`, which
-all support ‘sample_qubo’ and ‘sample_ising’ methods as well as the generic BQM sampler method.
-In addition to :class:`~dwave.system.samplers.DWaveSampler()`, classical solvers, which run on CPU or GPU, are available and
-useful for developing code or on a small versions of a problem to verify code.
-
-Hybrid Quantum-Classical Samplers
----------------------------------
-
-Quantum-classical hybrid is the use of both classical and quantum resources to solve problems, exploiting the complementary strengths that each provides.
-
-D-Wave's `Leap Quantum Application Environment <https://cloud.dwavesys.com/leap>`_
-provides state-of-the-art hybrid solvers you can submit arbitrary BQMs to.
-:std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` provides you with a Python framework for
-building a variety of flexible hybrid workflows that use quantum and classical
-resources together to find good solutions to your problem.
-
-.. _composites:
-
-Composites
-==========
-
-Samplers can be composed. The `composite pattern <https://en.wikipedia.org/wiki/Composite_pattern>`_
-allows layers of pre- and post-processing to be applied to binary quadratic programs without needing
-to change the underlying sampler implementation. We refer to these layers as `composites`.
-A composed sampler includes at least one sampler and possibly many composites.
-
-Examples of composites are :class:`~dwave.system.composites.EmbeddingComposite()`,
-used in the example above, and :class:`~dwave.system.composites.VirtualGraphComposite()`,
-both of which handle the mapping known as :term:`minor-embedding`.
-
-.. _minorEmbedding:
-
-Embedding
-=========
-
-To solve an arbitrarily posed binary quadratic problem directly on a D-Wave system requires mapping,
-called *minor embedding*, to a Chimera graph that represents the system's quantum processing unit.
-This preprocessing can be done by a composed sampler consisting of the
-:class:`~dwave.system.samplers.DWaveSampler()` and a composite that performs minor-embedding.
-(This step is handled automatically by :class:`~dwave.system.samplers.LeapHybridSampler()`
-and :std:doc:`dwave-hybrid <hybrid:index>` reference samplers.)
-
-See the :ref:`embedding_system` section for more information on :term:`minor-embedding` and the
-provided functionality.
