@@ -192,7 +192,7 @@ def majority_vote(samples, chains):
         [[1 0]
          [1 1]]
         >>> print(idx)
-        [0, 1]
+        [0 1]
 
     """
     samples, labels = dimod.as_samples(samples)
