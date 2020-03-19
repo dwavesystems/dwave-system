@@ -29,17 +29,17 @@ def ramp(s, width, annealing_time):
 
         annealing_time (float):
             The total annealing time, in microseconds.
-    
+
     Returns:
         list[2-tuple]: The points defining in a piece-wise curve in the shape of
         a ramp.
 
     Examples:
-        
+
         In this example we get a QPU, use it to construct a schedule and then
         use that schdule for the `h_gain_schedule` parameter.
 
-        >>> sampler = DWaveSampler(solver=dict(default_annealing_time=True,
+        >>> sampler = DWaveSampler(solver=dict(annealing_time=True,
                                                h_gain_schedule=True))
         >>> h = {v: -1 for v in sampler.nodelist}
         >>> schedule = ramp(.5, .2, sampler.properties['default_annealing_time'])
@@ -50,7 +50,7 @@ def ramp(s, width, annealing_time):
         raise ValueError("s should be in interval (0, 1)")
     if width >= min(s, 1 - s) / 2:
         raise ValueError("given width takes curve outside of [0, 1] interval")
-    
+
     return [(0, 0),
             (annealing_time * (s - width / 2), 0),
             (annealing_time * (s + width / 2), 1),
