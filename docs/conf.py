@@ -97,8 +97,6 @@ from __future__ import print_function, division
 
 import dimod
 from dwave.embedding import *
-#from dwave.system import *
-
 
 from unittest.mock import Mock
 from dwave.system.testing import MockDWaveSampler

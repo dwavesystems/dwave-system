@@ -68,7 +68,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['chip_id'] = 'MockDWaveSampler'
         properties['annealing_time_range'] = [1, 2000]
         properties['num_qubits'] = len(self.nodelist)
-
+        properties['extended_j_range'] = [-2.0, 1.0]
 
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[]):
