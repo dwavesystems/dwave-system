@@ -312,4 +312,5 @@ class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
             def __init__(self):
                 pass
 
+        DWaveSampler.validate_anneal_schedule(MockScheduleSampler(), [[0.0, 0.0], [0.2, 0.2], [5.2, 0.2], [6.0, 1.0]])
         DWaveSampler.validate_anneal_schedule(MockScheduleSampler(), [(0, 1), (55.0, 0.45), (155.0, 0.45), (210.0, 1)])
