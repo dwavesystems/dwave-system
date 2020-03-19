@@ -35,9 +35,8 @@ def ramp(s, width, annealing_time):
         a ramp.
 
     Examples:
-
-        In this example we get a QPU, use it to construct a schedule and then
-        use that schdule for the `h_gain_schedule` parameter.
+        This example constructs a schedule for a QPU that supports
+        configuring an `h_gain_schedule`.
 
         >>> sampler = DWaveSampler(solver=dict(annealing_time=True,
                                                h_gain_schedule=True))

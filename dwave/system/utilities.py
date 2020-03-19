@@ -47,9 +47,9 @@ def common_working_graph(graph0, graph1):
         >>> import dwave_networkx as dnx
         >>> from dwave.system import DWaveSampler, common_working_graph
         ...
-        >>> sampler = DWaveSampler(solver={'qpu': True}) # doctest: +SKIP
+        >>> sampler = DWaveSampler(solver={'qpu': True})
         >>> C4 = dnx.chimera_graph(4)  # a 4x4 lattice of Chimera tiles
-        >>> c4_working_graph = common_working_graph(C4, sampler.adjacency)   # doctest: +SKIP
+        >>> c4_working_graph = common_working_graph(C4, sampler.adjacency)   
 
     """
 
