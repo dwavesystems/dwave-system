@@ -32,10 +32,9 @@ a mapping known as :term:`minor-embedding`.
 
 >>> import networkx as nx
 >>> import dwave_networkx as dnx
->>> from dwave.system.samplers import DWaveSampler
->>> from dwave.system.composites import EmbeddingComposite
+>>> from dwave.system import DWaveSampler, EmbeddingComposite
 ...
 >>> s5 = nx.star_graph(4)  # a star graph where node 0 is hub to four other nodes
 >>> sampler = EmbeddingComposite(DWaveSampler())
->>> print(dnx.min_vertex_cover(s5, sampler))
+>>> print(dnx.min_vertex_cover(s5, sampler))   
 [0]

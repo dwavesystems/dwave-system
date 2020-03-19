@@ -192,9 +192,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             across the solver's entire Chimera graph, resulting in multiple samples
             (the exact number depends on the working Chimera graph of the D-Wave system).
 
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
-            >>> from dwave.system.composites import EmbeddingComposite, TilingComposite
+            >>> from dwave.system import DWaveSampler, EmbeddingComposite
+            >>> from dwave.system import TilingComposite
             ...
             >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
             >>> response = sampler.sample_ising({},{('a', 'b'): 1})

@@ -138,7 +138,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         or as environment variables, as described in
         `Configuring a D-Wave System <https://docs.ocean.dwavesys.com/en/latest/overview/dwavesys.html>`_.
 
-        >>> from dwave.system.samplers import DWaveSampler
+        >>> from dwave.system import DWaveSampler
         >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
         >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
         >>> for sample in sampleset.samples():  # doctest: +SKIP
@@ -182,7 +182,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.properties    # doctest: +SKIP
             {u'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
@@ -213,7 +213,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.parameters    # doctest: +SKIP
             {u'anneal_offsets': ['parameters'],
@@ -242,7 +242,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.edgelist    # doctest: +SKIP
             [(0, 4),
@@ -271,7 +271,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.nodelist    # doctest: +SKIP
             [0,
@@ -329,7 +329,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             This example submits a two-variable Ising problem mapped directly to qubits
             0 and 1 on a D-Wave system.
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
             >>> for sample in sampleset.samples():    # doctest: +SKIP
@@ -401,7 +401,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             This example submits a two-variable QUBO mapped directly to qubits
             0 and 4 on a D-Wave system.
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> Q = {(0, 0): -1, (4, 4): -1, (0, 4): 2}
             >>> sampleset = sampler.sample_qubo(Q)
@@ -475,7 +475,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example sets a quench schedule on a D-Wave system.
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
             >>> DWaveSampler().validate_anneal_schedule(quench_schedule)    # doctest: +SKIP

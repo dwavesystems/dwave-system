@@ -181,8 +181,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
            J range. In this example, the ten returned samples all represent valid states of
            the NOT gate.
 
-           >>> from dwave.system.samplers import DWaveSampler
-           >>> from dwave.system.composites import VirtualGraphComposite
+           >>> from dwave.system import DWaveSampler, VirtualGraphComposite
            >>> embedding = {'x': {0, 4, 1, 5}, 'y': {2, 6, 3, 7}}
            >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
            [-2.0, 1.0]
