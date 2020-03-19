@@ -45,10 +45,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     def __init__(self, broken_nodes=None, **config):
         if broken_nodes is None:
             self.nodelist = sorted(C4.nodes)
-            self.edgelist = sorted(sorted(edge) for edge in C4.edges)
+            self.edgelist = sorted(tuple(sorted(edge)) for edge in C4.edges)
         else:
             self.nodelist = sorted(v for v in C4.nodes if v not in broken_nodes)
-            self.edgelist = sorted(sorted((u, v)) for u, v in C4.edges
+            self.edgelist = sorted(tuple(sorted((u, v))) for u, v in C4.edges
                                    if u not in broken_nodes and v not in broken_nodes)
 
         # mark the sample kwargs
