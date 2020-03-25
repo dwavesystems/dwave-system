@@ -80,7 +80,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
        >>> sampler = EmbeddingComposite(DWaveSampler())
        >>> h = {'a': -1., 'b': 2}
        >>> J = {('a', 'b'): 1.5}
-       >>> sampleset = sampler.sample_ising(h, J)
+       >>> sampleset = sampler.sample_ising(h, J, num_reads=100)
+       >>> sampleset.first.energy
+       -4.5
+
 
     """
     def __init__(self, child_sampler,
@@ -498,8 +501,7 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
 
     Examples:
 
-        >>> from dwave.system.samplers import DWaveSampler
-        >>> from dwave.system.composites import FixedEmbeddingComposite
+        >>> from dwave.system import DWaveSampler, FixedEmbeddingComposite
         ...
         >>> embedding = {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]}
         >>> sampler = FixedEmbeddingComposite(DWaveSampler(), embedding)
@@ -507,7 +509,10 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
         ['a', 'b', 'c']
         >>> sampler.edgelist
         [('a', 'b'), ('a', 'c'), ('b', 'c')]
-        >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1})
+        >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1}, num_reads=500)
+        >>> sampleset.first.energy
+        -1.5
+
 
     """
     def __init__(self, child_sampler, embedding=None, source_adjacency=None,

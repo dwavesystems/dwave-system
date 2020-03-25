@@ -64,13 +64,13 @@ class CutOffComposite(dimod.ComposedSampler):
 
         >>> import dimod
         >>> sampler = DWaveSampler(solver={'qpu': True})
-        >>> bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},    # doctest: +SKIP
+        >>> bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},
         ...                            {'ab': -0.8, 'ac': -0.7, 'bc': -1},
         ...                            0,
         ...                            dimod.SPIN)
         >>> CutOffComposite(AutoEmbeddingComposite(sampler), 0.75).sample(bqm,
-        ...                 num_reads=1000).first.sample # doctest: +SKIP
-        {'a': -1, 'b': -1, 'c': -1}
+        ...                 num_reads=1000).first.energy
+        -3.5
 
     """
 

@@ -68,15 +68,14 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        Composite :class:`.TilingComposite` tiles it multiple times for parallel solution:
        the two nodes should typically have opposite values.
 
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import EmbeddingComposite
-       >>> from dwave.system.composites import TilingComposite
+       >>> from dwave.system import DWaveSampler, EmbeddingComposite
+       >>> from dwave.system import TilingComposite
        ...
        >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
        >>> Q = {(1, 1): -1, (1, 2): 2, (2, 1): 0, (2, 2): -1}
-       >>> response = sampler.sample_qubo(Q)
-       >>> response.first    # doctest: +SKIP
-       Sample(sample={1: 0, 2: 1}, energy=-1.0, num_occurrences=1, chain_break_fraction=0.0)
+       >>> sampleset = sampler.sample_qubo(Q)
+       >>> len(sampleset)> 1
+       True
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
@@ -193,9 +192,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             across the solver's entire Chimera graph, resulting in multiple samples
             (the exact number depends on the working Chimera graph of the D-Wave system).
 
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> from dwave.system.composites import EmbeddingComposite
-            >>> from dwave.system.composites import EmbeddingComposite, TilingComposite
+            >>> from dwave.system import DWaveSampler, EmbeddingComposite
+            >>> from dwave.system import TilingComposite
             ...
             >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
             >>> response = sampler.sample_ising({},{('a', 'b'): 1})

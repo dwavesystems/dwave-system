@@ -126,8 +126,8 @@ def discard(samples, chains):
         >>> unembedded, idx = dwave.embedding.discard(samples, chains)
         >>> unembedded
         array([[1, 0]], dtype=int8)
-        >>> idx
-        array([0])
+        >>> print(idx)
+        [0]
 
     """
     samples, labels = dimod.as_samples(samples)
@@ -188,11 +188,11 @@ def majority_vote(samples, chains):
         >>> chains = [(0, 1), (2, 3, 4)]
         >>> samples = np.array([[1, 1, 0, 0, 1], [1, 1, 1, 0, 1]], dtype=np.int8)
         >>> unembedded, idx = dwave.embedding.majority_vote(samples, chains)
-        >>> unembedded
-        array([[1, 0],
-               [1, 1]], dtype=int8)
-        >>> idx
-        array([0, 1])
+        >>> print(unembedded)
+        [[1 0]
+         [1 1]]
+        >>> print(idx)
+        [0 1]
 
     """
     samples, labels = dimod.as_samples(samples)

@@ -64,6 +64,7 @@ def diagnose_embedding(emb, source, target):
         to a square target graph. A valid embedding, such as
         `emb = {0: [1], 1: [0], 2: [2, 3]}`, yields no errors.
 
+         >>> from dwave.embedding import diagnose_embedding
          >>> import networkx as nx
          >>> source = nx.complete_graph(3)
          >>> target = nx.cycle_graph(4)

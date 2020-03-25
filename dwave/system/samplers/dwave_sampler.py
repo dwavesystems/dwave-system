@@ -137,14 +137,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         as its URL and an autentication token, are implicitly set in a configuration file
         or as environment variables, as described in
         `Configuring a D-Wave System <https://docs.ocean.dwavesys.com/en/latest/overview/dwavesys.html>`_.
+        Given sufficient reads (here 100), the quantum
+        computer should return the best solution, :math:`{1, -1}` on qubits 0 and 1,
+        respectively, as its first sample (samples are ordered from lowest energy).
 
-        >>> from dwave.system.samplers import DWaveSampler
+        >>> from dwave.system import DWaveSampler
         >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
-        >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
-        >>> for sample in sampleset.samples():  # doctest: +SKIP
-        ...    print(sample)
-        ...
-        {0: 1, 1: -1}
+        >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {}, num_reads=100)
+        >>> sampleset.first.sample[0] == 1 and sampleset.first.sample[1] == -1
+        True
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
@@ -182,7 +183,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.properties    # doctest: +SKIP
             {u'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
@@ -213,7 +214,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.parameters    # doctest: +SKIP
             {u'anneal_offsets': ['parameters'],
@@ -241,17 +242,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active couplers for the D-Wave solver.
 
         Examples:
+            Coupler list for one D-Wave 2000Q system (output snipped for brevity).
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
-            >>> sampler.edgelist    # doctest: +SKIP
-            [(0, 4),
-             (0, 5),
-             (0, 6),
-             (0, 7),
-             (0, 128),
-             (1, 4),
-            # Snipped above response for brevity
+            >>> sampler.edgelist
+            [(0, 4), (0, 5), (0, 6), (0, 7), ...
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -270,14 +266,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active qubits for the D-Wave solver.
 
         Examples:
+            Node list for one D-Wave 2000Q system (output snipped for brevity).
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
-            >>> sampler.nodelist    # doctest: +SKIP
-            [0,
-             1,
-             2,
-            # Snipped above response for brevity
+            >>> sampler.nodelist
+            [0, 1, 2, ...
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -327,15 +321,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to qubits
-            0 and 1 on a D-Wave system.
+            0 and 1 on a D-Wave system. Given sufficient reads (here 100), the quantum
+            computer should return the best solution, :math:`{1, -1}` on qubits 0 and 1,
+            respectively, as its first sample (samples are ordered from lowest energy).
 
-            >>> from dwave.system.samplers import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {})
-            >>> for sample in sampleset.samples():    # doctest: +SKIP
-            ...    print(sample)
-            ...
-            {0: 1, 1: -1}
+            >>> from dwave.system import DWaveSampler
+            >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
+            >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {}, num_reads=100)
+            >>> sampleset.first.sample[0] == 1 and sampleset.first.sample[1] == -1
+            True
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -399,16 +393,17 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example submits a two-variable QUBO mapped directly to qubits
-            0 and 4 on a D-Wave system.
+            0 and 4 on a D-Wave system. Given sufficient reads (here 100), the quantum
+            computer should return the best solutions, :math:`{0, 1}` or
+            :math:`{1, 0}` on qubits 0 and 4, respectively, as its first sample
+            (samples are ordered from lowest energy).
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> Q = {(0, 0): -1, (4, 4): -1, (0, 4): 2}
-            >>> sampleset = sampler.sample_qubo(Q)
-            >>> for sample in sampleset.samples():    # doctest: +SKIP
-            ...    print(sample)
-            ...
-            {0: 0, 4: 1}
+            >>> sampleset = sampler.sample_qubo(Q, num_reads=100)
+            >>> sampleset.first.sample[0] != sampleset.first.sample[4]
+            True
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -475,7 +470,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
             This example sets a quench schedule on a D-Wave system.
 
-            >>> from dwave.system.samplers import DWaveSampler
+            >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
             >>> DWaveSampler().validate_anneal_schedule(quench_schedule)    # doctest: +SKIP

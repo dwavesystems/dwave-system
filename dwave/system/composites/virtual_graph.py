@@ -93,27 +93,20 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
        J range. In this example, the ten returned samples all represent valid states of
        the AND gate.
 
-       >>> from dwave.system.samplers import DWaveSampler
-       >>> from dwave.system.composites import VirtualGraphComposite
+       >>> from dwave.system import DWaveSampler, VirtualGraphComposite
        >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
-       >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
+       >>> DWaveSampler().properties['extended_j_range']
        [-2.0, 1.0]
        >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=2) # doctest: +SKIP
        >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
-       >>> response = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
-       >>> for sample in response.samples():    # doctest: +SKIP
-       ...     print(sample)
-       ...
-       {'y': 0, 'x': 1, 'z': 0}
-       {'y': 1, 'x': 0, 'z': 0}
-       {'y': 1, 'x': 0, 'z': 0}
-       {'y': 1, 'x': 1, 'z': 1}
-       {'y': 0, 'x': 1, 'z': 0}
-       {'y': 1, 'x': 0, 'z': 0}
-       {'y': 0, 'x': 1, 'z': 0}
-       {'y': 0, 'x': 1, 'z': 0}
-       {'y': 0, 'x': 0, 'z': 0}
-       {'y': 1, 'x': 0, 'z': 0}
+       >>> sampleset = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
+       >>> print(sampleset)    # doctest: +SKIP
+          x  y  z energy num_oc. chain_.
+       0  1  0  0    0.0       2     0.0
+       1  0  1  0    0.0       3     0.0
+       2  1  1  1    0.0       3     0.0
+       3  0  0  0    0.0       2     0.0
+       ['BINARY', 4 rows, 10 samples, 3 variables]
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
@@ -182,28 +175,19 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
            J range. In this example, the ten returned samples all represent valid states of
            the NOT gate.
 
-           >>> from dwave.system.samplers import DWaveSampler
-           >>> from dwave.system.composites import VirtualGraphComposite
+           >>> from dwave.system import DWaveSampler, VirtualGraphComposite
            >>> embedding = {'x': {0, 4, 1, 5}, 'y': {2, 6, 3, 7}}
-           >>> DWaveSampler().properties['extended_j_range']   # doctest: +SKIP
+           >>> DWaveSampler().properties['extended_j_range']
            [-2.0, 1.0]
            >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=1) # doctest: +SKIP
            >>> h = {}
            >>> J = {('x', 'y'): 1}
-           >>> response = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
-           >>> for sample in response.samples():    # doctest: +SKIP
-           ...     print(sample)
-           ...
-           {'y': -1, 'x': 1}
-           {'y': 1, 'x': -1}
-           {'y': -1, 'x': 1}
-           {'y': -1, 'x': 1}
-           {'y': -1, 'x': 1}
-           {'y': 1, 'x': -1}
-           {'y': 1, 'x': -1}
-           {'y': 1, 'x': -1}
-           {'y': -1, 'x': 1}
-           {'y': 1, 'x': -1}
+           >>> sampleset = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
+           >>> print(sampleset)    # doctest: +SKIP
+              x  y energy num_oc. chain_.
+           0 -1 +1   -1.0       6     0.0
+           1 +1 -1   -1.0       4     0.0
+           ['SPIN', 2 rows, 10 samples, 2 variables]
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
