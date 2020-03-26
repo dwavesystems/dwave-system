@@ -296,7 +296,8 @@ class TestEmbeddingComposite(unittest.TestCase):
         sampler = EmbeddingComposite(
             dimod.StructureComposite(dimod.RandomSampler(), G.nodes, G.edges))
 
-        J = {(0, 1): 100}
+        # use a triangle so there is a chain of length 2
+        J = {(0, 1): 100, (1, 2): 100, (0, 2): 1}
 
         ss = sampler.sample_ising({}, J, warnings='SAVE')
         self.assertIn('warnings', ss.info)
@@ -306,6 +307,24 @@ class TestEmbeddingComposite(unittest.TestCase):
             if issubclass(warning['type'], ChainStrengthWarning):
                 count += 1
         self.assertEqual(count, 1)
+
+    def test_warnings_chain_strength_len1(self):
+        G = dnx.chimera_graph(12)
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.RandomSampler(), G.nodes, G.edges))
+
+        J = {(0, 1): 100}
+
+        ss = sampler.sample_ising({}, J, warnings='SAVE')
+        self.assertIn('warnings', ss.info)
+
+        # should have no chain length
+        count = 0
+        for warning in ss.info['warnings']:
+            if issubclass(warning['type'], ChainStrengthWarning):
+                count += 1
+        self.assertEqual(count, 0)
 
     def test_warnings_as_class_variable(self):
         G = dnx.chimera_graph(12)
