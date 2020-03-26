@@ -80,7 +80,8 @@ class MockSolver():
                             'qpu_programming_time': 8740,
                             'run_time_chip': 164,
                             'qpu_access_time': 11511,
-                            'qpu_readout_time_per_sample': 123})
+                            'qpu_readout_time_per_sample': 123},
+                    problem_id=5)
 
         samples = np.random.choice(tuple(bqm.vartype.value),
                                    size=(num_reads, len(bqm)))

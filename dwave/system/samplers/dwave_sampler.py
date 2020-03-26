@@ -352,9 +352,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 if warninghandler.action is WarningAction.SAVE:
                     sampleset.info['warnings'] = warninghandler.saved
 
-            # probably this should be propagated up to the cloud-client
-            sampleset.info.update(problem_id=computation.id)
-
             return sampleset
 
         return dimod.SampleSet.from_future(future, _hook)
