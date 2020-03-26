@@ -120,7 +120,10 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         if any(u not in target_adjacency for u in chain):
             raise InvalidNodeError(v, next(u not in target_adjacency for u in chain))
 
-        b = bias / len(chain)
+        try:
+            b = bias / len(chain)
+        except ZeroDivisionError:
+            raise MissingChainError(v)
 
         target_bqm.add_variables_from({u: b for u in chain})
 

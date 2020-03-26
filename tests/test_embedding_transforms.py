@@ -420,6 +420,15 @@ class TestEmbedBQM(unittest.TestCase):
         for v in itertools.chain(*embedding.values()):
             self.assertIn(v, target_bqm)
 
+    def test_empty_chain_exception(self):
+        embedding = {0: [], 1: [2], 2: [3]}
+        G = nx.cycle_graph(4)
+
+        bqm = dimod.BinaryQuadraticModel.from_qubo({(0, 0): 1})
+
+        with self.assertRaises(dwave.embedding.exceptions.MissingChainError):
+            dwave.embedding.embed_bqm(bqm, embedding, G)
+
     def test_energy_range_embedding(self):
         # start with an Ising
         bqm = dimod.BinaryQuadraticModel.from_ising({}, {(0, 1): 1, (1, 2): 1, (0, 2): 1})
