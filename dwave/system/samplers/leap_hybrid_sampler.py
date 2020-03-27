@@ -87,6 +87,9 @@ class LeapHybridSampler(dimod.Sampler):
 
     def __init__(self, solver=None, connection_close=True, **config):
 
+        # always use the base class (QPU client filters-out the hybrid solvers)
+        config['client'] = 'base'
+
         if solver is None:
             solver = {}
 
@@ -94,12 +97,13 @@ class LeapHybridSampler(dimod.Sampler):
             if solver.setdefault('category', 'hybrid') != 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'")
 
-        self.client = Client.from_config(solver=solver, connection_close=connection_close, **config)
+        self.client = Client.from_config(
+            solver=solver, connection_close=connection_close, **config)
+
         self.solver = self.client.get_solver()
 
         # For explicitly named solvers:
-        if ('category' not in self.properties.keys()) or (
-                      not self.properties['category'] == 'hybrid'):
+        if self.properties.get('category') != 'hybrid':
             raise ValueError("selected solver is not a hybrid solver.")
 
     @property
