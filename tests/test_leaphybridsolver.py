@@ -45,6 +45,9 @@ class MockClient:
         if isinstance(self.args['solver'], str) and self.args['solver'] == 'not_hybrid_solver':
             return MockBadLeapHybridSolver()
 
+        if self.args.get('client', 'base') not in ['base', 'hybrid']:
+            return MockBadLeapHybridSolver()
+
         return MockLeapHybridSolver()
 
 class TestLeapHybridSampler(unittest.TestCase):
@@ -59,6 +62,10 @@ class TestLeapHybridSampler(unittest.TestCase):
         LeapHybridSampler()
         mock_client.from_config.assert_called_once_with(connection_close=True,
                                                  solver={'category': 'hybrid'})
+
+        # Non-hybrid client setting is ignored?
+        mock_client.reset_mock()
+        LeapHybridSampler(client='qpu')
 
         # Explicitly set category to hybrid
         mock_client.reset_mock()
