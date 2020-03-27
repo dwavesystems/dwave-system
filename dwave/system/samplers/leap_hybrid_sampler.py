@@ -87,6 +87,9 @@ class LeapHybridSampler(dimod.Sampler):
 
     def __init__(self, solver=None, connection_close=True, **config):
 
+        # always use the base class (QPU client filters-out the hybrid solvers)
+        config['client'] = 'base'
+
         if solver is None:
             solver = {}
 

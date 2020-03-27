@@ -60,8 +60,8 @@ class TestLeapHybridSampler(unittest.TestCase):
         # Default call
         mock_client.reset_mock()
         LeapHybridSampler()
-        mock_client.from_config.assert_called_once_with(connection_close=True,
-                                                 solver={'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=True, solver={'category': 'hybrid'})
 
         # Non-hybrid client setting is ignored?
         mock_client.reset_mock()
@@ -70,8 +70,8 @@ class TestLeapHybridSampler(unittest.TestCase):
         # Explicitly set category to hybrid
         mock_client.reset_mock()
         LeapHybridSampler(solver={'category': 'hybrid'})
-        mock_client.from_config.assert_called_once_with(connection_close=True,
-                                                 solver={'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=True, solver={'category': 'hybrid'})
 
         # Explicitly set category to not hybrid
         with self.assertRaises(ValueError):
@@ -80,26 +80,25 @@ class TestLeapHybridSampler(unittest.TestCase):
         # Set irrelevant paremeters
         mock_client.reset_mock()
         LeapHybridSampler(solver={'qpu': True})
-        mock_client.from_config.assert_called_once_with(connection_close=True,
-                                                 solver={'qpu': True, 'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=True, solver={'qpu': True, 'category': 'hybrid'})
 
         mock_client.reset_mock()
         LeapHybridSampler(solver={'qpu': True, 'anneal_schedule' :False})
-        mock_client.from_config.assert_called_once_with(connection_close=True,
-                                                 solver={'anneal_schedule' :False,
-                                                         'qpu': True,
-                                                         'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=True,
+            solver={'anneal_schedule': False, 'qpu': True, 'category': 'hybrid'})
 
         # Named solver: hybrid
         mock_client.reset_mock()
         LeapHybridSampler(solver="hybrid_solver")
-        mock_client.from_config.assert_called_once_with(connection_close=True,
-                                                 solver="hybrid_solver")
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=True, solver="hybrid_solver")
 
         mock_client.reset_mock()
         LeapHybridSampler(connection_close=False, solver="hybrid_solver")
-        mock_client.from_config.assert_called_once_with(connection_close=False,
-                                                 solver="hybrid_solver")
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=False, solver="hybrid_solver")
 
         # Named solver: non-hybrid
         with self.assertRaises(ValueError):
@@ -108,13 +107,13 @@ class TestLeapHybridSampler(unittest.TestCase):
         # Set connection_close to False
         mock_client.reset_mock()
         LeapHybridSampler(connection_close=False)
-        mock_client.from_config.assert_called_once_with(connection_close=False,
-                                                 solver={'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=False, solver={'category': 'hybrid'})
 
         mock_client.reset_mock()
         LeapHybridSampler(connection_close=False, solver={'category': 'hybrid'})
-        mock_client.from_config.assert_called_once_with(connection_close=False,
-                                                 solver={'category': 'hybrid'})
+        mock_client.from_config.assert_called_once_with(
+            client='base', connection_close=False, solver={'category': 'hybrid'})
 
     @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
     def test_sample_bqm(self, mock_client):
