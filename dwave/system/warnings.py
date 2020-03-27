@@ -174,11 +174,17 @@ class WarningHandler(object):
                                      sample_index=row),
                            )
 
-    def chain_strength(self, bqm, chain_strength):
+    def chain_strength(self, bqm, chain_strength, embedding=None):
         """Issues a warning when any quadratic biases are greater than the given
         chain strength."""
         if as_action(self.action) is IGNORE:
             return
+
+        if embedding is not None:
+            if not embedding or all(len(chain) <= 1 for chain in embedding.values()):
+                # the chains are all length 1 so don't have to worry about
+                # strength
+                return
 
         interactions = [uv for uv, bias in bqm.quadratic.items()
                         if abs(bias) >= chain_strength]

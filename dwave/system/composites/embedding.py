@@ -235,7 +235,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         warninghandler = WarningHandler(warnings)
 
-        warninghandler.chain_strength(bqm, chain_strength)
+        warninghandler.chain_strength(bqm, chain_strength, embedding)
         warninghandler.chain_length(embedding)
 
         if bqm and not embedding:
