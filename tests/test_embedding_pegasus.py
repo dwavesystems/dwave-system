@@ -1,4 +1,4 @@
-from dwave.embedding.pegasus import find_clique_embedding
+from dwave.embedding.pegasus import find_clique_embedding, find_biclique_embedding
 from dwave.embedding.diagnostic import is_valid_embedding
 from dwave_networkx.generators.pegasus import pegasus_graph
 from random import shuffle
@@ -137,6 +137,12 @@ class TestFindClique(unittest.TestCase):
                 embedding = find_clique_embedding(k, target_graph=pg)
                 self.assertTrue(is_valid_embedding(embedding, K, pg))
 
+
+class Test_find_biclique_embedding(unittest.TestCase):
+    def test_full_yield_one_tile_k44(self):
+        left, right = find_biclique_embedding(6, 6, 2)
+        left, right = find_biclique_embedding(16, 16, 3)
+        # smoke test for now
 
 if __name__ == "__main__":
     unittest.main()
