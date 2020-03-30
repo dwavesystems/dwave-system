@@ -139,25 +139,24 @@ def find_biclique_embedding(a, b, m=None, target_graph=None):
         tuple: A 2-tuple containing:
 
             dict: An embedding mapping the left shore of the biclique to
-            the Chimera lattice.
+            the Pegasus lattice.
 
             dict: An embedding mapping the right shore of the biclique to
-            the Chimera lattice.
+            the Pegasus lattice.
 
     Examples:
-        This example finds an embedding for an alphanumerically labeled biclique in a single
-        Chimera unit cell.
+        This example finds an embedding for an alphanumerically labeled biclique in a small
+        Pegasus graph
 
-        >>> from dwave.embedding.chimera import find_biclique_embedding
+        >>> from dwave.embedding.pegasus import find_biclique_embedding
         ...
-        >>> left, right = find_biclique_embedding(['a', 'b', 'c'], ['d', 'e'], 1, 1)
+        >>> left, right = find_biclique_embedding(['a', 'b', 'c'], ['d', 'e'], 2)
         >>> print(left, right)  # doctest: +SKIP
-        {'a': [4], 'b': [5], 'c': [6]} {'d': [0], 'e': [1]}
+        {'a': [40], 'b': [41], 'c': [42]} {'d': [4], 'e': [5]}
 
     """
     _, anodes = a
     _, bnodes = b
-
 
     embedding_processor, embedding_to_pegasus = _pegasus_fragment_helper(m, target_graph)
     embedding = embedding_processor.tightestNativeBiClique(len(anodes), len(bnodes))
