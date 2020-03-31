@@ -22,6 +22,11 @@ import networkx as nx
 
 
 def _pegasus_fragment_helper(m=None, target_graph=None):
+    # This is a function that takes m or a target_graph and produces a
+    # `processor` object for the corresponding Pegasus graph, and a function
+    # that translates embeddings produced by that object back to the original
+    # pegasus graph.  Consumed by `find_clique_embedding` and
+    # `find_biclique_embedding`.
 
     # Organize parameter values
     if target_graph is None:
