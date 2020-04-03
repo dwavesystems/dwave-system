@@ -15,8 +15,9 @@
 # =============================================================================
 import unittest
 
-import dimod
+import numpy
 
+import dimod
 from dwave.cloud.exceptions import ConfigFileError
 
 from dwave.system.samplers import DWaveSampler
@@ -35,22 +36,58 @@ class TestDWaveSampler(unittest.TestCase):
     def tearDownClass(cls):
         cls.qpu.client.close()
 
-    def test_smoke_sample_ising(self):
+    @staticmethod
+    def nonzero_ising_problem(sampler):
+        max_h = max(sampler.properties.get('h_range', [-1, 1]))
+        max_j = max(sampler.properties.get('j_range', [-1, 1]))
+
+        h = {v: max_h for v in sampler.nodelist}
+        J = {interaction: max_j for interaction in sampler.edgelist}
+
+        return h, J
+
+    def test_sample_ising(self):
         sampler = self.qpu
 
-        h = {v: 0 for v in sampler.nodelist}
-        J = {interaction: 0 for interaction in sampler.edgelist}
+        h, J = self.nonzero_ising_problem(sampler)
 
         sampleset = sampler.sample_ising(h, J)
-        sampleset.resolve()
 
-    def test_smoke_sample_qubo(self):
+        bqm = dimod.BQM.from_ising(h, J)
+        numpy.testing.assert_array_almost_equal(
+            bqm.energies(sampleset), sampleset.record.energy)
+
+    def test_sample_qubo(self):
         sampler = self.qpu
 
-        Q = {interaction: 0 for interaction in sampler.edgelist}
+        Q, _ = dimod.ising_to_qubo(*self.nonzero_ising_problem(sampler))
 
         sampleset = sampler.sample_qubo(Q)
-        sampleset.resolve()
+
+        bqm = dimod.BQM.from_qubo(Q)
+        numpy.testing.assert_array_almost_equal(
+            bqm.energies(sampleset), sampleset.record.energy)
+
+    def test_sample_bqm_ising(self):
+        sampler = self.qpu
+
+        bqm = dimod.BQM.from_ising(*self.nonzero_ising_problem(sampler))
+
+        sampleset = sampler.sample(bqm)
+
+        numpy.testing.assert_array_almost_equal(
+            bqm.energies(sampleset), sampleset.record.energy)
+
+    def test_sample_bqm_qubo(self):
+        sampler = self.qpu
+
+        Q, _ = dimod.ising_to_qubo(*self.nonzero_ising_problem(sampler))
+        bqm = dimod.BQM.from_qubo(Q)
+
+        sampleset = sampler.sample(bqm)
+
+        numpy.testing.assert_array_almost_equal(
+            bqm.energies(sampleset), sampleset.record.energy)
 
     def test_mismatched_ising(self):
         sampler = self.qpu
