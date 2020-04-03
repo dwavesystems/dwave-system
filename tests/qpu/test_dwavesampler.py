@@ -68,6 +68,27 @@ class TestDWaveSampler(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(
             bqm.energies(sampleset), sampleset.record.energy)
 
+    def test_sample_bqm_ising(self):
+        sampler = self.qpu
+
+        bqm = dimod.BQM.from_ising(*self.nonzero_ising_problem(sampler))
+
+        sampleset = sampler.sample(bqm)
+
+        numpy.testing.assert_array_almost_equal(
+            bqm.energies(sampleset), sampleset.record.energy)
+
+    def test_sample_bqm_qubo(self):
+        sampler = self.qpu
+
+        Q, _ = dimod.ising_to_qubo(*self.nonzero_ising_problem(sampler))
+        bqm = dimod.BQM.from_qubo(Q)
+
+        sampleset = sampler.sample(bqm)
+
+        numpy.testing.assert_array_almost_equal(
+            bqm.energies(sampleset), sampleset.record.energy)
+
     def test_mismatched_ising(self):
         sampler = self.qpu
 
