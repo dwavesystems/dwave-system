@@ -18,14 +18,14 @@ import collections
 import dimod
 import dwave_networkx as dnx
 from tabu import TabuSampler
-from dwave.cloud.computation import Future as cloud_future
+import dwave.cloud.computation
 
 try:
     from neal import SimulatedAnnealingSampler
 except ImportError:
     from dimod import SimulatedAnnealingSampler
 
-from concurrent.futures import Future
+import concurrent.futures
 import numpy as np
 
 try:
@@ -105,7 +105,7 @@ class MockLeapHybridSolver:
 
     def upload_bqm(self, bqm, **parameters):
         bqm_adjarray = dimod.serialization.fileview.load(bqm)
-        future = Future()
+        future = concurrent.futures.Future()
         future.set_result(bqm_adjarray)
         return future
 
@@ -116,6 +116,6 @@ class MockLeapHybridSolver:
                                     sapi_problem_id.offset,
                                     sapi_problem_id.vartype)
         result = TabuSampler().sample(bqm, timeout=1000*int(time_limit))
-        future = cloud_future('fake_solver', None)
+        future = dwave.cloud.computation.Future('fake_solver', None)
         future._result = {'sampleset': result, 'problem_type': 'bqm'}
         return future
