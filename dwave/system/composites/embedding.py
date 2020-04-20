@@ -164,9 +164,13 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 variables to create chains. The energy penalty of chain breaks
                 is 2 * `chain_strength`.
 
-            chain_break_method (function, optional):
-                Method used to resolve chain breaks during sample unembedding.
-                See :func:`~dwave.embedding.unembed_sampleset`.
+            chain_break_method (function/list, optional):
+                Method or methods used to resolve chain breaks. If multiple
+                methods are given, the results are concatenated and a new field
+                called "chain_break_method" specifying the index of the method
+                is appended to the sample set.
+                See :func:`~dwave.embedding.unembed_sampleset` and
+                :mod:`dwave.embedding.chain_breaks`.
 
             chain_break_fraction (bool, optional, default=True):
                 Add a `chain_break_fraction` field to the unembedded response with
