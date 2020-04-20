@@ -220,6 +220,24 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         self.assertEqual(resp.record.chain_break_fraction.sum(), 0)
 
+    def test_multi(self):
+
+        samples = [{'a': -1, 'b': -1, 'c': +1, 'd': -1},
+                   {'a': -1, 'b': -1, 'c': -1, 'd': +1}]
+        embedding = {0: ['a', 'b', 'c'], 1: ['d']}
+        bqm = dimod.BinaryQuadraticModel.from_ising({}, {(0, 1): 1})
+
+        resp = dimod.SampleSet.from_samples(samples, energy=[-1, 1], info={},
+                                            vartype=dimod.SPIN)
+
+        methods = [dwave.embedding.majority_vote,
+                   dwave.embedding.discard]
+
+        ss = dwave.embedding.unembed_sampleset(resp, embedding, bqm,
+                                               chain_break_method=methods)
+
+        np.testing.assert_array_equal(ss.record.chain_break_method, [0, 0, 1])
+
 
 class TestEmbedBQM(unittest.TestCase):
     def test_embed_bqm_empty(self):
