@@ -16,6 +16,7 @@
 
 from __future__ import division
 
+import collections.abc as abc
 import itertools
 
 import numpy as np
@@ -306,8 +307,11 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
         source_bqm (:obj:`dimod.BinaryQuadraticModel`):
             Source BQM.
 
-        chain_break_method (function, optional):
-            Method used to resolve chain breaks.
+        chain_break_method (function/list, optional):
+            Method or methods used to resolve chain breaks. If multiple methods
+            are given, the results are concatenated and a new field called
+            "chain_break_method" specifying the index of the method is appended
+            to the sample set.
             See :mod:`dwave.embedding.chain_breaks`.
 
         chain_break_fraction (bool, optional, default=False):
@@ -345,6 +349,29 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
 
     if chain_break_method is None:
         chain_break_method = majority_vote
+    elif isinstance(chain_break_method, abc.Sequence):
+        # we want to apply multiple CBM and then combine
+        samplesets = [unembed_sampleset(target_sampleset, embedding,
+                                        source_bqm, chain_break_method=cbm,
+                                        chain_break_fraction=chain_break_fraction)
+                      for cbm in chain_break_method]
+        sampleset = dimod.sampleset.concatenate(samplesets)
+
+        # Add a new data field tracking which came from
+        # todo: add this functionality to dimod
+        cbm_idxs = np.empty(len(sampleset), dtype=np.int)
+
+        start = 0
+        for i, ss in enumerate(samplesets):
+            cbm_idxs[start:start+len(ss)] = i
+            start += len(ss)
+
+        new = np.lib.recfunctions.append_fields(sampleset.record,
+                                                'chain_break_method', cbm_idxs,
+                                                asrecarray=True, usemask=False)
+
+        return type(sampleset)(new, sampleset.variables, sampleset.info,
+                               sampleset.vartype)
 
     variables = list(source_bqm.variables)  # need this ordered
     try:
