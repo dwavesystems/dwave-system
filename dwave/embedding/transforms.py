@@ -312,6 +312,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
             are given, the results are concatenated and a new field called
             "chain_break_method" specifying the index of the method is appended
             to the sample set.
+            Defaults to :func:`~dwave.embedding.chain_breaks.majority_vote`.
             See :mod:`dwave.embedding.chain_breaks`.
 
         chain_break_fraction (bool, optional, default=False):
