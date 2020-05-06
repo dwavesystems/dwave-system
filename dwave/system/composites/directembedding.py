@@ -21,7 +21,7 @@ import dwave_networkx as dnx
 import dimod
 from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave_networkx import chimera_graph, pegasus_graph
-from dwave.system import FixedEmbeddingComposite
+from dwave.system.composites.embedding import FixedEmbeddingComposite
 from dwave.embedding.exceptions import EmbeddingError
 
 __all__ = ('DirectChimeraTilesEmbeddingComposite',
@@ -143,8 +143,16 @@ class DirectChimeraTilesEmbeddingComposite(dimod.ComposedSampler):
             self.couplers = self.child.edgelist
             embed = self._chimera_embedding
 
-        if (set(val for tup in Q.keys() for val in tup if tup[0] == tup[1]) -
-            set(val for tup in Q.keys() for val in tup if tup[0] != tup[1])):
+        max_nodes = 8*self.tiles if self.topology_type == "chimera" else \
+                    3*15*self.tiles
+        if not set(val for tup in Q.keys() for val in tup).issubset(set
+           (range(max_nodes))):
+           msg = "Composite supports only indexed nodes"
+           raise BinaryQuadraticModelStructureError(msg)
+
+        uncoupled = (set(val for tup in Q.keys() for val in tup if tup[0] == tup[1]) -
+            set(val for tup in Q.keys() for val in tup if tup[0] != tup[1]))
+        if uncoupled:
            msg = "Composite does not support singleton nodes: {}".format(uncoupled)
            raise BinaryQuadraticModelStructureError(msg)
 
