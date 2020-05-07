@@ -235,8 +235,15 @@ class DirectChimeraTilesEmbeddingComposite(dimod.ComposedSampler):
 
             nodes_h = list(dnx.pegasus_coordinates(self.tiles).iter_pegasus_to_linear(
                            self._h_pair(w + i, z, k_44)))
-            embedding.update({k + 8*i + 4: [nodes_h[k]] for v, k in self.edges_vh[i]})
-            embedding.update({k + 8*i + 4: [nodes_h[k]] for v, k in self.edges_hh[i]})
+            embedding.update({k + 8*i + 4: [nodes_h[k]] for v, k
+                              in self.edges_vh[i]})
+            embedding.update({h0 + 8*i + 4: [nodes_h[h0]] for
+                              h0, h1 in self.edges_hh[i]})
+            # Exploit empty self.edges_hh set for i = self.num_cells
+            nodes_h1 = list(dnx.pegasus_coordinates(self.tiles).iter_pegasus_to_linear(
+                            self._h_pair(w + i + 1, z, k_44)))
+            embedding.update({h1 + 8*(i + 1) + 4: [nodes_h1[h1]] for
+                              h0, h1 in self.edges_hh[i]})
 
         return(embedding)
 
