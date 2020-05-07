@@ -36,6 +36,7 @@ except ImportError:
     import mock
 
 C4 = dnx.chimera_graph(4, 4, 4)
+P6 = dnx.pegasus_graph(6)
 
 
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):
@@ -46,13 +47,16 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     properties = None
     parameters = None
 
-    def __init__(self, broken_nodes=None, **config):
+    def __init__(self, broken_nodes=None, topology="chimera", **config):
+
+        G = C4 if topology == "chimera" else P6
+
         if broken_nodes is None:
-            self.nodelist = sorted(C4.nodes)
-            self.edgelist = sorted(tuple(sorted(edge)) for edge in C4.edges)
+            self.nodelist = sorted(G.nodes)
+            self.edgelist = sorted(tuple(sorted(edge)) for edge in G.edges)
         else:
-            self.nodelist = sorted(v for v in C4.nodes if v not in broken_nodes)
-            self.edgelist = sorted(tuple(sorted((u, v))) for u, v in C4.edges
+            self.nodelist = sorted(v for v in G.nodes if v not in broken_nodes)
+            self.edgelist = sorted(tuple(sorted((u, v))) for u, v in G.edges
                                    if u not in broken_nodes and v not in broken_nodes)
 
         # mark the sample kwargs
@@ -65,10 +69,11 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['j_range'] = [-2.0, 1.0]
         properties['h_range'] = [-2.0, 2.0]
         properties['num_reads_range'] = [1, 10000]
-        properties['num_qubits'] = len(C4)
+        properties['num_qubits'] = len(G)
         properties['category'] = 'qpu'
         properties['quota_conversion_rate'] = 1
-        properties['topology'] = {'type': 'chimera', 'shape': [16, 16, 4]}
+        properties['topology'] = {'type': 'chimera', 'shape': [16, 16, 4]} if \
+           topology == "chimera" else {'type': 'pegasus', 'shape': [6, 6, 12]}
         properties['chip_id'] = 'MockDWaveSampler'
         properties['annealing_time_range'] = [1, 2000]
         properties['num_qubits'] = len(self.nodelist)

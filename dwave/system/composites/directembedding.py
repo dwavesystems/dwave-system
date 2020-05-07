@@ -177,7 +177,8 @@ class DirectChimeraTilesEmbeddingComposite(dimod.ComposedSampler):
                 self.couplers = G_ideal.edges
                 embedding = embed()
             except EmbeddingError:
-                msg = "Graph must be horizontally adjacent Chimera unit cells"
+                msg = "Graph must be up to {} horizontally adjacent \
+                       Chimera unit cells".format(self.tiles)
                 raise BinaryQuadraticModelStructureError(msg)
 
         return FixedEmbeddingComposite(self.child, embedding=embedding).sample_qubo(
