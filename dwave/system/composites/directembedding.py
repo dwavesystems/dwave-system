@@ -144,7 +144,7 @@ class DirectChimeraTilesEmbeddingComposite(dimod.ComposedSampler):
             embed = self._chimera_embedding
 
         max_nodes = 8*self.tiles if self.topology_type == "chimera" else \
-                    3*15*self.tiles
+                    3*8*self.tiles
         if not set(val for tup in Q.keys() for val in tup).issubset(set
            (range(max_nodes))):
            msg = "Composite supports only indexed nodes"
