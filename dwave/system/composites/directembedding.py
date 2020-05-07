@@ -208,8 +208,12 @@ class DirectChimeraTilesEmbeddingComposite(dimod.ComposedSampler):
                                             for v, h in self.edges_vh[i]})
                            embedding.update({h + 8*i + 4: [h + q0 + 8*i + 4]
                                             for v, h in self.edges_vh[i]})
-                           embedding.update({h + 8*i + 4: [h + q0 + 8*i + 4]
-                                            for v, h in self.edges_hh[i]})
+                           embedding.update({h0 + 8*i + 4: [h0 + q0 + 8*i + 4]
+                                            for h0, h1 in self.edges_hh[i]})
+                           # Exploit empty self.edges_hh set for i = self.num_cells
+                           embedding.update({h1 + 8*(i + 1) + 4:
+                                            [h1 + q0 + 8*(i+1) + 4] for h0, h1
+                                            in self.edges_hh[i]})
 
                        return (embedding)
 
