@@ -94,15 +94,6 @@ class TestDirect(unittest.TestCase):
         with self.assertRaises(BinaryQuadraticModelStructureError):
             sampleset = sampler.sample_ising(h, J)
 
-        sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
-                  topology="pegasus"))
-
-        h = {0: -1., 4: 2}
-        J = {}
-
-        with self.assertRaises(BinaryQuadraticModelStructureError):
-            sampleset = sampler.sample_ising(h, J)
-
     def test_embedding_chimera_first_cell(self):
         sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler())
 
@@ -164,18 +155,17 @@ class TestDirect(unittest.TestCase):
         self.assertEqual(sampleset.info["embedding_context"]["embedding"],
              {0: [32], 1: [33], 4: [36], 6: [38], 11: [43], 14: [46], 15: [47]})
 
-    # def test_embedding_pegasus_first_cell(self):
-    #     sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
-    #               topology="pegasus"))
-    #
-    #
-    #     h = {}
-    #     J = {(0, 4): 1, (4, 1): 1, (1, 6): 1}
-    #
-    #     sampleset = sampler.sample_ising(h, J, return_embedding=True)
-    #
-    #     self.assertEqual(sampleset.info["embedding_context"]["embedding"],
-    #          {0: [0], 1: [1], 4: [4], 6: [6]})
+    def test_embedding_pegasus_first_cell(self):
+        sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
+                  topology="pegasus"))
+
+        h = {}
+        J = {(0, 4): 1, (4, 1): 1, (1, 6): 1}
+
+        sampleset = sampler.sample_ising(h, J, return_embedding=True)
+
+        self.assertEqual(sampleset.info["embedding_context"]["embedding"],
+             {0: [20], 1: [25], 4: [440], 6: [450]})
 
     def test_embedding_pegasus_two_cell(self):
         sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
@@ -193,52 +183,56 @@ class TestDirect(unittest.TestCase):
 
         sampleset = sampler.sample_qubo(Q, return_embedding=True)
 
-    # def test_embedding_chimera_first_two_cells(self):
-    #     sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler())
-    #
-    #     h = {}
-    #     J = {(0, 4): 1, (4, 1): 1, (1, 6): 1, (6, 14): -1, (14, 11): 1,
-    #          (11, 15): 1}
-    #
-    #     sampleset = sampler.sample_ising(h, J, return_embedding=True)
-    #
-    #     self.assertEqual(sampleset.info["embedding_context"]["embedding"],
-    #          {0: [0], 1: [1], 4: [4], 6: [6], 11: [11], 14: [14], 15: [15]})
-    #
-    # def test_embedding_chimera_first_cell_broken(self):
-    #     sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
-    #               broken_nodes=[1]))
-    #
-    #     h = {}
-    #     J = {(0, 4): 1, (4, 1): 1, (1, 6): 1}
-    #
-    #     sampleset = sampler.sample_ising(h, J, return_embedding=True)
-    #
-    #     self.assertEqual(sampleset.info["embedding_context"]["embedding"],
-    #          {0: [8], 1: [9], 4: [12], 6: [14]})
-    #
-    # def test_embedding_chimera_two_cells_second_broken(self):
-    #     sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
-    #               broken_nodes=[14]))
-    #
-    #     h = {}
-    #     J = {(0, 4): 1, (4, 1): 1, (1, 6): 1, (6, 14): -1, (14, 11): 1,
-    #          (11, 15): 1}
-    #
-    #     sampleset = sampler.sample_ising(h, J, return_embedding=True)
-    #
-    #     self.assertEqual(sampleset.info["embedding_context"]["embedding"],
-    #          {0: [16], 1: [17], 4: [20], 6: [22], 11: [27], 14: [30], 15: [31]})
-    #
-    # def test_embedding_chimera_two_cells_broken_row(self):
-    #     sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
-    #               broken_nodes=[x for x in range(0, 4*8, 8)]))  # C4 tester
-    #
-    #     h = {}
-    #     J = {(0, 4): 1, (4, 1): 1, (1, 6): 1, (6, 14): -1, (14, 11): 1,
-    #          (11, 15): 1}
-    #
-    #     sampleset = sampler.sample_ising(h, J, return_embedding=True)
-    #
-    #     self.assertEqual(sampleset.info["embedding_context"]["embedding"],
-    #          {0: [32], 1: [33], 4: [36], 6: [38], 11: [43], 14: [46], 15: [47]})
+        self.assertEqual(sampleset.info["embedding_context"]["embedding"],
+             {2: [30], 1: [25], 0: [20], 3: [35], 6: [450], 5: [445], 7: [455],
+              4: [440], 9: [85], 8: [80], 10: [90], 11: [95], 13: [446],
+              14: [451], 15: [456], 12: [441]})
+
+        h = {0: 1.0, 1: -1.0, 2: -1.0, 3: 1.0, 4: 1.0, 5: -1.0, 6: 0.0, 7: 1.0,
+             8: 1.0, 9: -1.0, 10: -1.0, 11: 1.0, 12: 1.0, 13: 0.0, 14: -1.0,
+             15: 1.0}
+        J = {(9, 13): -1, (2, 6): -1, (8, 13): -1, (9, 14): -1, (9, 15): -1,
+             (10, 13): -1, (5, 13): -1, (10, 12): -1, (1, 5): -1, (10, 14): -1,
+             (0, 5): -1, (1, 6): -1, (3, 6): -1, (1, 7): -1, (11, 14): -1,
+             (2, 5): -1, (2, 4): -1, (6, 14): -1}
+
+    def test_embedding_pegasus_first_cell_broken(self):
+        sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
+                  topology="pegasus", broken_nodes=[20]))
+
+        h = {}
+        J = {(0, 4): 1, (4, 1): 1, (1, 6): 1}
+
+        sampleset = sampler.sample_ising(h, J, return_embedding=True)
+
+        self.assertEqual(sampleset.info["embedding_context"]["embedding"],
+             {0: [40], 1: [45], 4: [420], 6: [430]})
+
+    def test_embedding_pegasus_two_cells_second_broken(self):
+        sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
+                  topology="pegasus", broken_nodes=[451]))
+
+        h = {}
+        J = {(0, 4): 1, (4, 1): 1, (1, 6): 1, (6, 14): -1, (14, 11): 1,
+             (11, 15): 1}
+
+        sampleset = sampler.sample_ising(h, J, return_embedding=True)
+
+        self.assertEqual(sampleset.info["embedding_context"]["embedding"],
+             {0: [40], 1: [45], 4: [420], 6: [430], 11: [115], 14: [431],
+              15: [436]})
+
+    def test_embedding_pegasus_two_cells_broken_row(self):
+        sampler = DirectChimeraTilesEmbeddingComposite(MockDWaveSampler(
+                  topology="pegasus",
+                  broken_nodes=[x for x in range(0, 6*12, 4)]))  # P6 tester
+
+        h = {}
+        J = {(0, 4): 1, (4, 1): 1, (1, 6): 1, (6, 14): -1, (14, 11): 1,
+             (11, 15): 1}
+
+        sampleset = sampler.sample_ising(h, J, return_embedding=True)
+
+        self.assertEqual(sampleset.info["embedding_context"]["embedding"],
+             {0: [80], 1: [85], 4: [441], 6: [451], 11: [155], 14: [452],
+              15: [457]})
