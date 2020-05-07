@@ -164,7 +164,7 @@ class DirectChimeraTilesEmbeddingComposite(dimod.ComposedSampler):
                  for edge in Q.keys() if min(edge) != max(edge) and
                                          min(edge) >= 8 * i and
                                          max(edge) < 8 * (i + 1)])
-            self.edges_hh.append([(edge[0], edge[1])
+            self.edges_hh.append([(min(edge), max(edge))
                  for edge in Q.keys() if min(edge) in range(8 * i, 8 * (i + 1)) and
                                          max(edge) in range(8 * (i + 1), 8 * (i + 2))])
 
