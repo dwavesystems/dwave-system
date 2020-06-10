@@ -13,8 +13,6 @@
 #    limitations under the License.
 #
 # =============================================================================
-import dwave.system.flux_bias_offsets
-
 from dwave.system.samplers import *
 import dwave.system.samplers
 
@@ -22,3 +20,5 @@ from dwave.system.composites import *
 import dwave.system.composites
 
 from dwave.system.utilities import *
+
+import dwave.system.flux_bias_offsets

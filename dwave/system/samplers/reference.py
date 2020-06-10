@@ -1,4 +1,4 @@
-# Copyright 2018 D-Wave Systems Inc.
+# Copyright 2020 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -12,10 +12,21 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# ================================================================================================
-from dwave.system.composites.clique_embedding import *
-from dwave.system.composites.cutoffcomposite import *
-from dwave.system.composites.embedding import *
-from dwave.system.composites.tiling import *
-from dwave.system.composites.virtual_graph import *
-from dwave.system.composites.reversecomposite import *
+
+import dimod
+
+from dwave.system.composites.clique_embedding import CliqueEmbeddingComposite
+from dwave.system.samplers.dwave_sampler import DWaveSampler
+
+__all__ = ['CliqueEmbeddingScalingDWaveSampler']
+
+
+def CliqueEmbeddingScalingDWaveSampler(**config):
+    sampler = \
+        CliqueEmbeddingComposite(
+            dimod.ScaleComposite(
+                DWaveSampler(**config)
+                )
+            )
+
+    return sampler
