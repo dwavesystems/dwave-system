@@ -96,6 +96,8 @@ class LeapHybridSampler(dimod.Sampler):
         if isinstance(solver, abc.Mapping):
             if solver.setdefault('category', 'hybrid') != 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'")
+            if solver.setdefault('supported_problem_types__contains', 'bqm') != 'bqm':
+                raise ValueError("the only problem type this sampler supports is 'bqm'")
 
         self.client = Client.from_config(
             solver=solver, connection_close=connection_close, **config)
