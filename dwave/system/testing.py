@@ -103,6 +103,8 @@ class MockLeapHybridSolver:
                   'category': 'hybrid',
                   'quota_conversion_rate': 1}
 
+    supported_problem_types = ['bqm']
+
     def upload_bqm(self, bqm, **parameters):
         bqm_adjarray = dimod.serialization.fileview.load(bqm)
         future = concurrent.futures.Future()
