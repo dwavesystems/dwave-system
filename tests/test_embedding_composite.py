@@ -20,7 +20,6 @@ import warnings
 from collections import Mapping
 
 import dimod
-import dimod.testing as dtest
 import dwave_networkx as dnx
 
 import dwave.embedding
@@ -37,11 +36,12 @@ from dwave.embedding import chain_breaks
 from dwave.system.warnings import ChainStrengthWarning
 
 
+@dimod.testing.load_sampler_bqm_tests(EmbeddingComposite(MockDWaveSampler()))
 class TestEmbeddingComposite(unittest.TestCase):
     def test_instantiation_smoketest(self):
         sampler = EmbeddingComposite(MockDWaveSampler())
 
-        dtest.assert_sampler_api(sampler)
+        dimod.testing.assert_sampler_api(sampler)
 
     def test_sample_ising(self):
         sampler = EmbeddingComposite(MockDWaveSampler())
@@ -351,7 +351,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_instantiation_empty_embedding(self):
         sampler = FixedEmbeddingComposite(MockDWaveSampler(), {})
 
-        dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
+        dimod.testing.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
 
         self.assertEqual(sampler.edgelist, [])
 
@@ -361,7 +361,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_instantiation_empty_adjacency(self):
         sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency={})
 
-        dtest.assert_sampler_api(sampler)  # checks for attributes needed in a sampler
+        dimod.testing.assert_sampler_api(sampler)  # checks for attributes needed in a sampler
 
         self.assertEqual(sampler.edgelist, [])
 
@@ -373,7 +373,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         sampler = FixedEmbeddingComposite(MockDWaveSampler(), embedding)
         self.assertEqual(embedding, sampler.embedding)
 
-        dtest.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
+        dimod.testing.assert_sampler_api(sampler)  # checks adj consistent with nodelist/edgelist
 
         self.assertEqual(sampler.nodelist, ['a', 'b', 'c'])
         self.assertEqual(sampler.edgelist, [('a', 'b'), ('a', 'c'), ('b', 'c')])
@@ -439,6 +439,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         composite.sample(bqm, chain_break_method=cbm).resolve()
 
 
+@dimod.testing.load_sampler_bqm_tests(lambda: LazyFixedEmbeddingComposite(MockDWaveSampler()))
 class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_sample_instantiation(self):
         # Check that graph related values have not been instantiated
@@ -552,6 +553,7 @@ class TestLazyEmbeddingComposite(unittest.TestCase):
         self.assertGreaterEqual(len(response), 1)
 
 
+@dimod.testing.load_sampler_bqm_tests(AutoEmbeddingComposite(MockDWaveSampler()))
 class TestAutoEmbeddingComposite(unittest.TestCase):
     def test_broken_find_embedding(self):
         nodelist = [0, 1, 2, 3]

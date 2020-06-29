@@ -99,12 +99,12 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         return embed_bqm(source_bqm.binary, embedding, target_adjacency,
                          chain_strength=chain_strength, smear_vartype=None).spin
 
-    # create a new empty binary quadratic model with the same class as source_bqm
-    try:
+    # create a new empty binary quadratic model with the same class as
+    # source_bqm if it's shapeable, otherwise use AdjVectorBQM
+    if source_bqm.shapeable():
         target_bqm = source_bqm.base.empty(source_bqm.vartype)
-    except AttributeError:
-        # dimod < 0.9.0
-        target_bqm = source_bqm.empty(source_bqm.vartype)
+    else:
+        target_bqm = dimod.AdjVectorBQM.empty(source_bqm.vartype)
 
     # add the offset
     target_bqm.add_offset(source_bqm.offset)
@@ -389,7 +389,11 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
                for name in record.dtype.names if name not in reserved}
 
     if chain_break_fraction:
-        vectors['chain_break_fraction'] = broken_chains(target_sampleset, chains).mean(axis=1)[idxs]
+        broken = broken_chains(target_sampleset, chains)
+        if broken.size:
+            vectors['chain_break_fraction'] = broken.mean(axis=1)[idxs]
+        else:
+            vectors['chain_break_fraction'] = 0
 
     info = target_sampleset.info.copy()
 
