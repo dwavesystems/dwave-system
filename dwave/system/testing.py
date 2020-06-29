@@ -68,7 +68,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['num_qubits'] = len(C4)
         properties['category'] = 'qpu'
         properties['quota_conversion_rate'] = 1
-        properties['topology'] = {'type': 'chimera', 'shape': [16, 16, 4]}
+        properties['topology'] = {'type': 'chimera', 'shape': [4, 4, 4]}
         properties['chip_id'] = 'MockDWaveSampler'
         properties['annealing_time_range'] = [1, 2000]
         properties['num_qubits'] = len(self.nodelist)
