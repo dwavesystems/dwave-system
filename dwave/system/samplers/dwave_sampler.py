@@ -462,5 +462,5 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         # finally check the slope abs(slope) < 1/min_anneal_time
         max_slope = 1.0 / min_anneal_time
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
-            if abs((s0 - s1) / (t0 - t1)) > max_slope:
+            if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
