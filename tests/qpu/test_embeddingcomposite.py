@@ -14,6 +14,7 @@
 #
 # =============================================================================
 import unittest
+import warnings
 
 import dimod
 
@@ -47,3 +48,31 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
                                       (155.0, 0.45), (210.0, 1)]}
 
         sampler.sample(bqm, **kwargs).resolve()
+
+    def test_many_bqm_async(self):
+        sampler = EmbeddingComposite(self.qpu)
+
+        # in the future it would be good to test a wide variety of BQMs,
+        # see https://github.com/dwavesystems/dimod/issues/671
+        # but for now let's just test a few
+        bqm0 = dimod.BinaryQuadraticModel.from_ising({'a': 2.0, 'b': -2.0},
+                                                     {('a', 'b'): -1})
+        bqm1 = dimod.BinaryQuadraticModel.from_ising({2: 4},
+                                                     {(0, 1): 1.5, (1, 2): 5})
+
+        samplesets0 = []
+        samplesets1 = []
+        for _ in range(10):
+            # this should be async
+            samplesets0.append(sampler.sample(bqm0))
+            samplesets1.append(sampler.sample(bqm1))
+
+        if all(ss.done() for ss in samplesets0):
+            warnings.warn("Sampler calls appear to be synchronous")
+
+        for ss0, ss1 in zip(samplesets0, samplesets1):
+            dimod.testing.assert_sampleset_energies(ss0, bqm0)
+            dimod.testing.assert_sampleset_energies(ss1, bqm1)
+
+        self.assertTrue(all(ss.done() for ss in samplesets0))
+        self.assertTrue(all(ss.done() for ss in samplesets1))

@@ -271,29 +271,34 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         response = child.sample(bqm_embedded, **parameters)
 
-        warninghandler.chain_break(response, embedding)
+        def async_unembed(response):
+            # unembed the sampleset aysnchronously.
 
-        sampleset = unembed_sampleset(response, embedding, source_bqm=bqm,
-                                      chain_break_method=chain_break_method,
-                                      chain_break_fraction=chain_break_fraction,
-                                      return_embedding=return_embedding)
+            warninghandler.chain_break(response, embedding)
 
-        if return_embedding:
-            sampleset.info['embedding_context'].update(
-                embedding_parameters=embedding_parameters,
-                chain_strength=chain_strength)
+            sampleset = unembed_sampleset(response, embedding, source_bqm=bqm,
+                                          chain_break_method=chain_break_method,
+                                          chain_break_fraction=chain_break_fraction,
+                                          return_embedding=return_embedding)
 
-        if chain_break_fraction and len(sampleset):
-            warninghandler.issue("All samples have broken chains",
-                                 func=lambda: (sampleset.record.chain_break_fraction.all(), None))
+            if return_embedding:
+                sampleset.info['embedding_context'].update(
+                    embedding_parameters=embedding_parameters,
+                    chain_strength=chain_strength)
 
-        if warninghandler.action is WarningAction.SAVE:
-            # we're done with the warning handler so we can just pass the list
-            # off, if later we want to pass in a handler or similar we should
-            # do a copy
-            sampleset.info.setdefault('warnings', []).extend(warninghandler.saved)
+            if chain_break_fraction and len(sampleset):
+                warninghandler.issue("All samples have broken chains",
+                                     func=lambda: (sampleset.record.chain_break_fraction.all(), None))
 
-        return sampleset
+            if warninghandler.action is WarningAction.SAVE:
+                # we're done with the warning handler so we can just pass the list
+                # off, if later we want to pass in a handler or similar we should
+                # do a copy
+                sampleset.info.setdefault('warnings', []).extend(warninghandler.saved)
+
+            return sampleset
+
+        return dimod.SampleSet.from_future(response, async_unembed)
 
 
 class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):

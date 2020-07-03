@@ -152,12 +152,18 @@ class TestEmbeddingComposite(unittest.TestCase):
     def test_chain_break_method_customization(self):
         sampler = EmbeddingComposite(MockDWaveSampler())
 
-        with mock.patch('dwave.system.composites.embedding.unembed_sampleset') as mock_unembed:
-            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard)
-
-            # assert chain_break_method propagated to unembed_sampleset
-            __, kwargs = mock_unembed.call_args
+        def mock_unembed(*args, **kwargs):
+            self.assertIn('chain_break_method', kwargs)
             self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
+            mock_unembed.call_count += 1
+            return dwave.embedding.unembed_sampleset(*args, **kwargs)
+
+        mock_unembed.call_count = 0
+
+        with mock.patch('dwave.system.composites.embedding.unembed_sampleset', mock_unembed):
+            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard).resolve()
+
+        self.assertEqual(mock_unembed.call_count, 1)
 
     def test_find_embedding_kwarg(self):
         child = dimod.StructureComposite(dimod.NullSampler(), [0, 1], [(0, 1)])
@@ -399,12 +405,18 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
     def test_chain_break_method_customization(self):
         sampler = FixedEmbeddingComposite(MockDWaveSampler(), {'a': [0]})
 
-        with mock.patch('dwave.system.composites.embedding.unembed_sampleset') as mock_unembed:
-            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard)
-
-            # assert chain_break_method propagated to unembed_sampleset
-            __, kwargs = mock_unembed.call_args
+        def mock_unembed(*args, **kwargs):
+            self.assertIn('chain_break_method', kwargs)
             self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
+            mock_unembed.call_count += 1
+            return dwave.embedding.unembed_sampleset(*args, **kwargs)
+
+        mock_unembed.call_count = 0
+
+        with mock.patch('dwave.system.composites.embedding.unembed_sampleset', mock_unembed):
+            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard).resolve()
+
+        self.assertEqual(mock_unembed.call_count, 1)
 
     def test_keyer(self):
         C4 = dnx.chimera_graph(4)
@@ -523,12 +535,18 @@ class TestLazyFixedEmbeddingComposite(unittest.TestCase):
     def test_chain_break_method_customization(self):
         sampler = LazyFixedEmbeddingComposite(MockDWaveSampler())
 
-        with mock.patch('dwave.system.composites.embedding.unembed_sampleset') as mock_unembed:
-            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard)
-
-            # assert chain_break_method propagated to unembed_sampleset
-            __, kwargs = mock_unembed.call_args
+        def mock_unembed(*args, **kwargs):
+            self.assertIn('chain_break_method', kwargs)
             self.assertEqual(kwargs['chain_break_method'], chain_breaks.discard)
+            mock_unembed.call_count += 1
+            return dwave.embedding.unembed_sampleset(*args, **kwargs)
+
+        mock_unembed.call_count = 0
+
+        with mock.patch('dwave.system.composites.embedding.unembed_sampleset', mock_unembed):
+            sampler.sample_ising({'a': 1}, {}, chain_break_method=chain_breaks.discard).resolve()
+
+        self.assertEqual(mock_unembed.call_count, 1)
 
 
 class TestLazyEmbeddingComposite(unittest.TestCase):
