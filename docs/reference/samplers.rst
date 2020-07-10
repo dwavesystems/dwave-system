@@ -53,6 +53,7 @@ Properties
 .. autosummary::
    :toctree: generated/
 
+   DWaveCliqueSampler.largest_clique_size
    DWaveCliqueSampler.properties
    DWaveCliqueSampler.parameters
 
