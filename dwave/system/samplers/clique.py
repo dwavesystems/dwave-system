@@ -152,11 +152,18 @@ class DWaveCliqueSampler(dimod.Sampler):
         embedding = find_clique_embedding(bqm.variables, self.target_graph,
                                           use_cache=True)
 
+        # returns an empty embedding when the BQM is too large
+        if not embedding and bqm.num_variables:
+            raise ValueError("Cannot embed given BQM (size {}), sampler can "
+                             "only handle problems of size {}".format(
+                                len(bqm.variables), self.largest_clique_size))
+
+        assert bqm.num_variables == len(embedding)  # sanity check
+
         if chain_strength is None:
             # chain length determines chain strength
             if embedding:
-                chain_length = len(next(iter(embedding.values())))
-                chain_strength = 1.5 * math.sqrt(chain_length)
+                chain_strength = 1.5 * math.sqrt(len(embedding))
             else:
                 chain_strength = 1  # doesn't matter
 

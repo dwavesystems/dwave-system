@@ -112,3 +112,11 @@ class TestDWaveCliqueSampler(unittest.TestCase):
             bqm.quadratic[u, v] = -1
 
         chimera_sampler.sample(bqm).resolve()
+
+    def test_too_large(self):
+        num_variables = chimera_sampler.largest_clique_size + 1
+
+        bqm = dimod.BinaryQuadraticModel(num_variables, 'SPIN')
+
+        with self.assertRaises(ValueError):
+            chimera_sampler.sample(bqm)
