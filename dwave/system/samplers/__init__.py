@@ -11,7 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
+from dwave.system.samplers.clique import *
 from dwave.system.samplers.dwave_sampler import *
 from dwave.system.samplers.leap_hybrid_sampler import *
