@@ -85,6 +85,8 @@ class LeapHybridSampler(dimod.Sampler):
 
     """
 
+    _INTEGER_BQM_SIZE_THRESHOLD = 10000
+
     def __init__(self, solver=None, connection_close=True, **config):
 
         # always use the base class (QPU client filters-out the hybrid solvers)
@@ -189,9 +191,7 @@ class LeapHybridSampler(dimod.Sampler):
 
         """
 
-        bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM, dimod.AdjMapBQM, dimod.AdjVectorBQM])
-
-        num_vars = len(bqm.variables)
+        num_vars = bqm.num_variables
         xx, yy = zip(*self.properties["minimum_time_limit"])
         min_time_limit = np.interp([num_vars], xx, yy)[0]
 
@@ -204,6 +204,42 @@ class LeapHybridSampler(dimod.Sampler):
                    ).format(num_vars, min_time_limit)
             raise ValueError(msg)
 
-        with FileView(bqm) as fv:
+        # for very large BQMs, it is better to send the unlabelled version,
+        # to save on serializating the labels in both directions.
+        # Note that different hybrid solvers accept different numbers of
+        # variables and they might be lower than this threshold
+        if num_vars > self._INTEGER_BQM_SIZE_THRESHOLD:
+            return self._sample_large(bqm, time_limit=time_limit, **kwargs)
+
+        return self._sample(bqm, time_limit=time_limit, **kwargs)
+
+    def _sample(self, bqm, **kwargs):
+        """Sample from the given BQM."""
+        # get a FileView-compatibile BQM
+        bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM,
+                                     dimod.AdjMapBQM,
+                                     dimod.AdjVectorBQM])
+
+        with FileView(bqm, version=2) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
-        return self.solver.sample_bqm(sapi_problem_id, time_limit=time_limit).sampleset
+
+        return self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
+
+    def _sample_large(self, bqm, **kwargs):
+        """Sample from the unlabelled version of the BQM, then apply the
+        labels to the returned sampleset.
+        """
+        # get a FileView-compatibile BQM
+        # it is also important that the BQM be ordered
+        bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM,
+                                     dimod.AdjMapBQM,
+                                     dimod.AdjVectorBQM])
+
+        with FileView(bqm, version=2, ignore_labels=True) as fv:
+            sapi_problem_id = self.solver.upload_bqm(fv).result()
+
+        sampleset = self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
+
+        # relabel, as of dimod 0.9.5+ this is not blocking
+        mapping = dict(enumerate(bqm.iter_variables()))
+        return sampleset.relabel_variables(mapping)
