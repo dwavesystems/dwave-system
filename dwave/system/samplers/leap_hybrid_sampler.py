@@ -104,7 +104,7 @@ class LeapHybridSampler(dimod.Sampler):
         self.client = Client.from_config(
             solver=solver, connection_close=connection_close, **config)
 
-        self.solver = self.client.get_solver()
+        self.solver = self.client.get_solver(order_by='-version')
 
         # For explicitly named solvers:
         if self.properties.get('category') != 'hybrid':
