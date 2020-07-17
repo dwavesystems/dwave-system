@@ -105,6 +105,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             then it will instead propogate the `SolverNotFoundError` to the
             user.
 
+        order_by (callable/str/None):
+            Solver sorting key function or (or :class:`~dwave.cloud.Solver`
+            attribute/item dot-separated path).
+            See :class:`~dwave.cloud.Client.get_solvers` for a more detailed
+            description of the parameter.
+
         config_file (str, optional):
             Path to a configuration file that identifies a D-Wave system and provides
             connection information.
@@ -151,7 +157,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
-    def __init__(self, failover=False, retry_interval=-1, **config):
+    def __init__(self, failover=False, retry_interval=-1, order_by=None, **config):
 
         if config.get('solver_features') is not None:
             warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
@@ -162,7 +168,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             config['solver'] = config.pop('solver_features')
 
         self.client = Client.from_config(**config)
-        self.solver = self.client.get_solver()
+
+        if order_by is None:
+            # use the default from the cloud-client
+            self.solver = self.client.get_solver()
+        else:
+            self.solver = self.client.get_solver(order_by=order_by)
 
         self.failover = failover
         self.retry_interval = retry_interval
