@@ -20,6 +20,7 @@ import warnings
 
 from collections import namedtuple
 from concurrent.futures import Future
+from unittest import mock
 from uuid import uuid4
 
 import numpy as np
@@ -31,13 +32,6 @@ from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.samplers import DWaveSampler
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
-
-try:
-    # py3
-    import unittest.mock as mock
-except ImportError:
-    # py2
-    import mock
 
 
 C16 = dnx.chimera_graph(16)
@@ -124,7 +118,7 @@ class TestDwaveSampler(unittest.TestCase):
         MockClient.reset_mock()
         solver = {'qpu': True, 'num_qubits__gt': 1000}
         sampler = DWaveSampler(solver=solver)
-        MockClient.from_config.assert_called_once_with(solver=solver)
+        MockClient.from_config.assert_called_once_with(client='qpu', solver=solver)
 
     def test_sample_ising_variables(self):
 

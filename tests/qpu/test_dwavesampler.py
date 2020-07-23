@@ -30,7 +30,7 @@ class TestDWaveSampler(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(qpu=True))
+            cls.qpu = DWaveSampler()
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 
@@ -115,8 +115,7 @@ class TestMissingQubits(unittest.TestCase):
     def setUpClass(cls):
         try:
             # get a QPU with less than 100% yield
-            cls.qpu = DWaveSampler(solver=dict(qpu=True,
-                                               num_active_qubits__lt=2048))
+            cls.qpu = DWaveSampler(solver=dict(num_active_qubits__lt=2048))
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 
