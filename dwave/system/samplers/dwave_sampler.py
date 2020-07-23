@@ -120,6 +120,18 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         profile (str, optional):
             Profile to select from the configuration file.
 
+        client (str, optional, default='qpu'):
+            Client type used for accessing the API. Client type effectively
+            constraints the solver's ``category``. Supported values are
+            ``qpu``, ``sw`` and ``hybrid`` for QPU, software and hybrid solvers
+            respectively. In addition, ``base`` client type doesn't filter
+            solvers at all.
+
+            Note:
+                Until version 0.10.0 of ``dwave-system``, :class:`DWaveSampler`
+                used the ``base`` client, allowing non-QPU solvers to be
+                selected. To emulate the old behavior, set ``client='base'``.
+
         endpoint (str, optional):
             D-Wave API endpoint URL.
 
@@ -131,9 +143,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             as a set of required features. Supported features and values are described in
             :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
             compatibility, a solver name, formatted as a string, is accepted.
-
-        proxy (str, optional):
-            Proxy URL to be used for accessing the D-Wave API.
 
         **config:
             Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
@@ -176,6 +185,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("can not combine 'solver' and 'solver_features'")
 
             config['solver'] = config.pop('solver_features')
+
+        # we want a QPU solver by default, but allow override
+        config.setdefault('client', 'qpu')
 
         self.client = Client.from_config(**config)
 

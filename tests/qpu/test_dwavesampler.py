@@ -14,11 +14,13 @@
 #
 # =============================================================================
 import unittest
+from unittest import mock
 
 import numpy
 
 import dimod
 from dwave.cloud.exceptions import ConfigFileError
+from dwave.cloud.client import Client
 
 from dwave.system.samplers import DWaveSampler
 
@@ -132,3 +134,21 @@ class TestMissingQubits(unittest.TestCase):
 
         self.assertEqual(set(sampleset.variables), set(sampler.nodelist))
         assert len(sampleset.variables) < 2048  # sanity check
+
+
+class TestClientSelection(unittest.TestCase):
+
+    def test_client_type(self):
+        with mock.patch('dwave.cloud.qpu.Client') as qpu:
+            self.assertEqual(DWaveSampler().client, qpu())
+            self.assertEqual(DWaveSampler(client='qpu').client, qpu())
+
+        with mock.patch('dwave.cloud.sw.Client') as sw:
+            self.assertEqual(DWaveSampler(client='sw').client, sw())
+
+        with mock.patch('dwave.cloud.hybrid.Client') as hybrid:
+            self.assertEqual(DWaveSampler(client='hybrid').client, hybrid())
+
+    def test_base_client(self):
+        self.assertIsInstance(DWaveSampler(client=None).client, Client)
+        self.assertIsInstance(DWaveSampler(client='base').client, Client)
