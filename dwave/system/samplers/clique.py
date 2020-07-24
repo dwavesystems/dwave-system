@@ -190,6 +190,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                                    quadratic_range=self.qpu_quadratic_range,
                                    auto_scale=False,
                                    chain_strength=chain_strength,
+                                   **kwargs
                                    )
 
         # change_vartype is non-blocking
