@@ -40,7 +40,7 @@ class MockClient:
 
         self.args = kwargs
 
-    def get_solver(self):
+    def get_solver(self, order_by=None):
 
         if isinstance(self.args['solver'], str) and self.args['solver'] == 'not_hybrid_solver':
             return MockBadLeapHybridSolver()
