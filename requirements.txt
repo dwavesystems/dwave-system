@@ -1,12 +1,12 @@
 --extra-index-url https://pypi.dwavesys.com/simple
 
-dimod==0.9.1
-dwave-cloud-client==0.7.2
+dimod==0.9.5
+dwave-cloud-client==0.7.5
 dwave-networkx==0.8.4
 dwave-drivers==0.4.4
 dwave-tabu==0.2.2
 homebase==1.0.1
-minorminer==0.2.0.dev1
+minorminer==0.2.0
 six==1.11.0
 mock==2.0.0
 numpy==1.18.0
