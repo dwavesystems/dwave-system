@@ -25,17 +25,17 @@ __all__ = ['DWaveCliqueSampler']
 
 
 class DWaveCliqueSampler(dimod.Sampler):
-    """A Sampler for solving clique problems on the D-Wave system.
+    """A sampler for solving clique problems on the D-Wave system.
 
     The `DWaveCliqueSampler` wraps
     :func:`minorminer.busclique.find_clique_embedding` to generate embeddings
     with even chain length. These embeddings will work well for dense
     binary quadratic models. For sparse models, using
-    :class:`.EmbeddingComposite` is preferred.
+    :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is preferred.
 
     Args:
         **config:
-            Keyword arguments, as accapted by :class:`.DWaveSampler`
+            Keyword arguments, as accepted by :class:`.DWaveSampler`
 
     """
     def __init__(self, **config):
