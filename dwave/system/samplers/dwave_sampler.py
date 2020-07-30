@@ -34,6 +34,8 @@ from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.warnings import WarningHandler, WarningAction
 
+import dwave_networkx as dnx
+
 __all__ = ['DWaveSampler']
 
 
@@ -475,3 +477,49 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
             if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
+
+    # offset_lists, offsets_index, fabric_only, and nice_coordinates only apply to the pegasus topology
+    # did not include create_using() because it seemed like something the user shouldn't be able to do
+    def to_networkx_graph(self, data=True, coordinates=False, 
+                          offset_lists=None, offsets_index=None, fabric_only=True, nice_coordinates=False):
+
+        """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
+
+        Args:
+            data : bool (optional, default True) 
+                If True, each node has either a `chimera_index attribute` or
+                `pegasus_index attribute`, depending on the topology of the solver.
+                The attribute is a 4-tuple Chimera or Pegasus index.
+
+            coordinates : bool (optional, default False)
+                If True, node labels are 4-tuple Chimera or Pegasus indices. Ignored if 
+                this is a Pegasus topology and the `nice_coordinates` parameter is True.
+
+            # to complete!!
+
+        Returns:
+            G : NetworkX Graph
+                Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
+        """
+
+        topology_type = self.properties['topology']['type']
+        shape = self.properties['topology']['shape']
+
+        if (topology_type == 'chimera'):
+            G = dnx.chimera_graph(*shape, 
+                                  data=data, 
+                                  coordinates=coordinates)
+
+            # if i pass in the node and edge lists, i can't get chimera coordinates
+            # is this expected behavior?
+
+        elif (topology_type == 'pegasus'):
+            G = dnx.pegasus_graph(shape[0], 
+                                  data=data, 
+                                  offset_lists=offset_lists, 
+                                  offsets_index=offsets_index, 
+                                  coordinates=coordinates, 
+                                  fabric_only=fabric_only, 
+                                  nice_coordinates=nice_coordinates)
+
+        return G

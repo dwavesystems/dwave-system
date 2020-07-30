@@ -278,6 +278,30 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertEqual(len(response.info['warnings']), 2)
 
+    def test_to_networkx_chimera(self):
+        sampler = self.sampler
+        sampler.solver.properties.update({'topology': {'type': 'chimera', 'shape': [4, 4, 4]}})
+        G = sampler.to_networkx_graph(coordinates=True)
+
+        chimeraG = dnx.chimera_graph(4, 4, 4, coordinates=True)
+
+        self.assertEqual(set(G), set(chimeraG))
+
+        for u, v in chimeraG.edges:
+            self.assertIn(u, G[v])
+
+    def test_to_networkx_pegasus(self):
+        sampler = self.sampler
+        sampler.solver.properties.update(topology = {'type': 'pegasus', 'shape': [4, 4, 12]})
+        G = sampler.to_networkx_graph(coordinates=True)
+
+        pegasusG = dnx.pegasus_graph(4, coordinates=True)
+
+        self.assertEqual(set(G), set(pegasusG))
+
+        for u, v in pegasusG.edges:
+            self.assertIn(u, G[v])
+
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
     def test_typical(self):
         class MockScheduleSampler(DWaveSampler):
