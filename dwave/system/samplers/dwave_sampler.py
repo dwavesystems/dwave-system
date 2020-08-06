@@ -531,14 +531,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         # Will not allow for conversion of indices when passing in the node and edge lists
         # until dwave_networkx issue #170 is resolved.
-        if (topology_type == 'chimera'):
+        if topology_type == 'chimera':
             G = dnx.chimera_graph(*shape, 
                                   node_list=self.nodelist, 
                                   edge_list=self.edgelist,
                                   data=data, 
                                   coordinates=coordinates)
 
-        elif (topology_type == 'pegasus'):
+        elif topology_type == 'pegasus':
             G = dnx.pegasus_graph(shape[0], 
                                   node_list=self.nodelist, 
                                   edge_list=self.edgelist,
