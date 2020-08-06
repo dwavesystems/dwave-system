@@ -279,7 +279,7 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertEqual(len(response.info['warnings']), 2)
 
     # The two tests below don't behave as expected (coordinates=True and nice_coordinates=True, 
-    # but indexing scheme is still linear int). Resolved with dwave_networkx issue #170
+    # but indexing scheme is still linear int). See: https://github.com/dwavesystems/dwave_networkx/issues/170
     def test_to_networkx_chimera(self):
         sampler = self.sampler
         sampler.solver.properties.update({'topology': {'type': 'chimera', 'shape': [4, 4, 4]}})

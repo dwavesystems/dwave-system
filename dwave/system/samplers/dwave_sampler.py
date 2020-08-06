@@ -529,8 +529,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         topology_type = self.properties['topology']['type']
         shape = self.properties['topology']['shape']
 
-        # Will not allow for conversion of indices when passing in the node and edge lists
-        # until dwave_networkx issue #170 is resolved.
+        # Will not allow for conversion of indices when passing in the node and edge lists.
+        # See: https://github.com/dwavesystems/dwave_networkx/issues/170
         if topology_type == 'chimera':
             G = dnx.chimera_graph(*shape, 
                                   node_list=self.nodelist, 
