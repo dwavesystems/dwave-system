@@ -278,15 +278,13 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertEqual(len(response.info['warnings']), 2)
 
-    # The two tests below don't behave as expected (coordinates=True and nice_coordinates=True, 
-    # but indexing scheme is still linear int). See: https://github.com/dwavesystems/dwave_networkx/issues/170
     def test_to_networkx_chimera(self):
         sampler = self.sampler
         sampler.solver.properties.update({'topology': {'type': 'chimera', 'shape': [4, 4, 4]}})
-        G = sampler.to_networkx_graph(coordinates=True)
+        G = sampler.to_networkx_graph()
 
         # Create chimera graph for comparison
-        chimeraG = dnx.chimera_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist, coordinates=True)
+        chimeraG = dnx.chimera_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
 
         self.assertEqual(set(G), set(chimeraG))
 
@@ -298,10 +296,10 @@ class TestDwaveSampler(unittest.TestCase):
     def test_to_networkx_pegasus(self):
         sampler = self.sampler
         sampler.solver.properties.update({'topology': {'type': 'pegasus', 'shape': [4, 4, 12]}})
-        G = sampler.to_networkx_graph(nice_coordinates=True)
+        G = sampler.to_networkx_graph()
 
         # Create pegasus graph for comparison
-        pegasusG = dnx.pegasus_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist, nice_coordinates=True)
+        pegasusG = dnx.pegasus_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
 
         self.assertEqual(set(G), set(pegasusG))
 

@@ -479,47 +479,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
 
-    def to_networkx_graph(self, data=True, coordinates=False, 
-                          offset_lists=None, offsets_index=None, fabric_only=True, nice_coordinates=False):
+    def to_networkx_graph(self):
 
         """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
-
-        Args:
-            data : bool (optional, default True) 
-                If True, each node has either a `chimera_index attribute` or
-                `pegasus_index attribute`, depending on the topology of the solver.
-                The attribute is a 4-tuple Chimera or Pegasus index.
-
-            coordinates : bool (optional, default False)
-                If True, node labels are 4-tuple Chimera or Pegasus indices. Ignored if 
-                this is a Pegasus topology and the `nice_coordinates` parameter is True.
-
-            offset_lists : pair of lists (optional, default None)
-                Only applies to Pegasus graphs. Directly controls the offsets. Each list 
-                in the pair must have length 12 and contain even ints. If `offset_lists` is 
-                not None, the `offsets_index` parameter must be None.
-
-            offsets_index : int (optional, default None)
-                Only applies to Pegasus graphs. A number between 0 and 7, inclusive, that 
-                selects a preconfigured set of topological parameters. If both the `offsets_index` 
-                and `offset_lists` parameters are None, the `offsets_index` parameters is set 
-                to zero. At least one of these two parameters must be None.
-
-            fabric_only: bool (optional, default True)
-                Only applies to Pegasus graphs, which by definition, has some disconnected components.  
-                If True, the generator only constructs nodes from the largest component. If False, 
-                the full disconnected graph is constructed. Ignored if the `edge_lists` parameter is 
-                not None or `nice_coordinates` is True
-
-            nice_coordinates: bool, optional (default False)
-                Only applies to Pegasus graphs. If the `offsets_index` parameter is 0, the graph 
-                uses a "nicer" coordinate system, more compatible with Chimera addressing.
-                These coordinates are 5-tuples taking the form :math:`(t, y, x, u, k)` where
-                :math:`0 <= x < M-1`, :math:`0 <= y < M-1`, :math:`0 <= u < 2`,
-                :math:`0 <= k < 4`, and :math:`0 <= t < 3`.
-                For any given :math:`0 <= t0 < 3`, the subgraph of nodes with :math:`t = t0`
-                has the structure of `chimera(M-1, M-1, 4)` with the addition of odd couplers.
-                Supercedes both the `fabric_only` and `coordinates` parameters.
 
         Returns:
             G : NetworkX Graph
@@ -529,24 +491,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         topology_type = self.properties['topology']['type']
         shape = self.properties['topology']['shape']
 
-        # Will not allow for conversion of indices when passing in the node and edge lists.
-        # See: https://github.com/dwavesystems/dwave_networkx/issues/170
         if topology_type == 'chimera':
             G = dnx.chimera_graph(*shape, 
                                   node_list=self.nodelist, 
-                                  edge_list=self.edgelist,
-                                  data=data, 
-                                  coordinates=coordinates)
+                                  edge_list=self.edgelist)
 
         elif topology_type == 'pegasus':
             G = dnx.pegasus_graph(shape[0], 
                                   node_list=self.nodelist, 
-                                  edge_list=self.edgelist,
-                                  data=data, 
-                                  offset_lists=offset_lists, 
-                                  offsets_index=offsets_index, 
-                                  coordinates=coordinates, 
-                                  fabric_only=fabric_only, 
-                                  nice_coordinates=nice_coordinates)
+                                  edge_list=self.edgelist)
 
         return G
