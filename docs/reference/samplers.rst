@@ -41,6 +41,7 @@ Methods
    DWaveSampler.sample_ising
    DWaveSampler.sample_qubo
    DWaveSampler.validate_anneal_schedule
+   DWaveSampler.to_networkx_graph
 
 DWaveCliqueSampler
 ==================
