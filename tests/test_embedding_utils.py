@@ -96,6 +96,44 @@ class TestEdgelistToAdjacency(unittest.TestCase):
                 self.assertFalse((u, v) in edgelist and (v, u) in edgelist)
 
 
+class TestAdjacencyToEdgelist(unittest.TestCase):
+    def test_dict(self):
+        graph = nx.barbell_graph(17, 8)
+        adj = {v: set(graph[v]) for v in graph}
+
+        edgelist = dwave.embedding.utils.adjacency_to_edgelist(adj)
+        new_adj = {}
+        for u, v in edgelist:
+            new_adj.setdefault(u, set()).add(v)
+            new_adj.setdefault(v, set()).add(u)
+
+        self.assertEqual(adj, new_adj)
+
+    def test_nxgraph(self):
+        graph = nx.barbell_graph(17, 8)
+
+        edgelist = dwave.embedding.utils.adjacency_to_edgelist(graph)
+
+        edges0 = sorted(map(sorted, graph.edges()))
+        edges1 = sorted(map(sorted, edgelist))
+
+        self.assertEqual(edges0, edges1)
+
+    def test_bqm(self):
+        graph = nx.barbell_graph(17, 8)
+
+        bqm = dimod.BQM(vartype = dimod.SPIN)
+
+        bqm.add_interactions_from((u, v, 1) for u, v in graph.edges())
+
+        edgelist = dwave.embedding.utils.adjacency_to_edgelist(bqm)
+        
+        edges0 = sorted(map(sorted, graph.edges()))
+        edges1 = sorted(map(sorted, edgelist))
+
+        self.assertEqual(edges0, edges1)
+
+
 class TestChainToQuadratic(unittest.TestCase):
     def test_K5(self):
         """Test that when given a chain, the returned Jc uses all
@@ -194,3 +232,44 @@ class TestChainBreakFrequency(unittest.TestCase):
         freq = dwave.embedding.chain_break_frequency(sampleset, embedding)
 
         self.assertEqual(freq, {0: 3./5, 1: 0})
+
+class TestIntLabelDisjointSets(unittest.TestCase):
+    def test(self):
+        components = map(list, [range(1), range(1, 3), range(3, 6), range(6, 12)])
+        djs = dwave.embedding.utils.intlabel_disjointsets(12)
+
+        for x in range(12):
+            self.assertEqual(djs.find(x), x)
+            self.assertEqual(djs.size(x), 1)
+
+        for c in components:
+            for i, j in zip(c, c[1:]):
+                djs.union(i, j)
+
+        for c in components:
+            root = djs.find(c[0])
+            for x in c:
+                self.assertEqual(djs.find(x), root)
+                self.assertEqual(djs.size(x), len(c))
+
+        for c in components:
+            for i, j in combinations(c, 2):
+                djs.union(i, j)
+
+        for c in components:
+            root = djs.find(c[0])
+            for x in c:
+                self.assertEqual(djs.find(x), root)
+                self.assertEqual(djs.size(x), len(c))
+
+        djs.union(0, 1)
+        djs.union(2, 3)
+        djs.union(5, 6)
+        
+        root = djs.find(0)
+        for x in range(12):
+            self.assertEqual(djs.find(x), root)
+            self.assertEqual(djs.size(x), 12)
+        
+
+

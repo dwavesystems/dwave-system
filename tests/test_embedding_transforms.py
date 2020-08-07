@@ -322,7 +322,7 @@ class TestEmbedBQM(unittest.TestCase):
         embeddings = {0: {0, 2}, 1: {1}}  # (0, 2) not connected
         adj = {0: {1}, 1: {0, 2}, 2: {1}}
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(dwave.embedding.exceptions.DisconnectedChainError):
             dwave.embedding.embed_ising(h, j, embeddings, adj)
 
     def test_embed_ising_nonadj(self):

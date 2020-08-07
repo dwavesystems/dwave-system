@@ -30,9 +30,10 @@ from warnings import warn
 
 import dimod
 import minorminer
+import functools
 
 from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
-                             chain_to_quadratic)
+                             chain_to_quadratic, EmbeddedStructure)
 from dwave.system.warnings import WarningHandler, WarningAction
 
 __all__ = ('EmbeddingComposite',
@@ -90,7 +91,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                  find_embedding=minorminer.find_embedding,
                  embedding_parameters=None,
                  scale_aware=False,
-                 child_structure_search=dimod.child_structure_dfs
+                 child_structure_search=dimod.child_structure_dfs,
+                 embed_bqm=embed_bqm,
                  ):
 
         self.children = [child_sampler]
@@ -99,6 +101,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
         # want to overwrite them
         self.embedding_parameters = embedding_parameters or {}
         self.find_embedding = find_embedding
+
+        self.embed_bqm = embed_bqm
 
         # set the parameters
         self.parameters = parameters = child_sampler.parameters.copy()
@@ -245,7 +249,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency,
+        bqm_embedded = self.embed_bqm(bqm, embedding, target_adjacency,
                                  chain_strength=chain_strength,
                                  smear_vartype=dimod.SPIN)
 
@@ -420,6 +424,8 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         # save the embedding and overwrite the find_embedding function
         self.embedding = embedding
         self.properties.update(embedding=embedding)
+        structure = EmbeddedStructure(self.target_structure.edgelist, embedding)
+        self.embed_bqm = functools.partial(self.embed_bqm, embedded_structure=structure)
 
         def find_embedding(S, T):
             return embedding
