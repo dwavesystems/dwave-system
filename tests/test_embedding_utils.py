@@ -96,12 +96,12 @@ class TestEdgelistToAdjacency(unittest.TestCase):
                 self.assertFalse((u, v) in edgelist and (v, u) in edgelist)
 
 
-class TestAdjacencyToEdgelist(unittest.TestCase):
+class TestAdjacencyToEdgeIter(unittest.TestCase):
     def test_dict(self):
         graph = nx.barbell_graph(17, 8)
         adj = {v: set(graph[v]) for v in graph}
 
-        edgelist = dwave.embedding.utils.adjacency_to_edgelist(adj)
+        edgelist = dwave.embedding.utils.adjacency_to_edge_iter(adj)
         new_adj = {}
         for u, v in edgelist:
             new_adj.setdefault(u, set()).add(v)
@@ -112,7 +112,7 @@ class TestAdjacencyToEdgelist(unittest.TestCase):
     def test_nxgraph(self):
         graph = nx.barbell_graph(17, 8)
 
-        edgelist = dwave.embedding.utils.adjacency_to_edgelist(graph)
+        edgelist = dwave.embedding.utils.adjacency_to_edge_iter(graph)
 
         edges0 = sorted(map(sorted, graph.edges()))
         edges1 = sorted(map(sorted, edgelist))
@@ -126,7 +126,7 @@ class TestAdjacencyToEdgelist(unittest.TestCase):
 
         bqm.add_interactions_from((u, v, 1) for u, v in graph.edges())
 
-        edgelist = dwave.embedding.utils.adjacency_to_edgelist(bqm)
+        edgelist = dwave.embedding.utils.adjacency_to_edge_iter(bqm)
         
         edges0 = sorted(map(sorted, graph.edges()))
         edges1 = sorted(map(sorted, edgelist))

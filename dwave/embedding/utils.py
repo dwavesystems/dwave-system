@@ -24,7 +24,7 @@ from six import iteritems
 from dwave.embedding.chain_breaks import broken_chains
 
 
-__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edgelist', 'intlabel_disjointset', 
+__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edge_iter'
 
 
 def target_to_source(target_adjacency, embedding):
@@ -231,17 +231,17 @@ def edgelist_to_adjacency(edgelist):
             adjacency[v] = {u}
     return adjacency
 
-def adjacency_to_edgelist(adjacency):
-    """Converts an adjacency dict, networkx graph, or bqm to an edgelist
+def adjacency_to_edge_iter(adjacency):
+    """Converts an adjacency dict, networkx graph, or bqm to an edge iterator.
 
     Args:
         adjacency (dict/:class:`networkx.Graph`/:class:`dimod.BQM`):
             Should be a dict of the form {s: Ns, ...} where s is a variable
             in the graph and Ns is the set of neighbours of s.
 
-    Returns:
-        edgelist (iterable):
-            An iterator over 2-tuples where each 2-tuple is an edge.
+    Yields:
+        tuple: A 2-tuple, corresponding to an edge in the provided graph
+
     """
     if hasattr(adjacency, 'edges'):
         yield from adjacency.edges()
@@ -258,8 +258,8 @@ def adjacency_to_edgelist(adjacency):
                     yield (u, v)
 
 class intlabel_disjointsets:
-    """A fairly standard Disjoint Sets implementation with size and 
-    path-halving, for graphs labeled on [0, ..., n-1]
+    """A disjoint sets implementation with size and path-halving, for graphs 
+    labeled [0, ..., n-1]
 
     Args:
         n (int):

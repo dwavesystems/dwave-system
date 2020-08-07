@@ -74,6 +74,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
             and returns the :attr:`dimod.Structured.structure`.
             Defaults to :func:`dimod.child_structure_dfs`.
 
+        embed_bqm (function, optional):
+            A function that accepts a bqm, an embedding (or EmbeddedStructure
+            object) and optionally target_adjacency, chain_strength and vartype 
+            arguments.
+            Defaults to :func:`dwave.embedding.embed_bqm`
+
     Examples:
 
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
@@ -424,8 +430,15 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         # save the embedding and overwrite the find_embedding function
         self.embedding = embedding
         self.properties.update(embedding=embedding)
-        structure = EmbeddedStructure(self.target_structure.edgelist, embedding)
-        self.embed_bqm = functools.partial(self.embed_bqm, embedded_structure=structure)
+
+        target_edgelist = self.target_structure.edgelist
+        embedded_structure = EmbeddedStructure(target_edgelist, embedding)
+        original_embed_bqm = self.embed_bqm
+
+        def embed_bqm(S, emb, T, **params):
+            return original_embed_bqm(S, embedded_structure, **params)
+
+        self.embed_bqm = embed_bqm
 
         def find_embedding(S, T):
             return embedding
