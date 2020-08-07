@@ -34,6 +34,8 @@ from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.warnings import WarningHandler, WarningAction
 
+import dwave_networkx as dnx
+
 __all__ = ['DWaveSampler']
 
 
@@ -475,3 +477,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
             if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
+
+
+    def to_networkx_graph(self):
+
+        """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
+
+        Returns:
+            G : NetworkX Graph
+                Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
+        """
+
+        topology_type = self.properties['topology']['type']
+        shape = self.properties['topology']['shape']
+
+        if topology_type == 'chimera':
+            G = dnx.chimera_graph(*shape, 
+                                  node_list=self.nodelist, 
+                                  edge_list=self.edgelist)
+
+        elif topology_type == 'pegasus':
+            G = dnx.pegasus_graph(shape[0], 
+                                  node_list=self.nodelist, 
+                                  edge_list=self.edgelist)
+
+        return G
