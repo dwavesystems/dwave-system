@@ -375,7 +375,7 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         self.assertIn('embedding', sampler.properties)
 
     def test_instantiation_triangle(self):
-        embedding = {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]}
+        embedding = {'a': (0, 4), 'b': (1, 5), 'c': (2, 6)}
         sampler = FixedEmbeddingComposite(MockDWaveSampler(), embedding)
         self.assertEqual(embedding, sampler.embedding)
 

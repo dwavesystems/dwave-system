@@ -31,9 +31,10 @@ __all__ = ['embed_bqm',
            'embed_ising',
            'embed_qubo',
            'unembed_sampleset',
+           'EmbeddedStructure',
            ]
 
-class EmbeddedStructure:
+class EmbeddedStructure(dict):
     """Processes an embedding and a target graph to collect target edges
     into those within individual chains, and those that connect chains.  This
     is used elsewhere to embed binary quadratic models into the target graph.
@@ -49,18 +50,28 @@ class EmbeddedStructure:
             {s: {t, ...}, ...}, where s is a source-model variable and t is a 
             target-model variable.
 
+
+    This class is a dict, and will act as an immutable duplicate of embedding.
     """
 
     def __init__(self, target_edges, embedding):
-        self.embedding = embedding = {u: tuple(c) for u, c in embedding.items()}
-
+        if isinstance(embedding, EmbeddedStructure):
+            super().__init__(self)
+            if target_edges is None:
+                # this condition is used by self.copy
+                self._interaction_edges = embedding._interaction_edges.copy()
+                self._chain_edges = embedding._chain_edges.copy()
+                return
+        else:
+            super().__init__((u, tuple(c)) for u, c in embedding.items())
+        
         target_label = {}
         self._chain_edges = chain_edges = {}
         self._interaction_edges = interaction_edges = defaultdict(list)
 
         disjoint_sets = {}
         # prepare the data structures and compute the labeling of target nodes
-        for u, emb_u in embedding.items():
+        for u, emb_u in self.items():
             chain_edges[u] = []
             if not emb_u:
                 raise MissingChainError(u)
@@ -80,7 +91,7 @@ class EmbeddedStructure:
                     interaction_edges[u, v].append(i)
                     interaction_edges[v, u].append(j)
 
-        for u, emb_u in embedding.items():
+        for u, emb_u in self.items():
             if len(emb_u) != disjoint_sets[u].size(0):
                 raise DisconnectedChainError(u)
 
@@ -90,13 +101,13 @@ class EmbeddedStructure:
 
         Args:
             u (hashable):
-                A key in self.embedding
+                A key in self
 
         Yields:
             tuple: A 2-tuple, corresponding to an edge in the target graph
     
         """
-        emb_u = self.embedding[u]
+        emb_u = self[u]
         for i, j in self._chain_edges[u]:
             yield emb_u[i], emb_u[j]
 
@@ -106,11 +117,11 @@ class EmbeddedStructure:
 
         Args:
             u (hashable/tuple):
-                A key in self.embedding
+                A key in self
 
             v (hashable, optional):
-                A key in self.embedding.  If this argument is omitted, we will
-                interpret u, v := u
+                A key in self.  If this argument is omitted, we will interpret 
+                u, v := u
 
         Yields:
             tuple: A 2-tuple, corresponding to an edge in the target graph
@@ -120,12 +131,29 @@ class EmbeddedStructure:
             v, = args
         else:
             u, v = u
-        emb_u = self.embedding[u]
-        emb_v = self.embedding[v]
+        emb_u = self[u]
+        emb_v = self[v]
         int_u = self._interaction_edges[u, v]
         int_v = self._interaction_edges[v, u]
         for i, j in zip(int_u, int_v):
             yield emb_u[i], emb_v[j]
+
+    def __mutate_dict(self, *a, **k):
+        """Raise a TypeError -- this method is not supported because
+        EmbeddedStructure is immutable, but exists because dict is the parent
+        class."""
+        raise TypeError("EmbeddedStructure is immutable")
+
+    __delitem__=__setitem__=clear=pop=popitem=setdefault=update=__mutate_dict
+
+    def copy(self):
+        return EmbeddedStructure(None, self)
+
+    def fromkeys(self, *args, **kwargs):
+        """Raise a NotImplemented -- this method is not supported for the
+        EmbeddedStructure class, but exists because dict is the parent class."""        
+        raise NotImplementedError("EmbeddedStructure does not support the"
+                                  " fromkeys method")
 
 
 def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
@@ -194,21 +222,19 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
         if target_adjacency is not None:
             raise ValueError("target_adjacency should not be provided if "
                              "embedding is an EmbeddedStructure")
-        embedded_structure = embedding
-        embedding = embedded_structure.embedding
     elif target_adjacency is None:
         raise ValueError("either embedding should be an EmbeddedStructure, or "
                          "target_adjacency must be provided")
     else:
         target_edges = adjacency_to_edge_iter(target_adjacency)
-        embedded_structure = EmbeddedStructure(target_edges, embedding)
+        embedding = EmbeddedStructure(target_edges, embedding)
 
     if smear_vartype is dimod.SPIN and source_bqm.vartype is dimod.BINARY:
-        return embed_bqm(source_bqm.spin, embedding=embedded_structure,
+        return embed_bqm(source_bqm.spin, embedding=embedding,
                          chain_strength=chain_strength, smear_vartype=None
                          ).binary
     elif smear_vartype is dimod.BINARY and source_bqm.vartype is dimod.SPIN:
-        return embed_bqm(source_bqm.binary, embedding=embedded_structure,
+        return embed_bqm(source_bqm.binary, embedding=embedding,
                          chain_strength=chain_strength, smear_vartype=None).spin
 
     # create a new empty binary quadratic model with the same class as
@@ -236,7 +262,7 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
     # next up the quadratic biases, spread the quadratic biases evenly over the
     # available interactions
     for (u, v), bias in source_bqm.quadratic.items():
-        interactions = list(embedded_structure.interaction_edge_iter(u, v))
+        interactions = list(embedding.interaction_edge_iter(u, v))
 
         if not interactions:
             raise MissingEdgeError(u, v)
@@ -253,12 +279,12 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             q, = chain
             target_bqm.add_variable(q, 0.0)
         elif target_bqm.vartype is dimod.SPIN:
-            for p, q in embedded_structure.chain_edge_iter(v):
+            for p, q in embedding.chain_edge_iter(v):
                 target_bqm.add_interaction(p, q, -chain_strength)
                 target_bqm.add_offset(chain_strength)
         else:
             # this is in spin, but we need to respect the vartype
-            for p, q in embedded_structure.chain_edge_iter(v):
+            for p, q in embedding.chain_edge_iter(v):
                 target_bqm.add_interaction(p, q, -4*chain_strength)
                 target_bqm.add_variable(p, 2*chain_strength)
                 target_bqm.add_variable(q, 2*chain_strength)

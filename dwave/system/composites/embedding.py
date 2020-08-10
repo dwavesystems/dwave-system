@@ -255,9 +255,14 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        bqm_embedded = self.embed_bqm(bqm, embedding, target_adjacency,
-                                 chain_strength=chain_strength,
-                                 smear_vartype=dimod.SPIN)
+
+        embed_bqm_params = dict(chain_strength=chain_strength,
+                                smear_vartype=dimod.SPIN)
+
+        if not isinstance(embedding, EmbeddedStructure):
+            embed_bqm_params['target_adjacency'] = target_adjacency
+
+        bqm_embedded = self.embed_bqm(bqm, embedding, **embed_bqm_params)
 
         if 'initial_state' in parameters:
             # if initial_state was provided in terms of the source BQM, we want
@@ -427,18 +432,12 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     """Embedding used to map binary quadratic models to the child sampler."""
 
     def _fix_embedding(self, embedding):
+        target_edgelist = self.target_structure.edgelist
+        embedding = EmbeddedStructure(target_edgelist, embedding)
+
         # save the embedding and overwrite the find_embedding function
         self.embedding = embedding
         self.properties.update(embedding=embedding)
-
-        target_edgelist = self.target_structure.edgelist
-        embedded_structure = EmbeddedStructure(target_edgelist, embedding)
-        original_embed_bqm = self.embed_bqm
-
-        def embed_bqm(S, emb, T, **params):
-            return original_embed_bqm(S, embedded_structure, **params)
-
-        self.embed_bqm = embed_bqm
 
         def find_embedding(S, T):
             return embedding

@@ -467,3 +467,91 @@ class TestEmbedBQM(unittest.TestCase):
                                                 ('a', 'd'): 1.0, ('a', 'b'): -1.0}, 1.0, dimod.SPIN)
 
         self.assertEqual(embedded.spin, preferred)
+
+class TestEmbeddedStructure(unittest.TestCase):
+    def test_empty_embedding(self):
+        a = dwave.embedding.EmbeddedStructure([], {})
+        self.assertEquals(a, {})
+
+        b = dwave.embedding.EmbeddedStructure([(0, 1)], {})
+        self.assertEquals(b, {})
+
+    def check_edges(self, embedded_structure, inter_edges, chain_edges):
+        for u, v in itertools.product(embedded_structure, embedded_structure):
+            if u == v:
+                check = chain_edges[u]
+                got = list(embedded_structure.chain_edge_iter(u))
+                self.assertEquals(check, got)
+            else:
+                check = inter_edges[u, v]
+                got = list(embedded_structure.interaction_edge_iter(u, v))
+                self.assertEquals(check, got)
+
+    def test_triangle_to_triangle(self):
+        g = [(0, 1), (1, 2), (2, 0)]
+        emb = {0: (1,), 1: (2,), 2: (0,)}
+        a = dwave.embedding.EmbeddedStructure(g, emb)
+        inter_edges = {(0, 1): [(1, 2)], (1, 0): [(2, 1)],
+                       (0, 2): [(1, 0)], (2, 0): [(0, 1)],
+                       (1, 2): [(2, 0)], (2, 1): [(0, 2)]}
+        chain_edges = {i: [] for i in range(3)}
+        self.check_edges(a, inter_edges, chain_edges)
+
+        self.check_edges(a.copy(), inter_edges, chain_edges)
+
+
+    def test_hexagon_to_triangle(self):
+        g = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 0)]
+        emb = {0: (1, 2), 1: (3, 4), 2: (5, 0)}
+        a = dwave.embedding.EmbeddedStructure(g, emb)
+        inter_edges = {(0, 1): [(2, 3)], (1, 0): [(3, 2)],
+                       (0, 2): [(1, 0)], (2, 0): [(0, 1)],
+                       (1, 2): [(4, 5)], (2, 1): [(5, 4)]}
+
+        chain_edges = {u: [c] for u, c in emb.items()}
+        self.check_edges(a, inter_edges, chain_edges)
+
+        self.check_edges(a.copy(), inter_edges, chain_edges)
+
+    def test_immutable(self):
+        a = dwave.embedding.EmbeddedStructure([], {})
+        with self.assertRaises(TypeError):
+            a[0] = 0
+
+        with self.assertRaises(TypeError):
+            del a[0]
+
+        with self.assertRaises(TypeError):
+            a.clear()
+
+        with self.assertRaises(TypeError):
+            a.pop()
+
+        with self.assertRaises(TypeError):
+            a.popitem()
+
+        with self.assertRaises(TypeError):
+            a.setdefault(5, None)
+
+        with self.assertRaises(TypeError):
+            a.update((2, 3))
+
+        with self.assertRaises(NotImplementedError):
+            a.fromkeys((1,))
+    
+    def test_disconnected_chain(self):
+        g = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
+        emb = {0: (1, 2), 1: (3, 4), 2: (5, 0)}
+        with self.assertRaises(dwave.embedding.exceptions.DisconnectedChainError):
+            a = dwave.embedding.EmbeddedStructure(g, emb)
+
+    def test_missing_interaction(self):
+        g = [(0, 1), (1, 2)]
+        emb = {0: (1,), 1: (2,), 2: (0,)}
+        a = dwave.embedding.EmbeddedStructure(g, emb)
+        inter_edges = {(0, 1): [(1, 2)], (1, 0): [(2, 1)],
+                       (0, 2): [(1, 0)], (2, 0): [(0, 1)],
+                       (1, 2): [], (2, 1): []}
+        chain_edges = {i: [] for i in range(3)}
+        self.check_edges(a, inter_edges, chain_edges)
+
