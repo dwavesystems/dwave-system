@@ -24,7 +24,7 @@ from six import iteritems
 from dwave.embedding.chain_breaks import broken_chains
 
 
-__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edge_iter'
+__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges'
 
 
 def target_to_source(target_adjacency, embedding):
@@ -231,7 +231,7 @@ def edgelist_to_adjacency(edgelist):
             adjacency[v] = {u}
     return adjacency
 
-def adjacency_to_edge_iter(adjacency):
+def adjacency_to_edges(adjacency):
     """Converts an adjacency dict, networkx graph, or bqm to an edge iterator.
 
     Args:

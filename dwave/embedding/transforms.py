@@ -24,7 +24,7 @@ from collections import defaultdict
 
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
 from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError, DisconnectedChainError
-from dwave.embedding.utils import adjacency_to_edge_iter, intlabel_disjointsets
+from dwave.embedding.utils import adjacency_to_edges, intlabel_disjointsets
 
 
 __all__ = ['embed_bqm',
@@ -96,7 +96,7 @@ class EmbeddedStructure(dict):
                 raise DisconnectedChainError(u)
 
 
-    def chain_edge_iter(self, u):
+    def chain_edges(self, u):
         """Iterate over edges contained in the chain for u
 
         Args:
@@ -112,7 +112,7 @@ class EmbeddedStructure(dict):
             yield emb_u[i], emb_u[j]
 
 
-    def interaction_edge_iter(self, u, *args):
+    def interaction_edges(self, u, *args):
         """Iterate over edges between in the chains for u and v
 
         Args:
@@ -138,13 +138,13 @@ class EmbeddedStructure(dict):
         for i, j in zip(int_u, int_v):
             yield emb_u[i], emb_v[j]
 
-    def __mutate_dict(self, *a, **k):
+    def _mutate_dict(self, *a, **k):
         """Raise a TypeError -- this method is not supported because
         EmbeddedStructure is immutable, but exists because dict is the parent
         class."""
         raise TypeError("EmbeddedStructure is immutable")
 
-    __delitem__=__setitem__=clear=pop=popitem=setdefault=update=__mutate_dict
+    __delitem__=__setitem__=clear=pop=popitem=setdefault=update=_mutate_dict
 
     def copy(self):
         return EmbeddedStructure(None, self)
@@ -226,7 +226,7 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
         raise ValueError("either embedding should be an EmbeddedStructure, or "
                          "target_adjacency must be provided")
     else:
-        target_edges = adjacency_to_edge_iter(target_adjacency)
+        target_edges = adjacency_to_edges(target_adjacency)
         embedding = EmbeddedStructure(target_edges, embedding)
 
     if smear_vartype is dimod.SPIN and source_bqm.vartype is dimod.BINARY:
@@ -262,7 +262,7 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
     # next up the quadratic biases, spread the quadratic biases evenly over the
     # available interactions
     for (u, v), bias in source_bqm.quadratic.items():
-        interactions = list(embedding.interaction_edge_iter(u, v))
+        interactions = list(embedding.interaction_edges(u, v))
 
         if not interactions:
             raise MissingEdgeError(u, v)
@@ -279,12 +279,12 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             q, = chain
             target_bqm.add_variable(q, 0.0)
         elif target_bqm.vartype is dimod.SPIN:
-            for p, q in embedding.chain_edge_iter(v):
+            for p, q in embedding.chain_edges(v):
                 target_bqm.add_interaction(p, q, -chain_strength)
                 target_bqm.add_offset(chain_strength)
         else:
             # this is in spin, but we need to respect the vartype
-            for p, q in embedding.chain_edge_iter(v):
+            for p, q in embedding.chain_edges(v):
                 target_bqm.add_interaction(p, q, -4*chain_strength)
                 target_bqm.add_variable(p, 2*chain_strength)
                 target_bqm.add_variable(q, 2*chain_strength)

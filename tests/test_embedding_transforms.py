@@ -480,11 +480,11 @@ class TestEmbeddedStructure(unittest.TestCase):
         for u, v in itertools.product(embedded_structure, embedded_structure):
             if u == v:
                 check = chain_edges[u]
-                got = list(embedded_structure.chain_edge_iter(u))
+                got = list(embedded_structure.chain_edges(u))
                 self.assertEquals(check, got)
             else:
                 check = inter_edges[u, v]
-                got = list(embedded_structure.interaction_edge_iter(u, v))
+                got = list(embedded_structure.interaction_edges(u, v))
                 self.assertEquals(check, got)
 
     def test_triangle_to_triangle(self):
