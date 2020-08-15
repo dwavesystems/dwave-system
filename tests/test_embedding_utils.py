@@ -133,6 +133,9 @@ class TestAdjacencyToEdgeIter(unittest.TestCase):
 
         self.assertEqual(edges0, edges1)
 
+    def test_bad(self):
+        with self.assertRaises(TypeError):
+            edgelist = list(dwave.embedding.utils.adjacency_to_edges([]))
 
 class TestChainToQuadratic(unittest.TestCase):
     def test_K5(self):

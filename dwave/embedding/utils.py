@@ -249,13 +249,16 @@ def adjacency_to_edges(adjacency):
     elif hasattr(adjacency, 'quadratic'):
         yield from adjacency.quadratic
 
-    else:
+    elif hasattr(adjacency, 'items'):
         seen = set()
         for v, Nv in adjacency.items():
             seen.add(v)
             for u in Nv:
                 if u not in seen:
                     yield (u, v)
+    else:
+        raise TypeError("unrecognized type for adjacency -- provide a dict, "
+                        "Mapping, networkx.Graph or dimod.BQM")
 
 class intlabel_disjointsets:
     """A disjoint sets implementation with size and path-halving, for graphs 
