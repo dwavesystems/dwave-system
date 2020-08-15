@@ -52,10 +52,11 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
             Adjacency of the target graph as a dict of form {t: Nt, ...},
             where t is a variable in the target graph and Nt is its set of neighbours.
 
-        chain_strength (float, optional):
+        chain_strength (float/Sequence, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to create chains, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.
+            set to 2 * `chain_strength`. If a sequence is passed, a chain-specific
+            chain strength is applied.
 
         smear_vartype (:class:`.Vartype`, optional, default=None):
             Determines whether the linear bias of embedded variables is smeared
@@ -99,6 +100,8 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
         return embed_bqm(source_bqm.binary, embedding, target_adjacency,
                          chain_strength=chain_strength, smear_vartype=None).spin
 
+    chain_strength_is_seq = isinstance(chain_strength, abc.Sequence)
+
     # create a new empty binary quadratic model with the same class as
     # source_bqm if it's shapeable, otherwise use AdjVectorBQM
     if source_bqm.shapeable():
@@ -140,7 +143,7 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
 
         target_bqm.add_interactions_from((u, v, b) for u, v in available_interactions)
 
-    for chain in itervalues(embedding):
+    for idx, chain in enumerate(itervalues(embedding)):
 
         # in the case where the chain has length 1, there are no chain quadratic biases, but we
         # none-the-less want the chain variables to appear in the target_bqm
@@ -149,7 +152,9 @@ def embed_bqm(source_bqm, embedding, target_adjacency, chain_strength=1.0,
             target_bqm.add_variable(v, 0.0)
             continue
 
-        quadratic_chain_biases = chain_to_quadratic(chain, target_adjacency, chain_strength)
+        strength = chain_strength[idx] if chain_strength_is_seq else chain_strength
+
+        quadratic_chain_biases = chain_to_quadratic(chain, target_adjacency, strength)
         # this is in spin, but we need to respect the vartype
         if target_bqm.vartype is dimod.SPIN:
             target_bqm.add_interactions_from(quadratic_chain_biases)
@@ -187,10 +192,11 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             Adjacency of the target graph as a dict of form {t: Nt, ...},
             where t is a target-graph variable and Nt is its set of neighbours.
 
-        chain_strength (float, optional):
+        chain_strength (float/Sequence, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
-            variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.
+            variables to create chains, with the energy penalty of chain breaks
+            set to 2 * `chain_strength`. If a sequence is passed, a chain-specific
+            chain strength is applied.
 
     Returns:
         tuple: A 2-tuple:
@@ -245,10 +251,11 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
             Adjacency of the target graph as a dict of form {t: Nt, ...},
             where t is a target-graph variable and Nt is its set of neighbours.
 
-        chain_strength (float, optional):
+        chain_strength (float/Sequence, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
-            variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.
+            variables to create chains, with the energy penalty of chain breaks
+            set to 2 * `chain_strength`. If a sequence is passed, a chain-specific
+            chain strength is applied.
 
     Returns:
         dict[(variable, variable), bias]: Quadratic biases of the target QUBO.
