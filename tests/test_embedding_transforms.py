@@ -435,8 +435,14 @@ class TestEmbedBQM(unittest.TestCase):
 
         target_bqm = dwave.embedding.embed_bqm(bqm, embedding, G)
 
-        for v in itertools.chain(*embedding.values()):
-            self.assertIn(v, target_bqm)
+        for v, c in embedding.items():
+            if v in bqm.variables:
+                for q in c:
+                    self.assertIn(q, target_bqm)
+            else:
+                for q in c:
+                    self.assertNotIn(q, target_bqm)
+            
 
     def test_empty_chain_exception(self):
         embedding = {0: [], 1: [2], 2: [3]}
@@ -554,4 +560,29 @@ class TestEmbeddedStructure(unittest.TestCase):
                        (1, 2): [], (2, 1): []}
         chain_edges = {i: [] for i in range(3)}
         self.check_edges(a, inter_edges, chain_edges)
+
+    def test_embed_bqm(self):
+        #octahedron
+        g = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 0),
+             (0, 2), (1, 3), (2, 4), (3, 5), (4, 0), (5, 1)]
+        emb = {'a': (1, 2), 'b': (3, 4), 'c': (5, 0)}
+        emb_s = dwave.embedding.EmbeddedStructure(g, emb)
+        chain_strength = {'a': 10, 'b': 20, 'c': 30}
+        linear = {'a': -1, 'b': -2, 'c': -3}
+        quadratic = {('a', 'b'): 1, ('a', 'c'): -1, ('b', 'c'): 2}
+        source_bqm = dimod.BQM(linear, quadratic, 5, dimod.SPIN)
+
+        goal_linear = {0: -3/2, 1: -1/2, 2: -1/2, 3: -1, 4: -1, 5: -3/2}
+        goal_quadratic = {
+            (0, 5): -30, (1, 2): -10, (3, 4): -20, #chain edges
+            (1, 3): 1/3, (2, 3): 1/3, (2, 4): 1/3, #a-b
+            (0, 1): -1/3, (0, 2): -1/3, (1, 5): -1/3, #a-c
+            (3, 5): 2/3, (4, 5): 2/3, (4, 0): 2/3, #b-c
+        }
+        goal_offset = 5 + 10 + 20 + 30
+        goal_bqm = dimod.BQM(goal_linear, goal_quadratic, goal_offset, dimod.SPIN)
+
+        target_bqm = emb_s.embed_bqm(source_bqm, chain_strength=chain_strength)
+
+        dimod.testing.assert_bqm_almost_equal(target_bqm, goal_bqm)
 

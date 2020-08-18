@@ -74,12 +74,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
             and returns the :attr:`dimod.Structured.structure`.
             Defaults to :func:`dimod.child_structure_dfs`.
 
-        embed_bqm (function, optional):
-            A function that accepts a bqm, an embedding (or EmbeddedStructure
-            object) and optionally target_adjacency, chain_strength and vartype 
-            arguments.
-            Defaults to :func:`dwave.embedding.embed_bqm`
-
     Examples:
 
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
@@ -97,9 +91,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                  find_embedding=minorminer.find_embedding,
                  embedding_parameters=None,
                  scale_aware=False,
-                 child_structure_search=dimod.child_structure_dfs,
-                 embed_bqm=embed_bqm,
-                 ):
+                 child_structure_search=dimod.child_structure_dfs):
 
         self.children = [child_sampler]
 
@@ -107,8 +99,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
         # want to overwrite them
         self.embedding_parameters = embedding_parameters or {}
         self.find_embedding = find_embedding
-
-        self.embed_bqm = embed_bqm
 
         # set the parameters
         self.parameters = parameters = child_sampler.parameters.copy()
@@ -169,10 +159,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            chain_strength (float, optional, default=1.0):
+            chain_strength (float/mapping, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to create chains. The energy penalty of chain breaks
-                is 2 * `chain_strength`.
+                is 2 * `chain_strength`.  If a mapping is passed, a 
+                chain-specific strength is applied.
 
             chain_break_method (function/list, optional):
                 Method or methods used to resolve chain breaks. If multiple
@@ -255,14 +246,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
+        if not hasattr(embedding, 'embed_bqm'):
+            embedding = EmbeddedStructure(target_edgelist, embedding)
 
-        embed_bqm_params = dict(chain_strength=chain_strength,
-                                smear_vartype=dimod.SPIN)
-
-        if not isinstance(embedding, EmbeddedStructure):
-            embed_bqm_params['target_adjacency'] = target_adjacency
-
-        bqm_embedded = self.embed_bqm(bqm, embedding, **embed_bqm_params)
+        bqm_embedded = embedding.embed_bqm(bqm, chain_strength=chain_strength,
+                                           smear_vartype=dimod.SPIN)
 
         if 'initial_state' in parameters:
             # if initial_state was provided in terms of the source BQM, we want
@@ -455,10 +443,11 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            chain_strength (float, optional, default=1.0):
+            chain_strength (float/mapping, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
-                variables to create chains. The energy penalty of chain breaks
-                is 2 * `chain_strength`.
+                variables to form a chain, with the energy penalty of chain 
+                breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
+                chain-specific strength is applied.
 
             chain_break_method (function, optional):
                 Method used to resolve chain breaks during sample unembedding.
