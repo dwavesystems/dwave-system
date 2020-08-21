@@ -10,6 +10,3 @@ minorminer==0.2.0
 six==1.11.0
 mock==2.0.0
 numpy==1.18.0
-
-coverage
-codecov
