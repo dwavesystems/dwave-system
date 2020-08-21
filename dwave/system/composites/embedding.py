@@ -159,11 +159,13 @@ class EmbeddingComposite(dimod.ComposedSampler):
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            chain_strength (float/mapping, optional, default=1.0):
+            chain_strength (float/mapping/callable, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to create chains. The energy penalty of chain breaks
                 is 2 * `chain_strength`.  If a mapping is passed, a 
-                chain-specific strength is applied.
+                chain-specific strength is applied.  If a callable is passed, it
+                will be called on `chain_strength(bqm, embedding)` and should
+                return a float or mapping, to be interpreted as above.
 
             chain_break_method (function/list, optional):
                 Method or methods used to resolve chain breaks. If multiple
@@ -443,11 +445,13 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            chain_strength (float/mapping, optional, default=1.0):
+            chain_strength (float/mapping/callable, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to form a chain, with the energy penalty of chain 
                 breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
-                chain-specific strength is applied.
+                chain-specific strength is applied.  If a callable is passed, it
+                will be called on `chain_strength(bqm, embedding)` and should
+                return a float or mapping, to be interpreted as above.
 
             chain_break_method (function, optional):
                 Method used to resolve chain breaks during sample unembedding.

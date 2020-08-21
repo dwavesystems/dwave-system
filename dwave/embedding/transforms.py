@@ -162,11 +162,13 @@ class EmbeddedStructure(dict):
             source_bqm (:obj:`.BinaryQuadraticModel`):
                 Binary quadratic model to embed.
 
-            chain_strength (float/mapping, optional):
+            chain_strength (float/mapping/callable, optional):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to create chains, with the energy penalty of chain
                 breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
-                chain-specific strength is applied.
+                chain-specific strength is applied.  If a callable is passed, it
+                will be called on `chain_strength(source_bqm, self)` and should
+                return a float or mapping, to be interpreted as above.
 
             smear_vartype (:class:`.Vartype`, optional, default=None):
                 Determines whether the linear bias of embedded variables is
@@ -208,16 +210,21 @@ class EmbeddedStructure(dict):
             source_bqm = source_bqm.spin
         elif smear_vartype is dimod.BINARY:
             source_bqm = source_bqm.binary
+        else:
+            smear_vartype = source_bqm.vartype
 
         # create a new empty binary quadratic model with the same class as
         # source_bqm if it's shapeable, otherwise use AdjVectorBQM
         if source_bqm.shapeable():
-            target_bqm = source_bqm.base.empty(source_bqm.vartype)
+            target_bqm = source_bqm.base.empty(smear_vartype)
         else:
-            target_bqm = dimod.AdjVectorBQM.empty(source_bqm.vartype)
+            target_bqm = dimod.AdjVectorBQM.empty(smear_vartype)
 
         # add the offset
         target_bqm.add_offset(source_bqm.offset)
+
+        if callable(chain_strength):
+            chain_strength = chain_strength(source_bqm, self)
 
         if isinstance(chain_strength, abc.Mapping):
             strength_iter = (chain_strength[v] for v in source_bqm.linear)
@@ -243,7 +250,7 @@ class EmbeddedStructure(dict):
                 # variables to appear in the target_bqm
                 q, = chain
                 target_bqm.add_variable(q, 0.0)
-            elif target_bqm.vartype is dimod.SPIN:
+            elif smear_vartype is dimod.SPIN:
                 for p, q in self.chain_edges(v):
                     target_bqm.add_interaction(p, q, -strength)
                     offset += strength
@@ -296,11 +303,13 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             This should be omitted if and only if embedding is an 
             EmbeddedStructure object.
 
-        chain_strength (float/mapping, optional):
+        chain_strength (float/mapping/callable, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to form a chain, with the energy penalty of chain breaks
             set to 2 * `chain_strength`.  If a mapping is passed, a 
-            chain-specific strength is applied.
+            chain-specific strength is applied.  If a callable is passed, it
+            will be called on `chain_strength(source_bqm, embedding)` and should
+            return a float or mapping, to be interpreted as above.
 
         smear_vartype (:class:`.Vartype`, optional, default=None):
             Determines whether the linear bias of embedded variables is smeared
@@ -430,11 +439,13 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
             Adjacency of the target graph as a dict of form {t: Nt, ...},
             where t is a target-graph variable and Nt is its set of neighbours.
 
-        chain_strength (float/mapping, optional):
+        chain_strength (float/mapping/callable, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to form a chain, with the energy penalty of chain breaks
             set to 2 * `chain_strength`.  If a mapping is passed, a 
-            chain-specific strength is applied.
+            chain-specific strength is applied.  If a callable is passed, it
+            will be called on `chain_strength(source_bqm, embedding)` and should
+            return a float or mapping, to be interpreted as above.
 
     Returns:
         dict[(variable, variable), bias]: Quadratic biases of the target QUBO.
