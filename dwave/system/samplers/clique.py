@@ -165,17 +165,16 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         if chain_strength is None:
             # chain length determines chain strength
-            if embedding:
-                chain_strength = 1.5 * math.sqrt(len(embedding))
+            if embedding and bqm.num_variables > 1:
+                squared_j = (j ** 2 for j in bqm.quadratic.values())
+                num_edges = (bqm.num_variables*(bqm.num_variables-1))/2
+                rms = math.sqrt(sum(squared_j)/num_edges)
+       
+                chain_strength = 1.5 * rms * math.sqrt(bqm.num_variables)
             else:
                 chain_strength = 1  # doesn't matter
 
-            # scale chain strength by the problem scale
-            scalar = max(max(map(abs, bqm.linear.values()), default=0),
-                         max(map(abs, bqm.quadratic.values()), default=0))
-            chain_strength *= scalar
-
-        # # scaling only make sense in Ising space
+        # scaling only make sense in Ising space
         original_bqm = bqm
 
         if bqm.vartype is not dimod.SPIN:
