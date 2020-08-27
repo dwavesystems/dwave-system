@@ -29,6 +29,7 @@ from dwave.cloud import Client
 
 __all__ = ['LeapHybridSampler']
 
+
 class LeapHybridSampler(dimod.Sampler):
     """A class for using Leap's cloud-based hybrid solvers.
 
@@ -62,6 +63,10 @@ class LeapHybridSampler(dimod.Sampler):
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
 
+        solver (dict/str, optional):
+            Solver (a hybrid solver on which to run submitted problems) to select,
+            formatted as a string, or as a dict of solver features required.
+
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API.
 
@@ -94,13 +99,14 @@ class LeapHybridSampler(dimod.Sampler):
 
     def __init__(self, solver=None, connection_close=True, **config):
 
-        # always use the base class (QPU client filters-out the hybrid solvers)
-        config['client'] = 'base'
+        # we want a Hybrid solver by default, but allow override
+        config.setdefault('client', 'hybrid')
 
         if solver is None:
             solver = {}
 
         if isinstance(solver, abc.Mapping):
+            # TODO: instead of solver selection, try with user's default first
             if solver.setdefault('category', 'hybrid') != 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'")
             if solver.setdefault('supported_problem_types__contains', 'bqm') != 'bqm':
