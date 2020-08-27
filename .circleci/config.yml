@@ -10,9 +10,9 @@ jobs:
 
       - checkout
 
-      - restore_cache:
+      - restore_cache: &restore-cache-template
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: create virtualenv
@@ -24,12 +24,12 @@ jobs:
           command: |
             . env/bin/activate
             python --version
-            pip install -r requirements.txt
+            pip install -r requirements.txt -r tests/requirements.txt
 
-      - save_cache:
+      - save_cache: &save-cache-template
           paths:
             - ./env
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
         
       - run: &run-tests-template
           name: run unittests
@@ -70,7 +70,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: create virtualenv
@@ -81,13 +81,12 @@ jobs:
           name: install sphinx and dependencies
           command: |
             . env/bin/activate
-            pip install -r requirements.txt
-            pip install -r docs/requirements.txt
+            pip install -r requirements.txt -r docs/requirements.txt
 
       - save_cache:
           paths:
             - ./env
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: doctest
@@ -134,17 +133,12 @@ jobs:
             python -m pip install virtualenv
             python -m virtualenv env
 
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+      - restore_cache: *restore-cache-template
 
       - run: *install-dependencies-template
 
-      - save_cache:
-          paths:
-            - ./env
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
-        
+      - save_cache: *save-cache-template
+
       - run: *run-tests-template
 
   test-osx-3.7:
