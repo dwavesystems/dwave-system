@@ -149,5 +149,10 @@ class TestClientSelection(unittest.TestCase):
             self.assertEqual(DWaveSampler(client='hybrid').client, hybrid())
 
     def test_base_client(self):
-        self.assertIsInstance(DWaveSampler(client=None).client, Client)
-        self.assertIsInstance(DWaveSampler(client='base').client, Client)
+        # to test 'base' client instantiation offline,
+        # we would need a mock client and a mock solver
+        try:
+            self.assertEqual(type(DWaveSampler(client=None).client), Client)
+            self.assertEqual(type(DWaveSampler(client='base').client), Client)
+        except (ValueError, ConfigFileError):
+            raise unittest.SkipTest("no API token available")
