@@ -165,10 +165,9 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         if chain_strength is None:
             # chain length determines chain strength
-            if embedding and bqm.num_variables > 1:
+            if embedding and bqm.num_interactions > 0:
                 squared_j = (j ** 2 for j in bqm.quadratic.values())
-                num_edges = (bqm.num_variables*(bqm.num_variables-1))/2
-                rms = math.sqrt(sum(squared_j)/num_edges)
+                rms = math.sqrt(sum(squared_j)/bqm.num_interactions)
        
                 chain_strength = 1.5 * rms * math.sqrt(bqm.num_variables)
             else:
