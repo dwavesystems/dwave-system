@@ -102,6 +102,13 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         dimod.testing.assert_sampler_api(chimera_sampler)
         dimod.testing.assert_sampler_api(pegasus_sampler)
 
+    def test_clique(self):
+        self.assertEqual(len(chimera_sampler.clique(2)), 2)
+        self.assertEqual(len(chimera_sampler.clique(16)), 16)
+
+        self.assertEqual(len(chimera_sampler.clique(['a', 1])), 2)
+        self.assertEqual(set(chimera_sampler.clique(['a', 1])), {'a', 1})
+
     def test_largest_clique(self):
         self.assertEqual(len(chimera_sampler.largest_clique()), 16)
 
