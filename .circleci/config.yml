@@ -12,7 +12,7 @@ jobs:
 
       - restore_cache: &restore-cache-template
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: create virtualenv
@@ -26,17 +26,17 @@ jobs:
             python --version
             pip install -r requirements.txt -r tests/requirements.txt
 
-      - save_cache: &save-cache-template
-          paths:
-            - ./env
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
-        
       - run: &run-tests-template
           name: run unittests
           command: |
             . env/bin/activate
             python --version
             coverage run -m unittest discover
+
+      - save_cache: &save-cache-template
+          paths:
+            - ./env
+          key: v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: codecov
@@ -70,7 +70,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: create virtualenv
@@ -83,16 +83,16 @@ jobs:
             . env/bin/activate
             pip install -r requirements.txt -r docs/requirements.txt
 
-      - save_cache:
-          paths:
-            - ./env
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
-
       - run:
           name: doctest
           command: |
             . env/bin/activate
             make -C docs/ html doctest
+
+      - save_cache:
+          paths:
+            - ./env
+          key: v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
   test-osx-3.8: &osx-tests-template
     macos:
@@ -137,9 +137,9 @@ jobs:
 
       - run: *install-dependencies-template
 
-      - save_cache: *save-cache-template
-
       - run: *run-tests-template
+
+      - save_cache: *save-cache-template
 
   test-osx-3.7:
     <<: *osx-tests-template
@@ -163,12 +163,6 @@ jobs:
     <<: *osx-tests-template
     environment:
       PYTHON: 3.4.8
-      HOMEBREW_NO_AUTO_UPDATE: 1
-
-  test-osx-2.7:
-    <<: *osx-tests-template
-    environment:
-      PYTHON: 2.7.15
       HOMEBREW_NO_AUTO_UPDATE: 1
 
   deploy:

@@ -71,9 +71,17 @@ class DWaveCliqueSampler(dimod.Sampler):
         self.target_graph = G
 
         # get the energy range
-        self.qpu_linear_range = child.properties['h_range']
-        self.qpu_quadratic_range = child.properties.get(
-            'extended_j_range', child.properties['j_range'])
+        try:
+            self.qpu_linear_range = child.properties['h_range']
+            self.qpu_quadratic_range = child.properties.get(
+                'extended_j_range', child.properties['j_range'])
+        except KeyError as err:
+            # for backwards compatibility with old software solvers
+            if child.solver.is_software:
+                self.qpu_linear_range = [-2, 2]
+                self.qpu_quadratic_range = [-1, 1]
+            else:
+                raise err
 
     @property
     def parameters(self):
@@ -183,10 +191,12 @@ class DWaveCliqueSampler(dimod.Sampler):
             dimod.ScaleComposite(self.child),
             embedding)
 
+        if 'auto_scale' in self.child.parameters:
+            kwargs['auto_scale'] = False
+
         sampleset = sampler.sample(bqm,
                                    bias_range=self.qpu_linear_range,
                                    quadratic_range=self.qpu_quadratic_range,
-                                   auto_scale=False,
                                    chain_strength=chain_strength,
                                    **kwargs
                                    )
