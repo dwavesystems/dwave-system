@@ -103,11 +103,31 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def largest_clique_size(self):
-        """The maximum number of variables."""
+        """The maximum number of variables that can be embedded."""
         return len(self.largest_clique())
 
+    def clique(self, variables):
+        """Return the clique embedding of the given size.
+
+        Args:
+            variables (int/collection):
+                The source variables. If an integer, the variables are
+                embedding will be labelled `[0,n)`.
+
+        Returns:
+            dict: The clique embedding.
+
+        """
+        return find_clique_embedding(variables, self.target_graph)
+
     def largest_clique(self):
-        """Return a largest-size clique embedding."""
+        """The clique embedding with the maximum number of source variables.
+
+        Returns:
+            dict: The clique embedding with the maximum number of source
+            variables.
+
+        """
         return busgraph_cache(self.target_graph).largest_clique()
 
     def sample(self, bqm, chain_strength=None, **kwargs):
