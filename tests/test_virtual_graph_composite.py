@@ -74,7 +74,7 @@ class TestVirtualGraphWithMockDWaveSampler(unittest.TestCase):
         sampler = self.sampler
 
         __, __, adj = sampler.structure
-        embedding = {v: {v} for v in adj}
+        embedding = {v: (v,) for v in adj}
 
         sampler = VirtualGraphComposite(sampler, embedding=embedding, flux_biases=False)
 

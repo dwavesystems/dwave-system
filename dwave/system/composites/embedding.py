@@ -30,9 +30,10 @@ from warnings import warn
 
 import dimod
 import minorminer
+import functools
 
 from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
-                             chain_to_quadratic)
+                             chain_to_quadratic, EmbeddedStructure)
 from dwave.system.warnings import WarningHandler, WarningAction
 
 __all__ = ('EmbeddingComposite',
@@ -90,8 +91,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                  find_embedding=minorminer.find_embedding,
                  embedding_parameters=None,
                  scale_aware=False,
-                 child_structure_search=dimod.child_structure_dfs
-                 ):
+                 child_structure_search=dimod.child_structure_dfs):
 
         self.children = [child_sampler]
 
@@ -159,10 +159,13 @@ class EmbeddingComposite(dimod.ComposedSampler):
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            chain_strength (float, optional, default=1.0):
+            chain_strength (float/mapping/callable, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to create chains. The energy penalty of chain breaks
-                is 2 * `chain_strength`.
+                is 2 * `chain_strength`.  If a mapping is passed, a 
+                chain-specific strength is applied.  If a callable is passed, it
+                will be called on `chain_strength(bqm, embedding)` and should
+                return a float or mapping, to be interpreted as above.
 
             chain_break_method (function/list, optional):
                 Method or methods used to resolve chain breaks. If multiple
@@ -245,9 +248,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
-        bqm_embedded = embed_bqm(bqm, embedding, target_adjacency,
-                                 chain_strength=chain_strength,
-                                 smear_vartype=dimod.SPIN)
+        if not hasattr(embedding, 'embed_bqm'):
+            embedding = EmbeddedStructure(target_edgelist, embedding)
+
+        bqm_embedded = embedding.embed_bqm(bqm, chain_strength=chain_strength,
+                                           smear_vartype=dimod.SPIN)
 
         if 'initial_state' in parameters:
             # if initial_state was provided in terms of the source BQM, we want
@@ -417,6 +422,9 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     """Embedding used to map binary quadratic models to the child sampler."""
 
     def _fix_embedding(self, embedding):
+        target_edgelist = self.target_structure.edgelist
+        embedding = EmbeddedStructure(target_edgelist, embedding)
+
         # save the embedding and overwrite the find_embedding function
         self.embedding = embedding
         self.properties.update(embedding=embedding)
@@ -437,10 +445,13 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            chain_strength (float, optional, default=1.0):
+            chain_strength (float/mapping/callable, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
-                variables to create chains. The energy penalty of chain breaks
-                is 2 * `chain_strength`.
+                variables to form a chain, with the energy penalty of chain 
+                breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
+                chain-specific strength is applied.  If a callable is passed, it
+                will be called on `chain_strength(bqm, embedding)` and should
+                return a float or mapping, to be interpreted as above.
 
             chain_break_method (function, optional):
                 Method used to resolve chain breaks during sample unembedding.

@@ -24,7 +24,7 @@ from six import iteritems
 from dwave.embedding.chain_breaks import broken_chains
 
 
-__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency'
+__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges'
 
 
 def target_to_source(target_adjacency, embedding):
@@ -230,3 +230,98 @@ def edgelist_to_adjacency(edgelist):
         else:
             adjacency[v] = {u}
     return adjacency
+
+def adjacency_to_edges(adjacency):
+    """Converts an adjacency dict, networkx graph, or bqm to an edge iterator.
+
+    Args:
+        adjacency (dict/:class:`networkx.Graph`/:class:`dimod.BQM`):
+            Should be a dict of the form {s: Ns, ...} where s is a variable
+            in the graph and Ns is the set of neighbours of s.
+
+    Yields:
+        tuple: A 2-tuple, corresponding to an edge in the provided graph
+
+    """
+    if hasattr(adjacency, 'edges'):
+        yield from adjacency.edges()
+
+    elif hasattr(adjacency, 'quadratic'):
+        yield from adjacency.quadratic
+
+    elif hasattr(adjacency, 'items'):
+        seen = set()
+        for v, Nv in adjacency.items():
+            seen.add(v)
+            for u in Nv:
+                if u not in seen:
+                    yield (u, v)
+    else:
+        raise TypeError("unrecognized type for adjacency -- provide a dict, "
+                        "Mapping, networkx.Graph or dimod.BQM")
+
+class intlabel_disjointsets:
+    """A disjoint sets implementation with size and path-halving, for graphs 
+    labeled [0, ..., n-1]
+
+    Args:
+        n (int):
+            The number of items in the disjoint sets
+
+    """
+    def __init__(self, n):
+        self._parent = list(range(n))
+        self._size = [1] * n
+
+    def find(self, q):
+        """Find the current root for q.
+
+        Args:
+            q (int):
+                A number in range(n)
+
+        Returns:
+            int: the root of the set containing q
+
+        """
+        parent = self._parent
+        p = parent[q]
+        while q != p:
+            r = parent[q] = parent[p]
+            q, p = p, r
+        return p
+
+    def union(self, p, q):
+        """Merges the sets containing p and q.
+
+        Args:
+            p (int):
+                A number in range(n)
+            q (int):
+                A number in range(n)
+
+        """
+        p = self.find(p)
+        q = self.find(q)
+        a = self._size[p]
+        b = self._size[q]
+        if p == q:
+            return
+        if a > b:
+            p, q = q, p
+        self._parent[p] = q
+        self._size[q] = a + b
+
+    def size(self, q):
+        """Returns the size of the set containing q.
+
+        Args:
+            p (int):
+                A number in range(n)
+
+        Returns:
+            int: the size of the set containing q
+        """
+        return self._size[self.find(q)]
+
+
