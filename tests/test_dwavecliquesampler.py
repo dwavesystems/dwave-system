@@ -32,7 +32,7 @@ class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):
         self.properties = dict(h_range=[-2, 2],
                                j_range=[-1, 1],
                                extended_j_range=[-2, 1],)
-        self.parameters = {}
+        self.parameters = {'auto_scale': None}
 
     def sample(self, bqm, auto_scale=True):
         assert not auto_scale
