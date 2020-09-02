@@ -51,7 +51,7 @@ class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):
 
 
 class MockChimeraDWaveSampler(MockDWaveSampler):
-    def __init__(self, order_by=None):
+    def __init__(self, **config):
         super().__init__()
 
         self.properties.update(topology=dict(shape=[4, 4, 4], type='chimera'))
@@ -75,7 +75,7 @@ class MockChimeraDWaveSampler(MockDWaveSampler):
 
 
 class MockPegasusDWaveSampler(MockDWaveSampler):
-    def __init__(self, order_by=None):
+    def __init__(self, **config):
         super().__init__()
 
         self.properties.update(topology=dict(shape=[6], type='pegasus'))

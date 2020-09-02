@@ -56,10 +56,15 @@ class DWaveCliqueSampler(dimod.Sampler):
     """
     def __init__(self, **config):
 
-        # get the QPU with the most qubits available, subject to other
-        # constraints specified in **config
-        self.child = child = DWaveSampler(order_by='-num_active_qubits',
-                                          **config)
+        # to get the QPU with the most qubits available (subject to other
+        # constraints specified in **config), we need to set order_by
+        # (use simple solver parsing for now, i.e. until we have
+        # https://github.com/dwavesystems/dwave-cloud-client/issues/424)
+        solver = config.pop('solver', {})
+        if isinstance(solver, str):
+            solver = dict(name__eq=solver)
+        solver.update(order_by='-num_active_qubits')
+        self.child = child = DWaveSampler(solver=solver, **config)
 
         # do some topology checking
         try:

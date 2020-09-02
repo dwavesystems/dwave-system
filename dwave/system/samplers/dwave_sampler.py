@@ -113,6 +113,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             See :meth:`~dwave.cloud.client.Client.get_solvers` for a more detailed
             description of the parameter.
 
+            Note:
+                Isolated use of ``order_by`` has been deprecated in 0.10.0.
+                Please specify it as part of the ``solver`` argument dict.
+
         config_file (str, optional):
             Path to a configuration file that identifies a D-Wave system and provides
             connection information.
@@ -139,8 +143,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Authentication token for the D-Wave API to authenticate the client session.
 
         solver (dict/str, optional):
-            Solver (a D-Wave system on which to run submitted problems) to select given
-            as a set of required features. Supported features and values are described in
+            Solver (a D-Wave system on which to run submitted problems) to
+            select given as a set of required features. Solver priority (if
+            multiple solvers match) can be given via ``order_by`` key. Supported
+            features and values are described in
             :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
             compatibility, a solver name, formatted as a string, is accepted.
 
@@ -179,12 +185,18 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def __init__(self, failover=False, retry_interval=-1, order_by=None, **config):
 
         if config.get('solver_features') is not None:
-            warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
+            warn("'solver_features' argument has been renamed to 'solver'.",
+                 DeprecationWarning)
 
             if config.get('solver') is not None:
                 raise ValueError("can not combine 'solver' and 'solver_features'")
 
             config['solver'] = config.pop('solver_features')
+
+        # fold isolated order_by under solver
+        if order_by is not None:
+            warn("'order_by' has been moved under 'solver' dict.",
+                 DeprecationWarning)
 
         # we want a QPU solver by default, but allow override
         config.setdefault('client', 'qpu')
@@ -192,7 +204,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
 
         if order_by is None:
-            # use the default from the cloud-client
+            # use the default from the cloud-client (or from solver)
             self.solver = self.client.get_solver()
         else:
             self.solver = self.client.get_solver(order_by=order_by)
