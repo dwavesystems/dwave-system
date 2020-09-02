@@ -24,7 +24,7 @@ from collections import defaultdict
 
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
 from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError, DisconnectedChainError
-from dwave.embedding.utils import adjacency_to_edges, intlabel_disjointsets
+from dwave.embedding.utils import adjacency_to_edges, intlabel_disjointsets, get_chain_strength
 
 
 __all__ = ['embed_bqm',
@@ -155,7 +155,7 @@ class EmbeddedStructure(dict):
         raise NotImplementedError("EmbeddedStructure does not support the"
                                   " fromkeys method")
 
-    def embed_bqm(self, source_bqm, chain_strength = 1.0, smear_vartype = None):
+    def embed_bqm(self, source_bqm, chain_strength = None, smear_vartype = None):
         """Embed a binary quadratic model onto a target graph.
 
         Args:
@@ -168,7 +168,8 @@ class EmbeddedStructure(dict):
                 breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(source_bqm, self)` and should
-                return a float or mapping, to be interpreted as above.
+                return a float or mapping, to be interpreted as above. By default,
+                `chain_strength` is scaled to the problem.
 
             smear_vartype (:class:`.Vartype`, optional, default=None):
                 Determines whether the linear bias of embedded variables is
@@ -222,6 +223,11 @@ class EmbeddedStructure(dict):
 
         # add the offset
         target_bqm.add_offset(source_bqm.offset)
+
+        if chain_strength is None:
+            # Picked 1.415 as our prefactor as an avg of 1.33 (pegasus) 
+            # and 1.5 (chimera)
+            chain_strength = get_chain_strength(source_bqm, 1.415)
 
         if callable(chain_strength):
             chain_strength = chain_strength(source_bqm, self)
@@ -282,7 +288,7 @@ class EmbeddedStructure(dict):
 
 
 def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
-              chain_strength=1.0, smear_vartype=None):
+              chain_strength=None, smear_vartype=None):
     """Embed a binary quadratic model onto a target graph.
 
     Args:
@@ -309,7 +315,8 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             set to 2 * `chain_strength`.  If a mapping is passed, a 
             chain-specific strength is applied.  If a callable is passed, it
             will be called on `chain_strength(source_bqm, embedding)` and should
-            return a float or mapping, to be interpreted as above.
+            return a float or mapping, to be interpreted as above. By default,
+            `chain_strength` is scaled to the problem.
 
         smear_vartype (:class:`.Vartype`, optional, default=None):
             Determines whether the linear bias of embedded variables is smeared
@@ -361,7 +368,7 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
                                chain_strength=chain_strength)
 
 
-def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=1.0):
+def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=None):
     """Embed an Ising problem onto a target graph.
 
     Args:
@@ -384,7 +391,7 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to form a chain, with the energy penalty of chain breaks
             set to 2 * `chain_strength`.  If a dict is passed, a chain-specific
-            strength is applied.
+            strength is applied. By default, `chain_strength` is scaled to the problem.
 
     Returns:
         tuple: A 2-tuple:
@@ -424,7 +431,7 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
     return target_h, target_J
 
 
-def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
+def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
     """Embed a QUBO onto a target graph.
 
     Args:
@@ -445,7 +452,8 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=1.0):
             set to 2 * `chain_strength`.  If a mapping is passed, a 
             chain-specific strength is applied.  If a callable is passed, it
             will be called on `chain_strength(source_bqm, embedding)` and should
-            return a float or mapping, to be interpreted as above.
+            return a float or mapping, to be interpreted as above. By default, 
+            `chain_strength` is scaled to the problem.
 
     Returns:
         dict[(variable, variable), bias]: Quadratic biases of the target QUBO.
