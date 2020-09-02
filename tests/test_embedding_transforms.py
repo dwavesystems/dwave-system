@@ -368,7 +368,7 @@ class TestEmbedBQM(unittest.TestCase):
         adj.add_edges_from({(0, 1), (1, 2), (2, 3), (3, 0), (2, 0)})
 
         expected_h0 = {0: 0, 1: 1, 2: 5, 3: 5}
-        expected_j0 = {(0, 1): 3, (0, 2): -4, (0, 3): -4, (1, 2): 15, (2, 3): -1}
+        expected_j0 = {(0, 1): 3, (0, 2): -4, (0, 3): -4, (1, 2): 15, (2, 3): -19.94430662286024}
 
         h0, j0 = dwave.embedding.embed_ising(h, j, embeddings, adj)
         self.assertEqual(h0, expected_h0)

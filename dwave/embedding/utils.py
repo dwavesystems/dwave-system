@@ -39,14 +39,18 @@ def get_chain_strength(bqm, prefactor):
             should fall in the range of [0.5, 2].
 
     Returns:
-        float: The chain strength.
-
+        float: The chain strength, or 1 if chain strength is not applicable
+               to the problem. 
+            
     """
-    squared_j = (j ** 2 for j in bqm.quadratic.values())
-    rms = math.sqrt(sum(squared_j)/bqm.num_interactions)
-    avg_degree = bqm.degrees(array=True).mean()
+    if bqm.num_interactions > 0:
+        squared_j = (j ** 2 for j in bqm.quadratic.values())
+        rms = math.sqrt(sum(squared_j)/bqm.num_interactions)
+        avg_degree = bqm.degrees(array=True).mean()
 
-    return prefactor * rms * math.sqrt(avg_degree)
+        return prefactor * rms * math.sqrt(avg_degree)
+    else:
+        return 1    # won't matter (chain strength isn't needed to embed this problem)
 
 def target_to_source(target_adjacency, embedding):
     """Derive the source adjacency from an embedding and target adjacency.
