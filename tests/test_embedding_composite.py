@@ -249,7 +249,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.0)  # the default
+        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.415)  # the default
 
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
@@ -278,7 +278,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.0)  # the default
+        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.415)  # the default
 
         # restore the default
         EmbeddingComposite.return_embedding_default = False
@@ -305,7 +305,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         # use a triangle so there is a chain of length 2
         J = {(0, 1): 100, (1, 2): 100, (0, 2): 1}
 
-        ss = sampler.sample_ising({}, J, warnings='SAVE')
+        ss = sampler.sample_ising({}, J, chain_strength=1, warnings='SAVE')
         self.assertIn('warnings', ss.info)
 
         count = 0

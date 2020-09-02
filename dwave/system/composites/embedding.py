@@ -236,16 +236,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
         embedding = self.find_embedding(source_edgelist, target_edgelist,
                                         **embedding_parameters)
 
-        if warnings is None:
-            warnings = self.warnings_default
-        elif 'warnings' in child.parameters:
-            parameters.update(warnings=warnings)
-
-        warninghandler = WarningHandler(warnings)
-
-        warninghandler.chain_strength(bqm, chain_strength, embedding)
-        warninghandler.chain_length(embedding)
-
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
@@ -254,6 +244,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         bqm_embedded = embedding.embed_bqm(bqm, chain_strength=chain_strength,
                                            smear_vartype=dimod.SPIN)
+
+        if warnings is None:
+            warnings = self.warnings_default
+        elif 'warnings' in child.parameters:
+            parameters.update(warnings=warnings)
+
+        warninghandler = WarningHandler(warnings)
+
+        warninghandler.chain_strength(bqm, embedding.chain_strength, embedding)
+        warninghandler.chain_length(embedding)
 
         if 'initial_state' in parameters:
             # if initial_state was provided in terms of the source BQM, we want
@@ -290,7 +290,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
             if return_embedding:
                 sampleset.info['embedding_context'].update(
                     embedding_parameters=embedding_parameters,
-                    chain_strength=chain_strength)
+                    chain_strength=embedding.chain_strength)
 
             if chain_break_fraction and len(sampleset):
                 warninghandler.issue("All samples have broken chains",

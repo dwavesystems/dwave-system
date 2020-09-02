@@ -348,3 +348,5 @@ class intlabel_disjointsets:
             int: the size of the set containing q
         """
         return self._size[self.find(q)]
+
+

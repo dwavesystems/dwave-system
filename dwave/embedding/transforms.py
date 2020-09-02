@@ -68,6 +68,7 @@ class EmbeddedStructure(dict):
         target_label = {}
         self._chain_edges = chain_edges = {}
         self._interaction_edges = interaction_edges = defaultdict(list)
+        self._chain_strength = None
 
         disjoint_sets = {}
         # prepare the data structures and compute the labeling of target nodes
@@ -95,6 +96,10 @@ class EmbeddedStructure(dict):
             if len(emb_u) != disjoint_sets[u].size(0):
                 raise DisconnectedChainError(u)
 
+    @property
+    def chain_strength(self):
+        """Returns the chain strength selected for embedding."""
+        return self._chain_strength
 
     def chain_edges(self, u):
         """Iterate over edges contained in the chain for u
@@ -197,7 +202,7 @@ class EmbeddedStructure(dict):
             >>> # Embed and show the chain strength
             >>> target_bqm = dwave.embedding.embed_bqm(bqm, embedding, target)
             >>> target_bqm.quadratic[(2, 3)]
-            -1.0
+            -2.00111219075793
             >>> print(target_bqm.quadratic)  # doctest: +SKIP
             {(0, 1): 1.0, (0, 3): 1.0, (1, 2): 1.0, (2, 3): -1.0}
 
@@ -231,6 +236,8 @@ class EmbeddedStructure(dict):
 
         if callable(chain_strength):
             chain_strength = chain_strength(source_bqm, self)
+
+        self._chain_strength = chain_strength
 
         if isinstance(chain_strength, abc.Mapping):
             strength_iter = (chain_strength[v] for v in source_bqm.linear)
@@ -344,7 +351,7 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
         >>> # Embed and show the chain strength
         >>> target_bqm = dwave.embedding.embed_bqm(bqm, embedding, target)
         >>> target_bqm.quadratic[(2, 3)]
-        -1.0
+        -2.00111219075793
         >>> print(target_bqm.quadratic)  # doctest: +SKIP
         {(0, 1): 1.0, (0, 3): 1.0, (1, 2): 1.0, (2, 3): -1.0}
 
