@@ -115,12 +115,12 @@ class DWaveCliqueSampler(dimod.Sampler):
         return len(self.largest_clique())
 
     def clique(self, variables):
-        """Return the clique embedding of the given size.
+        """Return a clique embedding of the given size.
 
         Args:
             variables (int/collection):
-                The source variables. If an integer, the variables are
-                embedding will be labelled `[0,n)`.
+                Source variables. If an integer, the variables  embedded are
+                labelled `[0,n)`.
 
         Returns:
             dict: The clique embedding.
