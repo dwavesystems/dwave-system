@@ -249,7 +249,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.415)  # the default
+        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.414)  # the default
 
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
@@ -278,7 +278,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.415)  # the default
+        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.414)  # the default
 
         # restore the default
         EmbeddingComposite.return_embedding_default = False

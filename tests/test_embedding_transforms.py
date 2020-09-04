@@ -368,7 +368,7 @@ class TestEmbedBQM(unittest.TestCase):
         adj.add_edges_from({(0, 1), (1, 2), (2, 3), (3, 0), (2, 0)})
 
         expected_h0 = {0: 0, 1: 1, 2: 5, 3: 5}
-        expected_j0 = {(0, 1): 3, (0, 2): -4, (0, 3): -4, (1, 2): 15, (2, 3): -19.94430662286024}
+        expected_j0 = {(0, 1): 3, (0, 2): -4, (0, 3): -4, (1, 2): 15, (2, 3): -19.9302}
 
         h0, j0 = dwave.embedding.embed_ising(h, j, embeddings, adj)
         self.assertEqual(h0, expected_h0)
@@ -379,9 +379,9 @@ class TestEmbedBQM(unittest.TestCase):
             self.assertFalse((u, v) in expected_j0 and (v, u) in expected_j0)
 
             if (u, v) in expected_j0:
-                self.assertEqual(expected_j0[(u, v)], bias)
+                self.assertAlmostEqual(expected_j0[(u, v)], bias, 4)
             else:
-                self.assertEqual(expected_j0[(v, u)], bias)
+                self.assertAlmostEqual(expected_j0[(v, u)], bias, 4)
 
     def test_embed_ising_embedding_not_in_adj(self):
         """embedding refers to a variable not in the adjacency"""
@@ -587,7 +587,7 @@ class TestEmbeddedStructure(unittest.TestCase):
         dimod.testing.assert_bqm_almost_equal(target_bqm, goal_bqm)
 
         #test the chain_strength is a function case:
-        def strength_func(S, E):
+        def strength_func(S, **kwargs):
             return chain_strength
 
         target_bqm = emb_s.embed_bqm(source_bqm, chain_strength=strength_func)

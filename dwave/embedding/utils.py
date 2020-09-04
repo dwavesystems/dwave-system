@@ -25,32 +25,7 @@ from six import iteritems
 from dwave.embedding.chain_breaks import broken_chains
 
 
-__all__ = 'get_chain_strength', 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges'
-
-def get_chain_strength(bqm, prefactor):
-    """Calculates a chain strength scaled to the problem.
-
-    Args: 
-        bqm (:obj:`.BinaryQuadraticModel`):
-            A binary quadratic model.
-
-        prefactor (float):
-            Prefactor used for scaling. For optimal chain strength, the prefactor
-            should fall in the range of [0.5, 2].
-
-    Returns:
-        float: The chain strength, or 1 if chain strength is not applicable
-               to the problem. 
-            
-    """
-    if bqm.num_interactions > 0:
-        squared_j = (j ** 2 for j in bqm.quadratic.values())
-        rms = math.sqrt(sum(squared_j)/bqm.num_interactions)
-        avg_degree = bqm.degrees(array=True).mean()
-
-        return prefactor * rms * math.sqrt(avg_degree)
-    else:
-        return 1    # won't matter (chain strength isn't needed to embed this problem)
+__all__ = ['target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges']
 
 def target_to_source(target_adjacency, embedding):
     """Derive the source adjacency from an embedding and target adjacency.
