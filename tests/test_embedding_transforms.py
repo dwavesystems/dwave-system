@@ -587,7 +587,7 @@ class TestEmbeddedStructure(unittest.TestCase):
         dimod.testing.assert_bqm_almost_equal(target_bqm, goal_bqm)
 
         #test the chain_strength is a function case:
-        def strength_func(S, **kwargs):
+        def strength_func(S, E):
             return chain_strength
 
         target_bqm = emb_s.embed_bqm(source_bqm, chain_strength=strength_func)

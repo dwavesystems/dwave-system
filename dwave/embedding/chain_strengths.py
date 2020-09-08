@@ -14,14 +14,19 @@
 
 import math
 
-__all__ = ['scaled_degree_rms']
+__all__ = ['uniform_torque_compensation']
 
-def scaled_degree_rms(bqm, prefactor=1.414, **kwargs):
-    """Calculates chain strength using the RMS of the problem's quadratic biases. 
+def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
+    """Calculates chain strength using the RMS of the problem's quadratic biases.
+    Attempts to compensate for the torque that would break the chain. 
 
     Args: 
         bqm (:obj:`.BinaryQuadraticModel`):
             A binary quadratic model.
+
+        embedding (dict/:class:`.EmbeddedStructure`, default=None):
+            Included to satisfy the `chain_strength` callable specifications 
+            for `embed_bqm`. 
 
         prefactor (float, optional, default=1.414):
             Prefactor used for scaling. For non-pathological problems, the recommended 
