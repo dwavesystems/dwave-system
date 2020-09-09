@@ -10,3 +10,4 @@ Reference Documentation
    composites
    embedding
    utilities
+   warnings
