@@ -11,7 +11,6 @@ Documentation
 
 .. only:: html
 
-  :Release: |version|
   :Date: |today|
 
 .. note:: This documentation is for the latest version of
