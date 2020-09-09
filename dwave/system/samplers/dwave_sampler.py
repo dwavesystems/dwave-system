@@ -108,9 +108,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             user.
 
         order_by (callable/str/None):
-            Solver sorting key function or (or :class:`~dwave.cloud.Solver`
-            attribute/item dot-separated path).
-            See :class:`~dwave.cloud.Client.get_solvers` for a more detailed
+            Solver sorting key function or :class:`~dwave.cloud.solver.StructuredSolver`
+            attribute/item dot-separated path.
+            See :meth:`~dwave.cloud.client.Client.get_solvers` for a more detailed
             description of the parameter.
 
         config_file (str, optional):
@@ -139,20 +139,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
-        This example submits a two-variable Ising problem mapped directly to qubits 0
-        and 1 on a D-Wave system selected by explicitly requiring that it have these two
-        active qubits. Other required parameters for communication with the system, such
+        This example submits a two-variable Ising problem mapped directly to two
+        adjacent qubits on a D-Wave system. ``qubit_a`` is the first qubit in
+        the QPU's indexed list of qubits and ``qubit_b`` is one of the qubits
+        coupled to it. Other required parameters for communication with the system, such
         as its URL and an autentication token, are implicitly set in a configuration file
         or as environment variables, as described in
         `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
         Given sufficient reads (here 100), the quantum
-        computer should return the best solution, :math:`{1, -1}` on qubits 0 and 1,
-        respectively, as its first sample (samples are ordered from lowest energy).
+        computer should return the best solution, :math:`{1, -1}` on ``qubit_a`` and
+        ``qubit_b``, respectively, as its first sample (samples are ordered from
+        lowest energy).
 
         >>> from dwave.system import DWaveSampler
-        >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
-        >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {}, num_reads=100)
-        >>> sampleset.first.sample[0] == 1 and sampleset.first.sample[1] == -1
+        ...
+        >>> sampler = DWaveSampler(solver={'qpu': True})
+        ...
+        >>> qubit_a = sampler.nodelist[0]
+        >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
+        >>> sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
+        ...                                  {},
+        ...                                  num_reads=100)
+        >>> sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1
         True
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_

@@ -25,15 +25,32 @@ __all__ = ['DWaveCliqueSampler']
 class DWaveCliqueSampler(dimod.Sampler):
     """A sampler for solving clique problems on the D-Wave system.
 
-    The `DWaveCliqueSampler` wraps
-    :func:`minorminer.busclique.find_clique_embedding` to generate embeddings
-    with even chain length. These embeddings will work well for dense
+    This sampler wraps
+    :func:`~minorminer.busclique.find_clique_embedding` to generate embeddings
+    with even chain length. These embeddings work well for dense
     binary quadratic models. For sparse models, using
     :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is preferred.
 
     Args:
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`
+
+    Examples:
+        This example creates a BQM based on a 6-node clique (complete graph),
+        with random :math:`\pm 1` values assigned to nodes, and submits it to
+        a D-Wave system. Parameters for communication with the system, such
+        as its URL and an autentication token, are implicitly set in a
+        configuration file or as environment variables, as described in
+        `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
+
+        >>> from dwave.system import DWaveCliqueSampler
+        >>> import dimod
+        ...
+        >>> bqm = dimod.generators.ran_r(1, 6)
+        ...
+        >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+        ...
+        >>> sampleset = sampler.sample(bqm, num_reads=100)
 
     """
     def __init__(self, **config):
