@@ -226,7 +226,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def parameters(self):
         """dict[str, list]: D-Wave solver parameters in the form of a dict, where keys are
         keyword parameters accepted by a SAPI query and values are lists of properties in
-        :attr:`.DWaveSampler.properties` for each key.
+        :attr:`.properties` for each key.
 
         Solver parameters are dependent on the selected D-Wave solver and subject to change;
         for example, new released features may add parameters.
@@ -316,13 +316,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
                 Defines what warning action to take, if any. See
-                :mod:`~dwave.system.warnings`. The default behaviour is defined
-                by :attr:`warnings_default`, which itself defaults to
-                :class:`~dwave.system.warnings.IGNORE`
+                :ref:`warnings_system`. The default behaviour is to
+                ignore warnings.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.DWaveSampler.parameters`. D-Wave System Documentation's
+                :attr:`.parameters`. D-Wave System Documentation's
                 `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
                 describes the parameters and properties supported on the D-Wave system.
 
@@ -333,15 +332,24 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
 
         Examples:
-            This example submits a two-variable Ising problem mapped directly to qubits
-            0 and 1 on a D-Wave system. Given sufficient reads (here 100), the quantum
-            computer should return the best solution, :math:`{1, -1}` on qubits 0 and 1,
-            respectively, as its first sample (samples are ordered from lowest energy).
+            This example submits a two-variable Ising problem mapped directly to two
+            adjacent qubits on a D-Wave system. ``qubit_a`` is the first qubit in
+            the QPU's indexed list of qubits and ``qubit_b`` is one of the qubits
+            coupled to it. Given sufficient reads (here 100), the quantum
+            computer should return the best solution, :math:`{1, -1}` on ``qubit_a`` and
+            ``qubit_b``, respectively, as its first sample (samples are ordered from
+            lowest energy).
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler(solver={'qubits__issuperset': {0, 1}})
-            >>> sampleset = sampler.sample_ising({0: -1, 1: 1}, {}, num_reads=100)
-            >>> sampleset.first.sample[0] == 1 and sampleset.first.sample[1] == -1
+            ...
+            >>> sampler = DWaveSampler(solver={'qpu': True})
+            ...
+            >>> qubit_a = sampler.nodelist[0]
+            >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
+            >>> sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
+            ...                                  {},
+            ...                                  num_reads=100)
+            >>> sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1
             True
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -492,8 +500,20 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
 
         Returns:
-            G : NetworkX Graph
+            G : NetworkX graph.
                 Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
+        Examples:
+            This example converts a selected D-Wave system solver to a graph
+            and verifies it has over 2000 nodes.
+
+            >>> from dwave.system import DWaveSampler
+            ...
+            >>> sampler = DWaveSampler(solver={'qpu': True})
+            >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
+            >>> len(g.nodes) > 2000                  # doctest: +SKIP
+            True
+
+
         """
 
         topology_type = self.properties['topology']['type']
