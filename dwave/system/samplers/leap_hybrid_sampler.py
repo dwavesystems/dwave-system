@@ -35,7 +35,7 @@ class LeapHybridSampler(dimod.Sampler):
     Uses parameters set in a configuration file, as environment variables, or
     explicitly as input arguments for selecting and communicating with a hybrid solver.
     For more information, see
-    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/latest/docs_cloud/sdk_index.html>`_.
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
     Inherits from :class:`dimod.Sampler`.
 

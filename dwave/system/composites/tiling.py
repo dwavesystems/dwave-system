@@ -23,8 +23,8 @@ Chimera graph to obtain samples from multiple areas of the solver in one call.
 For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded
 D-Wave 2000Q system (16x16).
 
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
-of technical terms in descriptions of Ocean tools.
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+for explanations of technical terms in descriptions of Ocean tools.
 
 """
 from __future__ import division
@@ -77,7 +77,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        >>> len(sampleset)> 1
        True
 
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
@@ -200,7 +200,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             >>> len(response)    # doctest: +SKIP
             246
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """

@@ -89,7 +89,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     Uses parameters set in a configuration file, as environment variables, or
     explicitly as input arguments for selecting and communicating with a D-Wave
     system. For more information, see
-    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/projects/cloud-client/en/latest/>`_.
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
     Inherits from :class:`dimod.Sampler` and :class:`dimod.Structured`.
 
@@ -144,7 +144,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         active qubits. Other required parameters for communication with the system, such
         as its URL and an autentication token, are implicitly set in a configuration file
         or as environment variables, as described in
-        `Configuring a D-Wave System <https://docs.ocean.dwavesys.com/en/latest/overview/dwavesys.html>`_.
+        `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
         Given sufficient reads (here 100), the quantum
         computer should return the best solution, :math:`{1, -1}` on qubits 0 and 1,
         respectively, as its first sample (samples are ordered from lowest energy).
@@ -155,7 +155,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         >>> sampleset.first.sample[0] == 1 and sampleset.first.sample[1] == -1
         True
 
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
@@ -204,7 +204,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
               [-0.20860153999435985, 0.05511969218508182],
             # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -237,7 +237,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             u'auto_scale': ['parameters'],
             # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -262,7 +262,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> sampler.edgelist
             [(0, 4), (0, 5), (0, 6), (0, 7), ...
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -286,7 +286,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> sampler.nodelist
             [0, 1, 2, ...
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -336,7 +336,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> sampleset.first.sample[0] == 1 and sampleset.first.sample[1] == -1
             True
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -492,13 +492,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         shape = self.properties['topology']['shape']
 
         if topology_type == 'chimera':
-            G = dnx.chimera_graph(*shape, 
-                                  node_list=self.nodelist, 
+            G = dnx.chimera_graph(*shape,
+                                  node_list=self.nodelist,
                                   edge_list=self.edgelist)
 
         elif topology_type == 'pegasus':
-            G = dnx.pegasus_graph(shape[0], 
-                                  node_list=self.nodelist, 
+            G = dnx.pegasus_graph(shape[0],
+                                  node_list=self.nodelist,
                                   edge_list=self.edgelist)
 
         return G

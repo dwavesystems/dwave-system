@@ -23,7 +23,7 @@ embedding and specify a chain strength using these tools, they automatically cal
 in a chain to compensate for the effects of biases that may be introduced as a result of strong
 couplings.
 
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
 """
 import dimod
@@ -108,7 +108,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
        3  0  0  0    0.0       2     0.0
        ['BINARY', 4 rows, 10 samples, 3 variables]
 
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
@@ -189,7 +189,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
            1 +1 -1   -1.0       4     0.0
            ['SPIN', 2 rows, 10 samples, 2 variables]
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
