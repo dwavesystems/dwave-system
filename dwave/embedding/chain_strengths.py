@@ -17,8 +17,10 @@ import math
 __all__ = ['uniform_torque_compensation']
 
 def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
-    """Calculates chain strength using the RMS of the problem's quadratic biases.
-    Attempts to compensate for the torque that would break the chain. 
+    """Chain strength that attempts to compensate for torque that would break
+    the chain.
+
+    The RMS of the problem's quadratic biases is used for calculation.
 
     Args: 
         bqm (:obj:`.BinaryQuadraticModel`):

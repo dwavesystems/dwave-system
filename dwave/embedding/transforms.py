@@ -99,7 +99,7 @@ class EmbeddedStructure(dict):
 
     @property
     def chain_strength(self):
-        """Returns the chain strength selected for embedding."""
+        """callable: Return the chain strength selected for embedding."""
         return self._chain_strength
 
     def chain_edges(self, u):
