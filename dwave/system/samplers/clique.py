@@ -126,7 +126,20 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def largest_clique_size(self):
-        """The maximum number of variables that can be embedded."""
+        """The maximum number of variables that can be embedded.
+
+        Examples:
+            This example checks the largest clique that can be embedded into a
+            selected D-Wave system, which for this execution was a D-Wave 2000Q
+            system.
+
+            >>> from dwave.system import DWaveCliqueSampler
+            ...
+            >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+            >>> sampler.largest_clique_size      # doctest: +SKIP
+            63
+
+        """
         return len(self.largest_clique())
 
     def clique(self, variables):
@@ -139,6 +152,18 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         Returns:
             dict: The clique embedding.
+
+        Examples:
+            This example checks the chain-length for a node in the largest clique
+            that can be embedded into a selected D-Wave system, which for this
+            execution was a D-Wave 2000Q system.
+
+            >>> from dwave.system import DWaveCliqueSampler
+            ...
+            >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+            >>> embedding = sampler.largest_clique()      # doctest: +SKIP
+            >>> len(embedding[0])                         # doctest: +SKIP
+            17
 
         """
         return find_clique_embedding(variables, self.target_graph)
@@ -160,7 +185,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             bqm (:class:`~dimod.BinaryQuadraticModel`):
                 Any binary quadratic model with up to
                 :attr:`.largest_clique_size` variables. This BQM is embedded
-                using a dense clique embedding.
+                using a clique embedding.
 
             chain_strength (float, optional):
                 The (relative) chain strength to use in the embedding. By
@@ -170,7 +195,7 @@ class DWaveCliqueSampler(dimod.Sampler):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified
-                per solver in :attr:`.DWaveCliqueSampler.parameters`.
+                per solver in :attr:`.parameters`.
                 D-Wave System Documentation's
                 `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
                 describes the parameters and properties supported on the D-Wave
