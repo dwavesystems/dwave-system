@@ -10,6 +10,9 @@ defined by the BQM.
 
 .. currentmodule:: dwave.system.samplers
 
+.. contents::
+    :depth: 2
+
 DWaveSampler
 ============
 
