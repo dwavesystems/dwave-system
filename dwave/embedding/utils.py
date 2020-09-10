@@ -18,7 +18,6 @@ from __future__ import division, absolute_import
 
 import dimod
 import numpy as np
-import math
 
 from six import iteritems
 
