@@ -17,11 +17,11 @@
 """Embedding composites for various types of problems and application.
 For example:
 
-* :class:`EmbeddingComposite` for a problem with arbitrary structure that likely
+* :class:`.EmbeddingComposite` for a problem with arbitrary structure that likely
   requires hueristic embedding.
-* :class:`AutoEmbeddingComposite` can save unnecessary embedding for
+* :class:`.AutoEmbeddingComposite` can save unnecessary embedding for
   problems that might have a structure similar to the child sampler.
-* :class:`LazyFixedEmbeddingComposite` can benefit applications that
+* :class:`.LazyFixedEmbeddingComposite` can benefit applications that
   resubmit a BQM with changes in some values.
 """
 import itertools
@@ -162,7 +162,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
             chain_strength (float/mapping/callable, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to create chains. The energy penalty of chain breaks
-                is 2 * `chain_strength`.  If a mapping is passed, a 
+                is 2 * `chain_strength`.  If a mapping is passed, a
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(bqm, embedding)` and should
                 return a float or mapping, to be interpreted as above. By default,
@@ -315,7 +315,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
     sampling methods.
 
     Args:
-        sampler (dimod.Sampler):
+        child_sampler (dimod.Sampler):
             Structured dimod sampler.
 
         find_embedding (function, default=:func:`minorminer.find_embedding`):
@@ -448,8 +448,8 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
 
             chain_strength (float/mapping/callable, optional, default=1.0):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
-                variables to form a chain, with the energy penalty of chain 
-                breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
+                variables to form a chain, with the energy penalty of chain
+                breaks set to 2 * `chain_strength`.  If a mapping is passed, a
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(bqm, embedding)` and should
                 return a float or mapping, to be interpreted as above. By default,
@@ -505,7 +505,7 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
     """Maps problems to a structured sampler with the specified minor-embedding.
 
     Args:
-        sampler (dimod.Sampler):
+        child_sampler (dimod.Sampler):
             Structured dimod sampler such as a D-Wave system.
 
         embedding (dict[hashable, iterable], optional):
@@ -513,29 +513,32 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
             target graph).
 
         source_adjacency (dict[hashable, iterable]):
-            Deprecated. Dictionary to describe source graph. Ex. `{node:
+            Deprecated. Dictionary to describe source graph as `{node:
             {node neighbours}}`.
 
         kwargs:
             See the :class:`EmbeddingComposite` class for additional keyword
-            arguments. Note that `find_embedding` and `embedding_parameters`
+            arguments. Note that ``find_embedding`` and ``embedding_parameters``
             keyword arguments are ignored.
 
     Examples:
+        To embed a triangular problem (a problem with a three-node complete graph,
+        or clique) in the Chimera topology, you need to :term:`chain` two
+        qubits. This example maps triangular problems to a composed sampler
+        (based on the unstructure dimod ExactSolver) with a Chimera unit-cell
+        structure.
 
-        >>> from dwave.system import DWaveSampler, FixedEmbeddingComposite
+        >>> import dimod
+        >>> import dwave_networkx as dnx
+        >>> from dwave.system import FixedEmbeddingComposite
         ...
-        >>> embedding = {'a': [0, 4], 'b': [1, 5], 'c': [2, 6]}
-        >>> sampler = FixedEmbeddingComposite(DWaveSampler(), embedding)
-        >>> sampler.nodelist
-        ['a', 'b', 'c']
+        >>> c1 = dnx.chimera_graph(1)
+        >>> embedding = {'a': [0, 4], 'b': [1], 'c': [5]}
+        >>> structured_sampler = dimod.StructureComposite(dimod.ExactSolver(),
+        ...                                               c1.nodes, c1.edges)
+        >>> sampler = FixedEmbeddingComposite(structured_sampler, embedding)
         >>> sampler.edgelist
         [('a', 'b'), ('a', 'c'), ('b', 'c')]
-        >>> sampleset = sampler.sample_ising({'a': .5, 'c': 0}, {('a', 'c'): -1}, num_reads=500)
-        >>> sampleset.first.energy
-        -1.5
-
-
     """
     def __init__(self, child_sampler, embedding=None, source_adjacency=None,
                  **kwargs):
@@ -582,7 +585,7 @@ class AutoEmbeddingComposite(EmbeddingComposite):
     :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
 
     Args:
-        sampler (:class:`dimod.Sampler`):
+        child_sampler (:class:`dimod.Sampler`):
             Structured dimod sampler, such as a
             :obj:`~dwave.system.samplers.DWaveSampler()`.
 

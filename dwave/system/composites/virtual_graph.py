@@ -78,7 +78,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
     .. attention::
        D-Wave's *virtual graphs* feature can require many seconds of D-Wave system time to calibrate
        qubits to compensate for the effects of biases. If your account has limited
-       D-Wave system access, consider using *FixedEmbeddingComposite()* instead.
+       D-Wave system access, consider using :class:`.FixedEmbeddingComposite` instead.
 
     Examples:
        This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
@@ -95,9 +95,10 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
 
        >>> from dwave.system import DWaveSampler, VirtualGraphComposite
        >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
-       >>> DWaveSampler().properties['extended_j_range']
+       >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
+       >>> qpu_2000q.properties['extended_j_range']
        [-2.0, 1.0]
-       >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=2) # doctest: +SKIP
+       >>> sampler = VirtualGraphComposite(qpu_2000q, embedding, chain_strength=2) # doctest: +SKIP
        >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
        >>> sampleset = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
        >>> print(sampleset)    # doctest: +SKIP

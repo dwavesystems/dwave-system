@@ -71,7 +71,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
        >>> from dwave.system import TilingComposite
        ...
-       >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
+       >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
+       >>> sampler = EmbeddingComposite(TilingComposite(qpu_2000q, 1, 1, 4))
        >>> Q = {(1, 1): -1, (1, 2): 2, (2, 1): 0, (2, 2): -1}
        >>> sampleset = sampler.sample_qubo(Q)
        >>> len(sampleset)> 1
