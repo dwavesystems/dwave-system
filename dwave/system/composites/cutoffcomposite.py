@@ -31,7 +31,7 @@ class CutOffComposite(dimod.ComposedSampler):
 
     Prunes the binary quadratic model (BQM) submitted to the child sampler by
     retaining only interactions with values commensurate with the sampler's
-    precision as specified by the `cutoff` argument. Also removes variables
+    precision as specified by the ``cutoff`` argument. Also removes variables
     isolated post- or pre-removal of these interactions from the BQM passed
     on to the child sampler, setting these variables to values that minimize
     the original BQM's energy for the returned samples.
@@ -42,7 +42,7 @@ class CutOffComposite(dimod.ComposedSampler):
 
        cutoff (number):
             Lower bound for absolute value of interactions. Interactions
-            with absolute values lower than `cutoff` are removed. Isolated variables
+            with absolute values lower than ``cutoff`` are removed. Isolated variables
             are also not passed on to the child sampler.
 
        cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
@@ -56,10 +56,10 @@ class CutOffComposite(dimod.ComposedSampler):
             value. Defaults to :func:`operator.lt`.
 
     Examples:
-        This example removes one interaction, `'ac': -0.7`, before embedding
+        This example removes one interaction, ``'ac': -0.7``, before embedding
         on a D-Wave system. Note that the lowest-energy sample for the embedded problem
-        is `{'a': 1, 'b': -1, 'c': -1}` but with a large enough number of samples
-        (here `num_reads=1000`), the lowest-energy solution to the complete BQM is
+        is ``{'a': 1, 'b': -1, 'c': -1}`` but with a large enough number of samples
+        (here ``num_reads=1000``), the lowest-energy solution to the complete BQM is
         likely found and its energy recalculated by the composite.
 
         >>> import dimod
@@ -102,8 +102,8 @@ class CutOffComposite(dimod.ComposedSampler):
         """Cut off interactions and sample from the provided binary quadratic model.
 
         Prunes the binary quadratic model (BQM) submitted to the child sampler
-        by retaining only interactions with values commensurate with the
-        sampler's precision as specified by the `cutoff` argument. Also removes
+        by retaining only interactions with value`s commensurate with the
+        sampler's precision as specified by the ``cutoff`` argument. Also removes
         variables isolated post- or pre-removal of these interactions from the
         BQM passed on to the child sampler, setting these variables to values
         that minimize the original BQM's energy for the returned samples.
@@ -208,7 +208,7 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
 
     Prunes the binary polynomial submitted to the child sampler by retaining
     only interactions with values commensurate with the sampler's precision as
-    specified by the `cutoff` argument. Also removes variables isolated post-
+    specified by the ``cutoff`` argument. Also removes variables isolated post-
     or pre-removal of these interactions from the polynomial passed on to the
     child sampler, setting these variables to values that minimize the
     original polynomial's energy for the returned samples.
@@ -219,7 +219,7 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
 
        cutoff (number):
             Lower bound for absolute value of interactions. Interactions
-            with absolute values lower than `cutoff` are removed. Isolated variables
+            with absolute values lower than ``cutoff`` are removed. Isolated variables
             are also not passed on to the child sampler.
 
        cutoff_vartype (:class:`.Vartype`/str/set, default='SPIN'):
@@ -233,8 +233,8 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
             value. Defaults to :func:`operator.lt`.
 
     Examples:
-        This example removes one interaction, `'ac': 0.2`, before submitting
-        the polynomial to child sampler ExactSolver().
+        This example removes one interaction, ``'ac': 0.2``, before submitting
+        the polynomial to child sampler :class:`~dimod.reference.samplers.ExactSolver`.
 
         >>> import dimod
         >>> sampler = dimod.HigherOrderComposite(dimod.ExactSolver())
@@ -273,7 +273,7 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
 
         Prunes the binary polynomial submitted to the child sampler by retaining
         only interactions with values commensurate with the sampler's precision
-        as specified by the `cutoff` argument. Also removes variables isolated
+        as specified by the ``cutoff`` argument. Also removes variables isolated
         post- or pre-removal of these interactions from the polynomial passed
         on to the child sampler, setting these variables to values that minimize
         the original polynomial's energy for the returned samples.
