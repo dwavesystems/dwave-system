@@ -178,9 +178,10 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
 
            >>> from dwave.system import DWaveSampler, VirtualGraphComposite
            >>> embedding = {'x': {0, 4, 1, 5}, 'y': {2, 6, 3, 7}}
-           >>> DWaveSampler().properties['extended_j_range']
+           >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
+           >>> qpu_2000q.properties['extended_j_range']
            [-2.0, 1.0]
-           >>> sampler = VirtualGraphComposite(DWaveSampler(), embedding, chain_strength=1) # doctest: +SKIP
+           >>> sampler = VirtualGraphComposite(qpu_2000q, embedding, chain_strength=1) # doctest: +SKIP
            >>> h = {}
            >>> J = {('x', 'y'): 1}
            >>> sampleset = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
