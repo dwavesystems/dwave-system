@@ -121,7 +121,7 @@ class LeapHybridSampler(dimod.Sampler):
     def properties(self):
         """dict: Solver properties as returned by a SAPI query.
 
-        `Solver properties https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
         are dependent on the selected solver and subject to change.
         """
         try:
@@ -136,7 +136,7 @@ class LeapHybridSampler(dimod.Sampler):
         keyword parameters accepted by a SAPI query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each key.
 
-        `Solver parameters https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
         are dependent on the selected solver and subject to change.
         """
         try:
