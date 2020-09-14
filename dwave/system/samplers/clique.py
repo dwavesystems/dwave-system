@@ -49,7 +49,8 @@ class DWaveCliqueSampler(dimod.Sampler):
         >>> bqm = dimod.generators.ran_r(1, 6)
         ...
         >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-        ...
+        >>> sampler.largest_clique_size > 5
+        True
         >>> sampleset = sampler.sample(bqm, num_reads=100)
 
     """
@@ -127,18 +128,6 @@ class DWaveCliqueSampler(dimod.Sampler):
     @property
     def largest_clique_size(self):
         """The maximum number of variables that can be embedded.
-
-        Examples:
-            This example checks the largest clique that can be embedded into a
-            selected D-Wave system, which for this execution was a D-Wave 2000Q
-            system.
-
-            >>> from dwave.system import DWaveCliqueSampler
-            ...
-            >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-            >>> sampler.largest_clique_size      # doctest: +SKIP
-            63
-
         """
         return len(self.largest_clique())
 
@@ -152,19 +141,6 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         Returns:
             dict: The clique embedding.
-
-        Examples:
-            This example checks the chain-length for a node in the largest clique
-            that can be embedded into a selected D-Wave system, which for this
-            execution was a D-Wave 2000Q system.
-
-            >>> from dwave.system import DWaveCliqueSampler
-            ...
-            >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-            >>> embedding = sampler.largest_clique()      # doctest: +SKIP
-            >>> len(embedding[0])                         # doctest: +SKIP
-            17
-
         """
         return find_clique_embedding(variables, self.target_graph)
 

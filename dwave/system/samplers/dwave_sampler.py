@@ -500,7 +500,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
 
         Returns:
-            G : NetworkX graph.
+            G : :class:`networkx.Graph` graph.
                 Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
         Examples:
             This example converts a selected D-Wave system solver to a graph

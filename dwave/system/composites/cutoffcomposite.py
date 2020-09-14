@@ -102,7 +102,7 @@ class CutOffComposite(dimod.ComposedSampler):
         """Cut off interactions and sample from the provided binary quadratic model.
 
         Prunes the binary quadratic model (BQM) submitted to the child sampler
-        by retaining only interactions with value`s commensurate with the
+        by retaining only interactions with value commensurate with the
         sampler's precision as specified by the ``cutoff`` argument. Also removes
         variables isolated post- or pre-removal of these interactions from the
         BQM passed on to the child sampler, setting these variables to values
