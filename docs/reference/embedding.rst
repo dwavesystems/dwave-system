@@ -5,7 +5,7 @@ Embedding
 =========
 
 Provides functions that map :term:`binary quadratic model`\ s and samples between
-a :term:`source` :term`graph` and a :term:`target` graph.
+a :term:`source` :term:`graph` and a :term:`target` graph.
 
 For an introduction to :term:`minor-embedding`, see
 :std:doc:`Minor-Embedding <oceandocs:concepts/embedding>`.
@@ -76,7 +76,8 @@ Diagnostics
 Chain-Break Resolution
 ======================
 
-Handling samples with broken chains when unembedding.
+.. automodule:: dwave.embedding.chain_breaks
+.. currentmodule:: dwave.embedding
 
 Generators
 ----------
@@ -108,3 +109,8 @@ Exceptions
    exceptions.DisconnectedChainError
    exceptions.InvalidNodeError
    exceptions.MissingEdgeError
+
+Classes
+=======
+
+.. autoclass:: EmbeddedStructure

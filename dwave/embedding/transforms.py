@@ -47,12 +47,12 @@ class EmbeddedStructure(dict):
             iterable of 2 hashable objects.
 
         embedding (dict):
-            Mapping from source graph to target graph as a dict of form 
-            {s: {t, ...}, ...}, where s is a source-model variable and t is a 
+            Mapping from source graph to target graph as a dict of form
+            {s: {t, ...}, ...}, where s is a source-model variable and t is a
             target-model variable.
 
 
-    This class is a dict, and will act as an immutable duplicate of embedding.
+    This class is a dict, and acts as an immutable duplicate of embedding.
     """
 
     def __init__(self, target_edges, embedding):
@@ -65,7 +65,7 @@ class EmbeddedStructure(dict):
                 return
         else:
             super().__init__((u, tuple(c)) for u, c in embedding.items())
-        
+
         target_label = {}
         self._chain_edges = chain_edges = {}
         self._interaction_edges = interaction_edges = defaultdict(list)
@@ -103,15 +103,15 @@ class EmbeddedStructure(dict):
         return self._chain_strength
 
     def chain_edges(self, u):
-        """Iterate over edges contained in the chain for u
+        """Iterate over edges contained in the chain for u.
 
         Args:
             u (hashable):
-                A key in self
+                A key in self.
 
         Yields:
-            tuple: A 2-tuple, corresponding to an edge in the target graph
-    
+            tuple: A 2-tuple, corresponding to an edge in the target graph.
+
         """
         emb_u = self[u]
         for i, j in self._chain_edges[u]:
@@ -119,19 +119,19 @@ class EmbeddedStructure(dict):
 
 
     def interaction_edges(self, u, *args):
-        """Iterate over edges between in the chains for u and v
+        """Iterate over edges between in the chains for u and v.
 
         Args:
             u (hashable/tuple):
-                A key in self
+                A key in self.
 
             v (hashable, optional):
-                A key in self.  If this argument is omitted, we will interpret 
-                u, v := u
+                A key in self.  If this argument is omitted, interprets
+                :code:`u, v := u`.
 
         Yields:
-            tuple: A 2-tuple, corresponding to an edge in the target graph
-    
+            tuple: A 2-tuple, corresponding to an edge in the target graph.
+
         """
         if args:
             v, = args
@@ -157,7 +157,7 @@ class EmbeddedStructure(dict):
 
     def fromkeys(self, *args, **kwargs):
         """Raise a NotImplemented -- this method is not supported for the
-        EmbeddedStructure class, but exists because dict is the parent class."""        
+        EmbeddedStructure class, but exists because dict is the parent class."""
         raise NotImplementedError("EmbeddedStructure does not support the"
                                   " fromkeys method")
 
@@ -165,16 +165,16 @@ class EmbeddedStructure(dict):
         """Embed a binary quadratic model onto a target graph.
 
         Args:
-            source_bqm (:obj:`.BinaryQuadraticModel`):
+            source_bqm (:class:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to embed.
 
             chain_strength (float/mapping/callable, optional):
                 Magnitude of the quadratic bias (in SPIN-space) applied between
                 variables to create chains, with the energy penalty of chain
-                breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
+                breaks set to 2 * `chain_strength`.  If a mapping is passed, a
                 chain-specific strength is applied.  If a callable is passed, it
-                will be called on `chain_strength(source_bqm, self)` 
-                and should return a float or mapping, to be interpreted as above. 
+                will be called on `chain_strength(source_bqm, self)`
+                and should return a float or mapping, to be interpreted as above.
                 By default, `chain_strength` is scaled to the problem.
 
             smear_vartype (:class:`.Vartype`, optional, default=None):
@@ -188,7 +188,7 @@ class EmbeddedStructure(dict):
 
         Examples:
             This example embeds a triangular binary quadratic model representing
-            a :math:`K_3` clique into a square target graph by mapping variable 
+            a :math:`K_3` clique into a square target graph by mapping variable
             `c` in the source to nodes `2` and `3` in the target.
 
             >>> import networkx as nx
@@ -298,29 +298,29 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
     """Embed a binary quadratic model onto a target graph.
 
     Args:
-        source_bqm (:obj:`.BinaryQuadraticModel`):
+        source_bqm (:class:`~dimod.BinaryQuadraticModel`):
             Binary quadratic model to embed.
 
         embedding (dict/:class:`.EmbeddedStructure`):
             Mapping from source graph to target graph as a dict of form
             {s: {t, ...}, ...}, where s is a source-model variable and t is a
             target-model variable.  Alternately, an EmbeddedStructure object
-            produced by, for example, 
+            produced by, for example,
             EmbeddedStructure(target_adjacency.edges(), embedding). If embedding
             is a dict, target_adjacency must be provided.
 
         target_adjacency (dict/:obj:`networkx.Graph`, optional):
             Adjacency of the target graph as a dict of form {t: Nt, ...}, where
             t is a variable in the target graph and Nt is its set of neighbours.
-            This should be omitted if and only if embedding is an 
+            This should be omitted if and only if embedding is an
             EmbeddedStructure object.
 
         chain_strength (float/mapping/callable, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.  If a mapping is passed, a chain-specific 
-            strength is applied.  If a callable is passed, it will be called on 
-            `chain_strength(source_bqm, embedding)` and should return a 
+            set to 2 * `chain_strength`.  If a mapping is passed, a chain-specific
+            strength is applied.  If a callable is passed, it will be called on
+            `chain_strength(source_bqm, embedding)` and should return a
             float or mapping, to be interpreted as above. By default,
             `chain_strength` is scaled to the problem.
 
@@ -396,12 +396,12 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
         chain_strength (float/mapping/callable, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.  If a mapping is passed, a chain-specific 
-            strength is applied.  If a callable is passed, it will be called on 
-            `chain_strength(source_bqm, embedding)` and should return a 
+            set to 2 * `chain_strength`.  If a mapping is passed, a chain-specific
+            strength is applied.  If a callable is passed, it will be called on
+            `chain_strength(source_bqm, embedding)` and should return a
             float or mapping, to be interpreted as above. By default,
             `chain_strength` is scaled to the problem.
-    
+
     Returns:
         tuple: A 2-tuple:
 
@@ -458,10 +458,10 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
         chain_strength (float/mapping/callable, optional):
             Magnitude of the quadratic bias (in SPIN-space) applied between
             variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.  If a mapping is passed, a 
+            set to 2 * `chain_strength`.  If a mapping is passed, a
             chain-specific strength is applied.  If a callable is passed, it
-            will be called on `chain_strength(source_bqm, embedding)` 
-            and should return a float or mapping, to be interpreted as above. 
+            will be called on `chain_strength(source_bqm, embedding)`
+            and should return a float or mapping, to be interpreted as above.
             By default, `chain_strength` is scaled to the problem.
 
     Returns:
@@ -504,7 +504,7 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
 def unembed_sampleset(target_sampleset, embedding, source_bqm,
                       chain_break_method=None, chain_break_fraction=False,
                       return_embedding=False):
-    """Unembed a samples set.
+    """Unembed a sample set.
 
     Given samples from a target binary quadratic model (BQM), construct a sample
     set for a source BQM by unembedding.
@@ -518,7 +518,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
             {s: {t, ...}, ...}, where s is a source variable and t is a target
             variable.
 
-        source_bqm (:obj:`dimod.BinaryQuadraticModel`):
+        source_bqm (:obj:`~dimod.BinaryQuadraticModel`):
             Source BQM.
 
         chain_break_method (function/list, optional):
@@ -620,4 +620,3 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
                                             source_bqm,
                                             info=info,
                                             **vectors)
-
