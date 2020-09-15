@@ -24,8 +24,7 @@ from six import iteritems
 from dwave.embedding.chain_breaks import broken_chains
 
 
-__all__ = 'target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges'
-
+__all__ = ['target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges']
 
 def target_to_source(target_adjacency, embedding):
     """Derive the source adjacency from an embedding and target adjacency.

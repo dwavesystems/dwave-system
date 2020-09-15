@@ -12,8 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import math
-
 import dimod
 import dwave_networkx as dnx
 
@@ -196,15 +194,6 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         if bqm.vartype is not dimod.SPIN:
             bqm = bqm.change_vartype(dimod.SPIN, inplace=False)
-
-        if chain_strength is None:
-            # chain length determines chain strength
-            if embedding and bqm.num_interactions > 0:
-                squared_j = (j ** 2 for j in bqm.quadratic.values())
-                rms = math.sqrt(sum(squared_j)/bqm.num_interactions)
-                chain_strength = 1.5 * rms * math.sqrt(bqm.degrees(array=True).mean())
-            else:
-                chain_strength = 1  # doesn't matter
 
         sampler = FixedEmbeddingComposite(
             dimod.ScaleComposite(self.child),

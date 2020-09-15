@@ -146,7 +146,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
     """Defines the default behabior for :meth:`.sample`'s `warnings` kwarg.
     """
 
-    def sample(self, bqm, chain_strength=1.0,
+    def sample(self, bqm, chain_strength=None,
                chain_break_method=None,
                chain_break_fraction=True,
                embedding_parameters=None,
@@ -165,7 +165,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 is 2 * `chain_strength`.  If a mapping is passed, a 
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(bqm, embedding)` and should
-                return a float or mapping, to be interpreted as above.
+                return a float or mapping, to be interpreted as above. By default,
+                `chain_strength` is scaled to the problem.
 
             chain_break_method (function/list, optional):
                 Method or methods used to resolve chain breaks. If multiple
@@ -235,16 +236,6 @@ class EmbeddingComposite(dimod.ComposedSampler):
         embedding = self.find_embedding(source_edgelist, target_edgelist,
                                         **embedding_parameters)
 
-        if warnings is None:
-            warnings = self.warnings_default
-        elif 'warnings' in child.parameters:
-            parameters.update(warnings=warnings)
-
-        warninghandler = WarningHandler(warnings)
-
-        warninghandler.chain_strength(bqm, chain_strength, embedding)
-        warninghandler.chain_length(embedding)
-
         if bqm and not embedding:
             raise ValueError("no embedding found")
 
@@ -253,6 +244,16 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
         bqm_embedded = embedding.embed_bqm(bqm, chain_strength=chain_strength,
                                            smear_vartype=dimod.SPIN)
+
+        if warnings is None:
+            warnings = self.warnings_default
+        elif 'warnings' in child.parameters:
+            parameters.update(warnings=warnings)
+
+        warninghandler = WarningHandler(warnings)
+
+        warninghandler.chain_strength(bqm, embedding.chain_strength, embedding)
+        warninghandler.chain_length(embedding)
 
         if 'initial_state' in parameters:
             # if initial_state was provided in terms of the source BQM, we want
@@ -289,7 +290,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
             if return_embedding:
                 sampleset.info['embedding_context'].update(
                     embedding_parameters=embedding_parameters,
-                    chain_strength=chain_strength)
+                    chain_strength=embedding.chain_strength)
 
             if chain_break_fraction and len(sampleset):
                 warninghandler.issue("All samples have broken chains",
@@ -451,7 +452,8 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 breaks set to 2 * `chain_strength`.  If a mapping is passed, a 
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(bqm, embedding)` and should
-                return a float or mapping, to be interpreted as above.
+                return a float or mapping, to be interpreted as above. By default,
+                `chain_strength` is scaled to the problem.
 
             chain_break_method (function, optional):
                 Method used to resolve chain breaks during sample unembedding.
