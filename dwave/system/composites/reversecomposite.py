@@ -44,7 +44,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
             A dimod sampler.
 
     Examples:
-       This example run 100 reverse anneals each for three schedules on a problem
+       This example runs 100 reverse anneals each for three schedules on a problem
        constructed by setting random :math:`\pm 1` values on a clique (complete
        graph) of 15 nodes, minor-embedded on a D-Wave system using the
        :class:`.DWaveCliqueSampler` sampler.
@@ -103,7 +103,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
             :obj:`dimod.SampleSet` that has initial_state and schedule_index fields.
 
         Examples:
-           This example run 100 reverse anneals each for three schedules on a problem
+           This example runs 100 reverse anneals each for three schedules on a problem
            constructed by setting random :math:`\pm 1` values on a clique (complete
            graph) of 15 nodes, minor-embedded on a D-Wave system using the
            :class:`.DWaveCliqueSampler` sampler.
@@ -187,7 +187,7 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
             A dimod sampler.
 
     Examples:
-       This example run 100 reverse anneals each from two initial states on a problem
+       This example runs 100 reverse anneals each from two initial states on a problem
        constructed by setting random :math:`\pm 1` values on a clique (complete
        graph) of 15 nodes, minor-embedded on a D-Wave system using the
        :class:`.DWaveCliqueSampler` sampler.
@@ -242,7 +242,7 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
             :obj:`dimod.SampleSet` that has initial_state field.
 
         Examples:
-           This example run 100 reverse anneals each from two initial states on a problem
+           This example runs 100 reverse anneals each from two initial states on a problem
            constructed by setting random :math:`\pm 1` values on a clique (complete
            graph) of 15 nodes, minor-embedded on a D-Wave system using the
            :class:`.DWaveCliqueSampler` sampler.

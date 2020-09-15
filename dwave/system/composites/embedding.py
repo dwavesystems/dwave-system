@@ -525,8 +525,8 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
         To embed a triangular problem (a problem with a three-node complete graph,
         or clique) in the Chimera topology, you need to :term:`chain` two
         qubits. This example maps triangular problems to a composed sampler
-        (based on the unstructure dimod ExactSolver) with a Chimera unit-cell
-        structure.
+        (based on the unstructured :class:`~dimod.reference.samplers.ExactSolver`)
+        with a Chimera unit-cell structure.
 
         >>> import dimod
         >>> import dwave_networkx as dnx
