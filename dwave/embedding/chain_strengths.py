@@ -14,7 +14,7 @@
 
 import math
 
-__all__ = ['uniform_torque_compensation']
+__all__ = ['uniform_torque_compensation', 'scaled_to_problem']
 
 def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
     """Chain strength that attempts to compensate for torque that would break
@@ -61,5 +61,47 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
         avg_degree = bqm.degrees(array=True).mean()
 
         return prefactor * rms * math.sqrt(avg_degree)
+    else:
+        return 1    # won't matter (chain strength isn't needed to embed this problem)
+
+def scaled_to_problem(bqm, embedding=None, prefactor=1.0):
+    """Chain strength that is scaled to the problem bias range.
+
+    Args:
+        bqm (:obj:`.BinaryQuadraticModel`):
+            A binary quadratic model.
+
+        embedding (dict/:class:`.EmbeddedStructure`, default=None):
+            Included to satisfy the `chain_strength` callable specifications 
+            for `embed_bqm`. 
+
+        prefactor (float, optional, default=1.0):
+            Prefactor used for scaling. 
+
+    Returns:
+        float: The chain strength, or 1 if chain strength is not applicable
+               to the problem. 
+
+    Examples:
+        This example uses :func:`scaled_to_problem`, given a prefactor of 1.5, 
+        to calculate a chain strength that :class:`EmbeddingComposite` then uses.
+
+        >>> from functools import partial
+        >>> from dwave.system import EmbeddingComposite, DWaveSampler
+        >>> from dwave.embedding.chain_strengths import scaled_to_problem
+        ...
+        >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
+        >>> sampler = EmbeddingComposite(DWaveSampler())
+        >>> # partial() can be used when the BQM or embedding is not accessible
+        >>> chain_strength = partial(scaled_to_problem, prefactor=1.5)
+        >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
+        >>> sampleset.info['embedding_context']['chain_strength']
+        0.75
+
+    """  
+    if bqm.num_interactions > 0:
+        max_bias = max(max(map(abs, bqm.linear.values()), default=0),
+                       max(map(abs, bqm.quadratic.values()), default=0))
+        return prefactor * max_bias
     else:
         return 1    # won't matter (chain strength isn't needed to embed this problem)
