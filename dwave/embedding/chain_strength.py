@@ -11,10 +11,30 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+#
+# ================================================================================================
+"""Utility functions for calculating chain strength.
 
+Examples:
+    This example uses :func:`uniform_torque_compensation`, given a prefactor of 2, 
+    to calculate a chain strength that :class:`EmbeddingComposite` then uses.
+
+    >>> from functools import partial
+    >>> from dwave.system import EmbeddingComposite, DWaveSampler
+    >>> from dwave.embedding.chain_strength import uniform_torque_compensation
+    ...
+    >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
+    >>> sampler = EmbeddingComposite(DWaveSampler())
+    >>> # partial() can be used when the BQM or embedding is not accessible
+    >>> chain_strength = partial(uniform_torque_compensation, prefactor=2)
+    >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
+    >>> sampleset.info['embedding_context']['chain_strength']
+    1.224744871391589
+
+"""
 import math
 
-__all__ = ['uniform_torque_compensation', 'scaled_to_problem']
+__all__ = ['uniform_torque_compensation', 'scaled']
 
 def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
     """Chain strength that attempts to compensate for torque that would break
@@ -38,22 +58,6 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
         float: The chain strength, or 1 if chain strength is not applicable
                to the problem. 
 
-    Examples:
-        This example uses :func:`uniform_torque_compensation`, given a prefactor of 2, 
-        to calculate a chain strength that :class:`EmbeddingComposite` then uses.
-
-        >>> from functools import partial
-        >>> from dwave.system import EmbeddingComposite, DWaveSampler
-        >>> from dwave.embedding.chain_strength import uniform_torque_compensation
-        ...
-        >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
-        >>> sampler = EmbeddingComposite(DWaveSampler())
-        >>> # partial() can be used when the BQM or embedding is not accessible
-        >>> chain_strength = partial(uniform_torque_compensation, prefactor=2)
-        >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
-        >>> sampleset.info['embedding_context']['chain_strength']
-        1.224744871391589
-            
     """
     if bqm.num_interactions > 0:
         squared_j = (j ** 2 for j in bqm.quadratic.values())
@@ -64,7 +68,7 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
     else:
         return 1    # won't matter (chain strength isn't needed to embed this problem)
 
-def scaled_to_problem(bqm, embedding=None, prefactor=1.0):
+def scaled(bqm, embedding=None, prefactor=1.0):
     """Chain strength that is scaled to the problem bias range.
 
     Args:
@@ -81,22 +85,6 @@ def scaled_to_problem(bqm, embedding=None, prefactor=1.0):
     Returns:
         float: The chain strength, or 1 if chain strength is not applicable
                to the problem. 
-
-    Examples:
-        This example uses :func:`scaled_to_problem`, given a prefactor of 1.5, 
-        to calculate a chain strength that :class:`EmbeddingComposite` then uses.
-
-        >>> from functools import partial
-        >>> from dwave.system import EmbeddingComposite, DWaveSampler
-        >>> from dwave.embedding.chain_strength import scaled_to_problem
-        ...
-        >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
-        >>> sampler = EmbeddingComposite(DWaveSampler())
-        >>> # partial() can be used when the BQM or embedding is not accessible
-        >>> chain_strength = partial(scaled_to_problem, prefactor=1.5)
-        >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
-        >>> sampleset.info['embedding_context']['chain_strength']
-        0.75
 
     """  
     if bqm.num_interactions > 0:
