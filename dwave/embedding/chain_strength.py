@@ -44,7 +44,7 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
 
         >>> from functools import partial
         >>> from dwave.system import EmbeddingComposite, DWaveSampler
-        >>> from dwave.embedding.chain_strengths import uniform_torque_compensation
+        >>> from dwave.embedding.chain_strength import uniform_torque_compensation
         ...
         >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
         >>> sampler = EmbeddingComposite(DWaveSampler())
@@ -88,7 +88,7 @@ def scaled_to_problem(bqm, embedding=None, prefactor=1.0):
 
         >>> from functools import partial
         >>> from dwave.system import EmbeddingComposite, DWaveSampler
-        >>> from dwave.embedding.chain_strengths import scaled_to_problem
+        >>> from dwave.embedding.chain_strength import scaled_to_problem
         ...
         >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
         >>> sampler = EmbeddingComposite(DWaveSampler())

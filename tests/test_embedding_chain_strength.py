@@ -18,7 +18,7 @@ import networkx as nx
 
 import dimod
 import dwave.embedding
-from dwave.embedding.chain_strengths import uniform_torque_compensation, scaled_to_problem
+from dwave.embedding.chain_strength import uniform_torque_compensation, scaled_to_problem
 
 class TestUniformTorqueCompensation(unittest.TestCase):
     def setUp(self):

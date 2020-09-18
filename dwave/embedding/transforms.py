@@ -25,7 +25,7 @@ from collections import defaultdict
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
 from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError, DisconnectedChainError
 from dwave.embedding.utils import adjacency_to_edges, intlabel_disjointsets
-from dwave.embedding.chain_strengths import uniform_torque_compensation
+from dwave.embedding.chain_strength import uniform_torque_compensation
 
 
 __all__ = ['embed_bqm',
