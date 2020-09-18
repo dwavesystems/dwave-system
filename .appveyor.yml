@@ -21,10 +21,10 @@ matrix:
   fast_finish: true
 
 cache:
-  - '%PYTHON%\Lib\site-packages -> requirements.txt, tests\requirements.txt'
-  - '%AppData%\pip-cache'
+  # - '%PYTHON%\Lib\site-packages -> requirements.txt, tests\requirements.txt'
+  # - '%AppData%\pip-cache'
 
-build_script:
+build_script: 
   - "%PYTHON%\\python.exe -m pip install -r requirements.txt -r tests\\requirements.txt --cache-dir %AppData%\\pip-cache"
 
 before_test:
