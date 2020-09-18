@@ -37,6 +37,22 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
     Returns:
         float: The chain strength, or 1 if chain strength is not applicable
                to the problem. 
+
+    Examples:
+        This example uses :func:`uniform_torque_compensation`, given a prefactor of 2, 
+        to calculate a chain strength that :class:`EmbeddingComposite` then uses.
+
+        >>> from functools import partial
+        >>> from dwave.system import EmbeddingComposite, DWaveSampler
+        >>> from dwave.embedding.chain_strengths import uniform_torque_compensation
+        ...
+        >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
+        >>> sampler = EmbeddingComposite(DWaveSampler())
+        >>> # partial() can be used when the BQM or embedding is not accessible
+        >>> chain_strength = partial(uniform_torque_compensation, prefactor=2)
+        >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
+        >>> sampleset.info['embedding_context']['chain_strength']
+        1.224744871391589
             
     """
     if bqm.num_interactions > 0:
