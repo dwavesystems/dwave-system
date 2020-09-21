@@ -474,6 +474,12 @@ class TestEmbedBQM(unittest.TestCase):
 
         self.assertEqual(embedded.spin, preferred)
 
+    def test_deprecation(self):
+        dwave.embedding.embed_bqm(dimod.BQM.empty('SPIN'),
+                                  dwave.embedding.EmbeddedStructure([], {}),
+                                  {})
+
+
 class TestEmbeddedStructure(unittest.TestCase):
     def test_empty_embedding(self):
         a = dwave.embedding.EmbeddedStructure([], {})
