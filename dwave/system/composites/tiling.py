@@ -23,8 +23,8 @@ Chimera graph to obtain samples from multiple areas of the solver in one call.
 For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded
 D-Wave 2000Q system (16x16).
 
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_ for explanations
-of technical terms in descriptions of Ocean tools.
+See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+for explanations of technical terms in descriptions of Ocean tools.
 
 """
 from __future__ import division
@@ -71,13 +71,14 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
        >>> from dwave.system import TilingComposite
        ...
-       >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
+       >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
+       >>> sampler = EmbeddingComposite(TilingComposite(qpu_2000q, 1, 1, 4))
        >>> Q = {(1, 1): -1, (1, 2): 2, (2, 1): 0, (2, 2): -1}
        >>> sampleset = sampler.sample_qubo(Q)
        >>> len(sampleset)> 1
        True
 
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
@@ -195,12 +196,13 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             >>> from dwave.system import DWaveSampler, EmbeddingComposite
             >>> from dwave.system import TilingComposite
             ...
-            >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
+            >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
+            >>> sampler = EmbeddingComposite(TilingComposite(qpu_2000q, 1, 1, 4))
             >>> response = sampler.sample_ising({},{('a', 'b'): 1})
             >>> len(response)    # doctest: +SKIP
             246
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/latest/glossary.html>`_
+        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
         """

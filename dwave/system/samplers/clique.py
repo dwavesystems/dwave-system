@@ -25,15 +25,33 @@ __all__ = ['DWaveCliqueSampler']
 class DWaveCliqueSampler(dimod.Sampler):
     """A sampler for solving clique problems on the D-Wave system.
 
-    The `DWaveCliqueSampler` wraps
-    :func:`minorminer.busclique.find_clique_embedding` to generate embeddings
-    with even chain length. These embeddings will work well for dense
+    This sampler wraps
+    :func:`~minorminer.busclique.find_clique_embedding` to generate embeddings
+    with even chain length. These embeddings work well for dense
     binary quadratic models. For sparse models, using
     :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is preferred.
 
     Args:
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`
+
+    Examples:
+        This example creates a BQM based on a 6-node clique (complete graph),
+        with random :math:`\pm 1` values assigned to nodes, and submits it to
+        a D-Wave system. Parameters for communication with the system, such
+        as its URL and an autentication token, are implicitly set in a
+        configuration file or as environment variables, as described in
+        `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
+
+        >>> from dwave.system import DWaveCliqueSampler
+        >>> import dimod
+        ...
+        >>> bqm = dimod.generators.ran_r(1, 6)
+        ...
+        >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+        >>> sampler.largest_clique_size > 5
+        True
+        >>> sampleset = sampler.sample(bqm, num_reads=100)
 
     """
     def __init__(self, **config):
@@ -109,7 +127,8 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def largest_clique_size(self):
-        """The maximum number of variables that can be embedded."""
+        """The maximum number of variables that can be embedded.
+        """
         return len(self.largest_clique())
 
     def clique(self, variables):
@@ -122,7 +141,6 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         Returns:
             dict: The clique embedding.
-
         """
         return find_clique_embedding(variables, self.target_graph)
 
@@ -143,7 +161,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             bqm (:class:`~dimod.BinaryQuadraticModel`):
                 Any binary quadratic model with up to
                 :attr:`.largest_clique_size` variables. This BQM is embedded
-                using a dense clique embedding.
+                using a clique embedding.
 
             chain_strength (float, optional):
                 The (relative) chain strength to use in the embedding. By
@@ -153,7 +171,7 @@ class DWaveCliqueSampler(dimod.Sampler):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified
-                per solver in :attr:`.DWaveCliqueSampler.parameters`.
+                per solver in :attr:`.parameters`.
                 D-Wave System Documentation's
                 `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
                 describes the parameters and properties supported on the D-Wave

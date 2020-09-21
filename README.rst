@@ -19,7 +19,7 @@ dwave-system
 ============
 
 `dwave-system` is a basic API for easily incorporating the D-Wave system as a sampler in the
-`D-Wave Ocean software stack <https://docs.ocean.dwavesys.com/en/latest/overview/stack.html>`_,
+`D-Wave Ocean software stack <https://docs.ocean.dwavesys.com/en/stable/overview/stack.html>`_,
 directly or through `Leap <https://cloud.dwavesys.com/leap/>`_\ 's cloud-based hybrid solvers.
 It includes ``DWaveSampler``, a dimod sampler that accepts and passes system parameters
 such as system identification and authentication down the stack, and ``LeapHybridSampler``,

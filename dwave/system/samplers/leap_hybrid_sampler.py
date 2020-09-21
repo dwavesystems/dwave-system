@@ -35,11 +35,20 @@ class LeapHybridSampler(dimod.Sampler):
     Uses parameters set in a configuration file, as environment variables, or
     explicitly as input arguments for selecting and communicating with a hybrid solver.
     For more information, see
-    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/latest/docs_cloud/sdk_index.html>`_.
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
     Inherits from :class:`dimod.Sampler`.
 
     Args:
+        solver (dict/str, optional):
+            Solver (a hybrid solver on which to run submitted problems) to select
+            named as a string or given as a set of required features. Supported
+            features and values are described in
+            :meth:`~dwave.cloud.client.Client.get_solvers`.
+
+        connection_close (bool, optional):
+            Force HTTP(S) connection close after each request.
+
         config_file (str, optional):
             Path to a configuration file that identifies a hybrid solver and provides
             connection information.
@@ -52,10 +61,6 @@ class LeapHybridSampler(dimod.Sampler):
 
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
-
-        solver (dict/str, optional):
-            Solver (a hybrid solver on which to run submitted problems) to select,
-            formatted as a string.
 
         proxy (str, optional):
             Proxy URL to be used for accessing the D-Wave API.
@@ -114,9 +119,10 @@ class LeapHybridSampler(dimod.Sampler):
 
     @property
     def properties(self):
-        """dict: solver properties as returned by a SAPI query.
+        """dict: Solver properties as returned by a SAPI query.
 
-        Solver properties are dependent on the selected solver and subject to change.
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        are dependent on the selected solver and subject to change.
         """
         try:
             return self._properties
@@ -126,11 +132,12 @@ class LeapHybridSampler(dimod.Sampler):
 
     @property
     def parameters(self):
-        """dict[str, list]: solver parameters in the form of a dict, where keys are
+        """dict[str, list]: Solver parameters in the form of a dict, where keys are
         keyword parameters accepted by a SAPI query and values are lists of properties in
-        :attr:`.LeapHybridSampler.properties` for each key.
+        :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each key.
 
-        Solver parameters are dependent on the selected solver and subject to change.
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        are dependent on the selected solver and subject to change.
         """
         try:
             return self._parameters
@@ -153,7 +160,9 @@ class LeapHybridSampler(dimod.Sampler):
                 which is calculated and set by default.
                 The minimum time for a hybrid solver is specified as a piecewise-linear
                 curve defined by a set of floating-point pairs, the `minimum_time_limit`
-                field under :attr:`.LeapHybridSampler.properties`. The first element in each
+                field under
+                :attr:`~dwave.system.samplers.LeapHybridSampler.properties`.
+                The first element in each
                 pair is the number of problem variables; the second is the minimum
                 required time. The minimum time for any particular number of variables
                 is a linear interpolation calculated on two pairs that represent the
@@ -165,7 +174,7 @@ class LeapHybridSampler(dimod.Sampler):
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
-                :attr:`.LeapHybridSampler.parameters`.
+                :attr:`~dwave.system.samplers.LeapHybridSampler.parameters`.
 
         Returns:
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.

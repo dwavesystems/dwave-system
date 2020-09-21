@@ -29,18 +29,40 @@ __all__ = 'ReverseAdvanceComposite', 'ReverseBatchStatesComposite'
 
 
 class ReverseAdvanceComposite(dimod.ComposedSampler):
-    """Composite that reverse anneals an initial sample through a sequence of anneal
-     schedules.
+    """
+    Composite that reverse anneals an initial sample through a sequence of anneal
+    schedules.
 
-     If you do not specify an initial sample, a random sample is used for the first
-     submission. By default, each subsequent submission selects the most-found lowest-energy
-     sample as its initial state. If you set reinitialize_state to False, which makes each submission
-     behave like a random walk, the subsequent submission selects the last returned sample as
-     its initial state.
+    If you do not specify an initial sample, a random sample is used for the first
+    submission. By default, each subsequent submission selects the most-found
+    lowest-energy sample as its initial state. If you set reinitialize_state to False,
+    which makes each submission behave like a random walk, the subsequent submission
+    selects the last returned sample as its initial state.
 
     Args:
        sampler (:obj:`dimod.Sampler`):
             A dimod sampler.
+
+    Examples:
+       This example runs 100 reverse anneals each for three schedules on a problem
+       constructed by setting random :math:`\pm 1` values on a clique (complete
+       graph) of 15 nodes, minor-embedded on a D-Wave system using the
+       :class:`.DWaveCliqueSampler` sampler.
+
+       >>> import dimod
+       >>> from dwave.system import DWaveCliqueSampler, ReverseAdvanceComposite
+       ...
+       >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+       >>> sampler_reverse = ReverseAdvanceComposite(sampler)
+       >>> schedule = schedule = [[[0.0, 1.0], [t, 0.5], [20, 1.0]] for t in (5, 10, 15)]
+       ...
+       >>> bqm = dimod.generators.ran_r(1, 15)
+       >>> init_samples = {i: -1 for i in range(15)}
+       >>> sampleset = sampler_reverse.sample(bqm,
+       ...                                    anneal_schedules=schedule,
+       ...                                    initial_state=init_samples,
+       ...                                    num_reads=100,
+       ...                                    reinitialize_state=True)
 
     """
 
@@ -79,6 +101,28 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
 
         Returns:
             :obj:`dimod.SampleSet` that has initial_state and schedule_index fields.
+
+        Examples:
+           This example runs 100 reverse anneals each for three schedules on a problem
+           constructed by setting random :math:`\pm 1` values on a clique (complete
+           graph) of 15 nodes, minor-embedded on a D-Wave system using the
+           :class:`.DWaveCliqueSampler` sampler.
+
+           >>> import dimod
+           >>> from dwave.system import DWaveCliqueSampler, ReverseAdvanceComposite
+           ...
+           >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+           >>> sampler_reverse = ReverseAdvanceComposite(sampler)
+           >>> schedule = schedule = [[[0.0, 1.0], [t, 0.5], [20, 1.0]] for t in (5, 10, 15)]
+           ...
+           >>> bqm = dimod.generators.ran_r(1, 15)
+           >>> init_samples = {i: -1 for i in range(15)}
+           >>> sampleset = sampler_reverse.sample(bqm,
+           ...                                    anneal_schedules=schedule,
+           ...                                    initial_state=init_samples,
+           ...                                    num_reads=100,
+           ...                                    reinitialize_state=True)
+
 
         """
         child = self.child
@@ -142,6 +186,29 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
        sampler (:obj:`dimod.Sampler`):
             A dimod sampler.
 
+    Examples:
+       This example runs 100 reverse anneals each from two initial states on a problem
+       constructed by setting random :math:`\pm 1` values on a clique (complete
+       graph) of 15 nodes, minor-embedded on a D-Wave system using the
+       :class:`.DWaveCliqueSampler` sampler.
+
+       >>> import dimod
+       >>> from dwave.system import DWaveCliqueSampler, ReverseBatchStatesComposite
+       ...
+       >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+       >>> sampler_reverse = ReverseBatchStatesComposite(sampler)
+       >>> schedule = [[0.0, 1.0], [10.0, 0.5], [20, 1.0]]
+       ...
+       >>> bqm = dimod.generators.ran_r(1, 15)
+       >>> init_samples = [{i: -1 for i in range(15)}, {i: 1 for i in range(15)}]
+       >>> sampleset = sampler_reverse.sample(bqm,
+       ...                                    anneal_schedule=schedule,
+       ...                                    initial_states=init_samples,
+       ...                                    num_reads=100,
+       ...                                    reinitialize_state=True)
+
+
+
     """
 
     def __init__(self, child_sampler):
@@ -173,6 +240,28 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
 
         Returns:
             :obj:`dimod.SampleSet` that has initial_state field.
+
+        Examples:
+           This example runs 100 reverse anneals each from two initial states on a problem
+           constructed by setting random :math:`\pm 1` values on a clique (complete
+           graph) of 15 nodes, minor-embedded on a D-Wave system using the
+           :class:`.DWaveCliqueSampler` sampler.
+
+           >>> import dimod
+           >>> from dwave.system import DWaveCliqueSampler, ReverseBatchStatesComposite
+           ...
+           >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
+           >>> sampler_reverse = ReverseBatchStatesComposite(sampler)
+           >>> schedule = [[0.0, 1.0], [10.0, 0.5], [20, 1.0]]
+           ...
+           >>> bqm = dimod.generators.ran_r(1, 15)
+           >>> init_samples = [{i: -1 for i in range(15)}, {i: 1 for i in range(15)}]
+           >>> sampleset = sampler_reverse.sample(bqm,
+           ...                                    anneal_schedule=schedule,
+           ...                                    initial_states=init_samples,
+           ...                                    num_reads=100,
+           ...                                    reinitialize_state=True)
+
 
         """
         child = self.child

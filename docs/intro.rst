@@ -8,7 +8,8 @@ Introduction
 in either a hybrid quantum-classical solution, using
 :class:`~dwave.system.samplers.LeapHybridSampler()` or
 :std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` samplers such as
-:code:`KerberosSampler()`, or directly using :class:`~dwave.system.samplers.DWaveSampler()`.
+:class:`~hybrid.reference.kerberos.KerberosSampler`, or directly using
+:class:`~dwave.system.samplers.DWaveSampler()`.
 
 .. note:: For applications that require detailed control on communication with the remote
     compute resource (a D-Wave QPU or Leap's hybrid solvers), see
@@ -36,5 +37,5 @@ a mapping known as :term:`minor-embedding`.
 ...
 >>> s5 = nx.star_graph(4)  # a star graph where node 0 is hub to four other nodes
 >>> sampler = EmbeddingComposite(DWaveSampler())
->>> print(dnx.min_vertex_cover(s5, sampler))   
+>>> print(dnx.min_vertex_cover(s5, sampler))
 [0]

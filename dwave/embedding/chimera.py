@@ -53,7 +53,7 @@ def find_clique_embedding(k, m, n=None, t=None, target_edges=None):
 
         target_edges (iterable[edge]):
             A list of edges in the target Chimera graph. Nodes are labelled as
-            returned by :func:`~dwave_networkx.generators.chimera_graph`.
+            returned by :func:`~dwave_networkx.chimera_graph`.
 
     Returns:
         dict: An embedding mapping a clique to the Chimera lattice.
@@ -146,7 +146,7 @@ def find_biclique_embedding(a, b, m, n=None, t=None, target_edges=None):
 
         target_edges (iterable[edge]):
             A list of edges in the target Chimera graph. Nodes are labelled as
-            returned by :func:`~dwave_networkx.generators.chimera_graph`.
+            returned by :func:`~dwave_networkx.chimera_graph`.
 
     Returns:
         tuple: A 2-tuple containing:

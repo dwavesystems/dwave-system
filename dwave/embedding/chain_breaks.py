@@ -13,6 +13,7 @@
 #    limitations under the License.
 #
 # =============================================================================
+"""Unembedding samples with broken chains."""
 from __future__ import division
 
 from collections import Callable
@@ -284,7 +285,7 @@ class MinimizeEnergy(Callable):
     """Unembed samples by minimizing local energy for broken chains.
 
     Args:
-        bqm (:obj:`.BinaryQuadraticModel`).
+        bqm (:class:`~dimod.BinaryQuadraticModel`).
             Binary quadratic model associated with the source graph.
 
         embedding (dict):

@@ -128,7 +128,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_static_path = ['_static']
 
 def setup(app):
-    app.add_stylesheet('cookie_notice.css')
+    app.add_css_file('cookie_notice.css')
     app.add_javascript('cookie_notice.js')
     app.add_config_value('target', 'repo', 'env')
 
@@ -214,5 +214,5 @@ epub_exclude_files = ['search.html']
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
     'networkx': ('https://networkx.github.io/documentation/stable/', None),
     'qbsolv': ('https://docs.ocean.dwavesys.com/projects/qbsolv/en/latest/', None),
-    'oceandocs': ('https://docs.ocean.dwavesys.com/en/latest/', None),
+    'oceandocs': ('https://docs.ocean.dwavesys.com/en/stable/', None),
     'sysdocs_gettingstarted': ('https://docs.dwavesys.com/docs/latest/', None)}
