@@ -88,8 +88,8 @@ def scaled(bqm, embedding=None, prefactor=1.0):
 
     """  
     if bqm.num_interactions > 0:
-        max_bias = max(max(map(abs, bqm.linear.values()), default=0),
-                       max(map(abs, bqm.quadratic.values()), default=0))
+        max_bias = max(max(bqm.linear.max(), -bqm.linear.min()), 
+                       max(bqm.quadratic.max(), -bqm.quadratic.min()))
         return prefactor * max_bias
     else:
         return 1    # won't matter (chain strength isn't needed to embed this problem)
