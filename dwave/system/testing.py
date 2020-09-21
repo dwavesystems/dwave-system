@@ -75,7 +75,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['extended_j_range'] = [-2.0, 1.0]
 
     @dimod.bqm_structured
-    def sample(self, bqm, num_reads=10, flux_biases=[]):
+    def sample(self, bqm, num_reads=10, flux_biases=[], **kwargs):
         # we are altering the bqm
 
         if not flux_biases:
