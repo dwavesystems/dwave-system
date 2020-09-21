@@ -16,6 +16,7 @@
 
 import collections.abc as abc
 import itertools
+import warnings
 
 import numpy as np
 import dimod
@@ -361,8 +362,12 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
     """
     if isinstance(embedding, EmbeddedStructure):
         if target_adjacency is not None:
-            raise ValueError("target_adjacency should not be provided if "
-                             "embedding is an EmbeddedStructure")
+            warnings.warn(
+                "target_adjacency should not be provided if embedding is an "
+                "EmbeddedStructure. The given value will be ignored. In the "
+                "future this will raise an exception",
+                DeprecationWarning
+                )
     elif target_adjacency is None:
         raise ValueError("either embedding should be an EmbeddedStructure, or "
                          "target_adjacency must be provided")
