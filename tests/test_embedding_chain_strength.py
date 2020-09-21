@@ -18,7 +18,7 @@ import networkx as nx
 
 import dimod
 import dwave.embedding
-from dwave.embedding.chain_strengths import uniform_torque_compensation
+from dwave.embedding.chain_strength import uniform_torque_compensation, scaled
 
 class TestUniformTorqueCompensation(unittest.TestCase):
     def setUp(self):
@@ -50,3 +50,33 @@ class TestUniformTorqueCompensation(unittest.TestCase):
                                                   dimod.SPIN)
 
         dimod.testing.assert_bqm_almost_equal(embedded_bqm, expected_bqm, places=4) 
+
+class TestScaled(unittest.TestCase):
+    def setUp(self):
+        h = {0: 0, 1: -1, 2: 2}
+        J = {(0, 1): 1, (1, 2): -2, (0, 2): -1}
+        self.bqm = dimod.BinaryQuadraticModel.from_ising(h, J)
+
+    def test_empty(self):
+        empty_bqm = dimod.BinaryQuadraticModel({}, {}, 0, 'SPIN')
+        chain_strength = scaled(empty_bqm, prefactor=2)
+        self.assertEqual(chain_strength, 1)
+
+    def test_default_prefactor(self):
+        chain_strength = scaled(self.bqm)
+        self.assertEqual(chain_strength, 2)
+
+    def test_typical(self):
+        chain_strength = scaled(self.bqm, prefactor=1.5)
+        self.assertEqual(chain_strength, 3)
+
+    def test_as_callable(self):
+        embedding = {0: {0}, 1: {1}, 2: {2, 3}}
+        embedded_bqm = dwave.embedding.embed_bqm(self.bqm, embedding, nx.cycle_graph(4), 
+                                                 chain_strength=scaled)
+
+        expected_bqm = dimod.BinaryQuadraticModel({0: 0, 1: -1, 2: 1, 3: 1},
+                                                  {(0, 1): 1, (1, 2): -2, (2, 3): -2, (0, 3): -1},
+                                                  2,  # offset the energy from satisfying chains
+                                                  dimod.SPIN)
+        self.assertEqual(embedded_bqm, expected_bqm)

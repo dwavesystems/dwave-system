@@ -73,6 +73,17 @@ Diagnostics
    is_valid_embedding
    verify_embedding
 
+Chain Strength
+==============
+
+Utility functions for calculating chain strength.
+
+.. autosummary::
+   :toctree: generated/
+
+   chain_strength.uniform_torque_compensation
+   chain_strength.scaled
+
 Chain-Break Resolution
 ======================
 
