@@ -52,9 +52,9 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
        >>> import dimod
        >>> from dwave.system import DWaveCliqueSampler, ReverseAdvanceComposite
        ...
-       >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-       >>> sampler_reverse = ReverseAdvanceComposite(sampler)
-       >>> schedule = schedule = [[[0.0, 1.0], [t, 0.5], [20, 1.0]] for t in (5, 10, 15)]
+       >>> sampler = DWaveCliqueSampler()     # doctest: +SKIP
+       >>> sampler_reverse = ReverseAdvanceComposite(sampler)    # doctest: +SKIP
+       >>> schedule = [[[0.0, 1.0], [t, 0.5], [20, 1.0]] for t in (5, 10, 15)]
        ...
        >>> bqm = dimod.generators.ran_r(1, 15)
        >>> init_samples = {i: -1 for i in range(15)}
@@ -62,7 +62,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
        ...                                    anneal_schedules=schedule,
        ...                                    initial_state=init_samples,
        ...                                    num_reads=100,
-       ...                                    reinitialize_state=True)
+       ...                                    reinitialize_state=True)     # doctest: +SKIP
 
     """
 
@@ -111,9 +111,9 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
            >>> import dimod
            >>> from dwave.system import DWaveCliqueSampler, ReverseAdvanceComposite
            ...
-           >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-           >>> sampler_reverse = ReverseAdvanceComposite(sampler)
-           >>> schedule = schedule = [[[0.0, 1.0], [t, 0.5], [20, 1.0]] for t in (5, 10, 15)]
+           >>> sampler = DWaveCliqueSampler()         # doctest: +SKIP
+           >>> sampler_reverse = ReverseAdvanceComposite(sampler)    # doctest: +SKIP
+           >>> schedule = [[[0.0, 1.0], [t, 0.5], [20, 1.0]] for t in (5, 10, 15)]
            ...
            >>> bqm = dimod.generators.ran_r(1, 15)
            >>> init_samples = {i: -1 for i in range(15)}
@@ -121,7 +121,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
            ...                                    anneal_schedules=schedule,
            ...                                    initial_state=init_samples,
            ...                                    num_reads=100,
-           ...                                    reinitialize_state=True)
+           ...                                    reinitialize_state=True)  # doctest: +SKIP
 
 
         """
@@ -195,8 +195,8 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
        >>> import dimod
        >>> from dwave.system import DWaveCliqueSampler, ReverseBatchStatesComposite
        ...
-       >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-       >>> sampler_reverse = ReverseBatchStatesComposite(sampler)
+       >>> sampler = DWaveCliqueSampler()      # doctest: +SKIP
+       >>> sampler_reverse = ReverseBatchStatesComposite(sampler)    # doctest: +SKIP
        >>> schedule = [[0.0, 1.0], [10.0, 0.5], [20, 1.0]]
        ...
        >>> bqm = dimod.generators.ran_r(1, 15)
@@ -205,7 +205,7 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
        ...                                    anneal_schedule=schedule,
        ...                                    initial_states=init_samples,
        ...                                    num_reads=100,
-       ...                                    reinitialize_state=True)
+       ...                                    reinitialize_state=True)   # doctest: +SKIP
 
 
 
@@ -250,8 +250,8 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
            >>> import dimod
            >>> from dwave.system import DWaveCliqueSampler, ReverseBatchStatesComposite
            ...
-           >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-           >>> sampler_reverse = ReverseBatchStatesComposite(sampler)
+           >>> sampler = DWaveCliqueSampler()       # doctest: +SKIP
+           >>> sampler_reverse = ReverseBatchStatesComposite(sampler)   # doctest: +SKIP
            >>> schedule = [[0.0, 1.0], [10.0, 0.5], [20, 1.0]]
            ...
            >>> bqm = dimod.generators.ran_r(1, 15)
@@ -260,7 +260,7 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
            ...                                    anneal_schedule=schedule,
            ...                                    initial_states=init_samples,
            ...                                    num_reads=100,
-           ...                                    reinitialize_state=True)
+           ...                                    reinitialize_state=True)  # doctest: +SKIP
 
 
         """
