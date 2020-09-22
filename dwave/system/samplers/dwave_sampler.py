@@ -133,9 +133,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             solvers at all.
 
             Note:
-                Until version 0.10.0 of ``dwave-system``, :class:`DWaveSampler`
-                used the ``base`` client, allowing non-QPU solvers to be
-                selected. To emulate the old behavior, set ``client='base'``.
+                Prior to version 0.10.0, :class:`.DWaveSampler` used the
+                ``base`` client, allowing non-QPU solvers to be selected.
+                To reproduce the old behavior, set ``client='base'``.
 
         endpoint (str, optional):
             D-Wave API endpoint URL.
@@ -230,7 +230,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.properties    # doctest: +SKIP
-            {u'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
+            {'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
               [-0.2242514597680286, 0.01718456460967399],
               [-0.20860153999435985, 0.05511969218508182],
             # Snipped above response for brevity
@@ -261,12 +261,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.parameters    # doctest: +SKIP
-            {u'anneal_offsets': ['parameters'],
-            u'anneal_schedule': ['parameters'],
-            u'annealing_time': ['parameters'],
-            u'answer_mode': ['parameters'],
-            u'auto_scale': ['parameters'],
-            # Snipped above response for brevity
+            {'anneal_offsets': ['parameters'],
+             'anneal_schedule': ['parameters'],
+             'annealing_time': ['parameters'],
+             'answer_mode': ['parameters'],
+             'auto_scale': ['parameters'],
+             # Snipped above response for brevity
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -519,12 +519,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
 
     def to_networkx_graph(self):
-
         """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
 
         Returns:
-            G : :class:`networkx.Graph` graph.
+            :class:`networkx.Graph`:
                 Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
+
         Examples:
             This example converts a selected D-Wave system solver to a graph
             and verifies it has over 2000 nodes.
@@ -535,8 +535,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
             >>> len(g.nodes) > 2000                  # doctest: +SKIP
             True
-
-
         """
 
         topology_type = self.properties['topology']['type']

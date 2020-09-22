@@ -41,15 +41,6 @@ class LeapHybridSampler(dimod.Sampler):
     Inherits from :class:`dimod.Sampler`.
 
     Args:
-        solver (dict/str, optional):
-            Solver (a hybrid solver on which to run submitted problems) to select
-            named as a string or given as a set of required features. Supported
-            features and values are described in
-            :meth:`~dwave.cloud.client.Client.get_solvers`.
-
-        connection_close (bool, optional):
-            Force HTTP(S) connection close after each request.
-
         config_file (str, optional):
             Path to a configuration file that identifies a hybrid solver and provides
             connection information.
@@ -64,14 +55,13 @@ class LeapHybridSampler(dimod.Sampler):
             Authentication token for the D-Wave API to authenticate the client session.
 
         solver (dict/str, optional):
-            Solver (a hybrid solver on which to run submitted problems) to select,
-            formatted as a string, or as a dict of solver features required.
-
-        proxy (str, optional):
-            Proxy URL to be used for accessing the D-Wave API.
+            Solver (a hybrid solver on which to run submitted problems) to select
+            named as a string or given as a set of required features. Supported
+            features and values are described in
+            :meth:`~dwave.cloud.client.Client.get_solvers`.
 
         **config:
-            Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example builds a random sparse graph and uses a hybrid solver to find a
