@@ -48,10 +48,10 @@ class DWaveCliqueSampler(dimod.Sampler):
         ...
         >>> bqm = dimod.generators.ran_r(1, 6)
         ...
-        >>> sampler = DWaveCliqueSampler(solver={'qpu': True})
-        >>> sampler.largest_clique_size > 5
+        >>> sampler = DWaveCliqueSampler()   # doctest: +SKIP
+        >>> sampler.largest_clique_size > 5  # doctest: +SKIP
         True
-        >>> sampleset = sampler.sample(bqm, num_reads=100)
+        >>> sampleset = sampler.sample(bqm, num_reads=100)   # doctest: +SKIP
 
     """
     def __init__(self, **config):
