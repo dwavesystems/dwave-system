@@ -112,10 +112,13 @@ class LeapHybridSampler(dimod.Sampler):
             if solver.setdefault('supported_problem_types__contains', 'bqm') != 'bqm':
                 raise ValueError("the only problem type this sampler supports is 'bqm'")
 
+            # prefer the latest version, but allow kwarg override
+            solver.setdefault('order_by', '-version')
+
         self.client = Client.from_config(
             solver=solver, connection_close=connection_close, **config)
 
-        self.solver = self.client.get_solver(order_by='-version')
+        self.solver = self.client.get_solver()
 
         # For explicitly named solvers:
         if self.properties.get('category') != 'hybrid':
