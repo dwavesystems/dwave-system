@@ -111,6 +111,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         **config:
             Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
 
+    Note:
+        Prior to version 1.0.0, :class:`.DWaveSampler` used the ``base`` client,
+        allowing non-QPU solvers to be selected.
+        To reproduce the old behavior, instantiate :class:`.DWaveSampler` with
+        ``client='base'``.
+
     Examples:
         This example submits a two-variable Ising problem mapped directly to two
         adjacent qubits on a D-Wave system. ``qubit_a`` is the first qubit in
@@ -140,12 +146,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
-    def __init__(self, failover=False, retry_interval=-1, order_by=None, **config):
-
-        # fold isolated order_by under solver
-        if order_by is not None:
-            warn("'order_by' has been moved under 'solver' dict.",
-                 DeprecationWarning)
+    def __init__(self, failover=False, retry_interval=-1, **config):
 
         # strongly prefer QPU solvers; requires kwarg-level override
         config.setdefault('client', 'qpu')
@@ -158,12 +159,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         defaults.update(solver=dict(order_by='-num_active_qubits'))
 
         self.client = Client.from_config(**config)
-
-        # NOTE: split behavior until we remove `order_by` kwarg
-        if order_by is None:
-            self.solver = self.client.get_solver()
-        else:
-            self.solver = self.client.get_solver(order_by=order_by)
+        self.solver = self.client.get_solver()
 
         self.failover = failover
         self.retry_interval = retry_interval
