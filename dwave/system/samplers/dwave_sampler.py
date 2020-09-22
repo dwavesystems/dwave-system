@@ -108,51 +108,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             then it will instead propogate the `SolverNotFoundError` to the
             user.
 
-        order_by (callable/str/None):
-            Solver sorting key function or :class:`~dwave.cloud.solver.StructuredSolver`
-            attribute/item dot-separated path.
-            See :meth:`~dwave.cloud.client.Client.get_solvers` for a more detailed
-            description of the parameter.
-
-            Note:
-                Isolated use of ``order_by`` has been deprecated in 0.10.0.
-                Please specify it as part of the ``solver`` argument dict.
-
-        config_file (str, optional):
-            Path to a configuration file that identifies a D-Wave system and provides
-            connection information.
-
-        profile (str, optional):
-            Profile to select from the configuration file.
-
-        client (str, optional, default='qpu'):
-            Client type used for accessing the API. Client type effectively
-            constraints the solver's ``category``. Supported values are
-            ``qpu``, ``sw`` and ``hybrid`` for QPU, software and hybrid solvers
-            respectively. In addition, ``base`` client type doesn't filter
-            solvers at all.
-
-            Note:
-                Prior to version 0.10.0, :class:`.DWaveSampler` used the
-                ``base`` client, allowing non-QPU solvers to be selected.
-                To reproduce the old behavior, set ``client='base'``.
-
-        endpoint (str, optional):
-            D-Wave API endpoint URL.
-
-        token (str, optional):
-            Authentication token for the D-Wave API to authenticate the client session.
-
-        solver (dict/str, optional):
-            Solver (a D-Wave system on which to run submitted problems) to
-            select given as a set of required features. Solver priority (if
-            multiple solvers match) can be given via ``order_by`` key. Supported
-            features and values are described in
-            :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
-            compatibility, a solver name, formatted as a string, is accepted.
-
         **config:
-            Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example submits a two-variable Ising problem mapped directly to two
