@@ -169,7 +169,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         >>> from dwave.system import DWaveSampler
         ...
-        >>> sampler = DWaveSampler(solver={'qpu': True})
+        >>> sampler = DWaveSampler()
         ...
         >>> qubit_a = sampler.nodelist[0]
         >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
@@ -365,7 +365,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> sampler = DWaveSampler(solver={'qpu': True})
+            >>> sampler = DWaveSampler()
             ...
             >>> qubit_a = sampler.nodelist[0]
             >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
@@ -531,7 +531,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> sampler = DWaveSampler(solver={'qpu': True})
+            >>> sampler = DWaveSampler()
             >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
             >>> len(g.nodes) > 2000                  # doctest: +SKIP
             True
