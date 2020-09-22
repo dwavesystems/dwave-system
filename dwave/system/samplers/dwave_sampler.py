@@ -21,8 +21,9 @@ for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
 
-import functools
 import time
+import functools
+import collections.abc as abc
 
 from warnings import warn
 
@@ -113,12 +114,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             See :meth:`~dwave.cloud.client.Client.get_solvers` for a more detailed
             description of the parameter.
 
+            Note:
+                Isolated use of ``order_by`` has been deprecated in 0.10.0.
+                Please specify it as part of the ``solver`` argument dict.
+
         config_file (str, optional):
             Path to a configuration file that identifies a D-Wave system and provides
             connection information.
 
         profile (str, optional):
             Profile to select from the configuration file.
+
+        client (str, optional, default='qpu'):
+            Client type used for accessing the API. Client type effectively
+            constraints the solver's ``category``. Supported values are
+            ``qpu``, ``sw`` and ``hybrid`` for QPU, software and hybrid solvers
+            respectively. In addition, ``base`` client type doesn't filter
+            solvers at all.
+
+            Note:
+                Prior to version 0.10.0, :class:`.DWaveSampler` used the
+                ``base`` client, allowing non-QPU solvers to be selected.
+                To reproduce the old behavior, set ``client='base'``.
 
         endpoint (str, optional):
             D-Wave API endpoint URL.
@@ -127,13 +144,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Authentication token for the D-Wave API to authenticate the client session.
 
         solver (dict/str, optional):
-            Solver (a D-Wave system on which to run submitted problems) to select given
-            as a set of required features. Supported features and values are described in
+            Solver (a D-Wave system on which to run submitted problems) to
+            select given as a set of required features. Solver priority (if
+            multiple solvers match) can be given via ``order_by`` key. Supported
+            features and values are described in
             :meth:`~dwave.cloud.client.Client.get_solvers`. For backward
             compatibility, a solver name, formatted as a string, is accepted.
-
-        proxy (str, optional):
-            Proxy URL to be used for accessing the D-Wave API.
 
         **config:
             Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
@@ -153,7 +169,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         >>> from dwave.system import DWaveSampler
         ...
-        >>> sampler = DWaveSampler(solver={'qpu': True})
+        >>> sampler = DWaveSampler()
         ...
         >>> qubit_a = sampler.nodelist[0]
         >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
@@ -169,18 +185,25 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     """
     def __init__(self, failover=False, retry_interval=-1, order_by=None, **config):
 
-        if config.get('solver_features') is not None:
-            warn("'solver_features' argument has been renamed to 'solver'.", DeprecationWarning)
+        # fold isolated order_by under solver
+        if order_by is not None:
+            warn("'order_by' has been moved under 'solver' dict.",
+                 DeprecationWarning)
 
-            if config.get('solver') is not None:
-                raise ValueError("can not combine 'solver' and 'solver_features'")
+        # strongly prefer QPU solvers; requires kwarg-level override
+        config.setdefault('client', 'qpu')
 
-            config['solver'] = config.pop('solver_features')
+        # weakly prefer QPU solver with the highest qubit count,
+        # easily overridden on any config level above defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(solver=dict(order_by='-num_active_qubits'))
 
         self.client = Client.from_config(**config)
 
+        # NOTE: split behavior until we remove `order_by` kwarg
         if order_by is None:
-            # use the default from the cloud-client
             self.solver = self.client.get_solver()
         else:
             self.solver = self.client.get_solver(order_by=order_by)
@@ -189,7 +212,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.retry_interval = retry_interval
 
     warnings_default = WarningAction.IGNORE
-    """Defines the default behabior for :meth:`.sample_ising`'s  and
+    """Defines the default behavior for :meth:`.sample_ising`'s  and
     :meth:`sample_qubo`'s `warnings` kwarg.
     """
 
@@ -207,7 +230,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.properties    # doctest: +SKIP
-            {u'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
+            {'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
               [-0.2242514597680286, 0.01718456460967399],
               [-0.20860153999435985, 0.05511969218508182],
             # Snipped above response for brevity
@@ -238,12 +261,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
             >>> sampler.parameters    # doctest: +SKIP
-            {u'anneal_offsets': ['parameters'],
-            u'anneal_schedule': ['parameters'],
-            u'annealing_time': ['parameters'],
-            u'answer_mode': ['parameters'],
-            u'auto_scale': ['parameters'],
-            # Snipped above response for brevity
+            {'anneal_offsets': ['parameters'],
+             'anneal_schedule': ['parameters'],
+             'annealing_time': ['parameters'],
+             'answer_mode': ['parameters'],
+             'auto_scale': ['parameters'],
+             # Snipped above response for brevity
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -342,7 +365,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> sampler = DWaveSampler(solver={'qpu': True})
+            >>> sampler = DWaveSampler()
             ...
             >>> qubit_a = sampler.nodelist[0]
             >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
@@ -496,24 +519,22 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
 
     def to_networkx_graph(self):
-
         """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
 
         Returns:
-            G : :class:`networkx.Graph` graph.
+            :class:`networkx.Graph`:
                 Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
+
         Examples:
             This example converts a selected D-Wave system solver to a graph
             and verifies it has over 2000 nodes.
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> sampler = DWaveSampler(solver={'qpu': True})
+            >>> sampler = DWaveSampler()
             >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
             >>> len(g.nodes) > 2000                  # doctest: +SKIP
             True
-
-
         """
 
         topology_type = self.properties['topology']['type']

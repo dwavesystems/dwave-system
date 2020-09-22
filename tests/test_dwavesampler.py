@@ -20,6 +20,7 @@ import warnings
 
 from collections import namedtuple
 from concurrent.futures import Future
+from unittest import mock
 from uuid import uuid4
 
 import numpy as np
@@ -31,13 +32,6 @@ from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
 from dwave.system.samplers import DWaveSampler
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
-
-try:
-    # py3
-    import unittest.mock as mock
-except ImportError:
-    # py2
-    import mock
 
 
 C16 = dnx.chimera_graph(16)
@@ -106,25 +100,37 @@ class TestDwaveSampler(unittest.TestCase):
         self.sampler.solver = MockSolver()
 
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
-    def test_solver_init(self, MockClient):
-        """Deprecation warning is raised for `solver_features` use, but it still works."""
+    def test_init_default(self, MockClient):
+        """QPU with the highest number of qubits chosen by default."""
 
-        # assertWarns not available in py2
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            DWaveSampler(solver_features={'qpu': True})
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+        sampler = DWaveSampler()
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            DWaveSampler(solver={'qpu': True})
-            self.assertEqual(len(w), 0)
+        MockClient.from_config.assert_called_once_with(
+            client='qpu',
+            defaults={'solver': {'order_by': '-num_active_qubits'}})
 
-        MockClient.reset_mock()
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_init_generic_behavior(self, MockClient):
+        """Generic solver behavior (default prior to 0.10.0) can be forced."""
+
+        sampler = DWaveSampler(client='base')
+
+        MockClient.from_config.assert_called_once_with(
+            client='base',
+            defaults={'solver': {'order_by': '-num_active_qubits'}})
+
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_init_solver(self, MockClient):
+        """QPU can be explicitly selected (old default usage example)"""
+
         solver = {'qpu': True, 'num_qubits__gt': 1000}
+
         sampler = DWaveSampler(solver=solver)
-        MockClient.from_config.assert_called_once_with(solver=solver)
+
+        MockClient.from_config.assert_called_once_with(
+            client='qpu',
+            solver=solver,
+            defaults={'solver': {'order_by': '-num_active_qubits'}})
 
     def test_sample_ising_variables(self):
 

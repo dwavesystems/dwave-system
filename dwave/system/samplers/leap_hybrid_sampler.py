@@ -29,6 +29,7 @@ from dwave.cloud import Client
 
 __all__ = ['LeapHybridSampler']
 
+
 class LeapHybridSampler(dimod.Sampler):
     """A class for using Leap's cloud-based hybrid solvers.
 
@@ -40,15 +41,6 @@ class LeapHybridSampler(dimod.Sampler):
     Inherits from :class:`dimod.Sampler`.
 
     Args:
-        solver (dict/str, optional):
-            Solver (a hybrid solver on which to run submitted problems) to select
-            named as a string or given as a set of required features. Supported
-            features and values are described in
-            :meth:`~dwave.cloud.client.Client.get_solvers`.
-
-        connection_close (bool, optional):
-            Force HTTP(S) connection close after each request.
-
         config_file (str, optional):
             Path to a configuration file that identifies a hybrid solver and provides
             connection information.
@@ -62,11 +54,14 @@ class LeapHybridSampler(dimod.Sampler):
         token (str, optional):
             Authentication token for the D-Wave API to authenticate the client session.
 
-        proxy (str, optional):
-            Proxy URL to be used for accessing the D-Wave API.
+        solver (dict/str, optional):
+            Solver (a hybrid solver on which to run submitted problems) to select
+            named as a string or given as a set of required features. Supported
+            features and values are described in
+            :meth:`~dwave.cloud.client.Client.get_solvers`.
 
         **config:
-            Keyword arguments passed directly to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example builds a random sparse graph and uses a hybrid solver to find a
@@ -94,22 +89,26 @@ class LeapHybridSampler(dimod.Sampler):
 
     def __init__(self, solver=None, connection_close=True, **config):
 
-        # always use the base class (QPU client filters-out the hybrid solvers)
-        config['client'] = 'base'
+        # we want a Hybrid solver by default, but allow override
+        config.setdefault('client', 'hybrid')
 
         if solver is None:
             solver = {}
 
         if isinstance(solver, abc.Mapping):
+            # TODO: instead of solver selection, try with user's default first
             if solver.setdefault('category', 'hybrid') != 'hybrid':
                 raise ValueError("the only 'category' this sampler supports is 'hybrid'")
             if solver.setdefault('supported_problem_types__contains', 'bqm') != 'bqm':
                 raise ValueError("the only problem type this sampler supports is 'bqm'")
 
+            # prefer the latest version, but allow kwarg override
+            solver.setdefault('order_by', '-version')
+
         self.client = Client.from_config(
             solver=solver, connection_close=connection_close, **config)
 
-        self.solver = self.client.get_solver(order_by='-version')
+        self.solver = self.client.get_solver()
 
         # For explicitly named solvers:
         if self.properties.get('category') != 'hybrid':

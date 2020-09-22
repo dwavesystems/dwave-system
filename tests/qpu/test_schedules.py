@@ -25,7 +25,7 @@ class TestRamp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(qpu=True, h_gain_schedule=True))
+            cls.qpu = DWaveSampler(solver=dict(h_gain_schedule=True))
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 

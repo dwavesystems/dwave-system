@@ -56,10 +56,7 @@ class DWaveCliqueSampler(dimod.Sampler):
     """
     def __init__(self, **config):
 
-        # get the QPU with the most qubits available, subject to other
-        # constraints specified in **config
-        self.child = child = DWaveSampler(order_by='-num_active_qubits',
-                                          **config)
+        self.child = child = DWaveSampler(**config)
 
         # do some topology checking
         try:

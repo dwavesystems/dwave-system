@@ -28,8 +28,8 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls.qpu = DWaveSampler(solver=dict(
-                qpu=True, initial_state=True, anneal_schedule=True))
+            cls.qpu = DWaveSampler(
+                solver=dict(initial_state=True, anneal_schedule=True))
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no qpu available")
 
