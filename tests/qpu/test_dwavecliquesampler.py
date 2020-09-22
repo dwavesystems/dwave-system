@@ -24,8 +24,7 @@ from dwave.system import DWaveCliqueSampler
 class TestDWaveCliqueSampler(unittest.TestCase):
     def test_chimera(self):
         try:
-            sampler = DWaveCliqueSampler(
-                solver=dict(topology__type='chimera', qpu=True))
+            sampler = DWaveCliqueSampler(solver=dict(topology__type='chimera'))
         except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no Chimera-structured QPU available")
 
@@ -40,8 +39,7 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 
     def test_pegasus(self):
         try:
-            sampler = DWaveCliqueSampler(
-                solver=dict(topology__type='pegasus', qpu=True))
+            sampler = DWaveCliqueSampler(solver=dict(topology__type='pegasus'))
         except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no Pegasus-structured QPU available")
 
