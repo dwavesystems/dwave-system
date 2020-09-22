@@ -101,21 +101,7 @@ class TestDwaveSampler(unittest.TestCase):
 
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_solver_init(self, MockClient):
-        """Deprecation warning is raised for `solver_features` use, but it still works."""
 
-        # assertWarns not available in py2
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            DWaveSampler(solver_features={'qpu': True})
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            DWaveSampler(solver={'qpu': True})
-            self.assertEqual(len(w), 0)
-
-        MockClient.reset_mock()
         solver = {'qpu': True, 'num_qubits__gt': 1000}
         sampler = DWaveSampler(solver=solver)
         MockClient.from_config.assert_called_once_with(client='qpu', solver=solver)

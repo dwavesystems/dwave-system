@@ -184,15 +184,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     """
     def __init__(self, failover=False, retry_interval=-1, order_by=None, **config):
 
-        if config.get('solver_features') is not None:
-            warn("'solver_features' argument has been renamed to 'solver'.",
-                 DeprecationWarning)
-
-            if config.get('solver') is not None:
-                raise ValueError("can not combine 'solver' and 'solver_features'")
-
-            config['solver'] = config.pop('solver_features')
-
         # fold isolated order_by under solver
         if order_by is not None:
             warn("'order_by' has been moved under 'solver' dict.",
