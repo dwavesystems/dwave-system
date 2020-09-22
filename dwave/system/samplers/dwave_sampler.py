@@ -21,8 +21,9 @@ for explanations of technical terms in descriptions of Ocean tools.
 """
 from __future__ import division
 
-import functools
 import time
+import functools
+import collections.abc as abc
 
 from warnings import warn
 
@@ -189,13 +190,20 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             warn("'order_by' has been moved under 'solver' dict.",
                  DeprecationWarning)
 
-        # we want a QPU solver by default, but allow override
+        # strongly prefer QPU solvers; requires kwarg-level override
         config.setdefault('client', 'qpu')
+
+        # weakly prefer QPU solver with the highest qubit count,
+        # easily overridden on any config level above defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(solver=dict(order_by='-num_active_qubits'))
 
         self.client = Client.from_config(**config)
 
+        # NOTE: split behavior until we remove `order_by` kwarg
         if order_by is None:
-            # use the default from the cloud-client (or from solver)
             self.solver = self.client.get_solver()
         else:
             self.solver = self.client.get_solver(order_by=order_by)
@@ -204,7 +212,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.retry_interval = retry_interval
 
     warnings_default = WarningAction.IGNORE
-    """Defines the default behabior for :meth:`.sample_ising`'s  and
+    """Defines the default behavior for :meth:`.sample_ising`'s  and
     :meth:`sample_qubo`'s `warnings` kwarg.
     """
 
