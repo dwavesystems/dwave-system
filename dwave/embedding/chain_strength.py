@@ -55,8 +55,7 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
             range of prefactors to try is [0.5, 2].
 
     Returns:
-        float: The chain strength, or 1 if chain strength is not applicable
-               to the problem. 
+        float: The chain strength, or 1 if chain strength is not applicable.
 
     """
     if bqm.num_interactions > 0:
@@ -83,8 +82,7 @@ def scaled(bqm, embedding=None, prefactor=1.0):
             Prefactor used for scaling. 
 
     Returns:
-        float: The chain strength, or 1 if chain strength is not applicable
-               to the problem. 
+        float: The chain strength, or 1 if chain strength is not applicable.
 
     """  
     if bqm.num_interactions > 0:

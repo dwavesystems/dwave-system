@@ -176,7 +176,8 @@ class EmbeddedStructure(dict):
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(source_bqm, self)`
                 and should return a float or mapping, to be interpreted as above.
-                By default, `chain_strength` is scaled to the problem.
+                By default, `chain_strength` is calculated with 
+                :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             smear_vartype (:class:`.Vartype`, optional, default=None):
                 Determines whether the linear bias of embedded variables is
@@ -323,7 +324,8 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             strength is applied.  If a callable is passed, it will be called on
             `chain_strength(source_bqm, embedding)` and should return a
             float or mapping, to be interpreted as above. By default,
-            `chain_strength` is scaled to the problem.
+            `chain_strength` is calculated with
+            :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
         smear_vartype (:class:`.Vartype`, optional, default=None):
             Determines whether the linear bias of embedded variables is smeared
@@ -405,7 +407,8 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             strength is applied.  If a callable is passed, it will be called on
             `chain_strength(source_bqm, embedding)` and should return a
             float or mapping, to be interpreted as above. By default,
-            `chain_strength` is scaled to the problem.
+            `chain_strength` is calculated with 
+            :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
     Returns:
         tuple: A 2-tuple:
@@ -467,7 +470,8 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
             chain-specific strength is applied.  If a callable is passed, it
             will be called on `chain_strength(source_bqm, embedding)`
             and should return a float or mapping, to be interpreted as above.
-            By default, `chain_strength` is scaled to the problem.
+            By default, `chain_strength` is calculated with 
+            :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
     Returns:
         dict[(variable, variable), bias]: Quadratic biases of the target QUBO.
