@@ -33,6 +33,7 @@ install_requires = ['dimod>=0.9.6,<0.10.0',
                     'minorminer>=0.2.0,<0.3.0',
                     'six>=1.11.0,<2.0.0',
                     'numpy>=1.14.0,<2.0.0',
+                    'dwave-greedy>=0.1.0',
                     'dwave-tabu>=0.2.0',
                     ]
 
