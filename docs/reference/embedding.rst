@@ -76,7 +76,8 @@ Diagnostics
 Chain Strength
 ==============
 
-Utility functions for calculating chain strength.
+.. automodule:: dwave.embedding.chain_strength
+.. currentmodule:: dwave.embedding
 
 .. autosummary::
    :toctree: generated/
