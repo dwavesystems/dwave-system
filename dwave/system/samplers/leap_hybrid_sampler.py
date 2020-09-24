@@ -31,11 +31,14 @@ __all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
 
 
 class LeapHybridSampler(dimod.Sampler):
-    """A class for using Leap's cloud-based hybrid solvers.
+    """A class for using Leap's cloud-based hybrid BQM solvers.
+
+    Leap’s quantum-classical hybrid BQM solvers are intended to solve arbitrary
+    application problems formulated as binary quadratic models (BQM).
 
     Uses parameters set in a configuration file, as environment variables, or
-    explicitly as input arguments for selecting and communicating with a hybrid solver.
-    For more information, see
+    explicitly as input arguments for selecting and communicating with a hybrid
+    solver. For more information, see
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
     Inherits from :class:`dimod.Sampler`.
@@ -132,25 +135,26 @@ class LeapHybridSampler(dimod.Sampler):
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
-                The binary quadratic model.
+                Binary quadratic model.
 
             time_limit (int):
-                Maximum run time, in seconds, to allow the solver to work on the problem.
-                Must be at least the minimum required for the number of problem variables,
-                which is calculated and set by default.
-                The minimum time for a hybrid solver is specified as a piecewise-linear
-                curve defined by a set of floating-point pairs, the `minimum_time_limit`
-                field under
+                Maximum run time, in seconds, to allow the solver to work on the
+                problem. Must be at least the minimum required for the number of
+                problem variables, which is calculated and set by default.
+                The minimum time for a hybrid BQM solver is specified as a
+                piecewise-linear curve defined by a set of floating-point pairs,
+                the `minimum_time_limit` field under
                 :attr:`~dwave.system.samplers.LeapHybridSampler.properties`.
-                The first element in each
-                pair is the number of problem variables; the second is the minimum
-                required time. The minimum time for any particular number of variables
-                is a linear interpolation calculated on two pairs that represent the
-                relevant range for the given number of variables.
-                For example, if `LeapHybridSampler().properties["minimum_time_limit"]`
-                returns `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, then the minimum time
-                for a 50-variable problem is 5 seconds, the linear interpolation of the
-                first two pairs that represent problems with between 1 to 100 variables.
+                The first element in each pair is the number of problem variables;
+                the second is the minimum required time. The minimum time for any
+                particular number of variables is a linear interpolation calculated
+                on two pairs that represent the relevant range for the given
+                number of variables. For example, if
+                `LeapHybridSampler().properties["minimum_time_limit"]` returns
+                `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, then the minimum time
+                for a 50-variable problem is 5 seconds, the linear interpolation
+                of the first two pairs that represent problems with between 1 to
+                100 variables.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
@@ -160,8 +164,8 @@ class LeapHybridSampler(dimod.Sampler):
             :class:`dimod.SampleSet`: A `dimod` :obj:`~dimod.SampleSet` object.
 
         Examples:
-            This example builds a random sparse graph and uses a hybrid solver to find a
-            maximum independent set.
+            This example builds a random sparse graph and uses a hybrid solver to
+            find a maximum independent set.
 
             >>> import dimod
             >>> import networkx as nx
@@ -238,7 +242,59 @@ LeapHybridBQMSampler = LeapHybridSampler
 
 
 class LeapHybridDQMSampler:
-    """A class for using Leap's cloud-based hybrid DQM solvers."""
+    """A class for using Leap's cloud-based hybrid DQM solvers.
+
+    Leap’s quantum-classical hybrid DQM solvers are intended to solve arbitrary
+    application problems formulated as **discrete** quadratic models (DQM).
+
+    Uses parameters set in a configuration file, as environment variables, or
+    explicitly as input arguments for selecting and communicating with a hybrid
+    solver. For more information, see
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
+
+    Args:
+        **config:
+            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+
+    Examples:
+        This example solves a small, illustrative problem: a dieter must choose
+        a meal from a three-course menu, and wants one with the lowest calorie
+        count. The choices (cases of the three variables)
+        are:
+
+        * Main: pizza (300 calories) or sandwich (700 calories)
+        * Beverage: wine (200 calories) or large soda (400 calories)
+        * Dessert: fruit (100 calories), nuts (200 calories), or cake (500 calories)
+
+        The calorie count for each case is set as a linear bias.
+        Additionally, choosing the salty pizza makes it almost certain this person
+        drinks the large soda. This (constraint) is expressed by setting a strong
+        quadratic bias that penalizes eating pizza and not drinking soda.
+
+        >>> import dimod
+        >>> from dwave.system import LeapHybridDQMSampler
+        ...
+        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
+        ...
+        >>> dqm = dimod.DiscreteQuadraticModel()
+        >>> dqm.add_variable(2, label='food')
+        >>> dqm.add_variable(2, label='drink')
+        >>> dqm.add_variable(3, label='dessert')
+        ...
+        >>> for case, val in enumerate([300, 700]):
+               dqm.set_linear_case('food', case, val)
+        >>> for case, val in enumerate([200, 400]):
+        >>>    dqm.set_linear_case('drink', case, val)
+        >>> for case, val in enumerate([100, 200, 500]):
+               dqm.set_linear_case('dessert', case, val)
+        ...
+        >>> dqm.set_quadratic('food', 'drink', {(0, 0): 1000})
+        ...
+        >>> sampleset = dqm_sampler.sample_dqm(dqm)         # doctest: +SKIP
+        >>> print(sampleset.first.sample, sampleset.first.energy)   # doctest: +SKIP
+        {'food': 0, 'drink': 1, 'dessert': 0} 800.0
+
+    """
 
     def __init__(self, solver=None, connection_close=True, **config):
 
@@ -304,18 +360,40 @@ class LeapHybridDQMSampler:
             return parameters
 
     def sample_dqm(self, dqm, time_limit=None, compressed=False, **kwargs):
-        """Sample from the specified binary quadratic model.
+        """Sample from the specified discrete quadratic model.
 
         Args:
-            bqm (:obj:`dimod.DiscreteQuadraticModel`):
-                The binary quadratic model.
+            dqm (:obj:`dimod.DiscreteQuadraticModel`):
+                Discrete quadratic model (DQM).
 
-            time_limit (int):
-                The maximum run time in seconds.
+            time_limit (int, optional):
+                Maximum run time, in seconds, to allow the solver to work on the
+                problem. Must be at least the minimum required for the number of
+                problem variables, which is calculated and set by default.
+                The minimum time for a hybrid solver is specified as a
+                piecewise-linear curve defined by a set of floating-point pairs,
+                the `minimum_time_limit` field under
+                :attr:`~dwave.system.samplers.LeapHybridBQMSampler.properties`.
+                The first element in each pair is a combination of the numbers of
+                interactions, variables, and cases that reflects the "density" of
+                connectivity between the problem's variables;
+                the second is the minimum required time. The minimum time for any
+                particular problem size is a linear interpolation calculated on
+                two pairs that represent the relevant range for the given problem.
+                For example, if `LeapHybridSampler().properties["minimum_time_limit"]`
+                returns `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, then the minimum
+                time for a problem of "density" 50 is 5 seconds, the linear
+                interpolation of the first two pairs that represent problems with
+                "density" between 1 to 100.
+                :meth:`~dwave.system.samplers.LeapHybridBQMSampler.min_time_limit`
+                calculates the minimum time for your problem.
+
+            compressed (binary, optional):
+                Compresses the BQM data when set to True.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
-                :attr:`~dwave.system.samplers.LeapHybridSampler.parameters`.
+                :attr:`~dwave.system.samplers.LeapHybridBQMSampler.parameters`.
 
         Returns:
             :class:`dimod.SampleSet`: A sample set.
@@ -334,8 +412,7 @@ class LeapHybridDQMSampler:
         return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
 
     def min_time_limit(self, dqm):
-        """Return the minimum `time_limit` that will be accepted for the given
-        dqm.
+        """Return the minimum `time_limit` accepted for the given problem.
         """
         ec = dqm.num_variable_interactions() * dqm.num_cases() / dqm.num_variables()
         limits = np.array(self.properties['minimum_time_limit'])
