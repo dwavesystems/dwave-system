@@ -330,7 +330,7 @@ class LeapHybridDQMSampler:
         # does not implement io.BaseIO interface, so we use the underlying
         # (and internal) file-like object for now
         f = dqm.to_file(compressed=compressed, ignore_labels=True)._file
-        sampleset = self.solver.sample_dqm(f, time_limit=time_limit).sampleset
+        sampleset = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs).sampleset
         return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
 
     def min_time_limit(self, dqm):
