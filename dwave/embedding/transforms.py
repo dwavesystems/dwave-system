@@ -289,10 +289,8 @@ class EmbeddedStructure(dict):
 
             target_bqm.add_interactions_from((u, v, b) for u, v in interactions)
 
-        if return_vartype is dimod.BINARY:
-            return target_bqm.binary
-        elif return_vartype is dimod.SPIN:
-            return target_bqm.spin
+        # we made the target BQM so we can safely mutate it in-place
+        return target_bqm.change_vartype(return_vartype, inplace=True)
 
 
 def embed_bqm(source_bqm, embedding=None, target_adjacency=None,

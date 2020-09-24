@@ -1,2 +1,4 @@
+parameterized==0.7.4
+
 coverage
 codecov
