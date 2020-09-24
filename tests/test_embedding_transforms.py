@@ -24,6 +24,8 @@ import networkx as nx
 import numpy as np
 import numpy.testing as npt
 
+from parameterized import parameterized
+
 import dimod
 
 import dwave.embedding
@@ -247,6 +249,21 @@ class TestEmbedBQM(unittest.TestCase):
 
         self.assertIsInstance(embedded_bqm, dimod.BinaryQuadraticModel)
         self.assertFalse(embedded_bqm)  # should be empty
+
+    @parameterized.expand(
+        [('_'.join(vt.name for vt in vartypes), *vartypes) for vartypes
+         in itertools.product([dimod.BINARY, dimod.SPIN], repeat=3)])
+    def test_change_vartype_return(self, name,
+                                   source_vartype, smear_vartype,
+                                   target_vartype):
+
+        bqm = dimod.BinaryQuadraticModel.empty(source_vartype)
+        embedded_bqm = dwave.embedding.embed_bqm(bqm, {}, {},
+                                                 smear_vartype=smear_vartype)
+
+        self.assertIs(embedded_bqm.vartype, source_vartype)
+        embedded_bqm.change_vartype(target_vartype, inplace=False)
+        embedded_bqm.change_vartype(target_vartype, inplace=True)
 
     def test_embed_bqm_subclass_propagation(self):
 
