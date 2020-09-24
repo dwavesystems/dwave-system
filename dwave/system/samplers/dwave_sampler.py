@@ -85,7 +85,7 @@ def _failover(f):
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
-    """A class for using the D-Wave system as a sampler.
+    """A class for using the D-Wave system as a sampler for binary quadratic models.
 
     Uses parameters set in a configuration file, as environment variables, or
     explicitly as input arguments for selecting and communicating with a D-Wave
@@ -283,7 +283,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     @_failover
     def sample(self, bqm, warnings=None, **kwargs):
-        """Sample from the specified Ising model.
+        """Sample from the specified binary quadratic model.
 
         Args:
             bqm (:class:`~dimod.BinaryQuadraticModel`):
