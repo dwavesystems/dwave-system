@@ -27,7 +27,7 @@ from dimod.serialization.fileview import FileView
 
 from dwave.cloud import Client
 
-__all__ = ['LeapHybridSampler']
+__all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
 
 
 class LeapHybridSampler(dimod.Sampler):
@@ -232,3 +232,112 @@ class LeapHybridSampler(dimod.Sampler):
         # relabel, as of dimod 0.9.5+ this is not blocking
         mapping = dict(enumerate(bqm.iter_variables()))
         return sampleset.relabel_variables(mapping)
+
+
+LeapHybridBQMSampler = LeapHybridSampler
+
+
+class LeapHybridDQMSampler:
+    """A class for using Leap's cloud-based hybrid DQM solvers."""
+
+    def __init__(self, solver=None, connection_close=True, **config):
+
+        # we want a Hybrid solver by default, but allow override
+        config.setdefault('client', 'hybrid')
+
+        if solver is None:
+            solver = {}
+
+        if isinstance(solver, abc.Mapping):
+            # TODO: instead of solver selection, try with user's default first
+            if solver.setdefault('category', 'hybrid') != 'hybrid':
+                raise ValueError("the only 'category' this sampler supports is 'hybrid'")
+            if solver.setdefault('supported_problem_types__contains', 'dqm') != 'dqm':
+                raise ValueError("the only problem type this sampler supports is 'dqm'")
+
+            # prefer the latest version, but allow kwarg override
+            solver.setdefault('order_by', '-version')
+
+        self.client = Client.from_config(
+            solver=solver, connection_close=connection_close, **config)
+
+        self.solver = self.client.get_solver()
+
+        # For explicitly named solvers:
+        if self.properties.get('category') != 'hybrid':
+            raise ValueError("selected solver is not a hybrid solver.")
+        if 'dqm' not in self.solver.supported_problem_types:
+            raise ValueError("selected solver does not support the 'dqm' problem type.")
+
+        # overwrite the (static)
+
+    @property
+    def properties(self):
+        """dict: Solver properties as returned by a SAPI query.
+
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        are dependent on the selected solver and subject to change.
+        """
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
+
+    @property
+    def parameters(self):
+        """dict[str, list]: Solver parameters in the form of a dict, where keys
+        are keyword parameters accepted by a SAPI query and values are lists of
+        properties in
+        :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each
+        key.
+
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        are dependent on the selected solver and subject to change.
+        """
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            self._parameters = parameters
+            return parameters
+
+    def sample_dqm(self, dqm, time_limit=None, compressed=False, **kwargs):
+        """Sample from the specified binary quadratic model.
+
+        Args:
+            bqm (:obj:`dimod.DiscreteQuadraticModel`):
+                The binary quadratic model.
+
+            time_limit (int):
+                The maximum run time in seconds.
+
+            **kwargs:
+                Optional keyword arguments for the solver, specified in
+                :attr:`~dwave.system.samplers.LeapHybridSampler.parameters`.
+
+        Returns:
+            :class:`dimod.SampleSet`: A sample set.
+
+        """
+        if time_limit is None:
+            time_limit = self.min_time_limit(dqm)
+
+        # we convert to a file here rather than let the cloud-client handle
+        # it because we want to strip the labels and let the user handle
+        # note: SpooledTemporaryFile currently returned by DQM.to_file
+        # does not implement io.BaseIO interface, so we use the underlying
+        # (and internal) file-like object for now
+        f = dqm.to_file(compressed=compressed, ignore_labels=True)._file
+        sampleset = self.solver.sample_dqm(f, time_limit=time_limit).sampleset
+        return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
+
+    def min_time_limit(self, dqm):
+        """Return the minimum `time_limit` that will be accepted for the given
+        dqm.
+        """
+        ec = dqm.num_variable_interactions() * dqm.num_cases() / dqm.num_variables()
+        limits = np.array(self.properties['minimum_time_limit'])
+        t = np.interp(ec, limits[:, 0], limits[:, 1])
+        return max([5, t])
