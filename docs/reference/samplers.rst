@@ -98,3 +98,26 @@ Methods
    LeapHybridSampler.sample
    LeapHybridSampler.sample_ising
    LeapHybridSampler.sample_qubo
+
+LeapHybridDQMSampler
+====================
+
+.. autoclass:: LeapHybridDQMSampler
+
+Properties
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   LeapHybridDQMSampler.properties
+   LeapHybridDQMSampler.parameters
+
+
+Methods
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   LeapHybridDQMSampler.sample_dqm
