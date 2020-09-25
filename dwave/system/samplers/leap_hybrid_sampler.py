@@ -386,7 +386,7 @@ class LeapHybridDQMSampler:
                 calculates the minimum time for your problem.
 
             compressed (binary, optional):
-                Compresses the BQM data when set to True.
+                Compresses the DQM data when set to True.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in

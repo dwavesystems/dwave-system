@@ -122,3 +122,4 @@ Methods
    :toctree: generated/
 
    LeapHybridDQMSampler.sample_dqm
+   LeapHybridDQMSampler.min_time_limit

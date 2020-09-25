@@ -6,7 +6,7 @@ Introduction
 
 *dwave-system* enables easy incorporation of the D-Wave system as a :term:`sampler`
 in either a hybrid quantum-classical solution, using
-:class:`~dwave.system.samplers.LeapHybridSampler()` or
+:class:`~dwave.system.samplers.LeapHybridSampler()`, for example, or
 :std:doc:`dwave-hybrid <oceandocs:docs_hybrid/sdk_index>` samplers such as
 :class:`~hybrid.reference.kerberos.KerberosSampler`, or directly using
 :class:`~dwave.system.samplers.DWaveSampler()`.
