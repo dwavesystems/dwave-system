@@ -4,9 +4,10 @@
 Samplers
 ========
 
-A :term:`sampler` accepts a :term:`binary quadratic model` (BQM) and returns variable assignments.
-Samplers generally try to find minimizing values but can also sample from distributions
-defined by the BQM.
+A :term:`sampler` accepts a problem in :term:`binary quadratic model` (BQM) or
+:term:`discrete quadratic model` (DQM) format and returns variable assignments.
+Samplers generally try to find minimizing values but can also sample from
+distributions defined by the problem.
 
 .. currentmodule:: dwave.system.samplers
 

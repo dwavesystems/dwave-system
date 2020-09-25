@@ -257,42 +257,39 @@ class LeapHybridDQMSampler:
             Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
 
     Examples:
-        This example solves a small, illustrative problem: a dieter must choose
-        a meal from a three-course menu, and wants one with the lowest calorie
-        count. The choices (cases of the three variables)
-        are:
-
-        * Main: pizza (300 calories) or sandwich (700 calories)
-        * Beverage: wine (200 calories) or large soda (400 calories)
-        * Dessert: fruit (100 calories), nuts (200 calories), or cake (500 calories)
-
-        The calorie count for each case is set as a linear bias.
-        Additionally, choosing the salty pizza makes it almost certain this person
-        drinks the large soda. This (constraint) is expressed by setting a strong
-        quadratic bias that penalizes eating pizza and not drinking soda.
+        This example solves a small, illustrative problem: a game of
+        rock-paper-scissors. The DQM has two variables representing two hands,
+        with cases for rock, paper, scissors. Quadratic biases are set to
+        produce a lower value of the DQM for cases of variable ``my_hand``
+        interacting with cases of variable ``their_hand`` such that the former
+        wins over the latter; for example, the interaction of ``rock-scissors`` is
+        set to -1 while ``scissors-rock`` is set to +1.
 
         >>> import dimod
         >>> from dwave.system import LeapHybridDQMSampler
         ...
+        >>> cases = ["rock", "paper", "scissors"]
+        >>> win = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
+        ...
         >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
         ...
         >>> dqm = dimod.DiscreteQuadraticModel()
-        >>> dqm.add_variable(2, label='food')
-        >>> dqm.add_variable(2, label='drink')
-        >>> dqm.add_variable(3, label='dessert')
+        >>> dqm.add_variable(3, label='my_hand')
+        >>> dqm.add_variable(3, label='their_hand')
         ...
-        >>> for case, val in enumerate([300, 700]):
-               dqm.set_linear_case('food', case, val)
-        >>> for case, val in enumerate([200, 400]):
-        >>>    dqm.set_linear_case('drink', case, val)
-        >>> for case, val in enumerate([100, 200, 500]):
-               dqm.set_linear_case('dessert', case, val)
-        ...
-        >>> dqm.set_quadratic('food', 'drink', {(0, 0): 1000})
+        >>> for my_idx, my_case in enumerate(cases):
+        ...    for their_idx, their_case in enumerate(cases):
+        ...       if win[my_case] == their_case:
+        ...          dqm.set_quadratic('my_hand', 'their_hand',
+        ...                            {(my_idx, their_idx): -1})
+        ...       if win[their_case] == my_case:
+        ...          dqm.set_quadratic('my_hand', 'their_hand',
+        ...                            {(my_idx, their_idx): 1})
         ...
         >>> sampleset = dqm_sampler.sample_dqm(dqm)         # doctest: +SKIP
-        >>> print(sampleset.first.sample, sampleset.first.energy)   # doctest: +SKIP
-        {'food': 0, 'drink': 1, 'dessert': 0} 800.0
+        >>> print("{} beats {}".format(cases[sampleset.first.sample['my_hand']],
+        ...                            cases[sampleset.first.sample['their_hand']]))   # doctest: +SKIP
+        rock beats scissors
 
     """
 
@@ -397,6 +394,44 @@ class LeapHybridDQMSampler:
 
         Returns:
             :class:`dimod.SampleSet`: A sample set.
+
+    Examples:
+        This example solves a small, illustrative problem: a dieter must choose
+        a meal from a three-course menu, and wants one with the lowest calorie
+        count. The choices (cases of the three variables)
+        are:
+
+        * Main: pizza (300 calories) or sandwich (700 calories)
+        * Beverage: wine (200 calories) or large soda (400 calories)
+        * Dessert: fruit (100 calories), nuts (200 calories), or cake (500 calories)
+
+        The calorie count for each case is set as a linear bias.
+        Additionally, choosing the salty pizza makes it almost certain this person
+        drinks the large soda. This (constraint) is expressed by setting a strong
+        quadratic bias that penalizes eating pizza and not drinking soda.
+
+        >>> import dimod
+        >>> from dwave.system import LeapHybridDQMSampler
+        ...
+        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
+        ...
+        >>> dqm = dimod.DiscreteQuadraticModel()
+        >>> dqm.add_variable(2, label='food')
+        >>> dqm.add_variable(2, label='drink')
+        >>> dqm.add_variable(3, label='dessert')
+        ...
+        >>> for case, val in enumerate([300, 700]):
+               dqm.set_linear_case('food', case, val)
+        >>> for case, val in enumerate([200, 400]):
+        >>>    dqm.set_linear_case('drink', case, val)
+        >>> for case, val in enumerate([100, 200, 500]):
+               dqm.set_linear_case('dessert', case, val)
+        ...
+        >>> dqm.set_quadratic('food', 'drink', {(0, 0): 1000})
+        ...
+        >>> sampleset = dqm_sampler.sample_dqm(dqm)         # doctest: +SKIP
+        >>> print(sampleset.first.sample, sampleset.first.energy)   # doctest: +SKIP
+        {'food': 0, 'drink': 1, 'dessert': 0} 800.0
 
         """
         if time_limit is None:
