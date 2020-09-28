@@ -141,20 +141,9 @@ class LeapHybridSampler(dimod.Sampler):
                 Maximum run time, in seconds, to allow the solver to work on the
                 problem. Must be at least the minimum required for the number of
                 problem variables, which is calculated and set by default.
-                The minimum time for a hybrid BQM solver is specified as a
-                piecewise-linear curve defined by a set of floating-point pairs,
-                the `minimum_time_limit` field under
-                :attr:`~dwave.system.samplers.LeapHybridSampler.properties`.
-                The first element in each pair is the number of problem variables;
-                the second is the minimum required time. The minimum time for any
-                particular number of variables is a linear interpolation calculated
-                on two pairs that represent the relevant range for the given
-                number of variables. For example, if
-                `LeapHybridSampler().properties["minimum_time_limit"]` returns
-                `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, then the minimum time
-                for a 50-variable problem is 5 seconds, the linear interpolation
-                of the first two pairs that represent problems with between 1 to
-                100 variables.
+
+                :meth:`~dwave.system.samplers.LeapHybridSampler.min_time_limit`
+                calculates (and describes) the minimum time for your problem.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
@@ -185,16 +174,14 @@ class LeapHybridSampler(dimod.Sampler):
         """
 
         num_vars = bqm.num_variables
-        xx, yy = zip(*self.properties["minimum_time_limit"])
-        min_time_limit = np.interp([num_vars], xx, yy)[0]
 
         if time_limit is None:
-            time_limit = min_time_limit
+            time_limit = self.min_time_limit(bqm)
         if not isinstance(time_limit, Number):
             raise TypeError("time limit must be a number")
-        if time_limit < min_time_limit:
+        if time_limit < self.min_time_limit(bqm):
             msg = ("time limit for problem size {} must be at least {}"
-                   ).format(num_vars, min_time_limit)
+                   ).format(num_vars, self.min_time_limit(bqm))
             raise ValueError(msg)
 
         # for very large BQMs, it is better to send the unlabelled version,
@@ -237,6 +224,28 @@ class LeapHybridSampler(dimod.Sampler):
         mapping = dict(enumerate(bqm.iter_variables()))
         return sampleset.relabel_variables(mapping)
 
+    def min_time_limit(self, bqm):
+        """Return the minimum `time_limit` accepted for the given problem.
+
+        The minimum time for a hybrid BQM solver is specified as a piecewise-linear
+        curve defined by a set of floating-point pairs, the `minimum_time_limit`
+        field under :attr:`~dwave.system.samplers.LeapHybridSampler.properties`.
+        The first element in each pair is the number of problem variables; the
+        second is the minimum required time. The minimum time for any number of
+        variables is a linear interpolation calculated on two pairs that represent
+        the relevant range for the given number of variables.
+
+        Examples:
+            For a solver where
+            `LeapHybridSampler().properties["minimum_time_limit"]` returns
+            `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, the minimum time for a
+            problem 50 variales is 5 seconds (the linear interpolation of the
+            first two pairs that represent problems with between 1 to 100
+            variables).
+        """
+
+        xx, yy = zip(*self.properties["minimum_time_limit"])
+        return np.interp([bqm.num_variables], xx, yy)[0]
 
 LeapHybridBQMSampler = LeapHybridSampler
 
@@ -342,7 +351,7 @@ class LeapHybridDQMSampler:
         """dict[str, list]: Solver parameters in the form of a dict, where keys
         are keyword parameters accepted by a SAPI query and values are lists of
         properties in
-        :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each
+        :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties` for each
         key.
 
         `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
@@ -367,30 +376,16 @@ class LeapHybridDQMSampler:
                 Maximum run time, in seconds, to allow the solver to work on the
                 problem. Must be at least the minimum required for the number of
                 problem variables, which is calculated and set by default.
-                The minimum time for a hybrid solver is specified as a
-                piecewise-linear curve defined by a set of floating-point pairs,
-                the `minimum_time_limit` field under
-                :attr:`~dwave.system.samplers.LeapHybridBQMSampler.properties`.
-                The first element in each pair is a combination of the numbers of
-                interactions, variables, and cases that reflects the "density" of
-                connectivity between the problem's variables;
-                the second is the minimum required time. The minimum time for any
-                particular problem size is a linear interpolation calculated on
-                two pairs that represent the relevant range for the given problem.
-                For example, if `LeapHybridSampler().properties["minimum_time_limit"]`
-                returns `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, then the minimum
-                time for a problem of "density" 50 is 5 seconds, the linear
-                interpolation of the first two pairs that represent problems with
-                "density" between 1 to 100.
-                :meth:`~dwave.system.samplers.LeapHybridBQMSampler.min_time_limit`
-                calculates the minimum time for your problem.
+
+                :meth:`~dwave.system.samplers.LeapHybridDQMSampler.min_time_limit`
+                calculates (and describes) the minimum time for your problem.
 
             compressed (binary, optional):
                 Compresses the DQM data when set to True.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
-                :attr:`~dwave.system.samplers.LeapHybridBQMSampler.parameters`.
+                :attr:`~dwave.system.samplers.LeapHybridDQMSampler.parameters`.
 
         Returns:
             :class:`dimod.SampleSet`: A sample set.
@@ -448,6 +443,25 @@ class LeapHybridDQMSampler:
 
     def min_time_limit(self, dqm):
         """Return the minimum `time_limit` accepted for the given problem.
+
+        The minimum time for a hybrid DQM solver is specified as a
+        piecewise-linear curve defined by a set of floating-point pairs,
+        the `minimum_time_limit` field under
+        :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties`.
+        The first element in each pair is a combination of the numbers of
+        interactions, variables, and cases that reflects the "density" of
+        connectivity between the problem's variables;
+        the second is the minimum required time. The minimum time for any
+        particular problem size is a linear interpolation calculated on
+        two pairs that represent the relevant range for the given problem.
+
+        Examples:
+            For a solver where
+            `LeapHybridDQMSampler().properties["minimum_time_limit"]` returns
+            `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, the minimum time for a
+            problem of "density" 50 is 5 seconds (the linear interpolation of the
+            first two pairs that represent problems with "density" between 1 to
+            100).
         """
         ec = dqm.num_variable_interactions() * dqm.num_cases() / dqm.num_variables()
         limits = np.array(self.properties['minimum_time_limit'])
