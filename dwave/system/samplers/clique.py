@@ -23,7 +23,7 @@ __all__ = ['DWaveCliqueSampler']
 
 
 class DWaveCliqueSampler(dimod.Sampler):
-    """A sampler for solving clique problems on the D-Wave system.
+    """A sampler for solving clique binary quadratic models on the D-Wave system.
 
     This sampler wraps
     :func:`~minorminer.busclique.find_clique_embedding` to generate embeddings
