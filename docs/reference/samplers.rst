@@ -99,6 +99,7 @@ Methods
    LeapHybridSampler.sample
    LeapHybridSampler.sample_ising
    LeapHybridSampler.sample_qubo
+   LeapHybridSampler.min_time_limit
 
 LeapHybridDQMSampler
 ====================

@@ -391,42 +391,7 @@ class LeapHybridDQMSampler:
             :class:`dimod.SampleSet`: A sample set.
 
     Examples:
-        This example solves a small, illustrative problem: a dieter must choose
-        a meal from a three-course menu, and wants one with the lowest calorie
-        count. The choices (cases of the three variables)
-        are:
-
-        * Main: pizza (300 calories) or sandwich (700 calories)
-        * Beverage: wine (200 calories) or large soda (400 calories)
-        * Dessert: fruit (100 calories), nuts (200 calories), or cake (500 calories)
-
-        The calorie count for each case is set as a linear bias.
-        Additionally, choosing the salty pizza makes it almost certain this person
-        drinks the large soda. This (constraint) is expressed by setting a strong
-        quadratic bias that penalizes eating pizza and not drinking soda.
-
-        >>> import dimod
-        >>> from dwave.system import LeapHybridDQMSampler
-        ...
-        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
-        ...
-        >>> dqm = dimod.DiscreteQuadraticModel()
-        >>> dqm.add_variable(2, label='food')
-        >>> dqm.add_variable(2, label='drink')
-        >>> dqm.add_variable(3, label='dessert')
-        ...
-        >>> for case, val in enumerate([300, 700]):
-               dqm.set_linear_case('food', case, val)
-        >>> for case, val in enumerate([200, 400]):
-        >>>    dqm.set_linear_case('drink', case, val)
-        >>> for case, val in enumerate([100, 200, 500]):
-               dqm.set_linear_case('dessert', case, val)
-        ...
-        >>> dqm.set_quadratic('food', 'drink', {(0, 0): 1000})
-        ...
-        >>> sampleset = dqm_sampler.sample_dqm(dqm)         # doctest: +SKIP
-        >>> print(sampleset.first.sample, sampleset.first.energy)   # doctest: +SKIP
-        {'food': 0, 'drink': 1, 'dessert': 0} 800.0
+        See the example in :class:`LeapHybridDQMSampler`.
 
         """
         if time_limit is None:
