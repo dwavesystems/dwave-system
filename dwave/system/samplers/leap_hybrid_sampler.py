@@ -397,6 +397,14 @@ class LeapHybridDQMSampler:
         if time_limit is None:
             time_limit = self.min_time_limit(dqm)
 
+        # check the max time_limit if it's available
+        if 'maximum_time_limit_hrs' in self.properties:
+            if time_limit > 60*60*self.properties['maximum_time_limit_hrs']:
+                raise ValueError("time_limit cannot exceed the solver maximum "
+                                 "of {} hours ({} seconds given)".format(
+                                    self.properties['maximum_time_limit_hrs'],
+                                    time_limit))
+
         # we convert to a file here rather than let the cloud-client handle
         # it because we want to strip the labels and let the user handle
         # note: SpooledTemporaryFile currently returned by DQM.to_file
@@ -428,7 +436,8 @@ class LeapHybridDQMSampler:
             first two pairs that represent problems with "density" between 1 to
             100).
         """
-        ec = dqm.num_variable_interactions() * dqm.num_cases() / dqm.num_variables()
+        ec = (dqm.num_variable_interactions() * dqm.num_cases() /
+              max(dqm.num_variables(), 1))
         limits = np.array(self.properties['minimum_time_limit'])
         t = np.interp(ec, limits[:, 0], limits[:, 1])
         return max([5, t])
