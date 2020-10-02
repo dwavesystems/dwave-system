@@ -396,6 +396,9 @@ class LeapHybridDQMSampler:
         """
         if time_limit is None:
             time_limit = self.min_time_limit(dqm)
+        elif time_limit < self.min_time_limit(dqm):
+            raise ValueError("the minimum time limit is {}s ({}s provided)"
+                             "".format(self.min_time_limit(dqm), time_limit))
 
         # check the max time_limit if it's available
         if 'maximum_time_limit_hrs' in self.properties:
