@@ -365,7 +365,7 @@ class LeapHybridDQMSampler:
             self._parameters = parameters
             return parameters
 
-    def sample_dqm(self, dqm, time_limit=None, compressed=False, **kwargs):
+    def sample_dqm(self, dqm, time_limit=None, compress=False, compressed=None, **kwargs):
         """Sample from the specified discrete quadratic model.
 
         Args:
@@ -380,13 +380,16 @@ class LeapHybridDQMSampler:
                 :meth:`~dwave.system.samplers.LeapHybridDQMSampler.min_time_limit`
                 calculates (and describes) the minimum time for your problem.
 
-            compressed (binary, optional):
+            compress (binary, optional):
                 Compresses the DQM data when set to True. Use if your problem
                 somewhat exceeds the maximum allowed size. Compression tends to
                 be slow and more effective on homogenous data, which in this
                 case means it is more likely to help on DQMs with many identical
                 integer-valued biases than ones with random float-valued biases,
-                for exampel.
+                for example.
+
+            compressed (binary, optional):
+                Deprecated; please use ``compress`` instead.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
@@ -415,7 +418,18 @@ class LeapHybridDQMSampler:
         # note: SpooledTemporaryFile currently returned by DQM.to_file
         # does not implement io.BaseIO interface, so we use the underlying
         # (and internal) file-like object for now
-        f = dqm.to_file(compressed=compressed, ignore_labels=True)._file
+
+        if compressed is not None:
+            if compressed != compress:
+                raise ValueError("Conflicting values of 'compress' and 'compressed'")
+            warn(
+                "Argument 'compressed' is deprecated and in future will raise an"
+                "exception; please use 'compress' instead`.",
+                DeprecationWarning
+                )
+            compress = compressed
+
+        f = dqm.to_file(compressed=compress, ignore_labels=True)._file
         sampleset = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs).sampleset
         return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
 
