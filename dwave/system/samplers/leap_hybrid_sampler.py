@@ -381,7 +381,12 @@ class LeapHybridDQMSampler:
                 calculates (and describes) the minimum time for your problem.
 
             compressed (binary, optional):
-                Compresses the DQM data when set to True.
+                Compresses the DQM data when set to True. Use if your problem
+                somewhat exceeds the maximum allowed size. Compression tends to
+                be slow and more effective on homogenous data, which in this
+                case means it is more likely to help on DQMs with many identical
+                integer-valued biases than ones with random float-valued biases,
+                for exampel.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
