@@ -420,14 +420,12 @@ class LeapHybridDQMSampler:
         # (and internal) file-like object for now
 
         if compressed is not None:
-            if compressed != compress:
-                raise ValueError("Conflicting values of 'compress' and 'compressed'")
             warn(
-                "Argument 'compressed' is deprecated and in future will raise an"
-                "exception; please use 'compress' instead`.",
-                DeprecationWarning
+                "Argument 'compressed' is deprecated and in future will raise an "
+                "exception; please use 'compress' instead.",
+                DeprecationWarning, stacklevel=2
                 )
-            compress = compressed
+            compress = compressed or compress
 
         f = dqm.to_file(compressed=compress, ignore_labels=True)._file
         sampleset = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs).sampleset
