@@ -427,7 +427,7 @@ class LeapHybridDQMSampler:
                 )
             compress = compressed or compress
 
-        f = dqm.to_file(compressed=compress, ignore_labels=True)._file
+        f = dqm.to_file(compress=compress, ignore_labels=True)._file
         sampleset = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs).sampleset
         return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
 
