@@ -280,12 +280,11 @@ class LeapHybridDQMSampler:
         >>> cases = ["rock", "paper", "scissors"]
         >>> win = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
         ...
-        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
-        ...
         >>> dqm = dimod.DiscreteQuadraticModel()
-        >>> dqm.add_variable(3, label='my_hand')      # doctest: +SKIP
-        >>> dqm.add_variable(3, label='their_hand')   # doctest: +SKIP
-        ...
+        >>> dqm.add_variable(3, label='my_hand')
+        'my_hand'
+        >>> dqm.add_variable(3, label='their_hand')
+        'their_hand'
         >>> for my_idx, my_case in enumerate(cases):
         ...    for their_idx, their_case in enumerate(cases):
         ...       if win[my_case] == their_case:
@@ -295,7 +294,9 @@ class LeapHybridDQMSampler:
         ...          dqm.set_quadratic('my_hand', 'their_hand',
         ...                            {(my_idx, their_idx): 1})
         ...
-        >>> sampleset = dqm_sampler.sample_dqm(dqm)         # doctest: +SKIP
+        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
+        ...
+        >>> sampleset = dqm_sampler.sample_dqm(dqm)   # doctest: +SKIP
         >>> print("{} beats {}".format(cases[sampleset.first.sample['my_hand']],
         ...                            cases[sampleset.first.sample['their_hand']]))   # doctest: +SKIP
         rock beats scissors
