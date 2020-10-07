@@ -228,10 +228,7 @@ workflows:
       - test-osx-3.7
       - test-osx-3.6
       - test-osx-3.5
-      - test-doctest:
-          filters:
-            branches:
-              ignore: /^pull\/.*/
+      - test-doctest
 
   deploy:
     jobs:
