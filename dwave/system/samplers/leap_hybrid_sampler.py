@@ -283,8 +283,8 @@ class LeapHybridDQMSampler:
         >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
         ...
         >>> dqm = dimod.DiscreteQuadraticModel()
-        >>> dqm.add_variable(3, label='my_hand')
-        >>> dqm.add_variable(3, label='their_hand')
+        >>> dqm.add_variable(3, label='my_hand')      # doctest: +SKIP
+        >>> dqm.add_variable(3, label='their_hand')   # doctest: +SKIP
         ...
         >>> for my_idx, my_case in enumerate(cases):
         ...    for their_idx, their_case in enumerate(cases):
