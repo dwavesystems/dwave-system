@@ -108,6 +108,52 @@ class TestReverseIsing(unittest.TestCase):
             state = [state[var] for var in variables]
             self.assertIn(state, initial_state_list)
 
+    def test_batch_no_initial_states(self):
+        sampler = ReverseBatchStatesComposite(MockReverseSampler())
+        
+        h = {0: -1., 4: 2}
+        J = {(0, 4): 1.5}
+
+        # check default generates an initial state
+        response = sampler.sample_ising(h, J)
+        self.assertIn('initial_state', response.record.dtype.names)
+
+    def test_batch_generate_more_initial_states(self):
+        sampler = ReverseBatchStatesComposite(MockReverseSampler())
+        
+        h = {0: -1., 4: 2}
+        J = {(0, 4): 1.5}
+
+        num_reads = 2
+        initial_states = [{0:1, 4:1}]
+
+        response = sampler.sample_ising(h, J, initial_states=initial_states, num_reads=num_reads)
+        self.assertGreater(len(response), 4)
+
+        response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='tile', num_reads=num_reads)
+        self.assertGreater(len(response), 4)
+
+        with self.assertRaises(ValueError):
+            response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='none', num_reads=num_reads)
+
+    def test_batch_truncate_initial_states(self):
+        sampler = ReverseBatchStatesComposite(MockReverseSampler())
+        
+        h = {0: -1., 4: 2}
+        J = {(0, 4): 1.5}
+
+        num_reads = 1
+        initial_states = [{0:1, 4:1}, {0:-1, 4:1}, {0:-1, 4:-1}]
+
+        response = sampler.sample_ising(h, J, initial_states=initial_states, num_reads=num_reads)
+        self.assertEqual(len(response), 4)
+
+        response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='tile', num_reads=num_reads)
+        self.assertEqual(len(response), 4)
+
+        response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='none', num_reads=num_reads)
+        self.assertEqual(len(response), 4)
+
     def test_advance_correct_schedules(self):
         sampler = ReverseAdvanceComposite(MockReverseSampler())
 
