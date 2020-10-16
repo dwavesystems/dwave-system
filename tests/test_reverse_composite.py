@@ -128,10 +128,10 @@ class TestReverseIsing(unittest.TestCase):
         initial_states = [{0:1, 4:1}]
 
         response = sampler.sample_ising(h, J, initial_states=initial_states, num_reads=num_reads)
-        self.assertGreater(len(response), 4)
+        self.assertGreaterEqual(len(response), 4)
 
         response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='tile', num_reads=num_reads)
-        self.assertGreater(len(response), 4)
+        self.assertEqual(len(response), 4)  
 
         with self.assertRaises(ValueError):
             response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='none', num_reads=num_reads)

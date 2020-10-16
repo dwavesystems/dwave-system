@@ -309,29 +309,38 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
         parsed_initial_states = np.ascontiguousarray(parsed.initial_states.record.sample)
 
         # there is gonna be way too much data generated - better to histogram them if possible
-        if "answer_mode" in child.parameters:
+        if 'answer_mode' in child.parameters:
             parameters['answer_mode'] = 'histogram'
 
-        # prepare data fields for the new sampleset object
+        # reduce number of network calls if possible by aggregating init states
+        if 'num_reads' in child.parameters:
+            aggreg = parsed.initial_states.aggregate()
+            parsed_initial_states = np.ascontiguousarray(aggreg.record.sample)
+            parameters['num_reads'] = aggreg.record.num_occurrences
 
-        vectors = {}
+        samplesets = None
+        
+        unneeded = {'sample', 'energy', 'num_occurrences'}
+
         for initial_state in parsed_initial_states:
+            sampleset = child.sample(bqm, initial_state=dict(zip(bqm.variables, initial_state)), **parameters)
 
-            if not isinstance(initial_state, dict):
-                initial_state = dict(zip(bqm.variables, initial_state))
+            vectors = {}
+            for key in sampleset.record.dtype.names:
+                if key not in unneeded:
+                    vectors[key] = list(sampleset.record[key])
 
-            sampleset = child.sample(bqm, initial_state=initial_state, **parameters)
-            initial_state_, _ = dimod.as_samples(initial_state)
-            vectors = _update_data_vector(vectors, sampleset,
-                                          {'initial_state': [initial_state_[0]] * len(sampleset.record.energy)})
+            vectors['initial_state'] = [initial_state] * len(sampleset.record.energy)
 
-        samples = vectors.pop('sample')
+            sampleset = dimod.SampleSet.from_samples((sampleset.record.sample, bqm.variables), 
+                                                     bqm.vartype, sampleset.record.energy, info={}, **vectors)
+  
+            if samplesets is None:
+                samplesets = sampleset
+            else:
+                samplesets = dimod.concatenate((samplesets, sampleset))
 
-        return dimod.SampleSet.from_samples((samples, bqm.variables),
-                                            bqm.vartype,
-                                            info={},
-                                            **vectors)
-
+        return samplesets
 
 def _update_data_vector(vectors, sampleset, additional_parameters=None):
     var_names = sampleset.record.dtype.names
