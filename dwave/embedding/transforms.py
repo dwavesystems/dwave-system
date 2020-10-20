@@ -22,6 +22,7 @@ import numpy as np
 import dimod
 
 from collections import defaultdict
+from copy import deepcopy
 
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
 from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError, DisconnectedChainError
@@ -58,7 +59,7 @@ class EmbeddedStructure(dict):
 
     def __init__(self, target_edges, embedding):
         if isinstance(embedding, EmbeddedStructure):
-            super().__init__(self)
+            super().__init__(embedding)
             if target_edges is None:
                 # this condition is used by self.copy
                 self._interaction_edges = embedding._interaction_edges.copy()
@@ -97,6 +98,24 @@ class EmbeddedStructure(dict):
         for u, emb_u in self.items():
             if len(emb_u) != disjoint_sets[u].size(0):
                 raise DisconnectedChainError(u)
+
+    def __copy__(self):
+        return EmbeddedStructure(None, self)
+
+    copy = __copy__
+
+    def __deepcopy__(self, memo):
+        id_ = id(self)
+        new = memo.get(id_, None)
+        if new is not None:
+            return new
+
+        # everything is hashable so all copies are deep. Technically this
+        # can break some object equivalence (because we're ignoring the
+        # memo) but since the chains are converted into a new tuple in
+        # the __init__ already... this seems simpler and cleaner.
+        new = memo[id_] = self.copy()
+        return new
 
     @property
     def chain_strength(self):
@@ -152,9 +171,6 @@ class EmbeddedStructure(dict):
         raise TypeError("EmbeddedStructure is immutable")
 
     __delitem__=__setitem__=clear=pop=popitem=setdefault=update=_mutate_dict
-
-    def copy(self):
-        return EmbeddedStructure(None, self)
 
     def fromkeys(self, *args, **kwargs):
         """Raise a NotImplemented -- this method is not supported for the
