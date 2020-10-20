@@ -616,3 +616,19 @@ class TestEmbeddedStructure(unittest.TestCase):
         target_bqm = emb_s.embed_bqm(source_bqm, chain_strength=strength_func)
 
         dimod.testing.assert_bqm_almost_equal(target_bqm, goal_bqm)
+
+    def test_copy(self):
+        G = [(0, 1), (1, 2)]
+        embedding = {0: (1,), 1: (2,), 2: (0,)}
+        embedded_structure = dwave.embedding.EmbeddedStructure(G, embedding)
+
+        import copy
+
+        self.assertEqual(embedded_structure.copy(), embedded_structure)
+        self.assertEqual(copy.copy(embedded_structure), embedded_structure)
+        self.assertEqual(copy.deepcopy(embedded_structure), embedded_structure)
+
+        # deep with memo
+        memo = {}
+        self.assertIs(copy.deepcopy(embedded_structure, memo),
+                      copy.deepcopy(embedded_structure, memo))
