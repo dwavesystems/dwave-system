@@ -320,21 +320,13 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
 
         samplesets = None
         
-        unneeded = {'sample', 'energy', 'num_occurrences'}
-
         for initial_state in parsed_initial_states:
             sampleset = child.sample(bqm, initial_state=dict(zip(bqm.variables, initial_state)), **parameters)
 
-            vectors = {}
-            for key in sampleset.record.dtype.names:
-                if key not in unneeded:
-                    vectors[key] = list(sampleset.record[key])
+            if 'initial_state' not in sampleset.record.dtype.names:
+                init_state_vector = [initial_state] * len(sampleset.record.energy)
+                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vector)
 
-            vectors['initial_state'] = [initial_state] * len(sampleset.record.energy)
-
-            sampleset = dimod.SampleSet.from_samples((sampleset.record.sample, bqm.variables), 
-                                                     bqm.vartype, sampleset.record.energy, info={}, **vectors)
-  
             if samplesets is None:
                 samplesets = sampleset
             else:
