@@ -19,6 +19,7 @@ import logging
 import dimod
 import numpy as np
 import six
+import collections.abc as abc
 
 from dwave.embedding import broken_chains
 
@@ -186,8 +187,12 @@ class WarningHandler(object):
                 # strength
                 return
 
-        interactions = [uv for uv, bias in bqm.quadratic.items()
-                        if abs(bias) >= chain_strength]
+        if isinstance(chain_strength, abc.Mapping):
+            interactions = [(u, v) for (u, v), bias in bqm.quadratic.items()
+                            if abs(bias) >= min(chain_strength[u], chain_strength[v])]
+        else:
+            interactions = [uv for uv, bias in bqm.quadratic.items()
+                            if abs(bias) >= chain_strength]
 
         if interactions:
             self.issue("Some quadratic biases are stronger than the given "

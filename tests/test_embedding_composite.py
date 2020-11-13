@@ -332,6 +332,26 @@ class TestEmbeddingComposite(unittest.TestCase):
                 count += 1
         self.assertEqual(count, 0)
 
+    def test_warnings_chain_strength_dict(self):
+        sampler = EmbeddingComposite(MockDWaveSampler())
+
+        linear = {'a': -1, 'b': -2, 'c': -3}
+        quadratic = {('a', 'b'): 1, ('a', 'c'): -1, ('b', 'c'): 2}
+        bqm = dimod.BQM(linear, quadratic, 0, dimod.SPIN)
+
+        chain_strength = {'a': 10, 'b': 20, 'c': 1.5}   
+        ss = sampler.sample(bqm, chain_strength=chain_strength, warnings='SAVE')
+
+        self.assertIn('warnings', ss.info)
+        self.assertEqual(len(ss.info['warnings']), 1)
+
+        warning = ss.info['warnings'][0]
+        self.assertEqual(warning['type'], ChainStrengthWarning)
+
+        interactions = warning['data']['source_interactions']
+        self.assertEqual(len(interactions), 1)
+        self.assertCountEqual(interactions[0], ('b','c'))
+
     def test_warnings_as_class_variable(self):
         G = dnx.chimera_graph(12)
 
