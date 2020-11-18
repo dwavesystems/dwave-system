@@ -31,6 +31,13 @@ class DWaveCliqueSampler(dimod.Sampler):
     binary quadratic models. For sparse models, using
     :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is preferred.
 
+    :term:`Solver` selection---handled by :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method---defaults to filtering
+    solvers you have access to by
+    `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+    ``category=qpu`` and ``supported_problem_type=qubo/ising`` and returns online
+    solvers ordered by highest number of qubits.
+
     Args:
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`

@@ -89,8 +89,16 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Uses parameters set in a configuration file, as environment variables, or
     explicitly as input arguments for selecting and communicating with a D-Wave
-    system. For more information, see
+    system, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
+
+    :term:`Solver` selection---handled by :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method---defaults to filtering
+    solvers you have access to by
+    `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+    ``category=qpu`` and ``supported_problem_type=qubo/ising`` and returns online
+    solvers ordered by highest number of qubits.
+
 
     Inherits from :class:`dimod.Sampler` and :class:`dimod.Structured`.
 
