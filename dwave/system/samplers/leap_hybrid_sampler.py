@@ -36,7 +36,7 @@ class LeapHybridSampler(dimod.Sampler):
     Leap’s quantum-classical hybrid BQM solvers are intended to solve arbitrary
     application problems formulated as binary quadratic models (BQM).
 
-    You can configure your :term:`solver` selection and usage by setting paramters,
+    You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
     explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
@@ -45,7 +45,7 @@ class LeapHybridSampler(dimod.Sampler):
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
     access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
     ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
-    hybrid solvers are returned ordered by latest ``version``.
+    hybrid BQM solvers are returned ordered by latest ``version``.
 
     Inherits from :class:`dimod.Sampler`.
 
@@ -262,7 +262,7 @@ class LeapHybridDQMSampler:
     Leap’s quantum-classical hybrid DQM solvers are intended to solve arbitrary
     application problems formulated as **discrete** quadratic models (DQM).
 
-    You can configure your :term:`solver` selection and usage by setting paramters,
+    You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
     explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
@@ -271,7 +271,7 @@ class LeapHybridDQMSampler:
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
     access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
     ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
-    hybrid solvers are returned ordered by latest ``version``.
+    hybrid DQM solvers are returned ordered by latest ``version``.
 
     Args:
         **config:

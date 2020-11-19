@@ -87,7 +87,7 @@ def _failover(f):
 class DWaveSampler(dimod.Sampler, dimod.Structured):
     """A class for using the D-Wave system as a sampler for binary quadratic models.
 
-    You can configure your :term:`solver` selection and usage by setting paramters,
+    You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
     explicitly as input arguments. For more information, see
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_
