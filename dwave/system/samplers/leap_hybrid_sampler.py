@@ -36,17 +36,16 @@ class LeapHybridSampler(dimod.Sampler):
     Leap’s quantum-classical hybrid BQM solvers are intended to solve arbitrary
     application problems formulated as binary quadratic models (BQM).
 
-    Uses parameters set in a configuration file, as environment variables, or
-    explicitly as input arguments for selecting and communicating with a hybrid
-    solver, as described in
+    You can configure your :term:`solver` selection and usage by setting paramters,
+    hierarchically, in a configuration file, as environment variables, or
+    explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
-    :term:`Solver` selection---handled by :ref:`dwave-cloud-client <sdk_index_cloud>`'s
-    :meth:`~dwave.cloud.client.Client.get_solvers` method---defaults to filtering
-    solvers you have access to by
-    `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
-    ``category=hybrid`` and ``supported_problem_type=bqm`` and returns online
-    solvers ordered by latest ``version``.
+    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
+    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+    ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
+    hybrid solvers are returned ordered by latest ``version``.
 
     Inherits from :class:`dimod.Sampler`.
 
@@ -263,18 +262,16 @@ class LeapHybridDQMSampler:
     Leap’s quantum-classical hybrid DQM solvers are intended to solve arbitrary
     application problems formulated as **discrete** quadratic models (DQM).
 
-    Uses parameters set in a configuration file, as environment variables, or
-    explicitly as input arguments for selecting and communicating with a hybrid
-    solver, as described in
+    You can configure your :term:`solver` selection and usage by setting paramters,
+    hierarchically, in a configuration file, as environment variables, or
+    explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
-    :term:`Solver` selection---handled by :ref:`dwave-cloud-client <sdk_index_cloud>`'s
-    :meth:`~dwave.cloud.client.Client.get_solvers` method---defaults to filtering
-    solvers you have access to by
-    `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
-    ``category=hybrid`` and ``supported_problem_type=dqm`` and returns online
-    solvers ordered by latest ``version``.
-
+    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
+    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+    ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
+    hybrid solvers are returned ordered by latest ``version``.
 
     Args:
         **config:
