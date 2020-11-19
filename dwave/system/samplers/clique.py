@@ -31,6 +31,9 @@ class DWaveCliqueSampler(dimod.Sampler):
     binary quadratic models. For sparse models, using
     :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is preferred.
 
+    Configuration such as :term:`solver` selection is similar to that of
+    :class:`.DWaveSampler`.
+
     Args:
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`
