@@ -178,7 +178,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
                                             **vectors)
 
 
-class ReverseBatchStatesComposite(dimod.ComposedSampler):
+class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
     """Composite that reverse anneals from multiple initial samples. Each submission is independent
     from one another.
 
@@ -228,12 +228,46 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
     def properties(self):
         return {'child_properties': self.child.properties.copy()}
 
-    def sample(self, bqm, **parameters):
+    def sample(self, bqm, initial_states=None, initial_states_generator='random', num_reads=None, 
+               seed=None, **parameters):
         """Sample the binary quadratic model using reverse annealing from multiple initial states.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
+
+            initial_states (samples-like, optional, default=None):
+                One or more samples, each defining an initial state for all the problem variables. 
+                If fewer than `num_reads` initial states are defined, additional values are 
+                generated as specified by `initial_states_generator`. See :func:`dimod.as_samples` 
+                for a description of "samples-like".
+
+            initial_states_generator ({'none', 'tile', 'random'}, optional, default='random'):
+                Defines the expansion of `initial_states` if fewer than
+                `num_reads` are specified:
+
+                * "none":
+                    If the number of initial states specified is smaller than
+                    `num_reads`, raises ValueError.
+
+                * "tile":
+                    Reuses the specified initial states if fewer than `num_reads`
+                    or truncates if greater.
+
+                * "random":
+                    Expands the specified initial states with randomly generated
+                    states if fewer than `num_reads` or truncates if greater.
+
+            num_reads (int, optional, default=len(initial_states) or 1):
+                Equivalent to number of desired initial states. If greater than the number of 
+                provided initial states, additional states will be generated. If not provided, 
+                it is selected to match the length of `initial_states`. If `initial_states` 
+                is not provided, `num_reads` defaults to 1.
+
+            seed (int (32-bit unsigned integer), optional):
+                Seed to use for the PRNG. Specifying a particular seed with a
+                constant set of parameters produces identical results. If not
+                provided, a random seed is chosen.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -265,36 +299,40 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler):
 
         """
         child = self.child
-
-        if 'initial_states' not in parameters:
-            return child.sample(bqm, **parameters)
-
-        initial_states = parameters.pop('initial_states')
+        
+        parsed = self.parse_initial_states(bqm, 
+                                           initial_states=initial_states,
+                                           initial_states_generator=initial_states_generator,
+                                           num_reads=num_reads,
+                                           seed=seed)
+        
+        parsed_initial_states = np.ascontiguousarray(parsed.initial_states.record.sample)
 
         # there is gonna be way too much data generated - better to histogram them if possible
-        if "answer_mode" in child.parameters:
+        if 'answer_mode' in child.parameters:
             parameters['answer_mode'] = 'histogram'
 
-        # prepare data fields for the new sampleset object
+        # reduce number of network calls if possible by aggregating init states
+        if 'num_reads' in child.parameters:
+            aggreg = parsed.initial_states.aggregate()
+            parsed_initial_states = np.ascontiguousarray(aggreg.record.sample)
+            parameters['num_reads'] = aggreg.record.num_occurrences
 
-        vectors = {}
-        for initial_state in initial_states:
+        samplesets = None
+        
+        for initial_state in parsed_initial_states:
+            sampleset = child.sample(bqm, initial_state=dict(zip(bqm.variables, initial_state)), **parameters)
 
-            if not isinstance(initial_state, dict):
-                initial_state = dict(zip(bqm.variables, initial_state))
+            if 'initial_state' not in sampleset.record.dtype.names:
+                init_state_vector = [initial_state] * len(sampleset.record.energy)
+                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vector)
 
-            sampleset = child.sample(bqm, initial_state=initial_state, **parameters)
-            initial_state_, _ = dimod.as_samples(initial_state)
-            vectors = _update_data_vector(vectors, sampleset,
-                                          {'initial_state': [initial_state_[0]] * len(sampleset.record.energy)})
+            if samplesets is None:
+                samplesets = sampleset
+            else:
+                samplesets = dimod.concatenate((samplesets, sampleset))
 
-        samples = vectors.pop('sample')
-
-        return dimod.SampleSet.from_samples((samples, bqm.variables),
-                                            bqm.vartype,
-                                            info={},
-                                            **vectors)
-
+        return samplesets
 
 def _update_data_vector(vectors, sampleset, additional_parameters=None):
     var_names = sampleset.record.dtype.names
