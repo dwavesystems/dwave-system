@@ -154,6 +154,15 @@ class TestReverseIsing(unittest.TestCase):
         response = sampler.sample_ising(h, J, initial_states=initial_states, initial_states_generator='none', num_reads=num_reads)
         self.assertEqual(len(response), 4)
 
+    def test_advance_no_schedules(self):
+        sampler = ReverseAdvanceComposite(MockReverseSampler())
+
+        h = {0: -1., 4: 2}
+        J = {(0, 4): 1.5}
+
+        response = sampler.sample_ising(h, J)
+        self.assertIn('schedule_index', response.record.dtype.names)
+
     def test_advance_correct_schedules(self):
         sampler = ReverseAdvanceComposite(MockReverseSampler())
 
