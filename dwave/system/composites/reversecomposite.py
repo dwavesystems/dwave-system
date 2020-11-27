@@ -157,12 +157,21 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
             initial_state, _ = dimod.as_samples(initial_state)
 
             if 'initial_state' not in sampleset.record.dtype.names:
-                vect = [initial_state[0]] * len(sampleset.record.energy)
-                sampleset = dimod.append_data_vectors(sampleset, initial_state=vect)
+                init_state_vect = []
+
+                if parameters['reinitialize_state']:
+                    init_state_vect = [initial_state[0].copy() for i in range(len(sampleset.record.energy))]
+                else:
+                    # each sample is the next sample's initial state
+                    init_state_vect.append(initial_state[0].copy())
+                    for sample in sampleset.record.sample[:-1]:
+                        init_state_vect.append(sample)
+
+                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vect)
         
             if 'schedule_index' not in sampleset.record.dtype.names:
-                vect = [schedule_idx] * len(sampleset.record.energy)
-                sampleset = dimod.append_data_vectors(sampleset, schedule_index=vect)
+                schedule_index_vect = [schedule_idx] * len(sampleset.record.energy)
+                sampleset = dimod.append_data_vectors(sampleset, schedule_index=schedule_index_vect)
 
             if samplesets is None:
                 samplesets = sampleset
@@ -334,8 +343,8 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
             sampleset = child.sample(bqm, initial_state=dict(zip(bqm.variables, initial_state)), **parameters)
 
             if 'initial_state' not in sampleset.record.dtype.names:
-                init_state_vector = [initial_state] * len(sampleset.record.energy)
-                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vector)
+                init_state_vect = [initial_state.copy() for i in range(len(sampleset.record.energy))]
+                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vect)
 
             if samplesets is None:
                 samplesets = sampleset
