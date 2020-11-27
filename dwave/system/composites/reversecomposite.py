@@ -84,17 +84,21 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         return {'child_properties': self.child.properties.copy()}
 
     def sample(self, bqm, anneal_schedules=None, **parameters):
-        """Sample the binary quadratic model using reverse annealing along a given set of anneal schedules.
+        """Sample the binary quadratic model using reverse annealing along a given set 
+        of anneal schedules.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
-            anneal_schedules (list of lists): Anneal schedules in order of submission. Each schedule is
-                formatted as a list of [time, s] pairs
+            anneal_schedules (list of lists, optional, default=[[[0, 1], [1, 0.35], [9, 0.35], [10, 1]]]): 
+                Anneal schedules in order of submission. Each schedule is formatted 
+                as a list of [time, s] pairs, in which time is in microseconds and s 
+                is the normalized persistent current in the range [0,1].
 
-            initial_state (dict, optional): the state to reverse anneal from. If not provided, it will
-                be randomly generated
+            initial_state (dict, optional): 
+                The state to reverse anneal from. If not provided, it will
+                be randomly generated.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
@@ -128,7 +132,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         child = self.child
 
         if anneal_schedules is None:
-            return child.sample(bqm, **parameters)
+            anneal_schedules = [[[0, 1], [1, 0.35], [9, 0.35], [10, 1]]]    
 
         vartype_values = list(bqm.vartype.value)
         if 'initial_state' not in parameters:
@@ -145,16 +149,34 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
             if "answer_mode" in child.parameters:
                 parameters['answer_mode'] = 'histogram'
 
-        vectors = {}
+        samplesets = None
         for schedule_idx, anneal_schedule in enumerate(anneal_schedules):
             sampleset = child.sample(bqm, anneal_schedule=anneal_schedule, initial_state=initial_state,
                                      **parameters)
 
-            # update vectors
             initial_state, _ = dimod.as_samples(initial_state)
-            vectors = _update_data_vector(vectors, sampleset,
-                                          {'initial_state': [initial_state[0]] * len(sampleset.record.energy),
-                                           'schedule_index': [schedule_idx] * len(sampleset.record.energy)})
+
+            if 'initial_state' not in sampleset.record.dtype.names:
+                init_state_vect = []
+
+                if parameters['reinitialize_state']:
+                    init_state_vect = [initial_state[0].copy() for i in range(len(sampleset.record.energy))]
+                else:
+                    # each sample is the next sample's initial state
+                    init_state_vect.append(initial_state[0].copy())
+                    for sample in sampleset.record.sample[:-1]:
+                        init_state_vect.append(sample)
+
+                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vect)
+        
+            if 'schedule_index' not in sampleset.record.dtype.names:
+                schedule_index_vect = [schedule_idx] * len(sampleset.record.energy)
+                sampleset = dimod.append_data_vectors(sampleset, schedule_index=schedule_index_vect)
+
+            if samplesets is None:
+                samplesets = sampleset
+            else:
+                samplesets = dimod.concatenate((samplesets, sampleset))
 
             if schedule_idx+1 == len(anneal_schedules):
                 # no need to create the next initial state - last iteration
@@ -171,11 +193,8 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
                 # if not reinitialized, take the last state as the next initial state
                 initial_state = dict(zip(sampleset.variables, sampleset.record.sample[-1]))
 
-        samples = vectors.pop('sample')
-        return dimod.SampleSet.from_samples((samples, bqm.variables),
-                                            bqm.vartype,
-                                            info={'anneal_schedules': anneal_schedules},
-                                            **vectors)
+        samplesets.info['anneal_schedules'] = anneal_schedules
+        return samplesets
 
 
 class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
@@ -324,8 +343,8 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
             sampleset = child.sample(bqm, initial_state=dict(zip(bqm.variables, initial_state)), **parameters)
 
             if 'initial_state' not in sampleset.record.dtype.names:
-                init_state_vector = [initial_state] * len(sampleset.record.energy)
-                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vector)
+                init_state_vect = [initial_state.copy() for i in range(len(sampleset.record.energy))]
+                sampleset = dimod.append_data_vectors(sampleset, initial_state=init_state_vect)
 
             if samplesets is None:
                 samplesets = sampleset
@@ -333,19 +352,3 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
                 samplesets = dimod.concatenate((samplesets, sampleset))
 
         return samplesets
-
-def _update_data_vector(vectors, sampleset, additional_parameters=None):
-    var_names = sampleset.record.dtype.names
-    for name in var_names:
-        try:
-            vectors[name] = vectors[name] + list(sampleset.record[name])
-        except KeyError:
-            vectors[name] = list(sampleset.record[name])
-
-    for key, val in additional_parameters.items():
-        if key not in var_names:
-            try:
-                vectors[key] = vectors[key] + list(val)
-            except KeyError:
-                vectors[key] = list(val)
-    return vectors
