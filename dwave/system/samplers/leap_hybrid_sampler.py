@@ -93,7 +93,7 @@ class LeapHybridSampler(dimod.Sampler):
                 raise ValueError("the only problem type this sampler supports is 'bqm'")
 
             # prefer the latest version, but allow kwarg override
-            solver.setdefault('order_by', '-version')
+            solver.setdefault('order_by', '-properties.version')
 
         self.client = Client.from_config(
             solver=solver, connection_close=connection_close, **config)
@@ -331,7 +331,7 @@ class LeapHybridDQMSampler:
                 raise ValueError("the only problem type this sampler supports is 'dqm'")
 
             # prefer the latest version, but allow kwarg override
-            solver.setdefault('order_by', '-version')
+            solver.setdefault('order_by', '-properties.version')
 
         self.client = Client.from_config(
             solver=solver, connection_close=connection_close, **config)

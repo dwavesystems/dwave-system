@@ -65,7 +65,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             client='hybrid', connection_close=True,
             solver={'category': 'hybrid',
                     'supported_problem_types__contains': 'bqm',
-                    'order_by': '-version'})
+                    'order_by': '-properties.version'})
 
         # Non-hybrid client setting
         mock_client.reset_mock()
@@ -80,7 +80,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             client='hybrid', connection_close=True,
             solver={'category': 'hybrid',
                     'supported_problem_types__contains': 'bqm',
-                    'order_by': '-version'})
+                    'order_by': '-properties.version'})
 
         # Explicitly set category to not hybrid
         with self.assertRaises(ValueError):
@@ -93,7 +93,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             client='hybrid', connection_close=True,
             solver={'qpu': True, 'category': 'hybrid',
                     'supported_problem_types__contains': 'bqm',
-                    'order_by': '-version'})
+                    'order_by': '-properties.version'})
 
         mock_client.reset_mock()
         LeapHybridSampler(solver={'qpu': True, 'anneal_schedule': False})
@@ -101,7 +101,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             client='hybrid', connection_close=True,
             solver={'anneal_schedule': False, 'qpu': True, 'category': 'hybrid',
                     'supported_problem_types__contains': 'bqm',
-                    'order_by': '-version'})
+                    'order_by': '-properties.version'})
 
         # Named solver: hybrid
         mock_client.reset_mock()
@@ -125,7 +125,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             client='hybrid', connection_close=False,
             solver={'category': 'hybrid',
                     'supported_problem_types__contains': 'bqm',
-                    'order_by': '-version'})
+                    'order_by': '-properties.version'})
 
         mock_client.reset_mock()
         LeapHybridSampler(connection_close=False,
@@ -135,7 +135,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             client='hybrid', connection_close=False,
             solver={'category': 'hybrid',
                     'supported_problem_types__contains': 'bqm',
-                    'order_by': '-version'})
+                    'order_by': '-properties.version'})
 
     @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
     def test_sample_bqm(self, mock_client):
