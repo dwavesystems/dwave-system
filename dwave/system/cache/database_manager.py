@@ -11,8 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
 """Utilities for accessing the sqlite cache.
 
 Note:
@@ -25,9 +24,6 @@ import os
 import struct
 import base64
 import datetime
-
-from six import iteritems
-from six.moves import range
 
 from dwave.system.cache.cache_manager import cache_file
 from dwave.system.cache.schema import schema
@@ -500,7 +496,7 @@ def insert_embedding(cur, source_nodelist, source_edgelist, target_nodelist, tar
             chain.chain_length = :chain_length
         """
 
-    for v, chain in iteritems(embedding):
+    for v, chain in embedding.items():
         chain_data = {'source_node': v}
         insert_chain(cur, chain, chain_data)
 

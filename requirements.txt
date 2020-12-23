@@ -7,7 +7,5 @@ dwave-drivers==0.4.4
 dwave-tabu==0.3.1
 homebase==1.0.1
 minorminer==0.2.4
-six==1.11.0
-mock==2.0.0
 numpy==1.19.4; python_version >= '3.6'
 numpy==1.18.5; python_version == '3.5'

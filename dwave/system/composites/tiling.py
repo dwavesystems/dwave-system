@@ -11,8 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
 """
 A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that tiles small problems
 multiple times to a Chimera-structured sampler.
@@ -27,7 +26,7 @@ See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.ht
 for explanations of technical terms in descriptions of Ocean tools.
 
 """
-from __future__ import division
+
 from math import sqrt, ceil
 
 import dimod

@@ -11,8 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# =============================================================================
+
 """
 A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that uses the D-Wave virtual
 graph feature for improved :std:doc:`minor-embedding <oceandocs:docs_system/intro>`.
@@ -26,6 +25,7 @@ couplings.
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
 """
+
 import dimod
 
 from dwave.system.composites.embedding import FixedEmbeddingComposite

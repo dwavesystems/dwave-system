@@ -11,16 +11,13 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# =============================================================================
+
 import unittest
 
 from contextlib import contextmanager
 
-
 import dimod
 import numpy as np
-import six
 
 import dwave.embedding
 
@@ -66,15 +63,6 @@ class TestBrokenChains(unittest.TestCase):
 
 class TestChainBreakResolutionAPI():
     chains = [[0, 1], [2, 4], [3]]  # needs to be available to MinimizeEnergy
-
-    def subTest(self, *args, **kwargs):
-        # python2 does not support subTest so we just use a null context manager
-        if six.PY2:
-            @contextmanager
-            def nullcontext(enter_result=None):
-                yield enter_result
-            return nullcontext()
-        return super(TestChainBreakResolutionAPI, self).subTest(*args, **kwargs)
 
     def test_api(self):
         cases = {}

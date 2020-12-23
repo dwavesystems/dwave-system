@@ -11,21 +11,14 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# =============================================================================
+
 import unittest
+import unittest.mock as mock
 import numpy as np
 
 import dimod
 from dwave.cloud import Client
 from dwave.cloud.exceptions import SolverNotFoundError
-
-try:
-    # py3
-    import unittest.mock as mock
-except ImportError:
-    # py2
-    import mock
 
 from dwave.system.samplers import LeapHybridSampler
 from dwave.system.testing import MockLeapHybridSolver

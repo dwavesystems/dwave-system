@@ -11,9 +11,9 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
 import collections
+import unittest.mock as mock
 
 import dimod
 import dwave_networkx as dnx
@@ -28,12 +28,6 @@ except ImportError:
 import concurrent.futures
 import numpy as np
 
-try:
-    # py3
-    import unittest.mock as mock
-except ImportError:
-    # py2
-    import mock
 
 C4 = dnx.chimera_graph(4, 4, 4)
 

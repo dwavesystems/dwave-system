@@ -11,20 +11,18 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
-
-from __future__ import division, absolute_import
 
 import dimod
 import numpy as np
 
-from six import iteritems
-
 from dwave.embedding.chain_breaks import broken_chains
 
 
-__all__ = ['target_to_source', 'chain_to_quadratic', 'chain_break_frequency', 'adjacency_to_edges']
+__all__ = ['target_to_source',
+           'chain_to_quadratic',
+           'chain_break_frequency',
+           'adjacency_to_edges']
+
 
 def target_to_source(target_adjacency, embedding):
     """Derive the source adjacency from an embedding and target adjacency.
@@ -67,14 +65,14 @@ def target_to_source(target_adjacency, embedding):
 
     # we need the mapping from each node in the target to its source node
     reverse_embedding = {}
-    for v, chain in iteritems(embedding):
+    for v, chain in embedding.items():
         for u in chain:
             if u in reverse_embedding:
                 raise ValueError("target node {} assigned to more than one source node".format(u))
             reverse_embedding[u] = v
 
     # v is node in target, n node in source
-    for v, n in iteritems(reverse_embedding):
+    for v, n in reverse_embedding.items():
         neighbors = target_adjacency[v]
 
         # u is node in target

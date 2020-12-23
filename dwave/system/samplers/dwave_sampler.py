@@ -11,15 +11,13 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
 """
 A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for the D-Wave system.
 
 See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
 """
-from __future__ import division
 
 import time
 import functools
