@@ -11,14 +11,12 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# =============================================================================
+
 import enum
 import logging
 
 import dimod
 import numpy as np
-import six
 import collections.abc as abc
 
 from dwave.embedding import broken_chains
@@ -44,7 +42,7 @@ SAVE = WarningAction.SAVE
 def as_action(action):
     if isinstance(action, WarningAction):
         return action
-    elif isinstance(action, six.string_types):
+    elif isinstance(action, str):
         return WarningAction[action.upper()]
     else:
         raise TypeError('unknown warning action provided')

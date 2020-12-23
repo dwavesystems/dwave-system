@@ -11,21 +11,17 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# =============================================================================
+
 """
 Composites that do batch operations for reverse annealing.
 """
 
-try:
-    import collections.abc as abc
-except ImportError:
-    import collections as abc
+import collections.abc as abc
 
 import dimod
 import numpy as np
 
-__all__ = 'ReverseAdvanceComposite', 'ReverseBatchStatesComposite'
+__all__ = ['ReverseAdvanceComposite', 'ReverseBatchStatesComposite']
 
 
 class ReverseAdvanceComposite(dimod.ComposedSampler):
