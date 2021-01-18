@@ -12,7 +12,12 @@ distributions defined by the problem.
 .. currentmodule:: dwave.system.samplers
 
 .. contents::
-    :depth: 2
+    :local:
+    :depth: 1
+
+Other Ocean packages provide additional samplers; for example,
+:std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` provides samplers for testing
+your code.
 
 DWaveSampler
 ============

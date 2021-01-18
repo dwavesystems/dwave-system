@@ -5,12 +5,18 @@ Composites
 ==========
 
 :std:doc:`dimod composites <oceandocs:docs_dimod/introduction>` that provide layers of pre- and
-post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system.
+post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system:
 
 .. currentmodule:: dwave.system.composites
 
 .. contents::
-    :depth: 3
+    :local:
+    :depth: 2
+
+Other Ocean packages provide additional composites; for example,
+:std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` provides composites that operate
+on the problem (e.g., scaling values), track inputs and outputs for debugging,
+and other useful functionality relevant to generic samplers.
 
 CutOffs
 =======
