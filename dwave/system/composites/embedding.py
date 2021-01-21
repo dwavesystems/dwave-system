@@ -143,7 +143,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
     """
 
     warnings_default = WarningAction.IGNORE
-    """Defines the default behabior for :meth:`.sample`'s `warnings` kwarg.
+    """Defines the default behavior for :meth:`.sample`'s `warnings` kwarg.
     """
 
     def sample(self, bqm, chain_strength=None,
@@ -166,7 +166,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(bqm, embedding)` and should
                 return a float or mapping, to be interpreted as above. By default,
-                `chain_strength` is calculated with 
+                `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             chain_break_method (function/list, optional):
@@ -453,7 +453,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 breaks set to 2 * `chain_strength`.  If a mapping is passed, a
                 chain-specific strength is applied.  If a callable is passed, it
                 will be called on `chain_strength(bqm, embedding)` and should
-                return a float or mapping, to be interpreted as above. By default, 
+                return a float or mapping, to be interpreted as above. By default,
                 `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
