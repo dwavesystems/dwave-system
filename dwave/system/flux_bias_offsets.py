@@ -75,7 +75,8 @@ def get_flux_biases(sampler, embedding, chain_strength, num_reads=1000, max_age=
         raise RuntimeError(msg)
 
     fbo = drivers.oneshot_flux_bias(sampler, embedding.values(), num_reads=num_reads,
-                                    chain_strength=chain_strength)
+                                    chain_strength=chain_strength,
+                                    label='VirtualGraph flux bias measurements')
 
     # store them in the cache
     with cache_connect() as cur:
