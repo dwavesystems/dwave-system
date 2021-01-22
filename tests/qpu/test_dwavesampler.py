@@ -108,6 +108,24 @@ class TestDWaveSampler(unittest.TestCase):
         with self.assertRaises(dimod.exceptions.BinaryQuadraticModelStructureError):
             sampler.sample_qubo(Q).resolve()
 
+    def test_problem_labelling(self):
+        # NOTE: enable when problem labelling deployed to prod
+        if 'cloud' in self.qpu.client.endpoint:
+            self.skipTest("labels not supported in production")
+
+        sampler = self.qpu
+        h, J = self.nonzero_ising_problem(sampler)
+        label = 'problem label'
+
+        # label set
+        sampleset = sampler.sample_ising(h, J, label=label)
+        self.assertIn('problem_label', sampleset.info)
+        self.assertEqual(sampleset.info['problem_label'], label)
+
+        # label unset
+        sampleset = sampler.sample_ising(h, J)
+        self.assertNotIn('problem_label', sampleset.info)
+
 
 class TestMissingQubits(unittest.TestCase):
     @classmethod

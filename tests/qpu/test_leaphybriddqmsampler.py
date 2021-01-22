@@ -37,3 +37,19 @@ class TestLeapHybridSampler(unittest.TestCase):
 
         sampleset = sampler.sample_dqm(dqm)
         sampleset.resolve()
+
+    # NOTE: enable when problem labelling deployed to prod
+    @unittest.skipIf(sampler is not None and 'cloud' in sampler.client.endpoint,
+                     "labels not supported in production")
+    def test_problem_labelling(self):
+        dqm = dimod.DQM()
+        u = dqm.add_variable(2, 'a')
+        v = dqm.add_variable(3)
+        dqm.set_linear(u, [1, 2])
+        dqm.set_quadratic(u, v, {(0, 1): 1, (0, 2): 1})
+        label = 'problem label'
+
+        sampleset = sampler.sample_dqm(dqm, label=label)
+        self.assertIn('problem_id', sampleset.info)
+        self.assertIn('problem_label', sampleset.info)
+        self.assertEqual(sampleset.info['problem_label'], label)

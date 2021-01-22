@@ -32,3 +32,21 @@ class TestLeapHybridSampler(unittest.TestCase):
     def test_smoke(self):
         sampleset = sampler.sample_ising({'a': -1}, {'ab': 1})
         sampleset.resolve()
+
+    # NOTE: enable when problem labelling deployed to prod
+    @unittest.skipIf(sampler is not None and 'cloud' in sampler.client.endpoint,
+                     "labels not supported in production")
+    def test_problem_labelling(self):
+        bqm = dimod.BQM.from_ising({'a': -1}, {'ab': 1})
+        label = 'problem label'
+
+        # label set
+        sampleset = sampler.sample(bqm, label=label)
+        self.assertIn('problem_id', sampleset.info)
+        self.assertIn('problem_label', sampleset.info)
+        self.assertEqual(sampleset.info['problem_label'], label)
+
+        # label unset
+        sampleset = sampler.sample(bqm)
+        self.assertIn('problem_id', sampleset.info)
+        self.assertNotIn('problem_label', sampleset.info)
