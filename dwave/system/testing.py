@@ -14,6 +14,7 @@
 
 import collections
 import unittest.mock as mock
+from uuid import uuid4
 
 import dimod
 import dwave_networkx as dnx
@@ -53,6 +54,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         self.parameters = parameters = {}
         parameters['num_reads'] = ['num_reads_range']
         parameters['flux_biases'] = ['j_range']
+        parameters['label'] = []
 
         # add the interesting properties manually
         self.properties = properties = {}
@@ -70,10 +72,17 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[], **kwargs):
-        # we are altering the bqm
+        # we are altering the bqm if flux_biases given
+
+        info = dict(problem_id=str(uuid4()))
+        label = kwargs.get('label')
+        if label is not None:
+            info.update(problem_label=label)
 
         if not flux_biases:
-            return SimulatedAnnealingSampler().sample(bqm, num_reads=num_reads)
+            ss = SimulatedAnnealingSampler().sample(bqm, num_reads=num_reads)
+            ss.info.update(info)
+            return ss
 
         new_bqm = bqm.copy()
 
@@ -84,9 +93,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         response = SimulatedAnnealingSampler().sample(new_bqm, num_reads=num_reads)
 
         # recalculate the energies with the old bqm
-        return dimod.SampleSet.from_samples_bqm([{v: sample[v] for v in bqm}
+        return dimod.SampleSet.from_samples_bqm([{v: sample[v] for v in bqm.variables}
                                                  for sample in response.samples()],
-                                                bqm)
+                                                bqm, info=info)
 
 class MockLeapHybridSolver:
 

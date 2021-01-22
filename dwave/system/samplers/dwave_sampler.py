@@ -231,6 +231,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             parameters = {param: ['parameters']
                           for param in self.properties['parameters']}
             parameters.update(warnings=[])
+            parameters.update(label=[])
             self._parameters = parameters
             return parameters
 
