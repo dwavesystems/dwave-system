@@ -132,6 +132,7 @@ class LeapHybridSampler(dimod.Sampler):
         except AttributeError:
             parameters = {param: ['parameters']
                           for param in self.properties['parameters']}
+            parameters.update(label=[])
             self._parameters = parameters
             return parameters
 
@@ -374,6 +375,7 @@ class LeapHybridDQMSampler:
         except AttributeError:
             parameters = {param: ['parameters']
                           for param in self.properties['parameters']}
+            parameters.update(label=[])
             self._parameters = parameters
             return parameters
 

@@ -63,6 +63,8 @@ class MockSolver():
                   'chip_id': 'MockSolver'}
 
     def sample_bqm(self, bqm, num_reads=1, **kwargs):
+        problem_id = str(uuid4())
+        problem_label = kwargs.pop('label', None)
         info = dict(timing={'total_real_time': 11511, 'anneal_time_per_run': 20,
                             'post_processing_overhead_time': 2042,
                             'qpu_sampling_time': 164,
@@ -74,7 +76,9 @@ class MockSolver():
                             'run_time_chip': 164,
                             'qpu_access_time': 11511,
                             'qpu_readout_time_per_sample': 123},
-                    problem_id=5)
+                    problem_id=problem_id)
+        if problem_label:
+            info.update(problem_label=problem_label)
 
         samples = np.random.choice(tuple(bqm.vartype.value),
                                    size=(num_reads, len(bqm)))
@@ -83,8 +87,8 @@ class MockSolver():
         ss = dimod.SampleSet.from_samples_bqm((samples, bqm.variables), bqm,
                                               info=info)
         future.sampleset = ss
-        future.id = uuid4()
-        future.set_result = {}  # not actually needed
+        future.id = problem_id
+        future.label = problem_label
 
         return future
 
@@ -176,6 +180,26 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertIn('num_occurrences', response.record.dtype.fields)
         self.assertIn('timing', response.info)
         self.assertIn('problem_id', response.info)
+
+    def test_problem_labelling(self):
+        sampler = self.sampler
+
+        # label parameter is supported
+        self.assertIn('label', sampler.parameters)
+
+        # no-label case works as before
+        ss = sampler.sample_ising({}, {(0, 4): 1})
+
+        self.assertIn('problem_id', ss.info)
+        self.assertNotIn('problem_label', ss.info)
+
+        # label is propagated to sampleset.info
+        label = 'problem label'
+        ss = sampler.sample_ising({}, {(0, 4): 1}, label=label)
+
+        self.assertIn('problem_id', ss.info)
+        self.assertIn('problem_label', ss.info)
+        self.assertEqual(ss.info.get('problem_label'), label)
 
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_failover_false(self, MockClient):

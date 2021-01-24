@@ -20,6 +20,7 @@ from collections import Mapping
 
 import dimod
 import dwave_networkx as dnx
+from parameterized import parameterized_class
 
 import dwave.embedding
 
@@ -626,3 +627,23 @@ class TestAutoEmbeddingComposite(unittest.TestCase):
         sampler.sample_ising({}, {(0, 1): -1})
 
         sampler.sample_ising({}, {('a', 0): -1}, embedding_parameters={})
+
+
+@parameterized_class([
+   dict(embedding_composite_class=EmbeddingComposite),
+   dict(embedding_composite_class=AutoEmbeddingComposite),
+])
+class TestProblemLabelPropagation(unittest.TestCase):
+
+    def test_problem_labelling(self):
+        sampler = self.embedding_composite_class(MockDWaveSampler())
+
+        self.assertIn('label', sampler.parameters)
+
+        ss = sampler.sample_ising({}, {(0, 1): -1})
+        self.assertNotIn('problem_label', ss.info)
+
+        label = 'problem label'
+        ss = sampler.sample_ising({}, {(0, 1): -1}, label=label)
+        self.assertIn('problem_label', ss.info)
+        self.assertEqual(ss.info['problem_label'], label)
