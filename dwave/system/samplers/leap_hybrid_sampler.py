@@ -412,8 +412,8 @@ class LeapHybridDQMSampler:
         Returns:
             :class:`dimod.SampleSet`: A sample set.
 
-    Examples:
-        See the example in :class:`LeapHybridDQMSampler`.
+        Examples:
+            See the example in :class:`LeapHybridDQMSampler`.
 
         """
         if time_limit is None:
