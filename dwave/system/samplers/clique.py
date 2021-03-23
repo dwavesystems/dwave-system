@@ -163,11 +163,13 @@ class DWaveCliqueSampler(dimod.Sampler):
                 :attr:`.largest_clique_size` variables. This BQM is embedded
                 using a clique embedding.
 
-            chain_strength (float, optional):
-                The (relative) chain strength to use in the embedding. By
-                default a chain strength of `1.5sqrt(N)` where `N` is the size
-                of the largest clique, as returned by
-                :attr:`.largest_clique_size`.
+            chain_strength (float/mapping/callable, optional):
+                Sets the coupling strength between qubits representing variables 
+                that form a :term:`chain`. Mappings should specify the required 
+                chain strength for each variable. Callables should accept the BQM 
+                and embedding and return a float or mapping. By default, 
+                `chain_strength` is calculated with
+                :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified

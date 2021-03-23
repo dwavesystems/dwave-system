@@ -184,13 +184,11 @@ class EmbeddedStructure(dict):
                 Binary quadratic model to embed.
 
             chain_strength (float/mapping/callable, optional):
-                Magnitude of the quadratic bias (in SPIN-space) applied between
-                variables to create chains, with the energy penalty of chain
-                breaks set to 2 * `chain_strength`.  If a mapping is passed, a
-                chain-specific strength is applied.  If a callable is passed, it
-                will be called on `chain_strength(source_bqm, self)`
-                and should return a float or mapping, to be interpreted as above.
-                By default, `chain_strength` is calculated with 
+                Sets the coupling strength between qubits representing variables 
+                that form a :term:`chain`. Mappings should specify the required 
+                chain strength for each variable. Callables should accept the BQM 
+                and embedding and return a float or mapping. By default, 
+                `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             smear_vartype (:class:`.Vartype`, optional, default=None):
@@ -330,12 +328,10 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             EmbeddedStructure object.
 
         chain_strength (float/mapping/callable, optional):
-            Magnitude of the quadratic bias (in SPIN-space) applied between
-            variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.  If a mapping is passed, a chain-specific
-            strength is applied.  If a callable is passed, it will be called on
-            `chain_strength(source_bqm, embedding)` and should return a
-            float or mapping, to be interpreted as above. By default,
+            Sets the coupling strength between qubits representing variables 
+            that form a :term:`chain`. Mappings should specify the required chain
+            strength for each variable. Callables should accept the BQM and 
+            embedding and return a float or mapping. By default, 
             `chain_strength` is calculated with
             :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -413,13 +409,11 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             where t is a target-graph variable and Nt is its set of neighbours.
 
         chain_strength (float/mapping/callable, optional):
-            Magnitude of the quadratic bias (in SPIN-space) applied between
-            variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.  If a mapping is passed, a chain-specific
-            strength is applied.  If a callable is passed, it will be called on
-            `chain_strength(source_bqm, embedding)` and should return a
-            float or mapping, to be interpreted as above. By default,
-            `chain_strength` is calculated with 
+            Sets the coupling strength between qubits representing variables 
+            that form a :term:`chain`. Mappings should specify the required chain
+            strength for each variable. Callables should accept the BQM and 
+            embedding and return a float or mapping. By default, 
+            `chain_strength` is calculated with
             :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
     Returns:
@@ -476,13 +470,11 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
             where t is a target-graph variable and Nt is its set of neighbours.
 
         chain_strength (float/mapping/callable, optional):
-            Magnitude of the quadratic bias (in SPIN-space) applied between
-            variables to form a chain, with the energy penalty of chain breaks
-            set to 2 * `chain_strength`.  If a mapping is passed, a
-            chain-specific strength is applied.  If a callable is passed, it
-            will be called on `chain_strength(source_bqm, embedding)`
-            and should return a float or mapping, to be interpreted as above.
-            By default, `chain_strength` is calculated with 
+            Sets the coupling strength between qubits representing variables 
+            that form a :term:`chain`. Mappings should specify the required chain
+            strength for each variable. Callables should accept the BQM and 
+            embedding and return a float or mapping. By default, 
+            `chain_strength` is calculated with
             :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
     Returns:

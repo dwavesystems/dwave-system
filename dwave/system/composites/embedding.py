@@ -160,12 +160,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float/mapping/callable, optional):
-                Magnitude of the quadratic bias (in SPIN-space) applied between
-                variables to create chains. The energy penalty of chain breaks
-                is 2 * `chain_strength`.  If a mapping is passed, a
-                chain-specific strength is applied.  If a callable is passed, it
-                will be called on `chain_strength(bqm, embedding)` and should
-                return a float or mapping, to be interpreted as above. By default,
+                Sets the coupling strength between qubits representing variables 
+                that form a :term:`chain`. Mappings should specify the required 
+                chain strength for each variable. Callables should accept the BQM 
+                and embedding and return a float or mapping. By default, 
                 `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -448,12 +446,10 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float/mapping/callable, optional):
-                Magnitude of the quadratic bias (in SPIN-space) applied between
-                variables to form a chain, with the energy penalty of chain
-                breaks set to 2 * `chain_strength`.  If a mapping is passed, a
-                chain-specific strength is applied.  If a callable is passed, it
-                will be called on `chain_strength(bqm, embedding)` and should
-                return a float or mapping, to be interpreted as above. By default,
+                Sets the coupling strength between qubits representing variables 
+                that form a :term:`chain`. Mappings should specify the required 
+                chain strength for each variable. Callables should accept the BQM 
+                and embedding and return a float or mapping. By default, 
                 `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
