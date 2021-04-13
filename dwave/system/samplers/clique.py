@@ -13,8 +13,10 @@
 #    limitations under the License.
 
 from numbers import Number
+from typing import Tuple
 
 import dimod
+import networkx as nx
 import dwave_networkx as dnx
 
 from minorminer.busclique import find_clique_embedding, busgraph_cache
@@ -81,7 +83,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         self.retry_interval = retry_interval
 
     @property
-    def parameters(self):
+    def parameters(self) -> dict:
         try:
             return self._parameters
         except AttributeError:
@@ -97,7 +99,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         return parameters
 
     @property
-    def properties(self):
+    def properties(self) -> dict:
         try:
             return self._properties
         except AttributeError:
@@ -107,13 +109,15 @@ class DWaveCliqueSampler(dimod.Sampler):
         return self.properties
 
     @property
-    def largest_clique_size(self):
-        """The maximum number of variables that can be embedded.
-        """
+    def largest_clique_size(self) -> int:
+        """The maximum number of variables that can be embedded."""
         return len(self.largest_clique())
 
     @property
-    def qpu_linear_range(self):
+    def qpu_linear_range(self) -> Tuple[float, float]:
+        """Range of values possible for the qubit biases (linear biases),
+        h, for the QPU.
+        """
         try:
             return self._qpu_linear_range
         except AttributeError:
@@ -121,11 +125,11 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         # get the energy range
         try:
-            energy_range = self.child.properties['h_range']
+            energy_range = tuple(self.child.properties['h_range'])
         except KeyError as err:
             # for backwards compatibility with old software solvers
             if self.child.solver.is_software:
-                energy_range = [-2, 2]
+                energy_range = (-2, 2)
             else:
                 raise err
 
@@ -134,7 +138,10 @@ class DWaveCliqueSampler(dimod.Sampler):
         return energy_range
 
     @property
-    def qpu_quadratic_range(self):
+    def qpu_quadratic_range(self) -> Tuple[float, float]:
+        """Range of values possible for the coupling strengths (quadratic
+        biases), J, for the QPU.
+        """
         try:
             return self._qpu_quadratic_range
         except AttributeError:
@@ -142,11 +149,11 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         # get the energy range
         try:
-            energy_range = self.child.properties['j_range']
+            energy_range = tuple(self.child.properties['j_range'])
         except KeyError as err:
             # for backwards compatibility with old software solvers
             if self.child.solver.is_software:
-                energy_range = [-1, 1]
+                energy_range = (-1, 1)
             else:
                 raise err
 
@@ -155,7 +162,8 @@ class DWaveCliqueSampler(dimod.Sampler):
         return energy_range
 
     @property
-    def target_graph(self):
+    def target_graph(self) -> nx.Graph:
+        """The QPU topology."""
         try:
             return self._target_graph
         except AttributeError:

@@ -183,9 +183,15 @@ class TestFailover(unittest.TestCase):
         sampler.child.sample = mocksample
 
         G = sampler.target_graph
+        qlr = sampler.qpu_linear_range
+        qqr = sampler.qpu_quadratic_range
 
         self.assertIs(G, sampler.target_graph)
+        self.assertIs(qlr, sampler.qpu_linear_range)
+        self.assertIs(qqr, sampler.qpu_quadratic_range)
 
         sampler.sample_ising({}, {})
 
         self.assertIsNot(G, sampler.target_graph)
+        self.assertIsNot(qlr, sampler.qpu_linear_range)
+        self.assertIsNot(qqr, sampler.qpu_quadratic_range)
