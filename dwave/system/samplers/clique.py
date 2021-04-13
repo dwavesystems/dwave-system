@@ -12,12 +12,14 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from numbers import Number
+
 import dimod
 import dwave_networkx as dnx
 
 from minorminer.busclique import find_clique_embedding, busgraph_cache
 
-from dwave.system.samplers.dwave_sampler import DWaveSampler
+from dwave.system.samplers.dwave_sampler import DWaveSampler, _failover
 
 __all__ = ['DWaveCliqueSampler']
 
@@ -35,6 +37,19 @@ class DWaveCliqueSampler(dimod.Sampler):
     :class:`.DWaveSampler`.
 
     Args:
+        failover (optional, default=False):
+            Switch to a new QPU in the rare event that the currently connected
+            system goes offline. Note that different QPUs may have different
+            hardware graphs and a failover will result in a regenerated
+            :attr:`.nodelist`, :attr:`.edgelist`, :attr:`.properties` and
+            :attr:`.parameters`.
+
+        retry_interval (optional, default=-1):
+            The amount of time (in seconds) to wait to poll for a solver in
+            the case that no solver is found. If `retry_interval` is negative
+            then it will instead propogate the `SolverNotFoundError` to the
+            user.
+
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`
 
@@ -57,47 +72,13 @@ class DWaveCliqueSampler(dimod.Sampler):
         >>> sampleset = sampler.sample(bqm, num_reads=100)   # doctest: +SKIP
 
     """
-    def __init__(self, **config):
+    def __init__(self, *,
+                 failover: bool = False, retry_interval: Number = -1,
+                 **config):
+        self.child = DWaveSampler(failover=False, **config)
 
-        self.child = child = DWaveSampler(**config)
-
-        # do some topology checking
-        try:
-            topology_type = child.properties['topology']['type']
-            shape = child.properties['topology']['shape']
-        except KeyError:
-            raise ValueError("given sampler has unknown topology format")
-
-        # We need a networkx graph with certain properties. In the
-        # future it would be good for DWaveSampler to handle this.
-        # See https://github.com/dwavesystems/dimod/issues/647
-        if topology_type == 'chimera':
-            G = dnx.chimera_graph(*shape,
-                                  node_list=child.nodelist,
-                                  edge_list=child.edgelist,
-                                  )
-        elif topology_type == 'pegasus':
-            G = dnx.pegasus_graph(shape[0],
-                                  node_list=child.nodelist,
-                                  edge_list=child.edgelist,
-                                  )
-        else:
-            raise ValueError("unknown topology type")
-
-        self.target_graph = G
-
-        # get the energy range
-        try:
-            self.qpu_linear_range = child.properties['h_range']
-            self.qpu_quadratic_range = child.properties.get(
-                'extended_j_range', child.properties['j_range'])
-        except KeyError as err:
-            # for backwards compatibility with old software solvers
-            if child.solver.is_software:
-                self.qpu_linear_range = [-2, 2]
-                self.qpu_quadratic_range = [-1, 1]
-            else:
-                raise err
+        self.failover = failover
+        self.retry_interval = retry_interval
 
     @property
     def parameters(self):
@@ -131,6 +112,84 @@ class DWaveCliqueSampler(dimod.Sampler):
         """
         return len(self.largest_clique())
 
+    @property
+    def qpu_linear_range(self):
+        try:
+            return self._qpu_linear_range
+        except AttributeError:
+            pass
+
+        # get the energy range
+        try:
+            energy_range = self.child.properties['h_range']
+        except KeyError as err:
+            # for backwards compatibility with old software solvers
+            if self.child.solver.is_software:
+                energy_range = [-2, 2]
+            else:
+                raise err
+
+        self._qpu_linear_range = energy_range
+
+        return energy_range
+
+    @property
+    def qpu_quadratic_range(self):
+        try:
+            return self._qpu_quadratic_range
+        except AttributeError:
+            pass
+
+        # get the energy range
+        try:
+            energy_range = self.child.properties['j_range']
+        except KeyError as err:
+            # for backwards compatibility with old software solvers
+            if self.child.solver.is_software:
+                energy_range = [-1, 1]
+            else:
+                raise err
+
+        self._qpu_quadratic_range = energy_range
+
+        return energy_range
+
+    @property
+    def target_graph(self):
+        try:
+            return self._target_graph
+        except AttributeError:
+            pass
+
+        child = self.child
+
+        # do some topology checking
+        try:
+            topology_type = child.properties['topology']['type']
+            shape = child.properties['topology']['shape']
+        except KeyError:
+            raise ValueError("given sampler has unknown topology format")
+
+        # We need a networkx graph with certain properties. In the
+        # future it would be good for DWaveSampler to handle this.
+        # See https://github.com/dwavesystems/dimod/issues/647
+        if topology_type == 'chimera':
+            G = dnx.chimera_graph(*shape,
+                                  node_list=child.nodelist,
+                                  edge_list=child.edgelist,
+                                  )
+        elif topology_type == 'pegasus':
+            G = dnx.pegasus_graph(shape[0],
+                                  node_list=child.nodelist,
+                                  edge_list=child.edgelist,
+                                  )
+        else:
+            raise ValueError("unknown topology type")
+
+        self._target_graph = G
+
+        return G
+
     def clique(self, variables):
         """Return a clique embedding of the given size.
 
@@ -154,6 +213,34 @@ class DWaveCliqueSampler(dimod.Sampler):
         """
         return busgraph_cache(self.target_graph).largest_clique()
 
+    def trigger_failover(self):
+        """Trigger a failover and connect to a new solver.
+
+        retry_interval (number, optional):
+            The amount of time (in seconds) to wait to poll for a solver in
+            the case that no solver is found. If `retry_interval` is negative
+            then it will instead propogate the `SolverNotFoundError` to the
+            user. Defaults to :attr:`DWaveSampler.retry_interval`.
+
+        """
+        self.child.trigger_failover()
+
+        try:
+            del self._target_graph
+        except AttributeError:
+            pass
+
+        try:
+            del self._qpu_linear_range
+        except AttributeError:
+            pass
+
+        try:
+            del self._qpu_quadratic_range
+        except AttributeError:
+            pass
+
+    @_failover
     def sample(self, bqm, chain_strength=None, **kwargs):
         """Sample from the specified binary quadratic model.
 

@@ -19,6 +19,8 @@ import unittest.mock
 import dimod
 import dwave_networkx as dnx
 
+from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
+
 from dwave.system import DWaveCliqueSampler
 
 
@@ -48,6 +50,9 @@ class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):
             assert j_range[0] <= bias <= j_range[1]
 
         return super().sample(bqm)
+
+    def trigger_failover(self):
+        pass
 
 
 class MockChimeraDWaveSampler(MockDWaveSampler):
@@ -127,3 +132,60 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             chimera_sampler.sample(bqm)
+
+
+class TestFailover(unittest.TestCase):
+    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
+                         MockChimeraDWaveSampler)
+    def test_default(self):
+        sampler = DWaveCliqueSampler()
+
+        def mocksample(*args, **kwargs):
+            raise SolverOfflineError
+
+        sampler.child.sample = mocksample
+
+        with self.assertRaises(SolverOfflineError):
+            sampler.sample_ising({}, {})
+
+    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
+                         MockChimeraDWaveSampler)
+    def test_noretry(self):
+        sampler = DWaveCliqueSampler(failover=True, retry_interval=-1)
+
+        def mocksample(*args, **kwargs):
+            raise SolverOfflineError
+
+        sampler.child.sample = mocksample
+
+        def mocktrigger(*args, **kwargs):
+            raise SolverNotFoundError
+
+        sampler.child.trigger_failover = mocktrigger
+
+        with self.assertRaises(SolverNotFoundError):
+            sampler.sample_ising({}, {})
+
+    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
+                         MockChimeraDWaveSampler)
+    def test_properties(self):
+        sampler = DWaveCliqueSampler(failover=True)
+
+        def mocksample(*args, **kwargs):
+            count = getattr(mocksample, 'count', 0)
+
+            if count:
+                return dimod.SampleSet.from_samples([], energy=0., vartype='SPIN')
+            else:
+                mocksample.count = count + 1
+                raise SolverOfflineError
+
+        sampler.child.sample = mocksample
+
+        G = sampler.target_graph
+
+        self.assertIs(G, sampler.target_graph)
+
+        sampler.sample_ising({}, {})
+
+        self.assertIsNot(G, sampler.target_graph)
