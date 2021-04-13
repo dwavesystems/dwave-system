@@ -115,9 +115,7 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def qpu_linear_range(self) -> Tuple[float, float]:
-        """Range of values possible for the qubit biases (linear biases),
-        h, for the QPU.
-        """
+        """Range of linear biases allowed by the QPU."""
         try:
             return self._qpu_linear_range
         except AttributeError:
@@ -139,9 +137,7 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def qpu_quadratic_range(self) -> Tuple[float, float]:
-        """Range of values possible for the coupling strengths (quadratic
-        biases), J, for the QPU.
-        """
+        """Range of quadratic biases allowed by the QPU."""
         try:
             return self._qpu_quadratic_range
         except AttributeError:
@@ -149,7 +145,9 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         # get the energy range
         try:
-            energy_range = tuple(self.child.properties['j_range'])
+            energy_range = tuple(
+                self.child.properties.get('extended_j_range',
+                                          self.child.properties['j_range']))
         except KeyError as err:
             # for backwards compatibility with old software solvers
             if self.child.solver.is_software:
