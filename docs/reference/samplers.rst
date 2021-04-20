@@ -64,8 +64,11 @@ Properties
    :toctree: generated/
 
    DWaveCliqueSampler.largest_clique_size
+   DWaveCliqueSampler.qpu_linear_range
+   DWaveCliqueSampler.qpu_quadratic_range
    DWaveCliqueSampler.properties
    DWaveCliqueSampler.parameters
+   DWaveCliqueSampler.target_graph
 
 
 Methods

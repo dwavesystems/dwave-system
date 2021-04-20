@@ -39,6 +39,10 @@ __all__ = ['DWaveSampler']
 
 
 def _failover(f):
+    """Decorator for methods that might raise SolverOfflineError. Assumes that
+    the method is on a class with a `trigger_failover` method and a truthy
+    `failover` attribute.
+    """
     @functools.wraps(f)
     def wrapper(sampler, *args, **kwargs):
         while True:
@@ -49,36 +53,13 @@ def _failover(f):
                     raise err
 
             try:
-                # the requested features are saved on the client object, so
-                # we just need to request a new solver
-                sampler.solver = sampler.client.get_solver()
-
-                # delete the lazily-constructed attributes
-                try:
-                    del sampler._edgelist
-                except AttributeError:
-                    pass
-
-                try:
-                    del sampler._nodelist
-                except AttributeError:
-                    pass
-
-                try:
-                    del sampler._parameters
-                except AttributeError:
-                    pass
-
-                try:
-                    del sampler._properties
-                except AttributeError:
-                    pass
-
+                sampler.trigger_failover()
             except SolverNotFoundError as err:
                 if sampler.retry_interval < 0:
                     raise err
 
                 time.sleep(sampler.retry_interval)
+
     return wrapper
 
 
@@ -281,6 +262,34 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         except AttributeError:
             self._nodelist = nodelist = sorted(self.solver.nodes)
         return nodelist
+
+    def trigger_failover(self):
+        """Trigger a failover and connect to a new solver."""
+
+        # the requested features are saved on the client object, so
+        # we just need to request a new solver
+        self.solver = self.client.get_solver()
+
+        # delete the lazily-constructed attributes
+        try:
+            del self._edgelist
+        except AttributeError:
+            pass
+
+        try:
+            del self._nodelist
+        except AttributeError:
+            pass
+
+        try:
+            del self._parameters
+        except AttributeError:
+            pass
+
+        try:
+            del self._properties
+        except AttributeError:
+            pass
 
     @_failover
     def sample(self, bqm, warnings=None, **kwargs):
