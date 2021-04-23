@@ -1,5 +1,5 @@
 .. image:: https://img.shields.io/pypi/v/dwave-system.svg
-   :target: https://pypi.python.org/pypi/dwave-system
+   :target: https://pypi.org/project/dwave-system
 
 .. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
    :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
