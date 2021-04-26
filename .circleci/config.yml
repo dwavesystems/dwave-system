@@ -71,6 +71,12 @@ jobs:
             . env/bin/activate
             make -C docs/ html doctest
 
+      - run: 
+          name: linkcheck
+          command: |
+            . env/bin/activate
+            make -C docs/ linkcheck
+
   test-osx:
     parameters:
       python-version:
@@ -82,10 +88,10 @@ jobs:
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
 
-    steps: 
+    steps:
       - checkout
 
-      - run: 
+      - run:
           name: install pyenv
           command: |
             brew install pyenv
