@@ -15,13 +15,33 @@
 """who watches the watchmen?"""
 import unittest
 
-from dwave.system.testing import MockDWaveSampler
+from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 
 import dimod.testing as dit
+from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
 
 
 class TestMockDWaveSampler(unittest.TestCase):
-    def setUp(self):
+    def test_sampler(self):
         sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
+
+class TestMockLeapHybridDQMSampler(unittest.TestCase):
+    def test_sampler(self):
+        sampler = MockLeapHybridDQMSampler()
+
+        self.assertTrue(callable(sampler.sample_dqm))
+        self.assertTrue(callable(sampler.min_time_limit))
+        self.assertTrue(hasattr(sampler, 'properties'))
+        self.assertTrue(hasattr(sampler, 'parameters'))
+
+        dqm = DiscreteQuadraticModel()
+        dqm.add_variable(3)
+        dqm.add_variable(4)
+
+        result = sampler.sample_dqm(dqm)
+        self.assertTrue(isinstance(result, SampleSet))
+        self.assertGreaterEqual(len(result), 12)  # min num of samples from dqm solver
+        self.assertEqual(len(result.variables), 2)
+        self.assertEqual(result.vartype, ExtendedVartype.DISCRETE)
