@@ -97,6 +97,43 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                                  for sample in response.samples()],
                                                 bqm, info=info)
 
+class MockLeapHybridDQMSampler:
+    """Mock sampler modeled after LeapHybridDQMSampler that can be used for tests."""
+    def __init__(self, **config):
+        self.parameters = {'time_limit': ['parameters'],
+                           'label': []}
+
+        self.properties = {'category': 'hybrid',
+                           'supported_problem_types': ['dqm'],
+                           'quota_conversion_rate': 20,
+                           'minimum_time_limit': [[20000, 5.0], 
+                                                  [100000, 6.0], 
+                                                  [200000, 13.0], 
+                                                  [500000, 34.0], 
+                                                  [1000000, 71.0], 
+                                                  [2000000, 152.0], 
+                                                  [5000000, 250.0], 
+                                                  [20000000, 400.0], 
+                                                  [250000000, 1200.0]], 
+                           'maximum_time_limit_hrs': 24.0, 
+                           'maximum_number_of_variables': 3000, 
+                           'maximum_number_of_biases': 3000000000}
+
+    def sample_dqm(self, dqm, **kwargs):
+        num_samples = 12    # min num of samples from dqm solver
+        samples = np.empty((num_samples, dqm.num_variables()), dtype=int)
+        
+        for vi, v in enumerate(dqm.variables):
+            samples[:, vi] = np.random.choice(dqm.num_cases(v), size=num_samples)
+
+        return dimod.SampleSet.from_samples((samples, dqm.variables),
+                                             vartype='DISCRETE',
+                                             energy=dqm.energies(samples))
+
+    def min_time_limit(self, dqm):
+        # not caring about the problem, just returning the min
+        return self.properties['minimum_time_limit'][0][1]
+
 class MockLeapHybridSolver:
 
     properties = {'supported_problem_types': ['bqm'],
