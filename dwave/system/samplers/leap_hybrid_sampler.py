@@ -42,7 +42,7 @@ class LeapHybridSampler(dimod.Sampler):
 
     :ref:`dwave-cloud-client <sdk_index_cloud>`'s
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
-    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
     ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
     hybrid BQM solvers are returned ordered by latest ``version``.
 
@@ -109,7 +109,7 @@ class LeapHybridSampler(dimod.Sampler):
     def properties(self):
         """dict: Solver properties as returned by a SAPI query.
 
-        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
         """
         try:
@@ -124,7 +124,7 @@ class LeapHybridSampler(dimod.Sampler):
         keyword parameters accepted by a SAPI query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each key.
 
-        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_parameters.html>`_
         are dependent on the selected solver and subject to change.
         """
         try:
@@ -269,7 +269,7 @@ class LeapHybridDQMSampler:
 
     :ref:`dwave-cloud-client <sdk_index_cloud>`'s
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
-    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
     ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
     hybrid DQM solvers are returned ordered by latest ``version``.
 
@@ -350,7 +350,7 @@ class LeapHybridDQMSampler:
     def properties(self):
         """dict: Solver properties as returned by a SAPI query.
 
-        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
         """
         try:
@@ -367,7 +367,7 @@ class LeapHybridDQMSampler:
         :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties` for each
         key.
 
-        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_3.html>`_
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_parameters.html>`_
         are dependent on the selected solver and subject to change.
         """
         try:
