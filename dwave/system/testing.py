@@ -58,7 +58,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         # add the interesting properties manually
         self.properties = properties = {}
-        properties['j_range'] = [-2.0, 1.0]
+        properties['j_range'] = [-1.0, 1.0]
         properties['h_range'] = [-2.0, 2.0]
         properties['num_reads_range'] = [1, 10000]
         properties['num_qubits'] = len(C4)
@@ -69,6 +69,18 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['annealing_time_range'] = [1, 2000]
         properties['num_qubits'] = len(self.nodelist)
         properties['extended_j_range'] = [-2.0, 1.0]
+        properties["supported_problem_types"] = ['ising', 'qubo']
+        # add some occasionally useful properties
+        properties["default_annealing_time"] = 20
+        properties["default_programming_thermalization"] = 1000
+        properties["default_readout_thermalization"] = 0
+        properties["h_gain_schedule_range"] = [-4.0, 4.0]
+        properties["max_anneal_schedule_points"] = 12
+        properties["max_h_gain_schedule_points"] = 20
+        properties["per_qubit_coupling_range"] = [-18.0, 15.0]
+        properties["problem_run_duration_range"] = [0, 1000000]
+        properties["programming_thermalization_range"] = [0, 10000]
+        properties["readout_thermalization_range"] = [0, 10000]
 
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[], **kwargs):
@@ -106,23 +118,23 @@ class MockLeapHybridDQMSampler:
         self.properties = {'category': 'hybrid',
                            'supported_problem_types': ['dqm'],
                            'quota_conversion_rate': 20,
-                           'minimum_time_limit': [[20000, 5.0], 
-                                                  [100000, 6.0], 
-                                                  [200000, 13.0], 
-                                                  [500000, 34.0], 
-                                                  [1000000, 71.0], 
-                                                  [2000000, 152.0], 
-                                                  [5000000, 250.0], 
-                                                  [20000000, 400.0], 
-                                                  [250000000, 1200.0]], 
-                           'maximum_time_limit_hrs': 24.0, 
-                           'maximum_number_of_variables': 3000, 
+                           'minimum_time_limit': [[20000, 5.0],
+                                                  [100000, 6.0],
+                                                  [200000, 13.0],
+                                                  [500000, 34.0],
+                                                  [1000000, 71.0],
+                                                  [2000000, 152.0],
+                                                  [5000000, 250.0],
+                                                  [20000000, 400.0],
+                                                  [250000000, 1200.0]],
+                           'maximum_time_limit_hrs': 24.0,
+                           'maximum_number_of_variables': 3000,
                            'maximum_number_of_biases': 3000000000}
 
     def sample_dqm(self, dqm, **kwargs):
         num_samples = 12    # min num of samples from dqm solver
         samples = np.empty((num_samples, dqm.num_variables()), dtype=int)
-        
+
         for vi, v in enumerate(dqm.variables):
             samples[:, vi] = np.random.choice(dqm.num_cases(v), size=num_samples)
 
