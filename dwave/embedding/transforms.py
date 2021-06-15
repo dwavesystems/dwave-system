@@ -237,7 +237,10 @@ class EmbeddedStructure(dict):
         # create a new empty binary quadratic model with the same class as
         # source_bqm if it's shapeable, otherwise use AdjVectorBQM
         if source_bqm.shapeable():
-            target_bqm = source_bqm.base.empty(smear_vartype)
+            try:
+                target_bqm = source_bqm.base.empty(smear_vartype)
+            except AttributeError:
+                target_bqm = source_bqm.empty(smear_vartype)
         else:
             target_bqm = dimod.AdjVectorBQM.empty(smear_vartype)
 
