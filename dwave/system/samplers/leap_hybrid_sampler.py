@@ -22,8 +22,8 @@ from numbers import Number
 from collections import abc
 
 import dimod
-from dimod.serialization.fileview import FileView
 
+from dimod.binary.binary_quadratic_model import BQM
 from dwave.cloud import Client
 
 __all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
@@ -179,6 +179,16 @@ class LeapHybridSampler(dimod.Sampler):
             >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
 
         """
+        if not isinstance(bqm, BQM):
+            # handle legacy BQMs. Avoiding a bug in 0.10.0.dev5
+            # see https://github.com/dwavesystems/dimod/pull/845
+            old = bqm
+            bqm = BQM(old.vartype)
+            for v in old.variables:
+                bqm.add_variable(v)
+            bqm.linear.update(old.linear)
+            bqm.quadratic.update(old.quadratic)
+            bqm.offset += old.offset
 
         num_vars = bqm.num_variables
 
@@ -202,12 +212,7 @@ class LeapHybridSampler(dimod.Sampler):
 
     def _sample(self, bqm, **kwargs):
         """Sample from the given BQM."""
-        # get a FileView-compatibile BQM
-        bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM,
-                                     dimod.AdjMapBQM,
-                                     dimod.AdjVectorBQM])
-
-        with FileView(bqm, version=2) as fv:
+        with bqm.to_file(version=2) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
 
         return self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
@@ -216,13 +221,7 @@ class LeapHybridSampler(dimod.Sampler):
         """Sample from the unlabelled version of the BQM, then apply the
         labels to the returned sampleset.
         """
-        # get a FileView-compatibile BQM
-        # it is also important that the BQM be ordered
-        bqm = dimod.as_bqm(bqm, cls=[dimod.AdjArrayBQM,
-                                     dimod.AdjMapBQM,
-                                     dimod.AdjVectorBQM])
-
-        with FileView(bqm, version=2, ignore_labels=True) as fv:
+        with bqm.to_file(version=2, ignore_labels=True) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
 
         sampleset = self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
