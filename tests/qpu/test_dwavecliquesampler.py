@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 import itertools
+import os
 import unittest
 
 import dimod
@@ -21,6 +22,7 @@ from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.system import DWaveCliqueSampler
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
     def test_chimera(self):
         try:

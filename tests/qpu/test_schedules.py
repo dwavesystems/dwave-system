@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import unittest
 
 from dwave.cloud.exceptions import ConfigFileError
@@ -20,6 +21,7 @@ from dwave.system.schedules import ramp
 from dwave.system.samplers import DWaveSampler
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestRamp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
