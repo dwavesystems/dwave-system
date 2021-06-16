@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import itertools
 import unittest
 
@@ -24,6 +25,7 @@ from dwave.system.composites import VirtualGraphComposite
 from dwave.system.samplers import DWaveSampler
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestVirtualGraphComposite(unittest.TestCase):
 
     @classmethod

@@ -13,6 +13,7 @@
 #    limitations under the License.
 #
 
+import os
 import unittest
 
 import dimod
@@ -26,6 +27,7 @@ except (ValueError, ConfigFileError, SolverNotFoundError):
     sampler = None
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 @unittest.skipIf(sampler is None, "no hybrid sampler available")
 # @dimod.testing.load_sampler_bqm_tests(sampler)  # these take a while
 class TestLeapHybridSampler(unittest.TestCase):

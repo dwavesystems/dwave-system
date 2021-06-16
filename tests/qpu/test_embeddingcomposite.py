@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import unittest
 import warnings
 
@@ -22,6 +23,7 @@ from dwave.cloud.exceptions import ConfigFileError
 from dwave.system import DWaveSampler, EmbeddingComposite
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestEmbeddingCompositeExactSolver(unittest.TestCase):
 
     @classmethod

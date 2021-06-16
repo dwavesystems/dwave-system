@@ -1,15 +1,8 @@
 environment:
-
-  DWAVE_API_ENDPOINT: https://cloud.dwavesys.com/sapi
-  DWAVE_API_TOKEN:
-    secure: YekPDE0jzk9VymUkPeswJ8SBhhsvHcb0yP9b+bvx/YPs/wZUWDsl1GrNfCLe4Iys
-
   matrix:
 
     # https://www.appveyor.com/docs/build-environment/#python
 
-    - PYTHON: "C:\\Python35"
-    - PYTHON: "C:\\Python35-x64"
     - PYTHON: "C:\\Python36"
     - PYTHON: "C:\\Python36-x64"
     - PYTHON: "C:\\Python37"

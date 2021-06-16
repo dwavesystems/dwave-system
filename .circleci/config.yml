@@ -1,13 +1,17 @@
 version: 2.1
 
 jobs:
-  test-linux:
+  test-linux: &test-linux-template
     parameters:
-      image:
+      dimod-version:
+        type: string
+      python-version:
+        type: string
+      integration-test-python-version:
         type: string
 
     docker:
-      - image: circleci/python:<< parameters.image >>
+      - image: circleci/python:<< parameters.python-version >>
 
     steps:
       - checkout
@@ -22,6 +26,7 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -r requirements.txt -r tests/requirements.txt
+            pip install --upgrade 'dimod<< parameters.dimod-version >>'
 
       - save_cache: &save-test-cache-template
           paths:
@@ -32,6 +37,9 @@ jobs:
           name: run unittests
           command: |
             . env/bin/activate
+            if [[ << parameters.integration-test-python-version >> != << parameters.python-version >> ]]; then
+              export SKIP_INT_TESTS=1
+            fi
             coverage run -m unittest discover
 
       - run: &codecov-template
@@ -80,6 +88,8 @@ jobs:
   test-osx:
     parameters:
       python-version:
+        type: string
+      integration-test-python-version:
         type: string
 
     macos:
@@ -163,18 +173,19 @@ workflows:
   test:
     jobs:
       - test-linux:
+          name: test-linux-<< matrix.python-version >>-dimod<< matrix.dimod-version >>
           matrix:
             parameters:
-              image:
-                - 3.9-buster
-                - 3.8-buster
-                - 3.7-stretch
-                - 3.6-jessie
-                - 3.5-jessie
+              python-version: &python-versions [3.6.8, 3.7.9, 3.8.9, &latest-python 3.9.4]
+              integration-test-python-version: &integration-python-versions [*latest-python]
+
+              dimod-version: [==0.9.11, <0.10.0]
       - test-osx:
+          name: test-osx-<< matrix.python-version >>
           matrix:
             parameters:
-              python-version: ["3.5.4", "3.6.8", "3.7.5", "3.8.6", "3.9.0"]
+              python-version: *python-versions
+              integration-test-python-version: *integration-python-versions
       - test-doctest
 
   deploy:

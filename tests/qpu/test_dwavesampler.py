@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 import unittest
+import os
 from unittest import mock
 
 import numpy
@@ -24,6 +25,7 @@ from dwave.cloud.client import Client
 from dwave.system.samplers import DWaveSampler
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveSampler(unittest.TestCase):
 
     @classmethod
@@ -127,6 +129,7 @@ class TestDWaveSampler(unittest.TestCase):
         self.assertNotIn('problem_label', sampleset.info)
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestMissingQubits(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -152,6 +155,7 @@ class TestMissingQubits(unittest.TestCase):
         assert len(sampleset.variables) < 2048  # sanity check
 
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestClientSelection(unittest.TestCase):
 
     def test_client_type(self):
