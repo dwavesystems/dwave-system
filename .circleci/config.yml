@@ -37,7 +37,9 @@ jobs:
           name: run unittests
           command: |
             . env/bin/activate
-            if [[ << parameters.integration-test-python-version >> != << parameters.python-version >>]] then export SKIP_INT_TESTS=1 fi
+            if [[ << parameters.integration-test-python-version >> != << parameters.python-version >> ]]; then
+              export SKIP_INT_TESTS=1
+            fi
             coverage run -m unittest discover
 
       - run: &codecov-template
@@ -87,13 +89,14 @@ jobs:
     parameters:
       python-version:
         type: string
+      integration-test-python-version:
+        type: string
 
     macos:
       xcode: "12.2.0"
 
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
-      SKIP_INT_TESTS: 1
 
     steps:
       - checkout
@@ -178,13 +181,14 @@ workflows:
               # only ever put one version in here, it's a bit of a silly
               # way to do it but it keeps this number near the other python
               # versions
-              integration-test-python-version: [3.9.4]
+              integration-test-python-version: &integration-python-versions [3.9.4]
 
               dimod-version: [==0.9.11, <0.10.0]
       - test-osx:
           matrix:
             parameters:
               python-version: *python-versions
+              integration-test-python-version: *integration-python-versions
       - test-doctest
 
   deploy:
