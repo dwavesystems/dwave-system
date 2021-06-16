@@ -176,12 +176,8 @@ workflows:
           name: test-linux-<< matrix.python-version >>-dimod<< matrix.dimod-version >>
           matrix:
             parameters:
-              python-version: &python-versions [3.6.8, 3.7.9, 3.8.9, 3.9.4]
-
-              # only ever put one version in here, it's a bit of a silly
-              # way to do it but it keeps this number near the other python
-              # versions
-              integration-test-python-version: &integration-python-versions [3.9.4]
+              python-version: &python-versions [3.6.8, 3.7.9, 3.8.9, &latest-python 3.9.4]
+              integration-test-python-version: &integration-python-versions [*latest-python]
 
               dimod-version: [==0.9.11, <0.10.0]
       - test-osx:
