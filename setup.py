@@ -25,6 +25,7 @@ os.chdir(setup_folder_loc)
 exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
+# if the dimod version range changes, update in .circleci/config.yml
 install_requires = ['dimod>=0.9.11,<0.10.0',
                     'dwave-cloud-client>=0.8.4,<0.9.0',
                     'dwave-networkx>=0.8.4',
