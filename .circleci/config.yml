@@ -170,11 +170,10 @@ workflows:
                 - 3.8-buster
                 - 3.7-stretch
                 - 3.6-jessie
-                - 3.5-jessie
       - test-osx:
           matrix:
             parameters:
-              python-version: ["3.5.4", "3.6.8", "3.7.5", "3.8.6", "3.9.0"]
+              python-version: ["3.6.8", "3.7.5", "3.8.6", "3.9.0"]
       - test-doctest
 
   deploy:

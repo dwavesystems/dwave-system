@@ -41,7 +41,7 @@ install_requires = ['dimod>=0.9.11,<0.10.0',
 extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
                   }
 
-python_requires = '>=3.5'
+python_requires = '>=3.6'
 
 packages = ['dwave',
             'dwave.embedding',
