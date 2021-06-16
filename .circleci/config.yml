@@ -185,6 +185,7 @@ workflows:
 
               dimod-version: [==0.9.11, <0.10.0]
       - test-osx:
+          name: test-osx-<< matrix.python-version >>
           matrix:
             parameters:
               python-version: *python-versions
