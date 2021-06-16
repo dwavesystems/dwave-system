@@ -1,13 +1,13 @@
 version: 2.1
 
 jobs:
-  test-linux:
+  test-linux: &test-linux-template
     parameters:
-      image:
+      python-version:
         type: string
 
     docker:
-      - image: circleci/python:<< parameters.image >>
+      - image: circleci/python:<< parameters.python-version >>
 
     steps:
       - checkout
@@ -87,6 +87,7 @@ jobs:
 
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
+      SKIP_INT_TESTS: 1
 
     steps:
       - checkout
@@ -165,15 +166,11 @@ workflows:
       - test-linux:
           matrix:
             parameters:
-              image:
-                - 3.9-buster
-                - 3.8-buster
-                - 3.7-stretch
-                - 3.6-jessie
+              python-version: &python-versions [3.6.8, 3.7.9, 3.8.9, 3.9.4]
       - test-osx:
           matrix:
             parameters:
-              python-version: ["3.6.8", "3.7.5", "3.8.6", "3.9.0"]
+              python-version: *python-versions
       - test-doctest
 
   deploy:
