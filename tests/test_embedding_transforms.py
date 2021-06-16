@@ -453,10 +453,10 @@ class TestEmbedBQM(unittest.TestCase):
         for v, c in embedding.items():
             if v in bqm.variables:
                 for q in c:
-                    self.assertIn(q, target_bqm)
+                    self.assertIn(q, target_bqm.variables)
             else:
                 for q in c:
-                    self.assertNotIn(q, target_bqm)
+                    self.assertNotIn(q, target_bqm.variables)
             
 
     def test_empty_chain_exception(self):
