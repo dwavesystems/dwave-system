@@ -25,7 +25,7 @@ os.chdir(setup_folder_loc)
 exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod==0.10.0.dev5',
+install_requires = ['dimod==0.10.0.dev6',
                     'dwave-cloud-client>=0.8.4,<0.9.0',
                     'dwave-networkx>=0.8.4',
                     'networkx>=2.0,<3.0',
