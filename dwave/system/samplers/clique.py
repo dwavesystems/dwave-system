@@ -257,10 +257,10 @@ class DWaveCliqueSampler(dimod.Sampler):
                 using a clique embedding.
 
             chain_strength (float/mapping/callable, optional):
-                Sets the coupling strength between qubits representing variables 
-                that form a :term:`chain`. Mappings should specify the required 
-                chain strength for each variable. Callables should accept the BQM 
-                and embedding and return a float or mapping. By default, 
+                Sets the coupling strength between qubits representing variables
+                that form a :term:`chain`. Mappings should specify the required
+                chain strength for each variable. Callables should accept the BQM
+                and embedding and return a float or mapping. By default,
                 `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -273,6 +273,10 @@ class DWaveCliqueSampler(dimod.Sampler):
                 system. Note that `auto_scale` is not supported by this
                 sampler, because it scales the problem as part of the embedding
                 process.
+
+        Returns:
+            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
+            :class:`~concurrent.futures.Future`-like object.
 
         """
 
