@@ -275,7 +275,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                 process.
 
         Returns:
-            :class:`~dimod.SampleSet` constructed from a (non-blocking) :class:`~concurrent.futures.Future`: A
+            :class:`~dimod.SampleSet` constructed from a (non-blocking) :class:`~concurrent.futures.Future`-like object: A
             :obj:`~dimod.SampleSet` object.
 
         """

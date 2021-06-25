@@ -312,7 +312,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 describes the parameters and properties supported on the D-Wave system.
 
         Returns:
-            :class:`~dimod.SampleSet` constructed from a (non-blocking) :class:`~concurrent.futures.Future`: A
+            :class:`~dimod.SampleSet` constructed from a (non-blocking) :class:`~concurrent.futures.Future`-like object: A
             :obj:`~dimod.SampleSet` object.
             In it this sampler also provides timing information in the `info`
             field as described in the D-Wave System Documentation's

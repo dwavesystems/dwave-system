@@ -16,8 +16,8 @@ distributions defined by the problem.
     :depth: 1
 
 These samplers are non-blocking: the returned :class:`~dimod.SampleSet` is constructed
-from a :class:`~concurrent.futures.Future` that is resolved on the first read of
-any of its properties; for example, by printing the results or querying its
+from a :class:`~concurrent.futures.Future`-like object that is resolved on the first
+read of any of its properties; for example, by printing the results or querying its
 :meth:`~dimod.SampleSet.done` method.
 
 Other Ocean packages provide additional samplers; for example,
