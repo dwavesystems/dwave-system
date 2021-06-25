@@ -156,8 +156,7 @@ class LeapHybridSampler(dimod.Sampler):
                 :attr:`~dwave.system.samplers.LeapHybridSampler.parameters`.
 
         Returns:
-            :class:`~dimod.SampleSet` constructed from a (non-blocking) :class:`~concurrent.futures.Future`-like object: A
-            :obj:`~dimod.SampleSet` object.
+            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking) :class:`~concurrent.futures.Future`-like object.
 
         Examples:
             This example builds a random sparse graph and uses a hybrid solver to
@@ -411,8 +410,7 @@ class LeapHybridDQMSampler:
                 :attr:`~dwave.system.samplers.LeapHybridDQMSampler.parameters`.
 
         Returns:
-            :class:`~dimod.SampleSet` constructed from a (non-blocking) :class:`~concurrent.futures.Future`-like object: A
-            :obj:`~dimod.SampleSet` object.
+            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking) :class:`~concurrent.futures.Future`-like object.
 
         Examples:
             See the example in :class:`LeapHybridDQMSampler`.

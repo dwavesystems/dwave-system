@@ -17,8 +17,9 @@ distributions defined by the problem.
 
 These samplers are non-blocking: the returned :class:`~dimod.SampleSet` is constructed
 from a :class:`~concurrent.futures.Future`-like object that is resolved on the first
-read of any of its properties; for example, by printing the results or querying its
-:meth:`~dimod.SampleSet.done` method.
+read of any of its properties; for example, by printing the results. Your code can
+query its status with the :meth:`~dimod.SampleSet.done` method or ensure resolution
+with the :meth:`~dimod.SampleSet.resolve` method.
 
 Other Ocean packages provide additional samplers; for example,
 :std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` provides samplers for testing
