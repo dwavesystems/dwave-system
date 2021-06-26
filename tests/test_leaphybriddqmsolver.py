@@ -60,3 +60,46 @@ class TestLeapHybridDQMSampler(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             sampler.sample_dqm(dqm, time_limit=10000000)
+
+    def test_DQM_subclass_without_serialization_can_be_sampled(self):
+        """Test that DQM subclasses that do not implement serialization can
+        still be sampled by LeapHybridDQMSampler.
+
+        Sampling requires serialization.  LeapHybridDQMSampler calls
+        DQM.to_file(dqm, ...) if dqm.to_file(...) raises NotImplementedError.
+        """
+
+        class DQMWithoutSerialization(dimod.DQM):
+            def to_file(self, *args, **kwargs):
+                raise NotImplementedError
+
+        class MockSampleset:
+            def relabel_variables(self, *args):
+                return self
+
+        class MockFuture:
+            sampleset = MockSampleset()
+
+        class MockSolver:
+            properties = dict(category='hybrid',
+                              minimum_time_limit=[[10000, 1.0]]
+                              )
+            supported_problem_types = ['dqm']
+
+            def sample_dqm(self, *args, **kwargs):
+                return MockFuture()
+
+        class MockClient:
+            @classmethod
+            def from_config(cls, *args, **kwargs):
+                return cls()
+
+            def get_solver(self, *args, **kwargs):
+                return MockSolver()
+
+        with patch('dwave.system.samplers.leap_hybrid_sampler.Client', MockClient):
+            sampler = LeapHybridDQMSampler()
+
+            dqm = DQMWithoutSerialization()
+
+        sampler.sample_dqm(dqm)
