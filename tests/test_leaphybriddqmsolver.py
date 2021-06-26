@@ -103,3 +103,40 @@ class TestLeapHybridDQMSampler(unittest.TestCase):
             dqm = DQMWithoutSerialization()
 
         sampler.sample_dqm(dqm)
+
+    def test_filter_sampleset(self):
+
+        class DQMWithFilterSampleset(dimod.DQM):
+            def _filter_sampleset(self, sampleset):
+                sampleset.transformed = True
+                return sampleset
+
+        class MockSampleset:
+            pass
+
+        class MockFuture:
+            sampleset = MockSampleset()
+
+        class MockSolver:
+            properties = dict(category='hybrid',
+                              minimum_time_limit=[[10000, 1.0]]
+                              )
+            supported_problem_types = ['dqm']
+
+            def sample_dqm(self, *args, **kwargs):
+                return MockFuture()
+
+        class MockClient:
+            @classmethod
+            def from_config(cls, *args, **kwargs):
+                return cls()
+
+            def get_solver(self, *args, **kwargs):
+                return MockSolver()
+
+        with patch('dwave.system.samplers.leap_hybrid_sampler.Client', MockClient):
+            sampler = LeapHybridDQMSampler()
+
+            dqm = DQMWithFilterSampleset()
+
+        self.assertTrue(sampler.sample_dqm(dqm).transformed)
