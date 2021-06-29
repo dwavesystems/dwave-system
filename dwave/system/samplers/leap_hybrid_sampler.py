@@ -450,10 +450,7 @@ class LeapHybridDQMSampler:
             f = dimod.DQM.to_file(dqm, compress=compress, ignore_labels=True)._file
 
         sampleset = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs).sampleset
-        try:
-            return dqm._filter_sampleset(sampleset)
-        except AttributeError:
-            return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
+        return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
 
     def min_time_limit(self, dqm):
         """Return the minimum `time_limit` accepted for the given problem.
