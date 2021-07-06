@@ -142,7 +142,7 @@ class CutOffComposite(dimod.ComposedSampler):
         # next we check for isolated qubits and remove them, we could do this as
         # part of the construction but the assumption is there should not be
         # a large number in the 'typical' case
-        isolated = [v for v in new if not new.adj[v]]
+        isolated = [v for v in new.variables if not new.adj[v]]
         new.remove_variables_from(isolated)
 
         if isolated and len(new) == 0:
@@ -190,7 +190,7 @@ def _restore_isolated(sampleset, bqm, isolated):
             new_samples[:, col] = bqm.linear[v] <= 0
             continue
 
-        idxs = [variables.index[u] for u in neighbours]
+        idxs = [variables.index(u) for u in neighbours]
 
         # figure out which value for v would minimize the energy
         # v(h_v + \sum_u J_uv * u)
