@@ -179,7 +179,7 @@ workflows:
               python-version: &python-versions [3.6.8, 3.7.9, 3.8.9, &latest-python 3.9.4]
               integration-test-python-version: &integration-python-versions [*latest-python]
 
-              dimod-version: [==0.9.11, <0.10.0]
+              dimod-version: [==0.9.11, <0.10.0, ==0.10.0.dev6, ==0.10.0.dev7]
       - test-osx:
           name: test-osx-<< matrix.python-version >>
           matrix:
