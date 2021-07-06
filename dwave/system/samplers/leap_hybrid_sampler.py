@@ -39,7 +39,7 @@ from dwave.cloud import Client
 from dwave.system.utilities import classproperty, FeatureFlags
 
 
-__all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
+__all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler', 'LeapHybridCQMSampler']
 
 
 class LeapHybridSampler(dimod.Sampler):
@@ -532,3 +532,93 @@ class LeapHybridDQMSampler:
         limits = np.array(self.properties['minimum_time_limit'])
         t = np.interp(ec, limits[:, 0], limits[:, 1])
         return max([5, t])
+
+
+###############################################################################
+# We need to trick the cloud-client into accepting a new problem type
+# todo: migrate this stuff into the cloud-client
+def _encode_cqm(self, problem, params):
+    import json
+    body = json.dumps({
+        'solver': self.id,
+        'data': {'format': 'ref',
+                 'data': problem,
+                 },
+        'type': 'cqm',
+        'params': params
+    })
+    return body
+
+
+def _sample_cqm(self, cqm, **params):
+    from dwave.cloud.computation import Future
+    body = self.client._encode_problem_executor.submit(
+        self._encode_cqm,
+        problem=cqm, params=params)
+    # computation future holds a reference to the remote job
+    computation = Future(solver=self, id_=None,
+                         return_matrix=self.return_matrix)
+    self.client._submit(body, computation)
+    return computation
+
+from dwave.cloud.solver import UnstructuredSolver
+
+UnstructuredSolver._handled_problem_types.add('cqm')
+UnstructuredSolver._encode_cqm = _encode_cqm
+UnstructuredSolver.sample_cqm = _sample_cqm
+###############################################################################
+
+
+class LeapHybridCQMSampler:
+    def __init__(self, solver=None, connection_close=True, **config):
+
+        # we want a Hybrid solver by default, but allow override
+        config.setdefault('client', 'hybrid')
+
+        if solver is None:
+            solver = {}
+
+        if isinstance(solver, abc.Mapping):
+            # TODO: instead of solver selection, try with user's default first
+            if solver.setdefault('category', 'hybrid') != 'hybrid':
+                raise ValueError("the only 'category' this sampler supports is 'hybrid'")
+            if solver.setdefault('supported_problem_types__contains', 'cqm') != 'cqm':
+                raise ValueError("the only problem type this sampler supports is 'cqm'")
+
+            # prefer the latest version, but allow kwarg override
+            solver.setdefault('order_by', '-properties.version')
+
+        self.client = Client.from_config(
+            solver=solver, connection_close=connection_close, **config)
+
+        self.solver = self.client.get_solver()
+
+        # For explicitly named solvers:
+        if self.properties.get('category') != 'hybrid':
+            raise ValueError("selected solver is not a hybrid solver.")
+        if 'cqm' not in self.solver.supported_problem_types:
+            raise ValueError("selected solver does not support the 'cqm' problem type.")
+
+    @property
+    def properties(self):
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
+
+    @property
+    def parameters(self):
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            parameters.update(label=[])
+            self._parameters = parameters
+            return parameters
+
+    def sample_cqm(self, cqm, time_limit):
+        # todo: automatic time_limit
+        id_ = self.client.upload_problem_encoded(cqm.to_file()).result()
+        return self.solver.sample_cqm(id_, time_limit=time_limit).sampleset
