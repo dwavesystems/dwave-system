@@ -386,6 +386,10 @@ class LeapHybridDQMSampler:
             dqm (:obj:`dimod.DiscreteQuadraticModel`):
                 Discrete quadratic model (DQM).
 
+                Note that if `dqm` is a :class:`dimod.CaseLabelDQM`, then
+                :meth:`~dimod.CaseLabelDQM.map_sample` will need to be used to
+                restore the case labels in the returned sample set.
+
             time_limit (int, optional):
                 Maximum run time, in seconds, to allow the solver to work on the
                 problem. Must be at least the minimum required for the number of
