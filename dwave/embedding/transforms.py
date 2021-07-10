@@ -28,6 +28,16 @@ from dwave.embedding.utils import adjacency_to_edges, intlabel_disjointsets
 from dwave.embedding.chain_strength import uniform_torque_compensation
 
 
+try:
+    from dimod import AdjArrayBQM
+    from dimod.core.bqm import BinaryView, SpinView
+except ImportError:
+    # dummy classes for isinstance checks
+    class AdjArrayBQM: pass
+    class BinaryView: pass
+    class SpinView: pass
+
+
 __all__ = ['embed_bqm',
            'embed_ising',
            'embed_qubo',
@@ -234,18 +244,21 @@ class EmbeddedStructure(dict):
         else:
             smear_vartype = source_bqm.vartype
 
-        # create a new empty binary quadratic model with the same class as
-        # source_bqm if it's shapeable, otherwise use AdjVectorBQM
-        if source_bqm.shapeable():
+        # we need this check to support dimod 0.9.x, where there was one bqm
+        # type that was not shapeable
+        if (isinstance(source_bqm, (AdjArrayBQM, SpinView, BinaryView)) and
+                not source_bqm.shapeable()):
+            # this will never happen in dimod>=0.10.0
+            target_bqm = dimod.AdjVectorBQM.empty(smear_vartype)
+        else:
             try:
+                # dimod 0.9.x
                 target_bqm = source_bqm.base.empty(smear_vartype)
             except AttributeError:
                 target_bqm = source_bqm.empty(smear_vartype)
-        else:
-            target_bqm = dimod.AdjVectorBQM.empty(smear_vartype)
 
         # add the offset
-        target_bqm.add_offset(source_bqm.offset)
+        target_bqm.offset += source_bqm.offset
 
         if chain_strength is None:
             chain_strength = uniform_torque_compensation
@@ -290,7 +303,7 @@ class EmbeddedStructure(dict):
                     target_bqm.add_variable(p, 2*strength)
                     target_bqm.add_variable(q, 2*strength)
 
-        target_bqm.add_offset(offset)
+        target_bqm.offset += offset
 
         # next up the quadratic biases, spread the quadratic biases evenly over
         # the available interactions
@@ -379,7 +392,7 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
                 "target_adjacency should not be provided if embedding is an "
                 "EmbeddedStructure. The given value will be ignored. In the "
                 "future this will raise an exception",
-                DeprecationWarning
+                DeprecationWarning, stacklevel=2
                 )
     elif target_adjacency is None:
         raise ValueError("either embedding should be an EmbeddedStructure, or "
@@ -590,7 +603,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
 
         # Add a new data field tracking which came from
         # todo: add this functionality to dimod
-        cbm_idxs = np.empty(len(sampleset), dtype=np.int)
+        cbm_idxs = np.empty(len(sampleset), dtype=int)
 
         start = 0
         for i, ss in enumerate(samplesets):

@@ -35,6 +35,12 @@ from dwave.system.testing import MockDWaveSampler, mock
 from dwave.embedding import chain_breaks
 from dwave.system.warnings import ChainStrengthWarning
 
+try:
+    from dwave.preprocessing import ScaleComposite
+except ImportError:
+    # fall back on dimod of dwave.preprocessing is not installed
+    from dimod import ScaleComposite
+
 
 @dimod.testing.load_sampler_bqm_tests(EmbeddingComposite(MockDWaveSampler()))
 class TestEmbeddingComposite(unittest.TestCase):
@@ -216,7 +222,7 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         sampler = FixedEmbeddingComposite(
             dimod.TrackingComposite(
-                dimod.ScaleComposite(
+                ScaleComposite(
                     dimod.StructureComposite(
                         dimod.NullSampler(),
                         nodelist, edgelist))),
@@ -385,7 +391,8 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         self.assertIn('embedding', sampler.properties)
 
     def test_instantiation_empty_adjacency(self):
-        sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency={})
+        with self.assertWarns(DeprecationWarning):
+            sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency={})
 
         dimod.testing.assert_sampler_api(sampler)  # checks for attributes needed in a sampler
 
@@ -413,7 +420,8 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
     def test_adjacency(self):
         square_adj = {1: [2, 3], 2: [1, 4], 3: [1, 4], 4: [2, 3]}
-        sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency=square_adj)
+        with self.assertWarns(DeprecationWarning):
+            sampler = FixedEmbeddingComposite(MockDWaveSampler(), source_adjacency=square_adj)
 
         self.assertTrue(hasattr(sampler, 'adjacency'))
         self.assertTrue(hasattr(sampler, 'embedding'))

@@ -21,6 +21,12 @@ import dwave_networkx as dnx
 
 from minorminer.busclique import find_clique_embedding, busgraph_cache
 
+try:
+    from dwave.preprocessing import ScaleComposite
+except ImportError:
+    # fall back on dimod of dwave.preprocessing is not installed
+    from dimod import ScaleComposite
+
 from dwave.system.samplers.dwave_sampler import DWaveSampler, _failover
 
 __all__ = ['DWaveCliqueSampler']
@@ -313,7 +319,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             bqm = bqm.change_vartype(dimod.SPIN, inplace=False)
 
         sampler = FixedEmbeddingComposite(
-            dimod.ScaleComposite(self.child),
+            ScaleComposite(self.child),
             embedding)
 
         if 'auto_scale' in self.child.parameters:
