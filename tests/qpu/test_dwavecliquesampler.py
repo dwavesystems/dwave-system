@@ -33,7 +33,7 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         dimod.testing.assert_sampler_api(sampler)
 
         # submit a maximum ferromagnet
-        bqm = dimod.AdjVectorBQM('SPIN')
+        bqm = dimod.BinaryQuadraticModel('SPIN')
         for u, v in itertools.combinations(sampler.largest_clique(), 2):
             bqm.quadratic[u, v] = -1
 
@@ -48,7 +48,7 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         dimod.testing.assert_sampler_api(sampler)
 
         # submit a maximum ferromagnet
-        bqm = dimod.AdjVectorBQM('SPIN')
+        bqm = dimod.BinaryQuadraticModel('SPIN')
         for u, v in itertools.combinations(sampler.largest_clique(), 2):
             bqm.quadratic[u, v] = -1
 

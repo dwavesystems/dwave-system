@@ -119,7 +119,7 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 
     def test_ferromagnet_chimera(self):
         # submit a maximum ferromagnet
-        bqm = dimod.AdjVectorBQM('SPIN')
+        bqm = dimod.BinaryQuadraticModel('SPIN')
         for u, v in itertools.combinations(chimera_sampler.largest_clique(), 2):
             bqm.quadratic[u, v] = -1
 

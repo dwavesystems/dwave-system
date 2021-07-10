@@ -490,29 +490,30 @@ class TestEmbedBQM(unittest.TestCase):
         self.assertEqual(embedded.spin, preferred)
 
     def test_deprecation(self):
-        dwave.embedding.embed_bqm(dimod.BQM.empty('SPIN'),
-                                  dwave.embedding.EmbeddedStructure([], {}),
-                                  {})
+        with self.assertWarns(DeprecationWarning):
+            dwave.embedding.embed_bqm(dimod.BQM.empty('SPIN'),
+                                      dwave.embedding.EmbeddedStructure([], {}),
+                                      {})
 
 
 class TestEmbeddedStructure(unittest.TestCase):
     def test_empty_embedding(self):
         a = dwave.embedding.EmbeddedStructure([], {})
-        self.assertEquals(a, {})
+        self.assertEqual(a, {})
 
         b = dwave.embedding.EmbeddedStructure([(0, 1)], {})
-        self.assertEquals(b, {})
+        self.assertEqual(b, {})
 
     def check_edges(self, embedded_structure, inter_edges, chain_edges):
         for u, v in itertools.product(embedded_structure, embedded_structure):
             if u == v:
                 check = chain_edges[u]
                 got = list(embedded_structure.chain_edges(u))
-                self.assertEquals(check, got)
+                self.assertEqual(check, got)
             else:
                 check = inter_edges[u, v]
                 got = list(embedded_structure.interaction_edges(u, v))
-                self.assertEquals(check, got)
+                self.assertEqual(check, got)
 
     def test_triangle_to_triangle(self):
         g = [(0, 1), (1, 2), (2, 0)]

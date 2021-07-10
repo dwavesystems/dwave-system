@@ -545,13 +545,12 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
         # dev note: this entire block is to support a deprecated feature and can
         # be removed in the next major release
         if embedding is None:
-
-            warn(("The source_adjacency parameter is deprecated"),
-                 DeprecationWarning)
-
             if source_adjacency is None:
                 raise TypeError("either embedding or source_adjacency must be "
                                 "provided")
+            else:
+                warn(("The source_adjacency parameter is deprecated"),
+                     DeprecationWarning, stacklevel=2)
 
             source_edgelist = [(u, v) for u in source_adjacency for v in source_adjacency[u]]
 
