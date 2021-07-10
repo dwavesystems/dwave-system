@@ -96,7 +96,7 @@ class TestLeapHybridSampler(unittest.TestCase):
                 sampleset = sampler.sample_cqm(cqm)
                 self.assertConsistent(cqm, sampleset)
 
-    def test_constraints(self):
+    def test_linear_constraints(self):
         num_constraints = 100000
 
         x = dimod.Binary('x')
@@ -104,5 +104,17 @@ class TestLeapHybridSampler(unittest.TestCase):
         cqm = dimod.ConstrainedQuadraticModel()
         for _ in range(num_constraints):
             cqm.add_constraint(x == 1)
+
+        sampler.sample_cqm(cqm).resolve()  # smoke test
+
+    def test_quadratic_constraints(self):
+        num_constraints = 100000
+
+        x = dimod.Binary('x')
+        y = dimod.Binary('y')
+
+        cqm = dimod.ConstrainedQuadraticModel()
+        for _ in range(num_constraints):
+            cqm.add_constraint(x*y == 1)
 
         sampler.sample_cqm(cqm).resolve()  # smoke test
