@@ -17,6 +17,7 @@ import os
 import unittest
 
 import dimod
+import numpy as np
 
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.system import LeapHybridDQMSampler
@@ -37,8 +38,31 @@ class TestLeapHybridSampler(unittest.TestCase):
         dqm.set_linear(u, [1, 2])
         dqm.set_quadratic(u, v, {(0, 1): 1, (0, 2): 1})
 
+        try:
+            # dimod 0.10+
+            dqm.offset += 3
+        except AttributeError:
+            pass
+
         sampleset = sampler.sample_dqm(dqm)
-        sampleset.resolve()
+
+        np.testing.assert_array_almost_equal(dqm.energies(sampleset),
+                                             sampleset.record.energy)
+
+    def test_smoke_case_label(self):
+        try:
+            from dimod import CaseLabelDQM
+        except ImportError:
+            self.skipTest("need dimod 0.10+")
+
+        dqm = CaseLabelDQM()
+        u = dqm.add_variable({'red', 'green', 'blue'}, shared_labels=True)
+        dqm.offset = 5
+
+        sampleset = sampler.sample_dqm(dqm)
+
+        np.testing.assert_array_almost_equal(dqm.energies(sampleset),
+                                             sampleset.record.energy)
 
     # NOTE: enable when problem labelling deployed to prod
     @unittest.skipIf(sampler is not None and 'cloud' in sampler.client.endpoint,
