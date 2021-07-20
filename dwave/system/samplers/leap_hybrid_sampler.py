@@ -383,6 +383,7 @@ class LeapHybridDQMSampler:
             self._parameters = parameters
             return parameters
 
+    @dimod.decorators.nonblocking_sample_method
     def sample_dqm(self, dqm, time_limit=None, compress=False, compressed=None, **kwargs):
         """Sample from the specified discrete quadratic model.
 
@@ -458,8 +459,18 @@ class LeapHybridDQMSampler:
         except NotImplementedError:
             f = dimod.DQM.to_file(dqm, compress=compress, ignore_labels=True)._file
 
-        sampleset = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs).sampleset
-        return sampleset.relabel_variables(dict(enumerate(dqm.variables)))
+        future = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs)
+        yield future
+
+        sampleset = future.sampleset.relabel_variables(dict(enumerate(dqm.variables)))
+
+        if hasattr(dqm, 'offset') and dqm.offset:
+            # dimod 0.10+
+            # some versions of HSS don't account for the offset and it's hard
+            # to tell which
+            sampleset.record.energy = dqm.energies(sampleset)
+
+        yield sampleset
 
     def min_time_limit(self, dqm):
         """Return the minimum `time_limit` accepted for the given problem.
