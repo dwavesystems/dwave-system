@@ -618,7 +618,7 @@ class LeapHybridCQMSampler:
             self._parameters = parameters
             return parameters
 
-    def sample_cqm(self, cqm, time_limit: float = 5.):
+    def sample_cqm(self, cqm, time_limit: float = 5., **kwargs):
         """todo: docstring"""
 
         # todo: linear interpolation?
@@ -627,4 +627,4 @@ class LeapHybridCQMSampler:
                              f"{self.properties['minimum_time_limit_s']}")
 
         id_ = self.client.upload_problem_encoded(cqm.to_file()).result()
-        return self.solver.sample_cqm(id_, time_limit=time_limit).sampleset
+        return self.solver.sample_cqm(id_, time_limit=time_limit, **kwargs).sampleset
