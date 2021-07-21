@@ -79,7 +79,7 @@ jobs:
             . env/bin/activate
             make -C docs/ html doctest
 
-      - run: 
+      - run:
           name: linkcheck
           command: |
             . env/bin/activate
