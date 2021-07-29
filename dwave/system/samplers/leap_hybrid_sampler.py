@@ -618,13 +618,32 @@ class LeapHybridCQMSampler:
             self._parameters = parameters
             return parameters
 
-    def sample_cqm(self, cqm, time_limit: float = 5., **kwargs):
+    def sample_cqm(self, cqm: dimod.ConstrainedQuadraticModel,
+                   time_limit: float = 5., **kwargs):
         """todo: docstring"""
 
         # todo: linear interpolation?
         if time_limit < self.properties['minimum_time_limit_s']:
             raise ValueError("time_limit must be at least "
                              f"{self.properties['minimum_time_limit_s']}")
+
+        if len(cqm.constraints) > self.properties['maximum_number_of_constraints']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_constraints']} or fewer "
+                f"constraints, given model has {len(cqm.constraints)}")
+
+        if len(cqm.variables) > self.properties['maximum_number_of_variables']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_variables']} or fewer "
+                f"variables, given model has {len(cqm.variables)}")
+
+        if cqm.num_biases() > self.properties['maximum_number_of_biases']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_biases']} or fewer "
+                f"biases, given model has {cqm.num_biases()}")
 
         id_ = self.client.upload_problem_encoded(cqm.to_file()).result()
         return self.solver.sample_cqm(id_, time_limit=time_limit, **kwargs).sampleset
