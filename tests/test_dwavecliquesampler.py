@@ -133,6 +133,15 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         with self.assertRaises(ValueError):
             chimera_sampler.sample(bqm)
 
+    def test_qubit_coupling_range(self):
+        n = pegasus_sampler.largest_clique_size
+
+        bqm = dimod.BinaryQuadraticModel({}, 
+                {(u, v): -2 for u in range(n) for v in range(u+1, n)}, 'SPIN')
+
+        pegasus_sampler.sample(bqm, chain_strength=-0.5).resolve()
+
+
 
 class TestFailover(unittest.TestCase):
     @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
