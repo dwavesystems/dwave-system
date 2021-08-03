@@ -33,57 +33,43 @@ from dwave.system.samplers.dwave_sampler import DWaveSampler, _failover
 
 __all__ = ['DWaveCliqueSampler']
 
-class _ScaleComposite(ScaleComposite):
+class _QubitCouplingComposite(dimod.ComposedSampler):
     """Composite that scales variables of a problem.
 
-    Scales the variables of a binary quadratic model (BQM) and modifies linear
-    and quadratic terms accordingly.
     Checks whether the per qubit coupling range is violated for the qpu 
-    and rescale accordingly. 
+    and rescale accordingly. Scales the variables of a binary quadratic 
+    model (BQM) and modifies linear and quadratic terms accordingly.
 
     Args:
-       sampler (:obj:`dimod.Sampler`):
+       sampler (:obj:`dimod.ComposedSampler`):
             A dimod sampler.
-
-    This is local version of the parent class ScaleComposite, intended to be
-    used only with a DwaveCliqueSampler instance. 
     """
+    def __init__(self, child_sampler):
+        self._children = [child_sampler]
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def parameters(self):
+        param = self.child.parameters.copy()
+        return param
+
+    @property
+    def properties(self):
+        return {'child_properties': self.child.properties.copy()}
+
     @dimod.decorators.nonblocking_sample_method
-    def sample(self, bqm, scalar=None, bias_range=1, quadratic_range=None,
-               ignored_variables=None, ignored_interactions=None,
-               ignore_offset=False, **parameters):
+    def sample(self, bqm, **parameters):
         """ Scale and sample from the provided binary quadratic model.
 
-        if scalar is not given, problem is scaled based on bias and quadratic
-        ranges. See :meth:`.BinaryQuadraticModel.scale` and
-        :meth:`.BinaryQuadraticModel.normalize`
+        Problem is scaled based on the per qubit coupling range when 
+        that range is exceeded. 
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
-
-            scalar (number):
-                Value by which to scale the energy range of the binary
-                quadratic model. Overrides `bias_range` and `quadratic_range`.
-
-            bias_range (number/pair, default=1):
-                Value/range by which to normalize the all the biases, or if
-                `quadratic_range` is provided, just the linear biases.
-                Overridden by `scalar`.
-
-            quadratic_range (number/pair):
-                Value/range by which to normalize the quadratic biases.
-                Overridden by `scalar`.
-
-            ignored_variables (iterable, optional):
-                Biases associated with these variables are not scaled.
-
-            ignored_interactions (iterable[tuple], optional):
-                As an iterable of 2-tuples. Biases associated with these
-                interactions are not scaled.
-
-            ignore_offset (bool, default=False):
-                If True, the offset is not scaled.
 
             **parameters:
                 Parameters for the sampling method, specified by the child
@@ -91,25 +77,7 @@ class _ScaleComposite(ScaleComposite):
 
         Returns:
             :obj:`dimod.SampleSet`
-
         """
-        original_bqm = bqm
-        bqm = bqm.copy()  # we're going to be scaling
-
-        if scalar is not None:
-            bqm.scale(scalar,
-                      ignored_variables=ignored_variables,
-                      ignored_interactions=ignored_interactions,
-                      ignore_offset=ignore_offset)
-        else:
-            scalar = bqm.normalize(bias_range, quadratic_range,
-                                   ignored_variables=ignored_variables,
-                                   ignored_interactions=ignored_interactions,
-                                   ignore_offset=ignore_offset)
-
-        if scalar == 0:
-            raise ValueError('scalar must be non-zero')
-
         if 'per_qubit_coupling_range' in self.child.properties.keys():
 
             min_lim = self.child.properties['per_qubit_coupling_range'][0]
@@ -126,11 +94,8 @@ class _ScaleComposite(ScaleComposite):
                     f'The per_qubit_coupling_range is violated after scaling.'
                     ' The problem is rescaled with respect to coupling range.'
                     ' No variables, interactions, or offset are ignored.')
-                
-                # undoing the previous scaling byrestoring the original bqm 
-                bqm = original_bqm.copy()
 
-                # rescaling 
+                # scaling 
                 inv_scalar = max(min_coupling_range / min_lim, 
                                  max_coupling_range / max_lim)
                 scalar = 1.0 / inv_scalar
@@ -140,20 +105,17 @@ class _ScaleComposite(ScaleComposite):
                           ignored_interactions=[],
                           ignore_offset=[])
 
-        sampleset = self.child.sample(bqm, **parameters)
+                sampleset = self.child.sample(bqm, **parameters)
+                yield sampleset 
 
-        yield sampleset  # so that SampleSet.done() works
-
-        if not (ignored_variables or ignored_interactions or ignore_offset):
-            # we just need to scale back and don't need to worry about
-            # the stuff we ignored
-            sampleset.record.energy *= 1 / scalar
+            else:
+                sampleset = self.child.sample(bqm, **parameters)
+                yield sampleset 
         else:
-            sampleset.record.energy = original_bqm.energies(sampleset)
+            sampleset = self.child.sample(bqm, **parameters)
+            yield sampleset 
 
-        sampleset.info.update(scalar=scalar)
-
-        yield sampleset
+        yield sampleset 
 
 class DWaveCliqueSampler(dimod.Sampler):
     """A sampler for solving clique binary quadratic models on the D-Wave system.
@@ -442,7 +404,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             bqm = bqm.change_vartype(dimod.SPIN, inplace=False)
 
         sampler = FixedEmbeddingComposite(
-            _ScaleComposite(self.child),
+            ScaleComposite(_QubitCouplingComposite(self.child)),
             embedding)
 
         if 'auto_scale' in self.child.parameters:
