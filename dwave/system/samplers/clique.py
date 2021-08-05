@@ -15,6 +15,8 @@
 from numbers import Number
 from typing import Tuple
 
+import warnings 
+
 import dimod
 import networkx as nx
 import dwave_networkx as dnx
@@ -31,6 +33,89 @@ from dwave.system.samplers.dwave_sampler import DWaveSampler, _failover
 
 __all__ = ['DWaveCliqueSampler']
 
+class _QubitCouplingComposite(dimod.ComposedSampler):
+    """Composite that scales variables of a problem.
+
+    Checks whether the per qubit coupling range is violated for the qpu 
+    and rescale accordingly. Scales the variables of a binary quadratic 
+    model (BQM) and modifies linear and quadratic terms accordingly.
+
+    Args:
+       sampler (:obj:`dimod.ComposedSampler`):
+            A dimod sampler.
+    """
+    def __init__(self, child_sampler):
+        self._children = [child_sampler]
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def parameters(self):
+        param = self.child.parameters.copy()
+        return param
+
+    @property
+    def properties(self):
+        return {'child_properties': self.child.properties.copy()}
+
+    @dimod.decorators.nonblocking_sample_method
+    def sample(self, bqm, **parameters):
+        """ Scale and sample from the provided binary quadratic model.
+
+        Problem is scaled based on the per qubit coupling range when 
+        that range is exceeded. 
+
+        Args:
+            bqm (:obj:`dimod.BinaryQuadraticModel`):
+                Binary quadratic model to be sampled from.
+
+            **parameters:
+                Parameters for the sampling method, specified by the child
+                sampler.
+
+        Returns:
+            :obj:`dimod.SampleSet`
+        """
+        if 'per_qubit_coupling_range' in self.child.properties.keys():
+
+            min_lim = self.child.properties['per_qubit_coupling_range'][0]
+            max_lim = self.child.properties['per_qubit_coupling_range'][1]
+
+            total_coupling_range = {v: sum(bqm.adj[v].values()) 
+                                    for v in bqm.variables}
+
+            min_coupling_range = min(total_coupling_range.values())
+            max_coupling_range = max(total_coupling_range.values())
+
+            if (min_coupling_range < min_lim or max_coupling_range > max_lim):
+                warnings.warn(
+                    f'The per_qubit_coupling_range is violated after scaling.'
+                    ' The problem is rescaled with respect to coupling range.'
+                    ' No variables, interactions, or offset are ignored.')
+
+                # scaling 
+                inv_scalar = max(min_coupling_range / min_lim, 
+                                 max_coupling_range / max_lim)
+                scalar = 1.0 / inv_scalar
+
+                bqm.scale(scalar,
+                          ignored_variables=[],
+                          ignored_interactions=[],
+                          ignore_offset=[])
+
+                sampleset = self.child.sample(bqm, **parameters)
+                yield sampleset 
+
+            else:
+                sampleset = self.child.sample(bqm, **parameters)
+                yield sampleset 
+        else:
+            sampleset = self.child.sample(bqm, **parameters)
+            yield sampleset 
+
+        yield sampleset 
 
 class DWaveCliqueSampler(dimod.Sampler):
     """A sampler for solving clique binary quadratic models on the D-Wave system.
@@ -319,7 +404,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             bqm = bqm.change_vartype(dimod.SPIN, inplace=False)
 
         sampler = FixedEmbeddingComposite(
-            ScaleComposite(self.child),
+            ScaleComposite(_QubitCouplingComposite(self.child)),
             embedding)
 
         if 'auto_scale' in self.child.parameters:
