@@ -649,7 +649,7 @@ class LeapHybridCQMSampler:
             raise ValueError(
                 "constrained quadratic model must have "
                 f"{self.properties['maximum_number_of_quadratic_variables']} "
-                "or fewer variables with at least one quadratic bias accross "
+                "or fewer variables with at least one quadratic bias across "
                 "all constraints, given model has "
                 f"{cqm.num_quadratic_variables()}")
 
