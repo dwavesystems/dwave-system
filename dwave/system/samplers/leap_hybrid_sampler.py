@@ -16,6 +16,8 @@
 A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's hybrid solvers.
 """
 
+from typing import Optional
+
 import numpy as np
 from warnings import warn
 from numbers import Number
@@ -605,13 +607,16 @@ class LeapHybridCQMSampler:
             return parameters
 
     def sample_cqm(self, cqm: dimod.ConstrainedQuadraticModel,
-                   time_limit: float = 5., **kwargs):
+                   time_limit: Optional[float] = None, **kwargs):
         """todo: docstring"""
 
-        # todo: linear interpolation?
-        if time_limit < self.properties['minimum_time_limit_s']:
-            raise ValueError("time_limit must be at least "
-                             f"{self.properties['minimum_time_limit_s']}")
+        if time_limit is None:
+            time_limit = self.min_time_limit(cqm)
+        elif time_limit < self.min_time_limit(cqm):
+            raise ValueError("the minimum time limit for this problem is "
+                             f"{self.min_time_limit(cqm)} seconds "
+                             f"({time_limit}s provided), "
+                             "see .min_time_limit method")
 
         if len(cqm.constraints) > self.properties['maximum_number_of_constraints']:
             raise ValueError(
@@ -640,3 +645,23 @@ class LeapHybridCQMSampler:
                 f"{cqm.num_quadratic_variables()}")
 
         return self.solver.sample_cqm(cqm, time_limit=time_limit, **kwargs).sampleset
+
+    def min_time_limit(self, cqm: dimod.ConstrainedQuadraticModel) -> float:
+        """Return the minimum `time_limit` accepted for the given problem."""
+
+        # todo: remove the hard-coded defaults
+        num_variables_multiplier = self.properties.get('num_variables_multiplier', 1.57e-04)
+        num_biases_multiplier = self.properties.get('num_biases_multiplier', 4.65e-06)
+        num_constraints_multiplier = self.properties.get('num_constraints_multiplier', 6.44e-09)
+        minimum_time_limit = self.properties['minimum_time_limit_s']
+
+        num_variables = len(cqm.variables)
+        num_constraints = len(cqm.constraints)
+        num_biases = cqm.num_biases()
+
+        return max(
+            num_variables_multiplier * num_variables +
+            num_biases_multiplier * num_biases +
+            num_constraints_multiplier * num_variables * num_constraints,
+            minimum_time_limit
+            )
