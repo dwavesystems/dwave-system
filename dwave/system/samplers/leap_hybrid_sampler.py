@@ -645,5 +645,13 @@ class LeapHybridCQMSampler:
                 f"{self.properties['maximum_number_of_biases']} or fewer "
                 f"biases, given model has {cqm.num_biases()}")
 
+        if cqm.num_quadratic_variables() > self.properties['maximum_number_of_quadratic_variables']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_quadratic_variables']} "
+                "or fewer variables with at least one quadratic bias accross "
+                "all constraints, given model has "
+                f"{cqm.num_quadratic_variables()}")
+
         id_ = self.client.upload_problem_encoded(cqm.to_file()).result()
         return self.solver.sample_cqm(id_, time_limit=time_limit, **kwargs).sampleset
