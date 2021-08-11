@@ -537,35 +537,21 @@ class LeapHybridDQMSampler:
 ###############################################################################
 # We need to trick the cloud-client into accepting a new problem type
 # todo: migrate this stuff into the cloud-client
-def _encode_cqm(self, problem, params):
-    import json
-    body = json.dumps({
-        'solver': self.id,
-        'data': {'format': 'ref',
-                 'data': problem,
-                 },
-        'type': 'cqm',
-        'params': params
-    })
-    return body
+from dwave.cloud.solver import BaseUnstructuredSolver, available_solvers
 
 
-def _sample_cqm(self, cqm, **params):
-    from dwave.cloud.computation import Future
-    body = self.client._encode_problem_executor.submit(
-        self._encode_cqm,
-        problem=cqm, params=params)
-    # computation future holds a reference to the remote job
-    computation = Future(solver=self, id_=None,
-                         return_matrix=self.return_matrix)
-    self.client._submit(body, computation)
-    return computation
+class _CQMSolver(BaseUnstructuredSolver):
+    _handled_problem_types = {"cqm"}
+    _handled_encoding_formats = {"bq"}
 
-from dwave.cloud.solver import UnstructuredSolver
+    def _encode_problem_for_upload(self, cqm):
+        return cqm.to_file()
 
-UnstructuredSolver._handled_problem_types.add('cqm')
-UnstructuredSolver._encode_cqm = _encode_cqm
-UnstructuredSolver.sample_cqm = _sample_cqm
+    def sample_cqm(self, cqm, label=None, **params):
+        return self.sample_problem(cqm, label=label, **params)
+
+
+available_solvers.append(_CQMSolver)
 ###############################################################################
 
 
@@ -653,5 +639,4 @@ class LeapHybridCQMSampler:
                 "all constraints, given model has "
                 f"{cqm.num_quadratic_variables()}")
 
-        id_ = self.client.upload_problem_encoded(cqm.to_file()).result()
-        return self.solver.sample_cqm(id_, time_limit=time_limit, **kwargs).sampleset
+        return self.solver.sample_cqm(cqm, time_limit=time_limit, **kwargs).sampleset
