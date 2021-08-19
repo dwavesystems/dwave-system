@@ -610,6 +610,10 @@ class LeapHybridCQMSampler:
                    time_limit: Optional[float] = None, **kwargs):
         """todo: docstring"""
 
+        if not isinstance(cqm, dimod.ConstrainedQuadraticModel):
+            raise TypeError("first argument 'cqm' must be a ConstrainedQuadraticModel, "
+                            f"recieved {type(cqm).__name__}")
+
         if time_limit is None:
             time_limit = self.min_time_limit(cqm)
         elif time_limit < self.min_time_limit(cqm):

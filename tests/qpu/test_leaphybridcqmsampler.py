@@ -107,6 +107,10 @@ class TestLeapHybridSampler(unittest.TestCase):
 
         sampler.sample_cqm(cqm).resolve()  # smoke test
 
+    def test_other_quadratic_model(self):
+        with self.assertRaises(TypeError):
+            sampler.sample_cqm(dimod.BQM('SPIN'))
+
     def test_quadratic_constraints(self):
         num_constraints = 100000
 
