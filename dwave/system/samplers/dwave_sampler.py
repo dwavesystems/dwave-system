@@ -316,7 +316,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`~concurrent.futures.Future`-like object.
             In it this sampler also provides timing information in the `info`
             field as described in the D-Wave System Documentation's
-            `timing guide <https://docs.dwavesys.com/docs/latest/doc_timing.html>`_.
+            :ref:`sysdocs_gettingstarted:qpu_sapi_qpu_timing`.
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to two
