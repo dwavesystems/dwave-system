@@ -45,37 +45,37 @@ edges.update([(v, u) for u, v in edges])  # solver has bi-directional
 class MockSolver():
     nodes = set(range(2048))
     edges = edges
-    properties = {'readout_thermalization_range': [0, 10000],
-                  'annealing_time_range': [1, 2000],
-                  'default_readout_thermalization': 0,
+    properties = {'readout_thermalization_range': [0.0, 10000.0],
+                  'annealing_time_range': [1.0, 2000.0],
+                  'default_readout_thermalization': 0.0,
                   'parameters': {'num_spin_reversal_transforms': '',
                                  'programming_thermalization': '',
                                  'anneal_offsets': '',
                                  'num_reads': '',
                                  'max_answers': '',
                                  'readout_thermalization': '',
-                                 'beta': "",
+                                 'beta': '',
                                  'answer_mode': '',
                                  'auto_scale': '',
-                                 'postprocess': "",
+                                 'postprocess': '',
                                  'anneal_schedule': '',
-                                 'chains': ""},
+                                 'chains': ''},
                   'chip_id': 'MockSolver'}
 
     def sample_bqm(self, bqm, num_reads=1, **kwargs):
         problem_id = str(uuid4())
         problem_label = kwargs.pop('label', None)
-        info = dict(timing={'total_real_time': 11511, 'anneal_time_per_run': 20,
-                            'post_processing_overhead_time': 2042,
-                            'qpu_sampling_time': 164,
-                            'readout_time_per_run': 123,
-                            'qpu_delay_time_per_sample': 21,
-                            'qpu_anneal_time_per_sample': 20,
-                            'total_post_processing_time': 2042,
-                            'qpu_programming_time': 8740,
-                            'run_time_chip': 164,
-                            'qpu_access_time': 11511,
-                            'qpu_readout_time_per_sample': 123},
+        info = dict(timing={'total_real_time': 11511.0, 'anneal_time_per_run': 20.0,
+                            'post_processing_overhead_time': 2042.0,
+                            'qpu_sampling_time': 164.0,
+                            'readout_time_per_run': 123.0,
+                            'qpu_delay_time_per_sample': 21.0,
+                            'qpu_anneal_time_per_sample': 20.0,
+                            'total_post_processing_time': 2042.0,
+                            'qpu_programming_time': 8740.0,
+                            'run_time_chip': 164.0,
+                            'qpu_access_time': 11511.0,
+                            'qpu_readout_time_per_sample': 123.0},
                     problem_id=problem_id)
         if problem_label:
             info.update(problem_label=problem_label)
@@ -342,7 +342,7 @@ class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
         class MockScheduleSampler(DWaveSampler):
             parameters = {'anneal_schedule': ''}
             properties = {'max_anneal_schedule_points': 4,
-                          'annealing_time_range': [1, 2000]}
+                          'annealing_time_range': [1.0, 2000.0]}
 
             def __init__(self):
                 pass

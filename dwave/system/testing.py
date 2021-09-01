@@ -66,21 +66,21 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['quota_conversion_rate'] = 1
         properties['topology'] = {'type': 'chimera', 'shape': [4, 4, 4]}
         properties['chip_id'] = 'MockDWaveSampler'
-        properties['annealing_time_range'] = [1, 2000]
+        properties['annealing_time_range'] = [1.0, 2000.0]
         properties['num_qubits'] = len(self.nodelist)
         properties['extended_j_range'] = [-2.0, 1.0]
         properties["supported_problem_types"] = ['ising', 'qubo']
         # add some occasionally useful properties
-        properties["default_annealing_time"] = 20
-        properties["default_programming_thermalization"] = 1000
-        properties["default_readout_thermalization"] = 0
+        properties["default_annealing_time"] = 20.0
+        properties["default_programming_thermalization"] = 1000.0
+        properties["default_readout_thermalization"] = 0.0
         properties["h_gain_schedule_range"] = [-4.0, 4.0]
         properties["max_anneal_schedule_points"] = 12
         properties["max_h_gain_schedule_points"] = 20
         properties["per_qubit_coupling_range"] = [-18.0, 15.0]
-        properties["problem_run_duration_range"] = [0, 1000000]
-        properties["programming_thermalization_range"] = [0, 10000]
-        properties["readout_thermalization_range"] = [0, 10000]
+        properties["problem_run_duration_range"] = [0.0, 1000000.0]
+        properties["programming_thermalization_range"] = [0.0, 10000.0]
+        properties["readout_thermalization_range"] = [0.0, 10000.0]
 
     @dimod.bqm_structured
     def sample(self, bqm, num_reads=10, flux_biases=[], **kwargs):
