@@ -88,30 +88,27 @@ class LeapHybridSampler(dimod.Sampler):
 
     _INTEGER_BQM_SIZE_THRESHOLD = 10000
 
-    def __init__(self, solver=None, connection_close=True, **config):
-
-        # we want a Hybrid solver by default, but allow override
+    def __init__(self, **config):
+        # strongly prefer hybrid solvers; requires kwarg-level override
         config.setdefault('client', 'hybrid')
 
-        if solver is None:
-            solver = {}
+        # default to short-lived session to prevent resets on slow uploads
+        config.setdefault('connection_close', True)
 
-        if isinstance(solver, abc.Mapping):
-            # TODO: instead of solver selection, try with user's default first
-            if solver.setdefault('category', 'hybrid') != 'hybrid':
-                raise ValueError("the only 'category' this sampler supports is 'hybrid'")
-            if solver.setdefault('supported_problem_types__contains', 'bqm') != 'bqm':
-                raise ValueError("the only problem type this sampler supports is 'bqm'")
+        # prefer the latest hybrid BQM solver available, but allow for an easy
+        # override on any config level above the defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(
+            solver=dict(
+                supported_problem_types__contains='bqm',
+                order_by='-properties.version'))
 
-            # prefer the latest version, but allow kwarg override
-            solver.setdefault('order_by', '-properties.version')
-
-        self.client = Client.from_config(
-            solver=solver, connection_close=connection_close, **config)
-
+        self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # For explicitly named solvers:
+        # check user-specified solver conforms to our requirements
         if self.properties.get('category') != 'hybrid':
             raise ValueError("selected solver is not a hybrid solver.")
         if 'bqm' not in self.solver.supported_problem_types:
@@ -316,39 +313,33 @@ class LeapHybridDQMSampler:
         >>> print("{} beats {}".format(cases[sampleset.first.sample['my_hand']],
         ...                            cases[sampleset.first.sample['their_hand']]))   # doctest: +SKIP
         rock beats scissors
-
     """
 
-    def __init__(self, solver=None, connection_close=True, **config):
-
-        # we want a Hybrid solver by default, but allow override
+    def __init__(self, **config):
+        # strongly prefer hybrid solvers; requires kwarg-level override
         config.setdefault('client', 'hybrid')
 
-        if solver is None:
-            solver = {}
+        # default to short-lived session to prevent resets on slow uploads
+        config.setdefault('connection_close', True)
 
-        if isinstance(solver, abc.Mapping):
-            # TODO: instead of solver selection, try with user's default first
-            if solver.setdefault('category', 'hybrid') != 'hybrid':
-                raise ValueError("the only 'category' this sampler supports is 'hybrid'")
-            if solver.setdefault('supported_problem_types__contains', 'dqm') != 'dqm':
-                raise ValueError("the only problem type this sampler supports is 'dqm'")
+        # prefer the latest hybrid DQM solver available, but allow for an easy
+        # override on any config level above the defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(
+            solver=dict(
+                supported_problem_types__contains='dqm',
+                order_by='-properties.version'))
 
-            # prefer the latest version, but allow kwarg override
-            solver.setdefault('order_by', '-properties.version')
-
-        self.client = Client.from_config(
-            solver=solver, connection_close=connection_close, **config)
-
+        self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
-        # For explicitly named solvers:
+        # check user-specified solver conforms to our requirements
         if self.properties.get('category') != 'hybrid':
             raise ValueError("selected solver is not a hybrid solver.")
         if 'dqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
-
-        # overwrite the (static)
 
     @property
     def properties(self):
