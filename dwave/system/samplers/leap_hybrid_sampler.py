@@ -41,6 +41,13 @@ from dwave.cloud import Client
 __all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
 
 
+# taken from https://stackoverflow.com/a/39542816, licensed under CC BY-SA 3.0
+# not needed in py39+
+class classproperty(property):
+    def __get__(self, obj, objtype=None):
+        return super(classproperty, self).__get__(objtype)
+
+
 class LeapHybridSampler(dimod.Sampler):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
@@ -58,7 +65,11 @@ class LeapHybridSampler(dimod.Sampler):
     ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
     hybrid BQM solvers are returned ordered by latest ``version``.
 
-    Inherits from :class:`dimod.Sampler`.
+    Exact default solver specification used for feature-based solver filtering
+    (including ordering) is available as :attr:`.default_solver` property.
+    This specification is overridden when specifying solver explicitly in a
+    configuration file, an environment variable, or keyword arguments. See the
+    example below on how to extend it instead.
 
     Args:
         **config:
@@ -84,9 +95,26 @@ class LeapHybridSampler(dimod.Sampler):
         >>> sampler = LeapHybridSampler()    # doctest: +SKIP
         >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
 
+        This example specializes the default solver selection by filtering out
+        bulk BQM solvers.
+
+        >>> from dwave.system import LeapHybridSampler
+        ...
+        >>> solver = LeapHybridSampler.default_solver
+        >>> solver.update(name__regex=".*(?<!bulk)$")
+        >>> sampler = LeapHybridSampler(solver=solver)      # doctest: +SKIP
+        >>> sampler.solver        # doctest: +SKIP
+        BQMSolver(id='hybrid_binary_quadratic_model_version2')
+
     """
 
     _INTEGER_BQM_SIZE_THRESHOLD = 10000
+
+    @classproperty
+    def default_solver(cls):
+        """dict: Features used to select the latest hybrid BQM solver in Leap."""
+        return dict(supported_problem_types__contains='bqm',
+                    order_by='-properties.version')
 
     def __init__(self, **config):
         # strongly prefer hybrid solvers; requires kwarg-level override
@@ -100,10 +128,7 @@ class LeapHybridSampler(dimod.Sampler):
         defaults = config.setdefault('defaults', {})
         if not isinstance(defaults, abc.Mapping):
             raise TypeError("mapping expected for 'defaults'")
-        defaults.update(
-            solver=dict(
-                supported_problem_types__contains='bqm',
-                order_by='-properties.version'))
+        defaults.update(solver=self.default_solver)
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
@@ -274,6 +299,12 @@ class LeapHybridDQMSampler:
     ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
     hybrid DQM solvers are returned ordered by latest ``version``.
 
+    Exact default solver specification used for feature-based solver filtering
+    (including ordering) is available as :attr:`.default_solver` property.
+    This specification is overridden when specifying solver explicitly in a
+    configuration file, an environment variable, or keyword arguments. See the
+    example in :class:`.LeapHybridSampler` on how to extend it instead.
+
     Args:
         **config:
             Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
@@ -315,6 +346,12 @@ class LeapHybridDQMSampler:
         rock beats scissors
     """
 
+    @classproperty
+    def default_solver(self):
+        """dict: Features used to select the latest hybrid DQM solver in Leap."""
+        return dict(supported_problem_types__contains='dqm',
+                    order_by='-properties.version')
+
     def __init__(self, **config):
         # strongly prefer hybrid solvers; requires kwarg-level override
         config.setdefault('client', 'hybrid')
@@ -327,10 +364,7 @@ class LeapHybridDQMSampler:
         defaults = config.setdefault('defaults', {})
         if not isinstance(defaults, abc.Mapping):
             raise TypeError("mapping expected for 'defaults'")
-        defaults.update(
-            solver=dict(
-                supported_problem_types__contains='dqm',
-                order_by='-properties.version'))
+        defaults.update(solver=self.default_solver)
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()

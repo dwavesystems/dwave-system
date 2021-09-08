@@ -53,6 +53,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         default_solver = dict(
             supported_problem_types__contains='bqm',
             order_by='-properties.version')
+        self.assertEqual(LeapHybridSampler.default_solver, default_solver)
 
         defaults = dict(solver=default_solver)
 
