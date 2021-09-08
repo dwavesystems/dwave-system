@@ -1,11 +1,10 @@
 --extra-index-url https://pypi.dwavesys.com/simple
 
-dimod==0.9.15
-dwave-cloud-client==0.8.4
-dwave-networkx==0.8.4
+dimod==0.9.16
+dwave-cloud-client==0.8.7
+dwave-networkx==0.8.8
 dwave-drivers==0.4.4
-dwave-tabu==0.3.1
+dwave-tabu==0.4.1
 homebase==1.0.1
-minorminer==0.2.4
-numpy==1.19.4; python_version >= '3.6'
-numpy==1.18.5; python_version == '3.5'
+minorminer==0.2.6
+numpy==1.19.4
