@@ -15,7 +15,7 @@
 import os
 import unittest
 
-from dwave.cloud.exceptions import ConfigFileError
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 
 from dwave.system.schedules import ramp
 from dwave.system.samplers import DWaveSampler
@@ -27,7 +27,7 @@ class TestRamp(unittest.TestCase):
     def setUpClass(cls):
         try:
             cls.qpu = DWaveSampler(solver=dict(h_gain_schedule=True))
-        except (ValueError, ConfigFileError):
+        except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
 
     @classmethod

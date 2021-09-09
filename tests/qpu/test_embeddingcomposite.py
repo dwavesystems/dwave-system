@@ -18,7 +18,7 @@ import warnings
 
 import dimod
 
-from dwave.cloud.exceptions import ConfigFileError
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 
 from dwave.system import DWaveSampler, EmbeddingComposite
 
@@ -31,7 +31,7 @@ class TestEmbeddingCompositeExactSolver(unittest.TestCase):
         try:
             cls.qpu = DWaveSampler(
                 solver=dict(initial_state=True, anneal_schedule=True))
-        except (ValueError, ConfigFileError):
+        except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
 
     @classmethod

@@ -19,7 +19,7 @@ from unittest import mock
 import numpy
 
 import dimod
-from dwave.cloud.exceptions import ConfigFileError
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.client import Client
 
 from dwave.system.samplers import DWaveSampler
@@ -32,7 +32,7 @@ class TestDWaveSampler(unittest.TestCase):
     def setUpClass(cls):
         try:
             cls.qpu = DWaveSampler()
-        except (ValueError, ConfigFileError):
+        except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
 
     @classmethod
@@ -136,7 +136,7 @@ class TestMissingQubits(unittest.TestCase):
         try:
             # get a QPU with less than 100% yield
             cls.qpu = DWaveSampler(solver=dict(num_active_qubits__lt=2048))
-        except (ValueError, ConfigFileError):
+        except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
 
     @classmethod
