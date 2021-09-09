@@ -19,7 +19,7 @@ import unittest
 import minorminer
 import dimod.testing as dtest
 
-from dwave.cloud.exceptions import ConfigFileError
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 
 from dwave.system.composites import VirtualGraphComposite
 from dwave.system.samplers import DWaveSampler
@@ -32,7 +32,7 @@ class TestVirtualGraphComposite(unittest.TestCase):
     def setUpClass(cls):
         try:
             cls.qpu = DWaveSampler(solver=dict(flux_biases=True))
-        except (ValueError, ConfigFileError):
+        except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
 
     @classmethod
