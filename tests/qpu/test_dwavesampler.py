@@ -136,14 +136,19 @@ class TestMissingQubits(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            # select an Advantage QPU with less than 100% yield
-            m = 16
-            cls.num_qubits = len(pegasus_graph(m, fabric_only=False))
-            cls.qpu = DWaveSampler(
-                solver=dict(
-                    topology__type='pegasus',
-                    topology__shape=[m],
-                    num_active_qubits__lt=cls.num_qubits))
+            with Client.from_config() as client:
+                solvers = client.get_solvers(qpu=True)
+
+            if not solvers:
+                raise unittest.SkipTest("no qpu found")
+
+            # select a QPU with less than 100% yield
+            for solver in solvers:
+                if solver.num_active_qubits < solver.num_qubits:
+                    cls.qpu = DWaveSampler(solver=solver.id)
+                    return
+
+            raise unittest.SkipTest("no qpu with less than 100% yield found")
 
         except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
@@ -155,13 +160,13 @@ class TestMissingQubits(unittest.TestCase):
     def test_sample_ising_h_list(self):
         sampler = self.qpu
 
-        h = [0 for _ in range(self.num_qubits)]
+        h = [0 for _ in range(self.qpu.solver.num_qubits)]
         J = {edge: 0 for edge in sampler.edgelist}
 
         sampleset = sampler.sample_ising(h, J)
 
         self.assertEqual(set(sampleset.variables), set(sampler.nodelist))
-        self.assertLessEqual(len(sampleset.variables), self.num_qubits)  # sanity check
+        self.assertLessEqual(len(sampleset.variables), self.qpu.solver.num_qubits)  # sanity check
 
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
