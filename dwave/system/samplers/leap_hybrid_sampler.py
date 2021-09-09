@@ -65,11 +65,11 @@ class LeapHybridSampler(dimod.Sampler):
     ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
     hybrid BQM solvers are returned ordered by latest ``version``.
 
-    Exact default solver specification used for feature-based solver filtering
-    (including ordering) is available as :attr:`.default_solver` property.
-    This specification is overridden when specifying solver explicitly in a
-    configuration file, an environment variable, or keyword arguments. See the
-    example below on how to extend it instead.
+    The default specification for filtering and ordering solvers by features is
+    available as :attr:`.default_solver` property. Explicitly specifying a
+    solver in a configuration file, an environment variable, or keyword
+    arguments overrides this specification. See the example below on how to
+    extend it instead.
 
     Args:
         **config:
@@ -92,16 +92,18 @@ class LeapHybridSampler(dimod.Sampler):
         >>> bqm = dimod.BQM.from_qubo(qubo)
         ...
         >>> # Find a good solution
-        >>> sampler = LeapHybridSampler()    # doctest: +SKIP
-        >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
+        >>> sampler = LeapHybridSampler()       # doctest: +SKIP
+        >>> sampleset = sampler.sample(bqm)     # doctest: +SKIP
 
         This example specializes the default solver selection by filtering out
-        bulk BQM solvers.
+        bulk BQM solvers. (Bulk solvers are throughput-optimal for heavy/batch
+        workloads, have a higher start-up latency, and are not well suited for
+        live workloads. Not all Leap accounts have access to bulk solvers.)
 
         >>> from dwave.system import LeapHybridSampler
         ...
         >>> solver = LeapHybridSampler.default_solver
-        >>> solver.update(name__regex=".*(?<!bulk)$")
+        >>> solver.update(name__regex=".*(?<!bulk)$")       # name shouldn't end with "bulk"
         >>> sampler = LeapHybridSampler(solver=solver)      # doctest: +SKIP
         >>> sampler.solver        # doctest: +SKIP
         BQMSolver(id='hybrid_binary_quadratic_model_version2')
@@ -112,7 +114,7 @@ class LeapHybridSampler(dimod.Sampler):
 
     @classproperty
     def default_solver(cls):
-        """dict: Features used to select the latest hybrid BQM solver in Leap."""
+        """dict: Features used to select the latest accessible hybrid BQM solver."""
         return dict(supported_problem_types__contains='bqm',
                     order_by='-properties.version')
 
@@ -299,11 +301,11 @@ class LeapHybridDQMSampler:
     ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
     hybrid DQM solvers are returned ordered by latest ``version``.
 
-    Exact default solver specification used for feature-based solver filtering
-    (including ordering) is available as :attr:`.default_solver` property.
-    This specification is overridden when specifying solver explicitly in a
-    configuration file, an environment variable, or keyword arguments. See the
-    example in :class:`.LeapHybridSampler` on how to extend it instead.
+    The default specification for filtering and ordering solvers by features is
+    available as :attr:`.default_solver` property. Explicitly specifying a
+    solver in a configuration file, an environment variable, or keyword
+    arguments overrides this specification. See the example in :class:`.LeapHybridSampler`
+    on how to extend it instead.
 
     Args:
         **config:
@@ -348,7 +350,7 @@ class LeapHybridDQMSampler:
 
     @classproperty
     def default_solver(self):
-        """dict: Features used to select the latest hybrid DQM solver in Leap."""
+        """dict: Features used to select the latest accessible hybrid DQM solver."""
         return dict(supported_problem_types__contains='dqm',
                     order_by='-properties.version')
 
