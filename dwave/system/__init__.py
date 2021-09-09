@@ -21,3 +21,5 @@ from dwave.system.composites import *
 import dwave.system.composites
 
 from dwave.system.utilities import *
+
+from dwave.system.package_info import __version__

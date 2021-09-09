@@ -128,7 +128,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     """
     def __init__(self, failover=False, retry_interval=-1, **config):
-
         # strongly prefer QPU solvers; requires kwarg-level override
         config.setdefault('client', 'qpu')
 
