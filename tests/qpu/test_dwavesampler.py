@@ -21,6 +21,7 @@ import numpy
 import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.client import Client
+from dwave_networkx.generators.pegasus import pegasus_graph
 
 from dwave.system.samplers import DWaveSampler
 
@@ -131,11 +132,19 @@ class TestDWaveSampler(unittest.TestCase):
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestMissingQubits(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         try:
-            # get a QPU with less than 100% yield
-            cls.qpu = DWaveSampler(solver=dict(num_active_qubits__lt=2048))
+            # select an Advantage QPU with less than 100% yield
+            m = 16
+            cls.num_qubits = len(pegasus_graph(m, fabric_only=False))
+            cls.qpu = DWaveSampler(
+                solver=dict(
+                    topology__type='pegasus',
+                    topology__shape=[m],
+                    num_active_qubits__lt=cls.num_qubits))
+
         except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
 
@@ -146,13 +155,13 @@ class TestMissingQubits(unittest.TestCase):
     def test_sample_ising_h_list(self):
         sampler = self.qpu
 
-        h = [0 for _ in range(2048)]
+        h = [0 for _ in range(self.num_qubits)]
         J = {edge: 0 for edge in sampler.edgelist}
 
         sampleset = sampler.sample_ising(h, J)
 
         self.assertEqual(set(sampleset.variables), set(sampler.nodelist))
-        assert len(sampleset.variables) < 2048  # sanity check
+        self.assertLessEqual(len(sampleset.variables), self.num_qubits)  # sanity check
 
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
