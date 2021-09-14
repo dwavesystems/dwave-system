@@ -347,7 +347,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         if not (solver.nodes.issuperset(bqm.linear) and
                 solver.edges.issuperset(bqm.quadratic)):
-            msg = "Problem graph incompatible with solver."
+            msg = ("Problem graph incompatible with solver. Please use 'EmbeddingComposite' "
+                   "to map the problem graph to the solver.")
             raise BinaryQuadraticModelStructureError(msg)
 
         future = solver.sample_bqm(bqm, **kwargs)
