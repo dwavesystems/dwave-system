@@ -347,7 +347,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         if not (solver.nodes.issuperset(bqm.linear) and
                 solver.edges.issuperset(bqm.quadratic)):
-            msg = "Problem graph incompatible with solver."
+            msg = ("Problem graph incompatible with solver. Please use 'EmbeddingComposite' "
+                   "to map the problem graph to the solver.")
             raise BinaryQuadraticModelStructureError(msg)
 
         future = solver.sample_bqm(bqm, **kwargs)
@@ -376,7 +377,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         # on missing nodes for lists
         if isinstance(h, list):
             if len(h) > self.solver.num_qubits:
-                msg = "Problem graph incompatible with solver."
+                msg = ("Problem graph incompatible with solver. Please use 'EmbeddingComposite' "
+                       "to map the problem graph to the solver.")
                 raise BinaryQuadraticModelStructureError(msg)
             nodes = self.solver.nodes
             h = dict((v, b) for v, b in enumerate(h) if b and v in nodes)
