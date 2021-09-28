@@ -686,7 +686,32 @@ class LeapHybridCQMSampler:
 
     def sample_cqm(self, cqm: dimod.ConstrainedQuadraticModel,
                    time_limit: Optional[float] = None, **kwargs):
-        """todo: docstring"""
+        """Sample from the specified constrained quadratic model.
+
+        Args:
+            cqm (:obj:`dimod.ConstrainedQuadraticModel`):
+                Constrained quadratic model (DQM).
+
+            time_limit (int, optional):
+                Maximum run time, in seconds, to allow the solver to work on the
+                problem. Must be at least the minimum required for the problem,
+                which is calculated and set by default.
+
+                :meth:`~dwave.system.samplers.LeapHybridCQMSampler.min_time_limit`
+                calculates (and describes) the minimum time for your problem.
+
+            **kwargs:
+                Optional keyword arguments for the solver, specified in
+                :attr:`~dwave.system.samplers.LeapHybridCQMSampler.parameters`.
+
+        Returns:
+            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
+            :class:`~concurrent.futures.Future`-like object.
+
+        Examples:
+            See the example in :class:`LeapHybridCQMSampler`.
+
+        """
 
         if not isinstance(cqm, dimod.ConstrainedQuadraticModel):
             raise TypeError("first argument 'cqm' must be a ConstrainedQuadraticModel, "
