@@ -558,6 +558,70 @@ available_solvers.append(_CQMSolver)
 
 
 class LeapHybridCQMSampler:
+    """A class for using Leap's cloud-based hybrid CQM solvers.
+
+    Leap’s quantum-classical hybrid CQM solvers are intended to solve arbitrary
+    application problems formulated as constrained quadratic models (CQM).
+
+    You can configure your :term:`solver` selection and usage by setting parameters,
+    hierarchically, in a configuration file, as environment variables, or
+    explicitly as input arguments, as described in
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
+
+    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
+    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
+    ``category=hybrid`` and ``supported_problem_type=cqm``. By default, online
+    hybrid CQM solvers are returned ordered by latest ``version``.
+
+    Args:
+        **config:
+            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+
+    Examples:
+        This example solves a simple problem of finding the rectangle with the
+        greatest area when the perimeter is limited. In this example, the
+        perimeter of the rectangle is set to 8 (meaning the largest area is for
+        the :math:`2X2` square).
+
+        A CQM is created that will have two integer variables, :math:`i, j`, each
+        limited to half the maximum perimeter length of 8, to represent the
+        lengths of the rectangle's sides:
+
+        >>> from dimod import ConstrainedQuadraticModel, Integer
+        >>> i = Integer('i', upper_bound=4)
+        >>> j = Integer('j', upper_bound=4)
+        >>> cqm = ConstrainedQuadraticModel()
+
+        The area of the rectangle is given by the multiplication of side :math:`i`
+        by side :math:`j`. The goal is to maximize the area, :math:`i*j`. Because
+        D-Wave samplers minimize, the objective should have its lowest value when
+        this goal is met. Objective :math:`-i*j` has its minimum value when
+        :math:`i*j`, the area, is greatest:
+
+        >>> cqm.set_objective(-i*j)
+
+        Finally, the requirement that the sum of both sides must not exceed the
+        perimeter is represented as constraint :math:`2i + 2j <= 8`:
+
+        >>> cqm.add_constraint(2*i+2*j <= 8, "Max perimeter")
+        'Max perimeter'
+
+        Instantiate a hybrid CQM sampler and submit the problem for solution by
+        a remote solver provided by the Leap quantum cloud service:
+
+        >>> from dwave.system import LeapHybridCQMSampler
+        >>> sampler = LeapHybridCQMSampler()
+        >>> sampleset = sampler.sample_cqm(cqm)
+        >>> print(sampleset.first)                          # doctest: +SKIP
+        Sample(sample={'i': 2.0, 'j': 2.0}, energy=-4.0, num_occurrences=1,
+        ...            is_feasible=True, is_satisfied=array([ True]))
+
+        The best (lowest-energy) solution found has :math:`i=j=2` as expected,
+        a solution that is feasible because all the constraints (one in this
+        example) are satisfied.
+
+    """
     def __init__(self, solver=None, connection_close=True, **config):
 
         # we want a Hybrid solver by default, but allow override
@@ -589,6 +653,11 @@ class LeapHybridCQMSampler:
 
     @property
     def properties(self):
+        """dict: Solver properties as returned by a SAPI query.
+
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
+        are dependent on the selected solver and subject to change.
+        """
         try:
             return self._properties
         except AttributeError:
@@ -597,6 +666,15 @@ class LeapHybridCQMSampler:
 
     @property
     def parameters(self):
+        """dict[str, list]: Solver parameters in the form of a dict, where keys
+        are keyword parameters accepted by a SAPI query and values are lists of
+        properties in
+        :attr:`~dwave.system.samplers.LeapHybridCQMSampler.properties` for each
+        key.
+
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_parameters.html>`_
+        are dependent on the selected solver and subject to change.
+        """
         try:
             return self._parameters
         except AttributeError:
