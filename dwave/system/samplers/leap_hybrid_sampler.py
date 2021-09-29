@@ -144,8 +144,8 @@ class LeapHybridSampler(dimod.Sampler):
             raise ValueError("selected solver does not support the 'bqm' problem type.")
 
     @property
-    def properties(self):
-        """dict: Solver properties as returned by a SAPI query.
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
 
         `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
@@ -157,8 +157,8 @@ class LeapHybridSampler(dimod.Sampler):
             return properties
 
     @property
-    def parameters(self):
-        """dict[str, list]: Solver parameters in the form of a dict, where keys are
+    def parameters(self) -> Dict[str, list]:
+        """Solver parameters in the form of a dict, where keys are
         keyword parameters accepted by a SAPI query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each key.
 
@@ -386,8 +386,8 @@ class LeapHybridDQMSampler:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
 
     @property
-    def properties(self):
-        """dict: Solver properties as returned by a SAPI query.
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
 
         `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
@@ -399,8 +399,8 @@ class LeapHybridDQMSampler:
             return properties
 
     @property
-    def parameters(self):
-        """dict[str, list]: Solver parameters in the form of a dict, where keys
+    def parameters(self) -> Dict[str, list]:
+        """Solver parameters in the form of a dict, where keys
         are keyword parameters accepted by a SAPI query and values are lists of
         properties in
         :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties` for each
@@ -560,7 +560,7 @@ available_solvers.append(_CQMSolver)
 class LeapHybridCQMSampler:
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
-    Leap’s quantum-classical hybrid CQM solvers are intended to solve arbitrary
+    Leap’s quantum-classical hybrid CQM solvers are intended to solve
     application problems formulated as
     :ref:`constrained quadratic models (CQM) <cqm_sdk>`.
 
@@ -653,8 +653,8 @@ class LeapHybridCQMSampler:
             raise ValueError("selected solver does not support the 'cqm' problem type.")
 
     @property
-    def properties(self):
-        """dict: Solver properties as returned by a SAPI query.
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
 
         `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
@@ -666,8 +666,8 @@ class LeapHybridCQMSampler:
             return properties
 
     @property
-    def parameters(self):
-        """dict[str, list]: Solver parameters in the form of a dict, where keys
+    def parameters(self) -> dict[str, list]:
+        """Solver parameters in the form of a dict, where keys
         are keyword parameters accepted by a SAPI query and values are lists of
         properties in
         :attr:`~dwave.system.samplers.LeapHybridCQMSampler.properties` for each
