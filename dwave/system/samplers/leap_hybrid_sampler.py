@@ -561,7 +561,8 @@ class LeapHybridCQMSampler:
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
     Leap’s quantum-classical hybrid CQM solvers are intended to solve arbitrary
-    application problems formulated as constrained quadratic models (CQM).
+    application problems formulated as
+    :ref:`constrained quadratic models (CQM) <cqm_sdk>`.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
@@ -690,7 +691,7 @@ class LeapHybridCQMSampler:
 
         Args:
             cqm (:obj:`dimod.ConstrainedQuadraticModel`):
-                Constrained quadratic model (DQM).
+                Constrained quadratic model (CQM).
 
             time_limit (int, optional):
                 Maximum run time, in seconds, to allow the solver to work on the
