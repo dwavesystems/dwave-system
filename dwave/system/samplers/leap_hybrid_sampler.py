@@ -119,6 +119,12 @@ class LeapHybridSampler(dimod.Sampler):
         # default to short-lived session to prevent resets on slow uploads
         config.setdefault('connection_close', True)
 
+        if FeatureFlags.hss_solver_config_override:
+            # use legacy behavior (override solver config from env/file)
+            solver = config.setdefault('solver', {})
+            if isinstance(solver, abc.Mapping):
+                solver.update(self.default_solver)
+
         # prefer the latest hybrid BQM solver available, but allow for an easy
         # override on any config level above the defaults (file/env/kwarg)
         defaults = config.setdefault('defaults', {})
@@ -354,6 +360,12 @@ class LeapHybridDQMSampler:
 
         # default to short-lived session to prevent resets on slow uploads
         config.setdefault('connection_close', True)
+
+        if FeatureFlags.hss_solver_config_override:
+            # use legacy behavior (override solver config from env/file)
+            solver = config.setdefault('solver', {})
+            if isinstance(solver, abc.Mapping):
+                solver.update(self.default_solver)
 
         # prefer the latest hybrid DQM solver available, but allow for an easy
         # override on any config level above the defaults (file/env/kwarg)
