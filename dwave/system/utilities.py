@@ -14,9 +14,18 @@
 
 """Utility functions."""
 
+import os
+import json
 import networkx as nx
 
-__all__ = ['common_working_graph']
+__all__ = ['common_working_graph', 'classproperty']
+
+
+# taken from https://stackoverflow.com/a/39542816, licensed under CC BY-SA 3.0
+# not needed in py39+
+class classproperty(property):
+    def __get__(self, obj, objtype=None):
+        return super(classproperty, self).__get__(objtype)
 
 
 def common_working_graph(graph0, graph1):
@@ -58,3 +67,21 @@ def common_working_graph(graph0, graph1):
                      if v in graph1 and u in graph1[v])
 
     return(G)
+
+
+class FeatureFlags:
+    """User environment-level Ocean feature flags pertinent to dwave-system."""
+
+    # NOTE: This is an experimental feature. If we decide to keep it, we'll want
+    # to move this machinery level up to Ocean-common.
+
+    @staticmethod
+    def get(name, default=False):
+        try:
+            return json.loads(os.getenv('DWAVE_FEATURE_FLAGS')).get(name, default)
+        except:
+            return default
+
+    @classproperty
+    def hss_solver_config_override(cls):
+        return cls.get('hss_solver_config_override')

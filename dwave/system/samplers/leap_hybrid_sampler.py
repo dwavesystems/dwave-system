@@ -36,16 +36,10 @@ except ImportError:
     bqm_to_file = FileView
 
 from dwave.cloud import Client
+from dwave.system.utilities import classproperty, FeatureFlags
 
 
 __all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
-
-
-# taken from https://stackoverflow.com/a/39542816, licensed under CC BY-SA 3.0
-# not needed in py39+
-class classproperty(property):
-    def __get__(self, obj, objtype=None):
-        return super(classproperty, self).__get__(objtype)
 
 
 class LeapHybridSampler(dimod.Sampler):
