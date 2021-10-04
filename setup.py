@@ -33,7 +33,7 @@ install_requires = ['dimod>=0.10.0,<0.11.0',
                     'homebase>=1.0.0,<2.0.0',
                     'minorminer>=0.2.4,<0.3.0',
                     'numpy>=1.14.0,<2.0.0',
-                    'dwave-tabu>=0.2.0',
+                    'dwave-tabu>=0.4.2',
                     ]
 
 # NOTE: dwave-drivers can also be installed with `dwave install drivers`,
