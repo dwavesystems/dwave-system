@@ -348,10 +348,10 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         try:
             future = solver.sample_bqm(bqm, **kwargs)
-        except ProblemStructureError:
+        except ProblemStructureError as exc:
             msg = ("Problem graph incompatible with solver. Please use 'EmbeddingComposite' "
                    "to map the problem graph to the solver.")
-            raise BinaryQuadraticModelStructureError(msg)
+            raise BinaryQuadraticModelStructureError(msg) from exc
 
         if warnings is None:
             warnings = self.warnings_default
