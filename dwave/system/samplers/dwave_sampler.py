@@ -29,7 +29,8 @@ import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave.cloud import Client
-from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
+from dwave.cloud.exceptions import (
+    SolverOfflineError, SolverNotFoundError, ProblemStructureError)
 
 from dwave.system.warnings import WarningHandler, WarningAction
 
@@ -345,13 +346,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         solver = self.solver
 
-        if not (solver.nodes.issuperset(bqm.linear) and
-                solver.edges.issuperset(bqm.quadratic)):
+        try:
+            future = solver.sample_bqm(bqm, **kwargs)
+        except ProblemStructureError as exc:
             msg = ("Problem graph incompatible with solver. Please use 'EmbeddingComposite' "
                    "to map the problem graph to the solver.")
-            raise BinaryQuadraticModelStructureError(msg)
-
-        future = solver.sample_bqm(bqm, **kwargs)
+            raise BinaryQuadraticModelStructureError(msg) from exc
 
         if warnings is None:
             warnings = self.warnings_default
