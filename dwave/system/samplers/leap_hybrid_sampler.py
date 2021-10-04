@@ -16,6 +16,8 @@
 A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's hybrid solvers.
 """
 
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 from warnings import warn
 from numbers import Number
@@ -39,7 +41,11 @@ from dwave.cloud import Client
 from dwave.system.utilities import classproperty, FeatureFlags
 
 
-__all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler']
+__all__ = ['LeapHybridSampler',
+           'LeapHybridBQMSampler',
+           'LeapHybridDQMSampler',
+           'LeapHybridCQMSampler',
+           ]
 
 
 class LeapHybridSampler(dimod.Sampler):
@@ -142,8 +148,8 @@ class LeapHybridSampler(dimod.Sampler):
             raise ValueError("selected solver does not support the 'bqm' problem type.")
 
     @property
-    def properties(self):
-        """dict: Solver properties as returned by a SAPI query.
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
 
         `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
@@ -155,8 +161,8 @@ class LeapHybridSampler(dimod.Sampler):
             return properties
 
     @property
-    def parameters(self):
-        """dict[str, list]: Solver parameters in the form of a dict, where keys are
+    def parameters(self) -> Dict[str, list]:
+        """Solver parameters in the form of a dict, where keys are
         keyword parameters accepted by a SAPI query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each key.
 
@@ -384,8 +390,8 @@ class LeapHybridDQMSampler:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
 
     @property
-    def properties(self):
-        """dict: Solver properties as returned by a SAPI query.
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
 
         `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
         are dependent on the selected solver and subject to change.
@@ -397,8 +403,8 @@ class LeapHybridDQMSampler:
             return properties
 
     @property
-    def parameters(self):
-        """dict[str, list]: Solver parameters in the form of a dict, where keys
+    def parameters(self) -> Dict[str, list]:
+        """Solver parameters in the form of a dict, where keys
         are keyword parameters accepted by a SAPI query and values are lists of
         properties in
         :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties` for each
@@ -532,3 +538,227 @@ class LeapHybridDQMSampler:
         limits = np.array(self.properties['minimum_time_limit'])
         t = np.interp(ec, limits[:, 0], limits[:, 1])
         return max([5, t])
+
+
+class LeapHybridCQMSampler:
+    """A class for using Leap's cloud-based hybrid CQM solvers.
+
+    Leap’s quantum-classical hybrid CQM solvers are intended to solve
+    application problems formulated as
+    :ref:`constrained quadratic models (CQM) <cqm_sdk>`.
+
+    You can configure your :term:`solver` selection and usage by setting parameters,
+    hierarchically, in a configuration file, as environment variables, or
+    explicitly as input arguments, as described in
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
+
+    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
+    access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
+    ``category=hybrid`` and ``supported_problem_type=cqm``. By default, online
+    hybrid CQM solvers are returned ordered by latest ``version``.
+
+    Args:
+        **config:
+            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+
+    Examples:
+        This example solves a simple problem of finding the rectangle with the
+        greatest area when the perimeter is limited. In this example, the
+        perimeter of the rectangle is set to 8 (meaning the largest area is for
+        the :math:`2X2` square).
+
+        A CQM is created that will have two integer variables, :math:`i, j`, each
+        limited to half the maximum perimeter length of 8, to represent the
+        lengths of the rectangle's sides:
+
+        >>> from dimod import ConstrainedQuadraticModel, Integer
+        >>> i = Integer('i', upper_bound=4)
+        >>> j = Integer('j', upper_bound=4)
+        >>> cqm = ConstrainedQuadraticModel()
+
+        The area of the rectangle is given by the multiplication of side :math:`i`
+        by side :math:`j`. The goal is to maximize the area, :math:`i*j`. Because
+        D-Wave samplers minimize, the objective should have its lowest value when
+        this goal is met. Objective :math:`-i*j` has its minimum value when
+        :math:`i*j`, the area, is greatest:
+
+        >>> cqm.set_objective(-i*j)
+
+        Finally, the requirement that the sum of both sides must not exceed the
+        perimeter is represented as constraint :math:`2i + 2j <= 8`:
+
+        >>> cqm.add_constraint(2*i+2*j <= 8, "Max perimeter")
+        'Max perimeter'
+
+        Instantiate a hybrid CQM sampler and submit the problem for solution by
+        a remote solver provided by the Leap quantum cloud service:
+
+        >>> from dwave.system import LeapHybridCQMSampler
+        >>> sampler = LeapHybridCQMSampler()
+        >>> sampleset = sampler.sample_cqm(cqm)
+        >>> print(sampleset.first)                          # doctest: +SKIP
+        Sample(sample={'i': 2.0, 'j': 2.0}, energy=-4.0, num_occurrences=1,
+        ...            is_feasible=True, is_satisfied=array([ True]))
+
+        The best (lowest-energy) solution found has :math:`i=j=2` as expected,
+        a solution that is feasible because all the constraints (one in this
+        example) are satisfied.
+
+    """
+    def __init__(self, **config):
+        # strongly prefer hybrid solvers; requires kwarg-level override
+        config.setdefault('client', 'hybrid')
+
+        # default to short-lived session to prevent resets on slow uploads
+        config.setdefault('connection_close', True)
+
+        if FeatureFlags.hss_solver_config_override:
+            # use legacy behavior (override solver config from env/file)
+            solver = config.setdefault('solver', {})
+            if isinstance(solver, abc.Mapping):
+                solver.update(self.default_solver)
+
+        # prefer the latest hybrid CQM solver available, but allow for an easy
+        # override on any config level above the defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(solver=self.default_solver)
+
+        self.client = Client.from_config(**config)
+        self.solver = self.client.get_solver()
+
+        # For explicitly named solvers:
+        if self.properties.get('category') != 'hybrid':
+            raise ValueError("selected solver is not a hybrid solver.")
+        if 'cqm' not in self.solver.supported_problem_types:
+            raise ValueError("selected solver does not support the 'cqm' problem type.")
+
+    @classproperty
+    def default_solver(cls) -> Dict[str, str]:
+        """Features used to select the latest accessible hybrid CQM solver."""
+        return dict(supported_problem_types__contains='cqm',
+                    order_by='-properties.version')
+
+    @property
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
+
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
+        are dependent on the selected solver and subject to change.
+        """
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
+
+    @property
+    def parameters(self) -> Dict[str, List[str]]:
+        """Solver parameters in the form of a dict, where keys
+        are keyword parameters accepted by a SAPI query and values are lists of
+        properties in
+        :attr:`~dwave.system.samplers.LeapHybridCQMSampler.properties` for each
+        key.
+
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_parameters.html>`_
+        are dependent on the selected solver and subject to change.
+        """
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            parameters.update(label=[])
+            self._parameters = parameters
+            return parameters
+
+    def sample_cqm(self, cqm: dimod.ConstrainedQuadraticModel,
+                   time_limit: Optional[float] = None, **kwargs):
+        """Sample from the specified constrained quadratic model.
+
+        Args:
+            cqm (:obj:`dimod.ConstrainedQuadraticModel`):
+                Constrained quadratic model (CQM).
+
+            time_limit (int, optional):
+                Maximum run time, in seconds, to allow the solver to work on the
+                problem. Must be at least the minimum required for the problem,
+                which is calculated and set by default.
+
+                :meth:`~dwave.system.samplers.LeapHybridCQMSampler.min_time_limit`
+                calculates (and describes) the minimum time for your problem.
+
+            **kwargs:
+                Optional keyword arguments for the solver, specified in
+                :attr:`~dwave.system.samplers.LeapHybridCQMSampler.parameters`.
+
+        Returns:
+            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
+            :class:`~concurrent.futures.Future`-like object.
+
+        Examples:
+            See the example in :class:`LeapHybridCQMSampler`.
+
+        """
+
+        if not isinstance(cqm, dimod.ConstrainedQuadraticModel):
+            raise TypeError("first argument 'cqm' must be a ConstrainedQuadraticModel, "
+                            f"recieved {type(cqm).__name__}")
+
+        if time_limit is None:
+            time_limit = self.min_time_limit(cqm)
+        elif time_limit < self.min_time_limit(cqm):
+            raise ValueError("the minimum time limit for this problem is "
+                             f"{self.min_time_limit(cqm)} seconds "
+                             f"({time_limit}s provided), "
+                             "see .min_time_limit method")
+
+        if len(cqm.constraints) > self.properties['maximum_number_of_constraints']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_constraints']} or fewer "
+                f"constraints, given model has {len(cqm.constraints)}")
+
+        if len(cqm.variables) > self.properties['maximum_number_of_variables']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_variables']} or fewer "
+                f"variables, given model has {len(cqm.variables)}")
+
+        if cqm.num_biases() > self.properties['maximum_number_of_biases']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_biases']} or fewer "
+                f"biases, given model has {cqm.num_biases()}")
+
+        if cqm.num_quadratic_variables() > self.properties['maximum_number_of_quadratic_variables']:
+            raise ValueError(
+                "constrained quadratic model must have "
+                f"{self.properties['maximum_number_of_quadratic_variables']} "
+                "or fewer variables with at least one quadratic bias across "
+                "all constraints, given model has "
+                f"{cqm.num_quadratic_variables()}")
+
+        return self.solver.sample_cqm(cqm, time_limit=time_limit, **kwargs).sampleset
+
+    def min_time_limit(self, cqm: dimod.ConstrainedQuadraticModel) -> float:
+        """Return the minimum `time_limit` accepted for the given problem."""
+
+        # todo: remove the hard-coded defaults
+        num_variables_multiplier = self.properties.get('num_variables_multiplier', 1.57e-04)
+        num_biases_multiplier = self.properties.get('num_biases_multiplier', 4.65e-06)
+        num_constraints_multiplier = self.properties.get('num_constraints_multiplier', 6.44e-09)
+        minimum_time_limit = self.properties['minimum_time_limit_s']
+
+        num_variables = len(cqm.variables)
+        num_constraints = len(cqm.constraints)
+        num_biases = cqm.num_biases()
+
+        return max(
+            num_variables_multiplier * num_variables +
+            num_biases_multiplier * num_biases +
+            num_constraints_multiplier * num_variables * num_constraints,
+            minimum_time_limit
+            )

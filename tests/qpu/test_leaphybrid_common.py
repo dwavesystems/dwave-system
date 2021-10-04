@@ -21,13 +21,14 @@ from parameterized import parameterized_class
 
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.testing import isolated_environ
-from dwave.system import LeapHybridSampler, LeapHybridDQMSampler
+from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
 
 
 @parameterized_class(
     ("problem_type", "sampler_cls"), [
         ("bqm", LeapHybridSampler),
-        ("dqm", LeapHybridDQMSampler)
+        ("dqm", LeapHybridDQMSampler),
+        ("cqm", LeapHybridCQMSampler),
     ])
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestLegacySolverSelection(unittest.TestCase):
