@@ -540,27 +540,6 @@ class LeapHybridDQMSampler:
         return max([5, t])
 
 
-###############################################################################
-# We need to trick the cloud-client into accepting a new problem type
-# todo: migrate this stuff into the cloud-client
-from dwave.cloud.solver import BaseUnstructuredSolver, available_solvers
-
-
-class _CQMSolver(BaseUnstructuredSolver):
-    _handled_problem_types = {"cqm"}
-    _handled_encoding_formats = {"bq"}
-
-    def _encode_problem_for_upload(self, cqm):
-        return cqm.to_file()
-
-    def sample_cqm(self, cqm, label=None, **params):
-        return self.sample_problem(cqm, label=label, **params)
-
-
-available_solvers.append(_CQMSolver)
-###############################################################################
-
-
 class LeapHybridCQMSampler:
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
