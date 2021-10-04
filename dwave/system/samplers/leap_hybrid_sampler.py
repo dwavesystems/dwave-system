@@ -16,7 +16,7 @@
 A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's hybrid solvers.
 """
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from warnings import warn
@@ -623,27 +623,27 @@ class LeapHybridCQMSampler:
         example) are satisfied.
 
     """
-    def __init__(self, solver=None, connection_close=True, **config):
-
-        # we want a Hybrid solver by default, but allow override
+    def __init__(self, **config):
+        # strongly prefer hybrid solvers; requires kwarg-level override
         config.setdefault('client', 'hybrid')
 
-        if solver is None:
-            solver = {}
+        # default to short-lived session to prevent resets on slow uploads
+        config.setdefault('connection_close', True)
 
-        if isinstance(solver, abc.Mapping):
-            # TODO: instead of solver selection, try with user's default first
-            if solver.setdefault('category', 'hybrid') != 'hybrid':
-                raise ValueError("the only 'category' this sampler supports is 'hybrid'")
-            if solver.setdefault('supported_problem_types__contains', 'cqm') != 'cqm':
-                raise ValueError("the only problem type this sampler supports is 'cqm'")
+        if FeatureFlags.hss_solver_config_override:
+            # use legacy behavior (override solver config from env/file)
+            solver = config.setdefault('solver', {})
+            if isinstance(solver, abc.Mapping):
+                solver.update(self.default_solver)
 
-            # prefer the latest version, but allow kwarg override
-            solver.setdefault('order_by', '-properties.version')
+        # prefer the latest hybrid CQM solver available, but allow for an easy
+        # override on any config level above the defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(solver=self.default_solver)
 
-        self.client = Client.from_config(
-            solver=solver, connection_close=connection_close, **config)
-
+        self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
 
         # For explicitly named solvers:
@@ -651,6 +651,12 @@ class LeapHybridCQMSampler:
             raise ValueError("selected solver is not a hybrid solver.")
         if 'cqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'cqm' problem type.")
+
+    @classproperty
+    def default_solver(cls) -> Dict[str, str]:
+        """Features used to select the latest accessible hybrid CQM solver."""
+        return dict(supported_problem_types__contains='cqm',
+                    order_by='-properties.version')
 
     @property
     def properties(self) -> Dict[str, Any]:
@@ -666,7 +672,7 @@ class LeapHybridCQMSampler:
             return properties
 
     @property
-    def parameters(self) -> dict[str, list]:
+    def parameters(self) -> Dict[str, List[str]]:
         """Solver parameters in the form of a dict, where keys
         are keyword parameters accepted by a SAPI query and values are lists of
         properties in
