@@ -594,9 +594,9 @@ class LeapHybridCQMSampler:
         Instantiate a hybrid CQM sampler and submit the problem for solution by
         a remote solver provided by the Leap quantum cloud service:
 
-        >>> from dwave.system import LeapHybridCQMSampler
-        >>> sampler = LeapHybridCQMSampler()
-        >>> sampleset = sampler.sample_cqm(cqm)
+        >>> from dwave.system import LeapHybridCQMSampler   # doctest: +SKIP
+        >>> sampler = LeapHybridCQMSampler()                # doctest: +SKIP
+        >>> sampleset = sampler.sample_cqm(cqm)             # doctest: +SKIP
         >>> print(sampleset.first)                          # doctest: +SKIP
         Sample(sample={'i': 2.0, 'j': 2.0}, energy=-4.0, num_occurrences=1,
         ...            is_feasible=True, is_satisfied=array([ True]))
