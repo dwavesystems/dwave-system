@@ -16,7 +16,10 @@ import unittest
 
 import dwave_networkx as dnx
 
+from dwave.cloud.testing import isolated_environ
+
 from dwave.system import common_working_graph
+from dwave.system.utilities import FeatureFlags
 
 
 class TestCommonWorkingGraph(unittest.TestCase):
@@ -63,3 +66,29 @@ class TestCommonWorkingGraph(unittest.TestCase):
 
         self.assertEqual(set(H.nodes), {0, 1, 2})
         self.assertEqual(set(H.edges), set())
+
+
+class TestFeatureFlagSupport(unittest.TestCase):
+    def test_base(self):
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"x": true}'}):
+            self.assertTrue(FeatureFlags.get('x'))
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"x": false}'}):
+            self.assertFalse(FeatureFlags.get('x'))
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"x": 0}'}):
+            self.assertFalse(FeatureFlags.get('x'))
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"x": 1}'}):
+            self.assertTrue(FeatureFlags.get('x'))
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"x": error}'}):
+            self.assertFalse(FeatureFlags.get('x'))
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"y": true}'}):
+            self.assertFalse(FeatureFlags.get('x'))
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': ''}):
+            self.assertFalse(FeatureFlags.get('x'))
+        with isolated_environ(remove=('DWAVE_FEATURE_FLAGS',)):
+            self.assertFalse(FeatureFlags.get('x'))
+
+    def test_hss_solver_config_override(self):
+        with isolated_environ(add={'DWAVE_FEATURE_FLAGS': '{"hss_solver_config_override": true}'}):
+            self.assertTrue(FeatureFlags.hss_solver_config_override)
+        with isolated_environ(remove=('DWAVE_FEATURE_FLAGS',)):
+            self.assertFalse(FeatureFlags.hss_solver_config_override)
