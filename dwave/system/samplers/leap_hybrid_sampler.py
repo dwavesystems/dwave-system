@@ -41,7 +41,11 @@ from dwave.cloud import Client
 from dwave.system.utilities import classproperty, FeatureFlags
 
 
-__all__ = ['LeapHybridSampler', 'LeapHybridDQMSampler', 'LeapHybridCQMSampler']
+__all__ = ['LeapHybridSampler',
+           'LeapHybridBQMSampler',
+           'LeapHybridDQMSampler',
+           'LeapHybridCQMSampler',
+           ]
 
 
 class LeapHybridSampler(dimod.Sampler):
