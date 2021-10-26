@@ -23,6 +23,43 @@ from dwave.system.composites import TilingComposite
 
 
 class TestTiling(unittest.TestCase):
+    def test_pegasus_single_cell(self):
+        #Test trivial case of single cell (K4,4+4*odd) embedding over defect free
+        mock_sampler = MockDWaveSampler(topology_type='pegasus')  # C4 structured sampler
+        self.assertTrue('topology' in mock_sampler.properties and 'type' in mock_sampler.properties['topology'])
+        self.assertTrue(mock_sampler.properties['topology']['type'] == 'pegasus' and 'shape' in mock_sampler.properties['topology'])
+        sampler = TilingComposite(mock_sampler, 1, 1)
+        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
+        J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
+
+        m = n = mock_sampler.properties['topology']['shape'][0] - 1
+        expected_number_of_cells = m*n*3
+        num_reads = 10
+        response = sampler.sample_ising(h, J, num_reads=num_reads)
+        self.assertTrue(sum(response.record.num_occurrences)==expected_number_of_cells*num_reads)
+        
+    def test_pegasus_multi_cell(self):
+        #Test case of 2x3 cell embedding over defect free
+        mock_sampler = MockDWaveSampler(topology_type='pegasus',topology_shape=[8])  # C4 structured sampler
+        self.assertTrue('topology' in mock_sampler.properties and 'type' in mock_sampler.properties['topology'])
+        self.assertTrue(mock_sampler.properties['topology']['type'] == 'pegasus' and 'shape' in mock_sampler.properties['topology'])
+        sampler = TilingComposite(mock_sampler, 1, 1)
+        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
+        J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
+        
+        m_sub = 2
+        n_sub = 3
+        sampler = TilingComposite(mock_sampler, m_sub, n_sub)
+        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
+        J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
+
+        m = n = mock_sampler.properties['topology']['shape'][0] - 1
+        expected_number_of_cells = (m//m_sub)*(n//3)*3
+        num_reads = 1
+        response = sampler.sample_ising(h, J, num_reads = num_reads)
+        self.assertTrue(sum(response.record.num_occurrences)==expected_number_of_cells*num_reads)
+        
+        
     def test_sample_ising(self):
         mock_sampler = MockDWaveSampler()  # C4 structured sampler
 

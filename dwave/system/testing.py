@@ -30,24 +30,57 @@ import concurrent.futures
 import numpy as np
 
 
-C4 = dnx.chimera_graph(4, 4, 4)
 
 
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):
-    """Mock sampler modeled after DWaveSampler that can be used for tests."""
+    """Mock sampler modeled after DWaveSampler that can be used for tests.
+
+    Properties fields are populated matching a legacy device, and a 
+    placeholder sampler routine based on simulated annealing instantiated.
+    
+    Args:
+        broken_nodes (iterable of ints):
+            List of nodes to exclude (along with associated edges). For emulation of unyielded
+            qubits.
+        topology_type (string, default='chimera'):
+            QPU topology being emulated. Note that for Pegasus emulation the fabric_only=True
+            graph is presented.
+        topology_shape (string):
+            A list of three numbers [m,n,t] for Chimera, defaulted as [4,4,4]. 
+            A list of one number [m] for Pegasus, defaulted as [3]. 
+    
+    """
 
     nodelist = None
     edgelist = None
     properties = None
     parameters = None
 
-    def __init__(self, broken_nodes=None, **config):
-        if broken_nodes is None:
-            self.nodelist = sorted(C4.nodes)
-            self.edgelist = sorted(tuple(sorted(edge)) for edge in C4.edges)
+    def __init__(self, broken_nodes=None, topology_type='chimera',topology_shape=None, **config):
+        
+        if topology_type == 'pegasus':
+            if topology_shape == None:
+                topology_shape = [3]
+            elif len(topology_shape) != 1:
+                raise ValueError('topology_shape must be a single-value list for Pegasus')
+            #P3 fabric_only for small manageable (but non-trivial) default. P16 full scale.
+            solver_graph = dnx.pegasus_graph(topology_shape[0], fabric_only=True)
+        elif topology_type == 'chimera':
+            if topology_shape == None:
+                topology_shape = [4,4,4]
+            elif len(topology_shape) != 3:
+                raise ValueError('topology_shape must be 3-value list for Chimera')
+            #solver_graph for small manageable (but non-trivial) default. C16 full scale.
+            solver_graph = dnx.chimera_graph(topology_shape[0], topology_shape[1], topology_shape[2])
         else:
-            self.nodelist = sorted(v for v in C4.nodes if v not in broken_nodes)
-            self.edgelist = sorted(tuple(sorted((u, v))) for u, v in C4.edges
+            raise ValueError('Only \'chimera\' and \'pegasus\' topologies are supported')
+        
+        if broken_nodes is None:
+            self.nodelist = sorted(solver_graph.nodes)
+            self.edgelist = sorted(tuple(sorted(edge)) for edge in solver_graph.edges)
+        else:
+            self.nodelist = sorted(v for v in solver_graph.nodes if v not in broken_nodes)
+            self.edgelist = sorted(tuple(sorted((u, v))) for u, v in solver_graph.edges
                                    if u not in broken_nodes and v not in broken_nodes)
 
         # mark the sample kwargs
@@ -61,10 +94,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['j_range'] = [-1.0, 1.0]
         properties['h_range'] = [-2.0, 2.0]
         properties['num_reads_range'] = [1, 10000]
-        properties['num_qubits'] = len(C4)
+        properties['num_qubits'] = len(solver_graph)
         properties['category'] = 'qpu'
         properties['quota_conversion_rate'] = 1
-        properties['topology'] = {'type': 'chimera', 'shape': [4, 4, 4]}
+        properties['topology'] = {'type' : topology_type, 'shape' : topology_shape}
         properties['chip_id'] = 'MockDWaveSampler'
         properties['annealing_time_range'] = [1.0, 2000.0]
         properties['num_qubits'] = len(self.nodelist)
@@ -82,8 +115,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties["programming_thermalization_range"] = [0.0, 10000.0]
         properties["readout_thermalization_range"] = [0.0, 10000.0]
 
+        
     @dimod.bqm_structured
-    def sample(self, bqm, num_reads=10, flux_biases=[], **kwargs):
+    def sample(self, bqm, num_reads=1, flux_biases=[], **kwargs):
         # we are altering the bqm if flux_biases given
 
         info = dict(problem_id=str(uuid4()))

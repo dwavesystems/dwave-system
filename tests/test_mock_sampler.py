@@ -26,6 +26,14 @@ class TestMockDWaveSampler(unittest.TestCase):
         sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
+        
+    def test_topology_arguments(self):
+        pegasus_size = 4
+        sampler = MockDWaveSampler(topology_type='pegasus',topology_shape=[pegasus_size])
+        #P4 fabric only has 264 nodes
+        self.assertTrue(len(sampler.nodelist)==264)
+        dit.assert_sampler_api(sampler)
+        dit.assert_structured_api(sampler)
 
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
