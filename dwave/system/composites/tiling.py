@@ -133,7 +133,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         edges_per_cell = t * t
         if ('topology' in sampler.properties
             and 'type' in sampler.properties['topology']
-            and 'shape' in sampler.properties['topology']);
+            and 'shape' in sampler.properties['topology']):
             if sampler.properties['topology']['type'] == 'chimera':
                 #Similar to legacy branch, but using properties information to
                 #robustly define target solver graph (system)
@@ -247,14 +247,14 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                                 cells[s][i + sub_i][j + sub_j] = False  # Mark cell as matched
                                 for u in range(2):
                                     for k in range(t):
-                                        embedding[sub_c2i[sub_i, sub_j, u, k]]
-                                        = {c2i[(s,i + sub_i, j + sub_j, u, k)]}
+                                        embedding[sub_c2i[sub_i, sub_j, u, k]] = {
+                                            c2i[(s,i + sub_i, j + sub_j, u, k)]}
 
                         embeddings.append(embedding)
 
         if len(embeddings) == 0:
-            raise ValueError("no tile embeddings found; '
-            'is the sampler Pegasus or Chimera structured?")
+            raise ValueError("no tile embeddings found; "
+                             "is the sampler Pegasus or Chimera structured?")
         
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
