@@ -13,14 +13,14 @@
 #    limitations under the License.
 
 """
-A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that tiles small problems
-multiple times to a Chimera-structured sampler.
+A :std:doc:dimod composite <oceandocs:docs_dimod/reference/samplers> that tiles 
+small problems multiple times to a structured sampler.
 
-The :class:`.TilingComposite` takes a problem that can fit on a small
-:term:`Chimera` graph and replicates it across a larger
+The :class:.TilingComposite class takes a problem that can fit on a small
+:term:Chimera graph and replicates it across a larger Pegasus or
 Chimera graph to obtain samples from multiple areas of the solver in one call.
-For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a fully-yielded
-D-Wave 2000Q system (16x16).
+For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a 
+fully-yielded D-Wave 2000Q system (16x16).
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
@@ -39,25 +39,28 @@ __all__ = ['TilingComposite']
 
 
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
-    """Composite to tile a small problem across a sampler.
+    """Composite to tile a small problem across a structured sampler.
 
-    Enables parallel sampling for small problems (problems that are 
-    minor-embeddable in a :term:`Chimera` graph of dimensions (``sub_m``, ``sub_n``, ``t``). 
-    The sampler used can be Chimera or Pegasus structured, since Chimera graphs
-    are subgraphs of Pegasus graphs.
+
+
+    Enables parallel sampling on Chimera or Pegasus structured samplers of 
+    small problems. The small problem should be defined on a :term:`Chimera` 
+    graph of dimensions ``sub_m``, ``sub_n``, ``t``, or minor-embeddable to 
+    such a graph.
 
     Notation *CN* refers to a Chimera graph consisting of an NxN grid of unit 
     cells, where each unit cell is a bipartite graph with shores of size t. 
     The D-Wave 2000Q QPU supports a C16 Chimera graph: its 2048 qubits are 
-    logically mapped into a 16x16 matrix of unit cell of 8 qubits (t=4).
+    logically mapped into a 16x16 matrix of unit cells of 8 qubits (t=4). 
+    See also :func:dwave_networkx.chimera_graph 
 
-    Notation *PN* referes to a Pegasus graph consisting of 3x(N-1)x(N-1) grid 
+    Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid 
     of cells, where each unit cell is a bipartite graph with shore of size t, 
     supplemented with odd couplers (see nice_coordinate definition). The 
-    Advantage QPU supports a P16 Pegasus graph: It's qubits may be mapped to 
-    3x15x15 matrix of unit cells each of 8 qubits. This code supports tiling of 
-    chimera-structured problems, with an option of additional odd-couplers,
-    onto Pegasus. 
+    Advantage QPU supports a P16 Pegasus graph: its qubits may be mapped to a 
+    3x15x15 matrix of unit cells, each of 8 qubits. This code supports tiling of
+    Chimera-structured problems, with an option of additional odd-couplers,
+    onto Pegasus. See also :func:dwave_networkx.pegasus_graph .
 
     A problem that can be minor-embedded in a single chimera unit cell, for 
     example, can therefore be tiled across the unit cells of a D-Wave 2000Q as 
@@ -68,9 +71,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        sampler (:class:`dimod.Sampler`): Structured dimod sampler such as a 
            :class:`~dwave.system.samplers.DWaveSampler()`.
        sub_m (int): Minimum number of Chimera unit cell rows required for
-           minor-embedding without duplication.
+           minor-embedding a single instance of the problem.
        sub_n (int): Minimum number of Chimera unit cell columns required for 
-           minor-embedding without duplication.
+           minor-embedding a single instance of the problem.
        t (int, optional, default=4): Size of the shore within each Chimera unit 
            cell.
 
