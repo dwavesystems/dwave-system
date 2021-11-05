@@ -77,6 +77,7 @@ def effective_field(bqm,
             rows indicate independent samples, columns indicate independent variables
             ordered in accordance with the samples_like input.
     '''
+    
     if samples_like == None:
         samples = np.ones(bqm.num_variables)
         labels = bqm.variables
@@ -156,10 +157,14 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             of the estimators given bqm and samples_like.
         Tguess (float, optional):
             Seeding the optimize process can enable faster convergence.
+
     Returns:
         tuple of float and numpy array (T_estimate,T_bootstrap_estimates)
             T_estimate: a temperature estimate
             T_bootstrap_estimates: a numpy array of bootstrap estimators
+
+    See also:
+        https://doi.org/10.3389/fict.2016.00023
     '''
     
     T_estimate = 0
@@ -262,7 +267,7 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
             pathological behaviour.
             
     See also:
-        
+        https://doi.org/10.3389/fict.2016.00023
     
     '''
     
@@ -278,35 +283,3 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     T,estimators = maximum_pseudolikelihood_temperature(bqm, sampleset)
     return T
     
-def main():
-    print('Unit tests for routines. Uses tiled_cubic_lattice (convenient to test for large models with known global minima at all 1.')
-    import tiled_cubic_lattice
-    lattice_linear_scale = 4
-    
-    #bqm has gap of 2, each tile contributes 1 and there are two tiles per vertex. There are two ground states, all + and all -.
-    bqm = tiled_cubic_lattice.tiled_cubic_lattice_BQM((lattice_linear_scale,lattice_linear_scale,lattice_linear_scale))
-    N = bqm.num_variables
-    #We can add random fields [0,1), this makes the all 1 state the unique ground state.
-    random_biases = np.random.random(N)
-    for idx,key in enumerate(bqm.variables):
-        bqm.linear[key] = -random_biases[idx]
-
-    #The ground state is all 1, with a local gap in the range [1,2), all -1 remains a single bit flip gap (0,1]. And the case of a 1 bit flip away from all 1, is not a local minima. This allows useful testing of all routines.
-    samples_numpy = np.ones(shape=(3,N),dtype=dtype)
-    samples_numpy[1,:] *= -1 #Local minima
-    samples_numpy[2,0] = -1 #1 bit flip from ground state (could cost as much as 6)
-    sampleset =  dimod.SampleSet.from_samples(samples_numpy, 'SPIN', 0)
-    sampleset.relabel_variables({idx: key for idx,key in enumerate(bqm.variables)})
-    T = maximum_pseudolikelihood_temperature(bqm, sampleset, dtype=dtype)
-    print('Estimate of T',T)
-    ## Simpler case, fairly sample a single spin and check temperature is recovered
-    N = 3
-    bqm = dimod.BQM.from_ising({key : - 1 for key in range(N)},{})
-    N = bqm.num_variables
-    num_samples = 1000
-    samples_numpy = np.random.random(size=(num_samples,N))
-    invTemp = 1
-    samples_numpy = 2*(samples_numpy < (1+np.tanh(invTemp))/2) - 1
-    sampleset =  dimod.SampleSet.from_samples(samples_numpy, 'SPIN', 0)
-    T,estimators = maximum_pseudolikelihood_temperature(bqm, sampleset, dtype=float, bootstrap_size = 100)
-    print('Estimate of T',T)
