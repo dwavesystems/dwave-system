@@ -135,44 +135,42 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         num_sublattices=1
         nodes_per_cell = t * 2
         edges_per_cell = t * t
-        if ('topology' in sampler.properties
+        if not ('topology' in sampler.properties
             and 'type' in sampler.properties['topology']
             and 'shape' in sampler.properties['topology']):
-            if sampler.properties['topology']['type'] == 'chimera':
-                #Similar to legacy branch, but using properties information to
-                #robustly define target solver graph (system)
-                if len(sampler.properties['topology']['shape']) != 3: 
-                    raise ValueError('topology shape is not of length 3 '
-                                     '(not compatible with chimera)')
-                if sampler.properties['topology']['shape'][2] != t: 
-                    raise ValueError('Tiling methodology requires that solver'
-                                     'and subproblem have identical shore size')
-                m = sampler.properties['topology']['shape'][0]
-                n = sampler.properties['topology']['shape'][1]
-            else:
-                if len(sampler.properties['topology']['shape']) != 1: 
-                    raise ValueError('topology shape is not of length 1 '
-                                     '(not compatible with pegasus)')
-                #Full yield in odd-couplers also required.
-                #Generalizes chimera subgraph requirement and leads to some 
-                #simplification of expressions, but at with a cost in cell-yield
-                edges_per_cell += t
-                #Square solvers only by pegasus lattice definition PN yields
-                #3 by N-1 by N-1 cells:
-                num_sublattices=3
-                m = n = sampler.properties['topology']['shape'][0] - 1
-                if t!=4:
-                    raise ValueError(
-                        't=4 for all pegasus processors, value is not typically'
-                        'stored in solver properties and is difficult to infer.'
-                        'Therefore only the value t=4 is supported.')
-                    
+            raise ValueError('To use this composite it is necessary for the'
+                             'structured sampler to have an explicity topology'
+                             '(sampler.properties[\'topology\']). Necessary'
+                             'fields are \'type\' and \'shape\'. ')
+        if sampler.properties['topology']['type'] == 'chimera':
+            #Similar to legacy branch, but using properties information to
+            #robustly define target solver graph (system)
+            if len(sampler.properties['topology']['shape']) != 3: 
+                raise ValueError('topology shape is not of length 3 '
+                                 '(not compatible with chimera)')
+            if sampler.properties['topology']['shape'][2] != t: 
+                raise ValueError('Tiling methodology requires that solver'
+                                 'and subproblem have identical shore size')
+            m = sampler.properties['topology']['shape'][0]
+            n = sampler.properties['topology']['shape'][1]
         else:
-            warnings.warn("Incomplete solver topology information."
-                          "Falling back to unsafe legacy branch.",
-                          DeprecationWarning)
-            # assume square lattice shape, and high yield, chimera system
-            m = n = int(ceil(sqrt(ceil(len(sampler.structure.nodelist) / nodes_per_cell))))  
+            if len(sampler.properties['topology']['shape']) != 1: 
+                raise ValueError('topology shape is not of length 1 '
+                                 '(not compatible with pegasus)')
+            #Full yield in odd-couplers also required.
+            #Generalizes chimera subgraph requirement and leads to some 
+            #simplification of expressions, but at with a cost in cell-yield
+            edges_per_cell += t
+            #Square solvers only by pegasus lattice definition PN yields
+            #3 by N-1 by N-1 cells:
+            num_sublattices=3
+            m = n = sampler.properties['topology']['shape'][0] - 1
+            if t!=4:
+                raise ValueError(
+                    't=4 for all pegasus processors, value is not typically'
+                    'stored in solver properties and is difficult to infer.'
+                    'Therefore only the value t=4 is supported.')
+             
         
         if num_sublattices==1:
             #Chimera defaults. Appended coordinates (treat as first and only sublattice)
