@@ -35,6 +35,7 @@ import numpy as np
 
 import dwave.embedding
 
+import warnings
 __all__ = ['TilingComposite']
 
 
