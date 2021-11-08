@@ -25,7 +25,7 @@ from dwave.system.composites import TilingComposite
 class TestTiling(unittest.TestCase):
     def test_pegasus_single_cell(self):
         #Test trivial case of single cell (K4,4+4*odd) embedding over defect free
-        mock_sampler = MockDWaveSampler(topology_type='pegasus')  # C4 structured sampler
+        mock_sampler = MockDWaveSampler(topology_type='pegasus')  # P3 structured sampler
         self.assertTrue('topology' in mock_sampler.properties and 'type' in mock_sampler.properties['topology'])
         self.assertTrue(mock_sampler.properties['topology']['type'] == 'pegasus' and 'shape' in mock_sampler.properties['topology'])
         sampler = TilingComposite(mock_sampler, 1, 1)
@@ -40,7 +40,7 @@ class TestTiling(unittest.TestCase):
         
     def test_pegasus_multi_cell(self):
         #Test case of 2x3 cell embedding over defect free
-        mock_sampler = MockDWaveSampler(topology_type='pegasus',topology_shape=[8])  # C4 structured sampler
+        mock_sampler = MockDWaveSampler(topology_type='pegasus',topology_shape=[8])  # P8 structured sampler
         self.assertTrue('topology' in mock_sampler.properties and 'type' in mock_sampler.properties['topology'])
         self.assertTrue(mock_sampler.properties['topology']['type'] == 'pegasus' and 'shape' in mock_sampler.properties['topology'])
         sampler = TilingComposite(mock_sampler, 1, 1)
@@ -100,7 +100,46 @@ class TestTiling(unittest.TestCase):
                             {linear_index for linear_index, (i, j, u, k)
                              in hardware_graph.nodes(data='chimera_index')
                              if i in (2, 3) and j in (0, 1)})
+        
+    def test_tile_around_holes_pegasus(self):
+        pegasus_shape = [5]
+        # Create a pegasus graph with the following (nice-coordinate) structure:
+        # (j,x,y) [chimera sublattice, x-displacement, y-displacement]
+        # OOOX OOOO OOOO
+        # OOOO OOOO OOOO
+        # OOOO OOOO OOOO
+        # OOOO OOOO OOOX
+        # where O: complete cell, X: incomplete cell
+        broken_node_nice_coordinates = [(0,0,3,0,1), (2,3,3,1,3)]
+        broken_node_linear_coordinates = [
+            dnx.pegasus_coordinates(pegasus_shape[0]).nice_to_linear(coord)
+            for coord in broken_node_nice_coordinates]
 
+        # P5 structured sampler with two nodes missing
+        mock_sampler = MockDWaveSampler(topology_type='pegasus',
+                                        topology_shape=pegasus_shape,
+                                        broken_nodes=broken_node_linear_coordinates) 
+
+        sampler = TilingComposite(mock_sampler, 2, 2, 4)
+        
+        # Given the above pegasus graph, check that the embeddings are as follows:
+        # 00XX  3344 7788 
+        # 0011  3344 7788 
+        # 2211  5566 99XX  
+        # 22XX  5566 99XX
+        
+        #Check correct number of embeddings and size of each is sufficient,
+        #given chimera test checks detailed position:
+        self.assertTrue(len(sampler.embeddings) == 10)
+        self.assertFalse(any([len(emb) != 32 for emb in sampler.embeddings]))
+
+        #Can be refined to check exact positioning, but a lot of ugly code:
+        #For visualization in coordinate scheme use:
+        #for emb in sampler.embeddings:
+        #    print({key: dnx.pegasus_coordinates(pegasus_shape[0]).linear_to_nice(next(iter(val)))
+        #           for key,val in emb.items()})
+        
+        
     def test_sample_ising(self):
         sampler = TilingComposite(MockDWaveSampler(), 2, 2)
 
