@@ -170,7 +170,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         else:
             warnings.warn("Incomplete solver topology information."
                           "Falling back to unsafe legacy branch.",
-                          warnings.DeprecationWarning)
+                          DeprecationWarning)
             # assume square lattice shape, and high yield, chimera system
             m = n = int(ceil(sqrt(ceil(len(sampler.structure.nodelist) / nodes_per_cell))))  
         
