@@ -47,7 +47,7 @@ class TestMockDWaveSampler(unittest.TestCase):
         # Delete final external edge (1 edge)
     
         delete_nodes = [0]
-        delete_edges = [(5, 5)]
+        delete_edges = [(5, 7)]
         
         chimera_shape = [2, 2, 1]
         sampler = MockDWaveSampler(topology_type='chimera',

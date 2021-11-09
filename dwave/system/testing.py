@@ -84,14 +84,12 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         else:
             if broken_nodes == None:
                 broken_nodes = []
-                self.nodelist = sorted(solver_graph.nodes)
+            self.nodelist = sorted(v for v in solver_graph.nodes if v not in broken_nodes)
             if broken_edges == None:
                 broken_edges = []
-                self.nodelist = sorted(v for v in solver_graph.nodes if v not in broken_nodes) 
             self.edgelist = sorted(tuple(sorted((u, v))) for u, v in solver_graph.edges
                                    if u not in broken_nodes and v not in broken_nodes
                                    and (u, v) not in broken_edges and (v, u) not in broken_edges)
-
         # mark the sample kwargs
         self.parameters = parameters = {}
         parameters['num_reads'] = ['num_reads_range']
