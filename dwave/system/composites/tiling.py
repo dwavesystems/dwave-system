@@ -35,7 +35,6 @@ import numpy as np
 
 import dwave.embedding
 
-import warnings
 __all__ = ['TilingComposite']
 
 
@@ -131,7 +130,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             # case we would need to know how many tiles to use
             raise ValueError("given child sampler should be structured")
         self.children = [sampler]
-        #Chimera values (unless pegasus specified)
+        # Chimera values (unless pegasus specified)
         num_sublattices=1
         nodes_per_cell = t * 2
         edges_per_cell = t * t
@@ -139,12 +138,10 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             and 'type' in sampler.properties['topology']
             and 'shape' in sampler.properties['topology']):
             raise ValueError('To use this composite it is necessary for the'
-                             'structured sampler to have an explicity topology'
+                             'structured sampler to have an explicit topology'
                              '(sampler.properties[\'topology\']). Necessary'
                              'fields are \'type\' and \'shape\'. ')
         if sampler.properties['topology']['type'] == 'chimera':
-            #Similar to legacy branch, but using properties information to
-            #robustly define target solver graph (system)
             if len(sampler.properties['topology']['shape']) != 3: 
                 raise ValueError('topology shape is not of length 3 '
                                  '(not compatible with chimera)')
@@ -157,12 +154,12 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             if len(sampler.properties['topology']['shape']) != 1: 
                 raise ValueError('topology shape is not of length 1 '
                                  '(not compatible with pegasus)')
-            #Full yield in odd-couplers also required.
-            #Generalizes chimera subgraph requirement and leads to some 
-            #simplification of expressions, but at with a cost in cell-yield
+            # Full yield in odd-couplers also required.
+            # Generalizes chimera subgraph requirement and leads to some 
+            # simplification of expressions, but at with a cost in cell-yield
             edges_per_cell += t
-            #Square solvers only by pegasus lattice definition PN yields
-            #3 by N-1 by N-1 cells:
+            # Square solvers only by pegasus lattice definition PN yields
+            # 3 by N-1 by N-1 cells:
             num_sublattices=3
             m = n = sampler.properties['topology']['shape'][0] - 1
             if t!=4:
@@ -173,7 +170,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
              
         
         if num_sublattices==1:
-            #Chimera defaults. Appended coordinates (treat as first and only sublattice)
+            # Chimera defaults. Appended coordinates (treat as first and only sublattice)
             system = dnx.chimera_graph(m, n, t,
                                        node_list=sampler.structure.nodelist,
                                        edge_list=sampler.structure.edgelist)
@@ -185,7 +182,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             system = dnx.pegasus_graph(m,
                                        node_list=sampler.structure.nodelist,
                                        edge_list=sampler.structure.edgelist)
-            #Vector specification in terms of nice coordinates:
+            # Vector specification in terms of nice coordinates:
             c2i = {dnx.pegasus_coordinates(m+1).linear_to_nice(linear_index):
                    linear_index for linear_index in system.nodes()}
         

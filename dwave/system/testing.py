@@ -40,11 +40,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     
     Args:
         broken_nodes (iterable of ints):
-            List of nodes to exclude (along with associated edges). For emulation of unyielded
-            qubits.
+            List of nodes to exclude (along with associated edges). For 
+            emulation of unyielded qubits.
+        broken_edges (iterable of (int,int) tuples):
+            List of edges to exclude. For emulation of unyielded edges.
         topology_type (string, default='chimera'):
-            QPU topology being emulated. Note that for Pegasus emulation the fabric_only=True
-            graph is presented.
+            QPU topology being emulated. Note that for Pegasus emulation the 
+            fabric_only=True graph is presented.
         topology_shape (string):
             A list of three numbers [m,n,t] for Chimera, defaulted as [4,4,4]. 
             A list of one number [m] for Pegasus, defaulted as [3]. 
@@ -56,32 +58,39 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     properties = None
     parameters = None
 
-    def __init__(self, broken_nodes=None, topology_type='chimera',topology_shape=None, **config):
+    def __init__(self, broken_nodes=None, broken_edges=None,
+                 topology_type='chimera',topology_shape=None, **config):
         
         if topology_type == 'pegasus':
             if topology_shape == None:
                 topology_shape = [3]
             elif len(topology_shape) != 1:
                 raise ValueError('topology_shape must be a single-value list for Pegasus')
-            #P3 fabric_only for small manageable (but non-trivial) default. P16 full scale.
+            # P3 fabric_only for small manageable (but non-trivial) default. P16 full scale.
             solver_graph = dnx.pegasus_graph(topology_shape[0], fabric_only=True)
         elif topology_type == 'chimera':
             if topology_shape == None:
                 topology_shape = [4,4,4]
             elif len(topology_shape) != 3:
                 raise ValueError('topology_shape must be 3-value list for Chimera')
-            #solver_graph for small manageable (but non-trivial) default. C16 full scale.
+            # solver_graph for small manageable (but non-trivial) default. C16 full scale.
             solver_graph = dnx.chimera_graph(topology_shape[0], topology_shape[1], topology_shape[2])
         else:
             raise ValueError('Only \'chimera\' and \'pegasus\' topologies are supported')
         
-        if broken_nodes is None:
+        if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
             self.edgelist = sorted(tuple(sorted(edge)) for edge in solver_graph.edges)
         else:
-            self.nodelist = sorted(v for v in solver_graph.nodes if v not in broken_nodes)
+            if broken_nodes == None:
+                broken_nodes = []
+                self.nodelist = sorted(solver_graph.nodes)
+            if broken_edges == None:
+                broken_edges = []
+                self.nodelist = sorted(v for v in solver_graph.nodes if v not in broken_nodes) 
             self.edgelist = sorted(tuple(sorted((u, v))) for u, v in solver_graph.edges
-                                   if u not in broken_nodes and v not in broken_nodes)
+                                   if u not in broken_nodes and v not in broken_nodes
+                                   and (u, v) not in broken_edges and (v, u) not in broken_edges)
 
         # mark the sample kwargs
         self.parameters = parameters = {}
