@@ -26,7 +26,37 @@ class TestMockDWaveSampler(unittest.TestCase):
         sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
-
+        
+    def test_topology_arguments(self):
+        pegasus_size = 4
+        sampler = MockDWaveSampler(topology_type='pegasus',topology_shape=[pegasus_size])
+        # P4 fabric only has 264 nodes
+        self.assertTrue(len(sampler.nodelist)==264)
+        dit.assert_sampler_api(sampler)
+        dit.assert_structured_api(sampler)
+        
+    def test_yield_arguments(self):
+        # Request 1 node and 1 edge deletion, check resulting graph 
+        #    1      3
+        #  X      2
+        #
+        #    5 -X-  7
+        #  4      6
+        # Defect free case: 8 nodes. 4 external edges, 4 internal edges
+        # Delete first node (2 edges, 1 node)
+        # Delete final external edge (1 edge)
+    
+        delete_nodes = [0]
+        delete_edges = [(5, 7)]
+        
+        chimera_shape = [2, 2, 1]
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=chimera_shape,
+                                   broken_nodes=delete_nodes,
+                                   broken_edges=delete_edges)
+        self.assertTrue(len(sampler.nodelist)==7)
+        self.assertTrue(len(sampler.edgelist)==5)
+        
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
         sampler = MockLeapHybridDQMSampler()
