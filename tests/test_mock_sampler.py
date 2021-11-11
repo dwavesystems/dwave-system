@@ -30,7 +30,7 @@ class TestMockDWaveSampler(unittest.TestCase):
     def test_chimera_topology(self):
         grid_parameter = 5
         tile_parameter = 2
-        sampler = MockDWaveSampler(topology_type='pegasus',
+        sampler = MockDWaveSampler(topology_type='chimera',
                                    topology_shape=[grid_parameter,
                                                    grid_parameter,
                                                    tile_parameter])
