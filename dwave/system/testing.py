@@ -108,14 +108,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         else:
             if broken_nodes is None:
                 broken_nodes = []
-<<<<<<< HEAD
             self.nodelist = sorted(set(solver_graph.nodes).difference(broken_nodes))
             if broken_edges == None:
-=======
-            self.nodelist = sorted(v for v in solver_graph.nodes
-                                   if v not in broken_nodes)
-            if broken_edges is None:
->>>>>>> dc529c2 (Modified requirements for dwave_networkx, minor edits on pull request review)
                 broken_edges = []
             self.edgelist = sorted(tuple(sorted((u, v))) for
                                    u, v in solver_graph.edges
