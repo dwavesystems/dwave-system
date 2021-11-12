@@ -67,7 +67,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  topology_type='chimera',topology_shape=None, **config):
         
         if topology_type == 'zephyr':
-            if topology_shape == None:
+            if topology_shape is None:
                 topology_shape = [2,4]
             elif len(topology_shape) != 2:
                 raise ValueError('topology_shape must be a 2-value '
@@ -77,7 +77,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             solver_graph = dnx.zephyr_graph(topology_shape[0],
                                             topology_shape[1])
         elif topology_type == 'pegasus':
-            if topology_shape == None:
+            if topology_shape is None:
                 topology_shape = [3]
             elif len(topology_shape) != 1:
                 raise ValueError('topology_shape must be a single-value '
@@ -87,7 +87,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             solver_graph = dnx.pegasus_graph(topology_shape[0],
                                              fabric_only=True)
         elif topology_type == 'chimera':
-            if topology_shape == None:
+            if topology_shape is None:
                 topology_shape = [4,4,4]
             elif len(topology_shape) != 3:
                 raise ValueError('topology_shape must be 3-value list '
@@ -106,10 +106,16 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             self.edgelist = sorted(tuple(sorted(edge))
                                    for edge in solver_graph.edges)
         else:
-            if broken_nodes == None:
+            if broken_nodes is None:
                 broken_nodes = []
+<<<<<<< HEAD
             self.nodelist = sorted(set(solver_graph.nodes).difference(broken_nodes))
             if broken_edges == None:
+=======
+            self.nodelist = sorted(v for v in solver_graph.nodes
+                                   if v not in broken_nodes)
+            if broken_edges is None:
+>>>>>>> dc529c2 (Modified requirements for dwave_networkx, minor edits on pull request review)
                 broken_edges = []
             self.edgelist = sorted(tuple(sorted((u, v))) for
                                    u, v in solver_graph.edges
@@ -131,8 +137,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['num_qubits'] = len(solver_graph)
         properties['category'] = 'qpu'
         properties['quota_conversion_rate'] = 1
-        properties['topology'] = {'type' : topology_type,
-                                  'shape' : topology_shape}
+        properties['topology'] = {'type': topology_type,
+                                  'shape': topology_shape}
         properties['chip_id'] = 'MockDWaveSampler'
         properties['annealing_time_range'] = [1.0, 2000.0]
         properties['num_qubits'] = len(self.nodelist)
