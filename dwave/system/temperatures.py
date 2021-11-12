@@ -82,6 +82,27 @@ def effective_field(bqm,
         numpy.array: An array of effective fields for each variable in each sample.
             rows indicate independent samples, columns indicate independent variables
             ordered in accordance with the samples_like input.
+
+    Examples:
+       For a Ferromagnetic Ising chain H = - 1/2 sum_i s_i s_{i+1}
+       and for a ground state sample (all +1), the energy lost when flipping
+       any spin is equal to the number of couplers frustrated: -2 in the center
+       of the chain, and -1 at the end. Note the value is negative (the energy 
+       goes up when we flip - as expected because we are evaluating a ground 
+       state).
+       
+       >>> import dimod
+       >>> import numpy as np
+       >>> from dwave.system.temperatures import effective_field
+       >>> N = 5
+       >>> bqm = dimod.BinaryQuadraticModel.from_ising(
+                     {}, 
+                     {(i,i+1) : -1 for i in range(N-1)})
+       >>> var_labels = list(range(N))
+       >>> samples_like = (np.ones(shape=(1,N)), var_labels)
+       >>> E = effective_field(bqm,samples_like,current_state_energy=True)
+       >>> print('Cost to flip spin against current assignment', E)
+       
     '''
     
     if samples_like == None:
@@ -92,18 +113,22 @@ def effective_field(bqm,
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
         variable_order=labels,
         dtype=dtype)
-    
+
+    # eff_field = h + J*s
     effective_field = np.tile(h[np.newaxis,:],(samples.shape[0],1))
     for sI in range(samples.shape[0]):
         np.add.at(effective_field[sI,:],irow,qdata*samples[sI,icol])
         np.add.at(effective_field[sI,:],icol,qdata*samples[sI,irow])
+
     if current_state_energy == True:
+        #Ising: eff_field = 2*s*(h + J*s)
         if bqm.vartype == dimod.vartypes.Vartype.SPIN:
             effective_field = 2*samples*effective_field
         elif bqm.vartype == dimod.vartypes.Vartype.BINARY:
             effective_field = (2*samples-1)*effective_field
         else:
             raise ValueError('Unknown vartype for BQM')
+
     return effective_field
 
 def maximum_pseudolikelihood_temperature(bqm = None,
@@ -170,6 +195,32 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             T_estimate: a temperature estimate
             T_bootstrap_estimates: a numpy array of bootstrap estimators
 
+    Examples:
+       Draw samples from the default DWaveSampler() for a large spin-glass 
+       problem (random couplers J, zero external field h).
+       Establish a temperature estimate by maximum pseudo-likelihood. 
+
+       Note that due to the complicated freeze-out properties of hard models,
+       such as large scale spin-glasses, deviation from a classical Boltzmann 
+       distribution is anticipated.
+       Nevertheless, the T estimate can always be interpretted as an estimator
+       of local excitations rates. For example T will be 0 if only 
+       local minima are returned (even if some of the local minima are not 
+       ground states).
+       
+       >>> import dimod
+       >>> from dwave.system.temperatures import maximum_pseudolikelihood_temperature
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> from random import random
+       >>> sampler = DWaveSampler()     # doctest: +SKIP
+       >>> bqm = dimod.BinaryQuadraticModel.from_ising(
+                     {}, 
+                     {e : 1-2*random() for e in sampler.edgelist})     # doctest: +SKIP
+       >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)     # doctest: +SKIP
+       >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm,sampleset)     # doctest: +SKIP
+       >>> print('Effective temperature '
+                 ,T)     # doctest: +SKIP
+       
     See also:
         https://doi.org/10.3389/fict.2016.00023
     '''
@@ -232,27 +283,38 @@ def maximum_pseudolikelihood_temperature(bqm = None,
 def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',units_T = 'mK'):
     ''' Provides an effective temperature as function of freezeout information.
     
-    A quantum annealer is assumed to implement a Hamiltonian
+    A D-Wave quantum annealer is assumed to implement a Hamiltonian
     H = B(s)/2 H_P - A(s)/2 H_D. H_P is the problem (classical) Hamiltonian
-    and H_D is the driver Hamiltonian.
+    and H_D is the driver Hamiltonian. B(s) is the problem energy scale and A(s)
+    is the driver (transverse field) energy scale, s is the normalized anneal
+    time s = t/t_a (in [0,1]).
 
     If a quantum annealer achieves an equilibrated distribution 
     over decohered states late in the anneal then the transverse field is 
     negligible: A(s) << B(s). 
-    If dynamics stop abruptly the equilibrated distribution is described 
-    by a classical Boltzmann distribution for classical states s that may 
-    be measured in accordance with a probability distribution:
+    If in addition dynamics stop abruptly the equilibrated distribution is 
+    described by a classical Boltzmann distribution for classical spin states s 
+    that may be measured in accordance with a probability distribution:
     P(s) = exp(- B(s*) H_P(s) / 2 kB T)
     B(s*) is the schedule energy scale associated to the problem Hamiltonian, 
     T is the physical temperature and kB is the Boltzmann constant.
-    We can define a unitless effective temperature to complement the unitless
-    Hamiltonian definition as T_eff = 2 kB T/B(s*), returned by this function.
+    We can define a unitless effective temperature, to complement the unitless
+    Hamiltonian, definition as T_eff = 2 kB T/B(s*), returned by this function.
+    P(s) = exp(-H_P(s)/T_eff)
 
     Single qubit freeze-out (s*) is well characterized as part of calibration 
     processes and reported alongside annealing schedules {A(s),B(s)} and 
     device temperature. This allows an effective temperature to be calculated 
     for online solvers, appropriate for some simple Hamiltonians. Values are
-    typically specified in mK and GHz.
+    typically specified in mK and GHz. More complicated systems such as chains
+    may freeze-out differently (at different s, or asynchronously). Large
+    problems may have slow dynamics at small s, where A(s) cannot be ignored.
+    One should also be aware of known noise model properties for purposes 
+    of interpretting a temperature.
+
+    Note that for QPU solvers this temperature applies to programmed 
+    Hamiltonians H_P submitted with auto_scale = False. If auto_scale=True 
+    (default) an additional scaling factor is required.
 
     Args:
         freezeout_B (float):
@@ -274,7 +336,13 @@ def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',unit
         float : The effective (unitless) temperature. 
     
     Examples:
-        
+       This example uses the published parameters for the Advantage_system4.1
+       solver: B(s=0.612) = 3.91 GHz , T = 15.4mK.
+       
+       >>> from dwave.system.temperatures import freezeout_effective_temperature
+       >>> T = freezeout_effective_temperature(freezeout_B = 3.91,
+                                               temperature = 15.4)
+       >>> print('Effective temperature at single qubit freeze-out is',T)
     '''
     
     #Convert units_B to Joules
@@ -349,6 +417,14 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     See also:
         https://doi.org/10.3389/fict.2016.00023
     
+    Examples:
+       Draw samples from the default DWaveSampler(), and establish the temperature
+       
+       >>> from dwave.system.temperatures import fast_effective_temperature
+       >>> from dwave.system.samplers import DWaveSampler
+       >>> sampler = DWaveSampler()
+       >>> T = fast_effective_temperature(sampler)     # doctest: +SKIP
+       >>> print('Effective temperature at freeze-out is',T)     # doctest: +SKIP
     '''
     
     if sampler == None:

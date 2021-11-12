@@ -23,22 +23,32 @@ from dwave.system.temperatures import (maximum_pseudolikelihood_temperature,
 
 from dwave.system.testing import MockDWaveSampler
 
+try:
+    from neal import SimulatedAnnealingSampler
+except ImportError:
+    from dimod import SimulatedAnnealingSampler
+
 
 class TestTemperatures(unittest.TestCase):
     
     def test_effective_field(self):
-        #A sampler at 24mK, with B(s*)=1GHz at
-        #freeze-out, yields an effective temperature
-        #of 1.
-        num_var = 10
+        # For a simple model of independent spins H = sum_i s_i
+        # The effective field is 1 (setting a spin to 1, costs 1 unit of energy,
+        # relative to its exclusion)
+        num_var = 3
         num_samples = 2
         var_labels = list(range(num_var))
         bqm = dimod.BinaryQuadraticModel.from_ising({var: 1 for var in var_labels}, {})
         samples_like = (np.ones(shape=(num_samples,num_var)),var_labels)
         E = effective_field(bqm,
                             samples_like)
-        self.assertTrue(True)
-    
+        self.assertTrue(np.array_equal(np.ones(shape=(num_samples,num_var)), E))
+        # energy lost in flipping from sample value (1) to -1 is H(1) - H(-1) = +2.
+        E = effective_field(bqm,
+                            samples_like,
+                            current_state_energy=True)
+        self.assertTrue(np.array_equal(2*np.ones(shape=(num_samples,num_var)), E))
+        
     def test_maximum_pseudolikelihood_temperature(self):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.
@@ -56,25 +66,42 @@ class TestTemperatures(unittest.TestCase):
         self.assertTrue(type(T) is tuple and len(T)==2)
 
     def test_freezeout_effective_temperature(self):
-        #24mK and 1GHz line up conveniently for T=1.000
+        # 24mK and 1GHz line up conveniently for T=1.00
         BsGHz=1
         TmK=24
         T = freezeout_effective_temperature(BsGHz,TmK)
-        self.assertTrue(np.round(T*1000)==1000)
+        self.assertTrue(np.round(T*100)==100)
+        
+        # https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
+        # Accessed November 12th, 2021
+        # Advantage_system4.1 (Advantage): B(s=0.612) = 3.91GHz , T = 15.4mK
+        # T_eff = 0.16
+        # DW_2000Q_6 (DW2000Q-LN): B(s=0.719) = 6.54GHz , T = 13.5mK
+        # T_eff = 0.086 
+        BsGHz=3.91
+        TmK=15.4
+        T = freezeout_effective_temperature(BsGHz,TmK)
+        self.assertTrue(np.round(T*100)==16)
+        
+        BsGHz=6.54
+        TmK=13.5
+        T = freezeout_effective_temperature(BsGHz,TmK)
+        self.assertTrue(np.round(T*1000)==86)
+        
         
     def test_fast_effective_temperature(self):
-        #Initializing in a ground state, all effective
-        #fields must be non-negative.
+        # Initializing in a ground state, all effective
+        # fields must be non-negative.
         sampler = MockDWaveSampler()
         T = fast_effective_temperature(sampler=sampler)
-        #Simulated Annealer will tend to return only ground
-        #states, hence temperature 0. But exceptions are
-        #possible. Hence no assertion on value
+        # Simulated Annealer will tend to return only ground
+        # states, hence temperature 0. But exceptions are
+        # possible. Hence no assertion on value.
         
     def test_bqm_versus_ising(self):
-        #Add test to check handling of BQM
+        # Add test to check handling of BQM
         self.assertTrue(True)
 
     def test_bootstrap_errors(self):
-        #Add test to check bootstrap estimator implementation
+        # Add test to check bootstrap estimator implementation
         self.assertTrue(True)
