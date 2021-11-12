@@ -98,8 +98,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                              topology_shape[1],
                                              topology_shape[2])
         else:
-            raise ValueError('Only \'chimera\', \'pegasus\' and \'zephyr\' '
-                             'topologies are supported')
+            raise ValueError("Only 'chimera', 'pegasus' and 'zephyr' "
+                             "topologies are supported")
         
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
