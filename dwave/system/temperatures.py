@@ -12,21 +12,27 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""The maximum pseudo-likelihood estimator for temperature and auxiliary 
-functions.
+"""Effective temperature estimators
 
 Maximum pseudo-likelihood is an efficient estimator for the temperature 
 describing a classical Boltzmann distribution P(x) = exp(-H(x)/T)/Z(T) 
-given samples from that distribution, where H(x) is the energy function."""
+given samples from that distribution, where H(x) is the classical energy 
+function. This estimator is implemented.
 
-#import os
-#import json
-#import networkx as nx
+A temperature can also be inferred from an assumed single late freeze-out 
+of dynamics in combination with schedule energy scales. This estimator is
+implemented.
+
+See also: https://doi.org/10.3389/fict.2016.00023
+""" 
+
+import warnings
 import numpy as np
 import dimod
 from scipy import optimize
 
-__all__ = ['effective_field', 'maximum_pseudolikelihood_temperature', 'fast_effective_temperature']
+__all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
+           'freezeout_effective_temperature', 'fast_effective_temperature']
 
 def effective_field(bqm,
                     samples_like,
@@ -145,9 +151,10 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         sampleset (:class:`dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
             a Boltzmann distribution characterized by bqm.
-        site_energy (numpy array, optional):
-            The effective fields associated to a sampleset and bqm.
-            An effective field distribution derived from the 
+        site_energy (2d numpy array, optional):
+            The effective fields associated to a sampleset and bqm. Rows
+            denote spins, columns samples.
+            An effective field matrix derived from the 
             bqm and sampleset if not provided.
         dtype=None
         bootstrap_size (int, optional, default=0):
@@ -222,6 +229,76 @@ def maximum_pseudolikelihood_temperature(bqm = None,
     
     return T_estimate, T_bootstrap_estimates
 
+def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',units_T = 'mK'):
+    ''' Provides an effective temperature as function of freezeout information.
+    
+    A quantum annealer is assumed to implement a Hamiltonian
+    H = B(s)/2 H_P - A(s)/2 H_D. H_P is the problem (classical) Hamiltonian
+    and H_D is the driver Hamiltonian.
+
+    If a quantum annealer achieves an equilibrated distribution 
+    over decohered states late in the anneal then the transverse field is 
+    negligible: A(s) << B(s). 
+    If dynamics stop abruptly the equilibrated distribution is described 
+    by a classical Boltzmann distribution for classical states s that may 
+    be measured in accordance with a probability distribution:
+    P(s) = exp(- B(s*) H_P(s) / 2 kB T)
+    B(s*) is the schedule energy scale associated to the problem Hamiltonian, 
+    T is the physical temperature and kB is the Boltzmann constant.
+    We can define a unitless effective temperature to complement the unitless
+    Hamiltonian definition as T_eff = 2 kB T/B(s*), returned by this function.
+
+    Single qubit freeze-out (s*) is well characterized as part of calibration 
+    processes and reported alongside annealing schedules {A(s),B(s)} and 
+    device temperature. This allows an effective temperature to be calculated 
+    for online solvers, appropriate for some simple Hamiltonians. Values are
+    typically specified in mK and GHz.
+
+    Args:
+        freezeout_B (float):
+            The schedule value for the problem Hamiltonian at freeze-out.
+
+        temperature (float):
+            The physical temperature of the annealer.
+        
+        units_B (string, optional, 'GHz'):
+            Units in which the schedule is specified. Allowed values:
+            'GHz' (Giga-Hertz) and 'J' (Joules).
+
+        units_T (string, optional, 'mK'):
+            Units in which the schedule is specified. Allowed values:
+            'mK' and 'K'.
+
+    
+    Returns:
+        float : The effective (unitless) temperature. 
+    
+    Examples:
+        
+    '''
+    
+    #Convert units_B to Joules
+    if units_B == 'GHz':
+        h = 6.626068e-34 #J/Hz
+        freezeout_B = freezeout_B *h
+        freezeout_B *= 1e9
+    elif units_B == 'J':
+        pass
+    else:
+        raise ValueException("Units must be 'J' (Joules) "
+                             "or 'mK' (milli-Kelvin)")
+    
+    if units_T == 'mK':
+        temperature = temperature * 1e-3
+    elif units_T == 'K':
+        pass
+    else:
+        raise ValueException("Units must be 'K' (Kelvin) "
+                             "or 'mK' (milli-Kelvin)")
+    kB = 1.3806503e-23 # J/K
+    
+    return 2*temperature*kB/freezeout_B
+
 def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 6):
     ''' Provides a single programming estimate to the effective temperature.
     
@@ -239,7 +316,7 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     This method is closely related to a <x_i> = tanh(h/T) chi^2 fitting 
     procedure, in effect the gradient is returned by this method. 
     Maximum-likelihood however places greater weight on the rare (but 
-    informative) fluctuations in the strongly biased portion of the tanh() 
+    informative) fluctuations in the strongly biased portion of the tanh 
     curve relative to chi^2 fitting. Both methods yield the same 
     temperature up to sampling error. Maximum pseudo-likelihood generalizes
     to temperature estimates over samples drawn from arbitrary Hamiltonians.
@@ -250,16 +327,19 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     freeze-out B(s=0.612) = 3.91GHz, and operational temperature of
     15.4mK, imply an effective temperature for single qubits of
     T_guess = B(s^*)/[2 k_B T] ~ 6 which is used by default; and is 
-    sufficiently close for other devices. 
+    sufficiently close for related online systems.
 
     Args:
         sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`\ ``(client="qpu")``):
             A D-Wave sampler. 
+
         num_reads (int, optional, default = 100):
             Number of reads to use.
+
         seed (int, optional):
             Seeds the problem generation process. Allowing reproducibility
             from pseudo-random samplers.
+
         T_guess (int, optional, default = 6.1):
             Determines the range of biases probed for temperature
             inference; an accurate choice raises the efficiency
@@ -275,6 +355,20 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
         from dwave.system.samplers import DWaveSampler
         sampler = DWaveSampler()
     h_range = [-2/T_guess, 2/T_guess]
+    if hasattr(sampler,'properties') and 'h_range' in sampler.properties:
+        warn_user = False
+        if h_range[0] < sampler.properties['h_range'][0]:
+           h_range[0] = sampler.properties['h_range'][0]
+           warn_user = True
+        if h_range[1] > sampler.properties['h_range'][1]:
+            h_range[1] = sampler.properties['h_range'][1]
+            warn_user = True
+        if warn_user:
+            warnings.warn(
+                'T_guess is small (relative to programmable h_range). '
+                'Maximum h_range is employed, but this may be '
+                'statistically inefficient.')
+            
     prng = np.random.RandomState(seed)
     h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
     bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx] for idx,var in enumerate(sampler.nodelist)}, {})
