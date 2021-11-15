@@ -27,14 +27,40 @@ class TestMockDWaveSampler(unittest.TestCase):
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
         
-    def test_topology_arguments(self):
-        pegasus_size = 4
-        sampler = MockDWaveSampler(topology_type='pegasus',topology_shape=[pegasus_size])
+    def test_chimera_topology(self):
+        grid_parameter = 5
+        tile_parameter = 2
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=[grid_parameter,
+                                                   grid_parameter,
+                                                   tile_parameter])
+        # C5 (shore 2) fabric only has 200 nodes
+        self.assertTrue(len(sampler.nodelist)==
+                        grid_parameter*grid_parameter*tile_parameter*2)
+        dit.assert_sampler_api(sampler)
+        dit.assert_structured_api(sampler)
+
+    def test_pegasus_topology(self):
+        grid_parameter = 4
+        sampler = MockDWaveSampler(topology_type='pegasus',
+                                   topology_shape=[grid_parameter])
         # P4 fabric only has 264 nodes
         self.assertTrue(len(sampler.nodelist)==264)
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
-        
+
+    def test_zephyr_topology(self):
+        grid_parameter = 3
+        tile_parameter = 4
+        sampler = MockDWaveSampler(topology_type='zephyr',
+                                   topology_shape=[grid_parameter,
+                                                   tile_parameter])
+        # P4 fabric only has 264 nodes
+        self.assertTrue(len(sampler.nodelist)==
+                        tile_parameter*grid_parameter*(8*grid_parameter + 4))
+        dit.assert_sampler_api(sampler)
+        dit.assert_structured_api(sampler)
+    
     def test_yield_arguments(self):
         # Request 1 node and 1 edge deletion, check resulting graph 
         #    1      3

@@ -42,14 +42,19 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         broken_nodes (iterable of ints):
             List of nodes to exclude (along with associated edges). For 
             emulation of unyielded qubits.
+        
         broken_edges (iterable of (int,int) tuples):
             List of edges to exclude. For emulation of unyielded edges.
+        
         topology_type (string, default='chimera'):
             QPU topology being emulated. Note that for Pegasus emulation the 
-            fabric_only=True graph is presented.
+            fabric_only=True graph is presented. Supported options are
+            'chimera', 'pegasus' or 'zephyr'
+            
         topology_shape (string):
             A list of three numbers [m,n,t] for Chimera, defaulted as [4,4,4]. 
-            A list of one number [m] for Pegasus, defaulted as [3]. 
+            A list of one number [m] for Pegasus, defaulted as [3].
+            A list of two numbers [m,t] for Zephyr, defaulted as [2,4].  
     
     """
 
@@ -61,35 +66,57 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     def __init__(self, broken_nodes=None, broken_edges=None,
                  topology_type='chimera',topology_shape=None, **config):
         
-        if topology_type == 'pegasus':
-            if topology_shape == None:
+        if topology_type == 'zephyr':
+            if topology_shape is None:
+                topology_shape = [2,4]
+            elif len(topology_shape) != 2:
+                raise ValueError('topology_shape must be a 2-value '
+                                 'list for Zephyr')
+            # Z2 for small manageable (but non-trivial) default.
+            # Z15 full scale.
+            solver_graph = dnx.zephyr_graph(topology_shape[0],
+                                            topology_shape[1])
+        elif topology_type == 'pegasus':
+            if topology_shape is None:
                 topology_shape = [3]
             elif len(topology_shape) != 1:
-                raise ValueError('topology_shape must be a single-value list for Pegasus')
-            # P3 fabric_only for small manageable (but non-trivial) default. P16 full scale.
-            solver_graph = dnx.pegasus_graph(topology_shape[0], fabric_only=True)
+                raise ValueError('topology_shape must be a single-value '
+                                 'list for Pegasus')
+            # P3 fabric_only for small manageable (but non-trivial) default.
+            # P16 full scale.
+            solver_graph = dnx.pegasus_graph(topology_shape[0],
+                                             fabric_only=True)
         elif topology_type == 'chimera':
-            if topology_shape == None:
+            if topology_shape is None:
                 topology_shape = [4,4,4]
             elif len(topology_shape) != 3:
-                raise ValueError('topology_shape must be 3-value list for Chimera')
-            # solver_graph for small manageable (but non-trivial) default. C16 full scale.
-            solver_graph = dnx.chimera_graph(topology_shape[0], topology_shape[1], topology_shape[2])
+                raise ValueError('topology_shape must be 3-value list '
+                                 'for Chimera')
+            # solver_graph for small manageable (but non-trivial) default.
+            # C16 full scale.
+            solver_graph = dnx.chimera_graph(topology_shape[0],
+                                             topology_shape[1],
+                                             topology_shape[2])
         else:
-            raise ValueError('Only \'chimera\' and \'pegasus\' topologies are supported')
+            raise ValueError("Only 'chimera', 'pegasus' and 'zephyr' "
+                             "topologies are supported")
         
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
-            self.edgelist = sorted(tuple(sorted(edge)) for edge in solver_graph.edges)
+            self.edgelist = sorted(tuple(sorted(edge))
+                                   for edge in solver_graph.edges)
         else:
-            if broken_nodes == None:
+            if broken_nodes is None:
                 broken_nodes = []
-            self.nodelist = sorted(v for v in solver_graph.nodes if v not in broken_nodes)
+            self.nodelist = sorted(set(solver_graph.nodes).difference(broken_nodes))
             if broken_edges == None:
                 broken_edges = []
-            self.edgelist = sorted(tuple(sorted((u, v))) for u, v in solver_graph.edges
-                                   if u not in broken_nodes and v not in broken_nodes
-                                   and (u, v) not in broken_edges and (v, u) not in broken_edges)
+            self.edgelist = sorted(tuple(sorted((u, v))) for
+                                   u, v in solver_graph.edges
+                                   if u not in broken_nodes
+                                   and v not in broken_nodes
+                                   and (u, v) not in broken_edges
+                                   and (v, u) not in broken_edges)
         # mark the sample kwargs
         self.parameters = parameters = {}
         parameters['num_reads'] = ['num_reads_range']
@@ -104,7 +131,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties['num_qubits'] = len(solver_graph)
         properties['category'] = 'qpu'
         properties['quota_conversion_rate'] = 1
-        properties['topology'] = {'type' : topology_type, 'shape' : topology_shape}
+        properties['topology'] = {'type': topology_type,
+                                  'shape': topology_shape}
         properties['chip_id'] = 'MockDWaveSampler'
         properties['annealing_time_range'] = [1.0, 2000.0]
         properties['num_qubits'] = len(self.nodelist)
