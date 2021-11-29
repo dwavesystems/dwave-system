@@ -102,7 +102,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """list: List of active qubits for the structured solver."""
 
     edgelist = None
-    """list: List of active couplers for the D-Wave solver."""
+    """list: List of active couplers for the structured solver."""
 
     parameters = None
     """dict[str, list]: Parameters in the form of a dict."""
@@ -112,6 +112,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
     children = None
     """list: The single wrapped structured sampler."""
+
+    embeddings = []
+    """list: Embeddings into each available tile on the structured solver."""
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
 
@@ -212,7 +215,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                         and _between(qubits, qubits) == edges_per_cell)
 
         # List of 'embeddings'
-        self.embeddings = properties['embeddings'] = embeddings = []
+        self.embeddings = properties['embeddings'] = embeddings
 
         # For each possible chimera cell check if the next few cells are complete
         for s in range(num_sublattices):
@@ -312,4 +315,5 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
 
     @property
     def num_tiles(self):
+        """Number of tiles available for replicating the problem."""
         return len(self.embeddings)

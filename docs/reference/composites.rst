@@ -40,7 +40,7 @@ Properties
    CutOffComposite.children
    CutOffComposite.parameters
    CutOffComposite.properties
-   
+
 Methods
 ~~~~~~~
 
@@ -220,7 +220,9 @@ Properties
    TilingComposite.child
    TilingComposite.children
    TilingComposite.edgelist
+   TilingComposite.embeddings
    TilingComposite.nodelist
+   TilingComposite.num_tiles
    TilingComposite.parameters
    TilingComposite.properties
    TilingComposite.structure
