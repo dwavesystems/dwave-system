@@ -251,9 +251,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                                         embedding[sub_c2i[sub_i, sub_j, u, k]] = {
                                             c2i[(s,i + sub_i, j + sub_j, u, k)]}
 
-                        embeddings.append(embedding)
+                        self.embeddings.append(embedding)
 
-        if len(embeddings) == 0:
+        if len(self.embeddings) == 0:
             raise ValueError("no tile embeddings found; "
                              "is the sampler Pegasus or Chimera structured?")
 
