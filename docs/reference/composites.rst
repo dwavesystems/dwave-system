@@ -38,10 +38,9 @@ Properties
 
    CutOffComposite.child
    CutOffComposite.children
-   CutOffComposite.properties
    CutOffComposite.parameters
-
-
+   CutOffComposite.properties
+   
 Methods
 ~~~~~~~
 
@@ -68,9 +67,8 @@ Properties
 
    PolyCutOffComposite.child
    PolyCutOffComposite.children
-   PolyCutOffComposite.properties
    PolyCutOffComposite.parameters
-
+   PolyCutOffComposite.properties
 
 Methods
 ~~~~~~~
@@ -158,13 +156,13 @@ Properties
 .. autosummary::
    :toctree: generated/
 
-   FixedEmbeddingComposite.properties
-   FixedEmbeddingComposite.parameters
-   FixedEmbeddingComposite.children
-   FixedEmbeddingComposite.child
-   FixedEmbeddingComposite.nodelist
-   FixedEmbeddingComposite.edgelist
    FixedEmbeddingComposite.adjacency
+   FixedEmbeddingComposite.child
+   FixedEmbeddingComposite.children
+   FixedEmbeddingComposite.edgelist
+   FixedEmbeddingComposite.nodelist
+   FixedEmbeddingComposite.parameters
+   FixedEmbeddingComposite.properties
    FixedEmbeddingComposite.structure
 
 Methods
@@ -190,11 +188,11 @@ Properties
    :toctree: generated/
 
 
+   LazyFixedEmbeddingComposite.adjacency
+   LazyFixedEmbeddingComposite.edgelist
+   LazyFixedEmbeddingComposite.nodelist
    LazyFixedEmbeddingComposite.parameters
    LazyFixedEmbeddingComposite.properties
-   LazyFixedEmbeddingComposite.nodelist
-   LazyFixedEmbeddingComposite.edgelist
-   LazyFixedEmbeddingComposite.adjacency
    LazyFixedEmbeddingComposite.structure
 
 Methods
@@ -218,13 +216,13 @@ Properties
 .. autosummary::
    :toctree: generated/
 
-   TilingComposite.properties
-   TilingComposite.parameters
-   TilingComposite.children
-   TilingComposite.child
-   TilingComposite.nodelist
-   TilingComposite.edgelist
    TilingComposite.adjacency
+   TilingComposite.child
+   TilingComposite.children
+   TilingComposite.edgelist
+   TilingComposite.nodelist
+   TilingComposite.parameters
+   TilingComposite.properties
    TilingComposite.structure
 
 Methods
@@ -248,13 +246,13 @@ Properties
 .. autosummary::
    :toctree: generated/
 
-   VirtualGraphComposite.properties
-   VirtualGraphComposite.parameters
-   VirtualGraphComposite.children
-   VirtualGraphComposite.child
-   VirtualGraphComposite.nodelist
-   VirtualGraphComposite.edgelist
    VirtualGraphComposite.adjacency
+   VirtualGraphComposite.child
+   VirtualGraphComposite.children
+   VirtualGraphComposite.edgelist
+   VirtualGraphComposite.nodelist
+   VirtualGraphComposite.parameters
+   VirtualGraphComposite.properties
    VirtualGraphComposite.structure
 
 Methods
@@ -287,9 +285,8 @@ Properties
 
    ReverseBatchStatesComposite.child
    ReverseBatchStatesComposite.children
-   ReverseBatchStatesComposite.properties
    ReverseBatchStatesComposite.parameters
-
+   ReverseBatchStatesComposite.properties
 
 Methods
 ~~~~~~~
@@ -314,9 +311,8 @@ Properties
 
    ReverseAdvanceComposite.child
    ReverseAdvanceComposite.children
-   ReverseAdvanceComposite.properties
    ReverseAdvanceComposite.parameters
-
+   ReverseAdvanceComposite.properties
 
 Methods
 ~~~~~~~

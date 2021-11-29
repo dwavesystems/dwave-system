@@ -13,8 +13,8 @@
 #    limitations under the License.
 
 """
-A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that tiles
-small problems multiple times to a structured sampler.
+A :ref:`dimod composite <oceandocs:samplers_index>` that tiles small problems
+multiple times to a structured sampler.
 
 The :class:`.TilingComposite` class takes a problem that can fit on a small
 :term:`Chimera` graph and replicates it across a larger Pegasus or
