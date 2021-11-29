@@ -215,7 +215,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                         and _between(qubits, qubits) == edges_per_cell)
 
         # List of 'embeddings'
-        self.embeddings = properties['embeddings'] = embeddings
+        self.embeddings = properties['embeddings'] = embeddings = []
 
         # For each possible chimera cell check if the next few cells are complete
         for s in range(num_sublattices):
