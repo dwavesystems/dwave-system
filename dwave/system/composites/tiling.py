@@ -13,13 +13,13 @@
 #    limitations under the License.
 
 """
-A :std:doc:dimod composite <oceandocs:docs_dimod/reference/samplers> that tiles 
+A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that tiles
 small problems multiple times to a structured sampler.
 
-The :class:.TilingComposite class takes a problem that can fit on a small
-:term:Chimera graph and replicates it across a larger Pegasus or
+The :class:`.TilingComposite` class takes a problem that can fit on a small
+:term:`Chimera` graph and replicates it across a larger Pegasus or
 Chimera graph to obtain samples from multiple areas of the solver in one call.
-For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a 
+For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a
 fully-yielded D-Wave 2000Q system (16x16).
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -41,40 +41,39 @@ __all__ = ['TilingComposite']
 class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     """Composite to tile a small problem across a structured sampler.
 
-
-
-    Enables parallel sampling on Chimera or Pegasus structured samplers of 
-    small problems. The small problem should be defined on a :term:`Chimera` 
-    graph of dimensions ``sub_m``, ``sub_n``, ``t``, or minor-embeddable to 
+    Enables parallel sampling on Chimera or Pegasus structured samplers of
+    small problems. The small problem should be defined on a :term:`Chimera`
+    graph of dimensions ``sub_m``, ``sub_n``, ``t``, or minor-embeddable to
     such a graph.
 
-    Notation *CN* refers to a Chimera graph consisting of an NxN grid of unit 
-    cells, where each unit cell is a bipartite graph with shores of size t. 
-    The D-Wave 2000Q QPU supports a C16 Chimera graph: its 2048 qubits are 
-    logically mapped into a 16x16 matrix of unit cells of 8 qubits (t=4). 
-    See also :func:dwave_networkx.chimera_graph 
+    Notation *CN* refers to a Chimera graph consisting of an NxN grid of unit
+    cells, where each unit cell is a bipartite graph with shores of size t.
+    The D-Wave 2000Q QPU supports a C16 Chimera graph: its 2048 qubits are
+    logically mapped into a 16x16 matrix of unit cells of 8 qubits (t=4).
+    See also the :func:`dwave_networkx.chimera_graph` function.
 
-    Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid 
-    of cells, where each unit cell is a bipartite graph with shore of size t, 
-    supplemented with odd couplers (see nice_coordinate definition). The 
-    Advantage QPU supports a P16 Pegasus graph: its qubits may be mapped to a 
+    Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid
+    of cells, where each unit cell is a bipartite graph with shore of size t,
+    supplemented with odd couplers (see ``nice_coordinate`` definition in
+    the :func:`dwave_networkx.pegasus_graph` function). The
+    Advantage QPU supports a P16 Pegasus graph: its qubits may be mapped to a
     3x15x15 matrix of unit cells, each of 8 qubits. This code supports tiling of
     Chimera-structured problems, with an option of additional odd-couplers,
-    onto Pegasus. See also :func:dwave_networkx.pegasus_graph .
+    onto Pegasus. See also the :func:`dwave_networkx.pegasus_graph` function.
 
-    A problem that can be minor-embedded in a single chimera unit cell, for 
-    example, can therefore be tiled across the unit cells of a D-Wave 2000Q as 
+    A problem that can be minor-embedded in a single chimera unit cell, for
+    example, can therefore be tiled across the unit cells of a D-Wave 2000Q as
     16x16 duplicates (or Advantage as 3x15x15 duplicates), subject to solver
     yield. This enables up to 256 (625) parallel samples per read.
 
     Args:
-       sampler (:class:`dimod.Sampler`): Structured dimod sampler such as a 
+       sampler (:class:`dimod.Sampler`): Structured dimod sampler such as a
            :class:`~dwave.system.samplers.DWaveSampler()`.
        sub_m (int): Minimum number of Chimera unit cell rows required for
            minor-embedding a single instance of the problem.
-       sub_n (int): Minimum number of Chimera unit cell columns required for 
+       sub_n (int): Minimum number of Chimera unit cell columns required for
            minor-embedding a single instance of the problem.
-       t (int, optional, default=4): Size of the shore within each Chimera unit 
+       t (int, optional, default=4): Size of the shore within each Chimera unit
            cell.
 
     Examples:
@@ -142,20 +141,20 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                              '(sampler.properties[\'topology\']). Necessary'
                              'fields are \'type\' and \'shape\'. ')
         if sampler.properties['topology']['type'] == 'chimera':
-            if len(sampler.properties['topology']['shape']) != 3: 
+            if len(sampler.properties['topology']['shape']) != 3:
                 raise ValueError('topology shape is not of length 3 '
                                  '(not compatible with chimera)')
-            if sampler.properties['topology']['shape'][2] != t: 
+            if sampler.properties['topology']['shape'][2] != t:
                 raise ValueError('Tiling methodology requires that solver'
                                  'and subproblem have identical shore size')
             m = sampler.properties['topology']['shape'][0]
             n = sampler.properties['topology']['shape'][1]
         else:
-            if len(sampler.properties['topology']['shape']) != 1: 
+            if len(sampler.properties['topology']['shape']) != 1:
                 raise ValueError('topology shape is not of length 1 '
                                  '(not compatible with pegasus)')
             # Full yield in odd-couplers also required.
-            # Generalizes chimera subgraph requirement and leads to some 
+            # Generalizes chimera subgraph requirement and leads to some
             # simplification of expressions, but at with a cost in cell-yield
             edges_per_cell += t
             # Square solvers only by pegasus lattice definition PN yields
@@ -167,14 +166,14 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                     't=4 for all pegasus processors, value is not typically'
                     'stored in solver properties and is difficult to infer.'
                     'Therefore only the value t=4 is supported.')
-             
-        
+
+
         if num_sublattices==1:
             # Chimera defaults. Appended coordinates (treat as first and only sublattice)
             system = dnx.chimera_graph(m, n, t,
                                        node_list=sampler.structure.nodelist,
                                        edge_list=sampler.structure.edgelist)
-            
+
             c2i = {(0, *chimera_index) : linear_index
                    for (linear_index, chimera_index)
                    in system.nodes(data='chimera_index')}
@@ -185,16 +184,16 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             # Vector specification in terms of nice coordinates:
             c2i = {dnx.pegasus_coordinates(m+1).linear_to_nice(linear_index):
                    linear_index for linear_index in system.nodes()}
-        
+
         sub_c2i = {chimera_index: linear_index for (linear_index, chimera_index)
                    in tile.nodes(data='chimera_index')}
-        
+
         # Count the connections between these qubits
         def _between(qubits1, qubits2):
             edges = [edge for edge in system.edges if edge[0] in qubits1
                      and edge[1] in qubits2]
             return len(edges)
-        
+
         # Get the list of qubits in a cell
         def _cell_qubits(s, i, j):
             return [c2i[(s, i, j, u, k)] for u in range(2) for k in range(t)
@@ -203,7 +202,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         # get a mask of complete cells
         cells = [[[False for _ in range(n)] for _ in range(m)]
                  for _ in range(num_sublattices)]
-        
+
         for s in range(num_sublattices):
             for i in range(m):
                 for j in range(n):
@@ -211,7 +210,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                     cells[s][i][j] = (
                         len(qubits) == nodes_per_cell
                         and _between(qubits, qubits) == edges_per_cell)
-                    
+
         # List of 'embeddings'
         self.embeddings = properties['embeddings'] = embeddings = []
 
@@ -219,12 +218,12 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         for s in range(num_sublattices):
             for i in range(m + 1 - sub_m):
                 for j in range(n + 1 - sub_n):
-                    
+
                     # Check if the sub cells are matched
                     match = all(cells[s][i + sub_i][j + sub_j]
                                 for sub_i in range(sub_m)
                                 for sub_j in range(sub_n))
-                    
+
                     # Check if there are connections between the cells.
                     # Both Pegasus and Chimera have t vertical and t horizontal between cells:
                     for sub_i in range(sub_m):
@@ -237,7 +236,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
                                 match &= _between(
                                     _cell_qubits(s, i + sub_i, j + sub_j),
                                     _cell_qubits(s, i + sub_i, j + sub_j + 1)) == t
-                    
+
                     if match:
                         # Pull those cells out into an embedding.
                         embedding = {}
@@ -254,7 +253,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         if len(embeddings) == 0:
             raise ValueError("no tile embeddings found; "
                              "is the sampler Pegasus or Chimera structured?")
-        
+
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
         """Sample from the specified binary quadratic model.
