@@ -515,4 +515,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                   node_list=self.nodelist,
                                   edge_list=self.edgelist)
 
+        elif topology_type == 'zephyr':
+            G = dnx.zephyr_graph(shape[0],
+                                  node_list=self.nodelist,
+                                  edge_list=self.edgelist)
+
         return G
