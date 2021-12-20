@@ -48,7 +48,19 @@ class TestTemperatures(unittest.TestCase):
                             samples_like,
                             current_state_energy=True)
         self.assertTrue(np.array_equal(2*np.ones(shape=(num_samples,num_var)), E))
-        
+
+    def test_effective_field_vartype(self):
+        # Check effective fields are identical whether using bqm or ising model
+        num_var = 4
+        var_labels = list(range(num_var))
+        bqm = dimod.BinaryQuadraticModel.from_ising({var: var for var in var_labels}, {(var1,var2) : var1%2 + var2%2 - 1 for var1 in var_labels for var2 in var_labels})
+        E_ising = effective_field(bqm,current_state_energy=True)
+        bqm.change_vartype('BINARY',inplace=True)
+        E_bqm = effective_field(bqm,current_state_energy=True)
+        print(E_ising,E_bqm)
+        self.assertTrue(np.array_equal(E_ising, E_bqm))
+   
+
     def test_maximum_pseudolikelihood_temperature(self):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.

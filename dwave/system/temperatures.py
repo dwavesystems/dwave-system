@@ -18,12 +18,15 @@ Maximum pseudo-likelihood is an efficient estimator for the temperature
 describing a classical Boltzmann distribution P(x) = exp(-H(x)/T)/Z(T) 
 given samples from that distribution, where H(x) is the classical energy 
 function. This estimator is implemented.
+See also: https://doi.org/10.3389/fict.2016.00023 
+https://www.jstor.org/stable/25464568
 
-A temperature can also be inferred from an assumed single late freeze-out 
-of dynamics in combination with schedule energy scales. This estimator is
-implemented.
+A temperature can also be inferred from an assumed freeze-out phenomena in 
+combination with the schedule energy scale [B(s), the energy of the problem 
+Hamiltonian]. This estimator is implemented. Relevant device-specific properties
+are published for online solvers:
+https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
 
-See also: https://doi.org/10.3389/fict.2016.00023
 """ 
 
 import warnings
@@ -35,15 +38,14 @@ __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature']
 
 def effective_field(bqm,
-                    samples_like,
-                    current_state_energy=False,
-                    dtype=None):
+                    samples_like=None,
+                    current_state_energy=False):
     '''Returns the effective field for all variables and all samples.
     
-    The effective field with current_state_energy = False is the bias 
-    attributable to a single variable conditioned on fixed values for all 
-    neighboring spins (the additional energy associated to inclusion of 
-    variable i in state +1, relative to its exclusion). 
+    The effective field with current_state_energy = False is the energy
+    attributable to setting a variable to value 1, conditioned on fixed values 
+    for all neighboring variables (relative to exclusion of the variable, and 
+    associated energy terms, from the problem). 
     
     The effective field with current_state_energy = True is the energy gained
     by flipping the variable state against its current value (from say -1 to 1 
@@ -68,20 +70,17 @@ def effective_field(bqm,
             A collection of raw samples. `samples_like` is an extension of
             NumPy's array_like_ structure. See examples below.
             When not provided, a single sample with all +1 assignments is
-            created, ordered by bqm.variables.
-        dtype (data-type, optional): 
-            Type casting for effective field. Should match bqm interaction
-            types when not defaulted. Allows calculation of fields that 
-            are not double precision floats (numpy default). 
+            created, ordered by bqm.variables. 
         current_state_energy (bool, optional, default=False): 
-            * False * Returns effective field, the energy cost of inclusion
-                of a variable in state 1.
+            * False * Returns effective field, the energy cost (lost) by 
+                inclusion of a variable in state 1.
             * True * Returns energy gained in flipping the value of a variable
                 against that determined by samples_like. 
     Returns:
-        numpy.array: An array of effective fields for each variable in each sample.
-            rows indicate independent samples, columns indicate independent variables
-            ordered in accordance with the samples_like input.
+        numpy.array: An array of effective fields for each variable in each 
+            sample. rows indicate independent samples, columns indicate 
+            independent variables ordered in accordance with the samples_like 
+            input.
 
     Examples:
        For a Ferromagnetic Ising chain H = - 1/2 sum_i s_i s_{i+1}
@@ -104,38 +103,34 @@ def effective_field(bqm,
        >>> print('Cost to flip spin against current assignment', E)
        
     '''
-    
-    if samples_like == None:
-        samples = np.ones(bqm.num_variables)
+    if bqm.vartype == dimod.vartypes.Vartype.BINARY:
+        #Copy and convert to spin type.
+        #Not efficient, but useful for clarity.
+        bqm = bqm.change_vartype('SPIN', inplace=False)
+       
+    if samples_like is None:
+        samples = np.ones(shape=(1,bqm.num_variables))
         labels = bqm.variables
     else:
         samples, labels = dimod.sampleset.as_samples(samples_like)
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
-        variable_order=labels,
-        dtype=dtype)
-
-    # eff_field = h + J*s
-    effective_field = np.tile(h[np.newaxis,:],(samples.shape[0],1))
+        variable_order=labels)
+    # eff_field = h + J*s OR diag(Q) + (Q-diag(Q))*b
+    effective_fields = np.tile(h[np.newaxis,:],(samples.shape[0],1))
     for sI in range(samples.shape[0]):
-        np.add.at(effective_field[sI,:],irow,qdata*samples[sI,icol])
-        np.add.at(effective_field[sI,:],icol,qdata*samples[sI,irow])
+        np.add.at(effective_fields[sI,:],irow,qdata*samples[sI,icol])
+        np.add.at(effective_fields[sI,:],icol,qdata*samples[sI,irow])
 
-    if current_state_energy == True:
+    if current_state_energy is True:
         #Ising: eff_field = 2*s*(h + J*s)
-        if bqm.vartype == dimod.vartypes.Vartype.SPIN:
-            effective_field = 2*samples*effective_field
-        elif bqm.vartype == dimod.vartypes.Vartype.BINARY:
-            effective_field = (2*samples-1)*effective_field
-        else:
-            raise ValueError('Unknown vartype for BQM')
-
-    return effective_field
+        effective_fields = 2*samples*effective_fields
+        
+    return effective_fields
 
 def maximum_pseudolikelihood_temperature(bqm = None,
                                          sampleset = None,
                                          site_energy = None,
                                          bootstrap_size = 0,
-                                         dtype=None,
                                          seed=None,
                                          Tguess=None):
     '''Returns a sampling-based temperature estimate.
@@ -146,16 +141,17 @@ def maximum_pseudolikelihood_temperature(bqm = None,
     Given a sample set a temperature estimate establishes the temperature that 
     is most likely to have produced the sample set.
     An effective temperature can be derived from a sampleset by considering the 
-    rate of excitations only. A maximum-pseudo-likelihood estimator considers
-    local excitations only, which are sufficient to establish a temperature 
-    efficiently (in compute time and number of samples). If the bqm consists
-    of independent variable problems (linear bias only) then the estimator
-    is equivalent to a maximum likelihood estimator.
+    rate of excitations only. A maximum-pseudo-likelihood (MPL) estimator 
+    considers local excitations only, which are sufficient to establish a 
+    temperature efficiently (in compute time and number of samples). If the bqm
+    consists of independent variable problems (no couplings between variables) 
+    then the estimator is equivalent to a maximum likelihood estimator.
     
-    The effective temperature is defined by the solution T to 
-    0 = sum_i \sum_{s in S}} nu_i(s) exp(beta nu_i(s)), 
-    where nu is the energy cost of flipping spin i against its current 
-    assignment (the effective field).
+    The effective MPL temperature is defined by the solution T to 
+    0 = sum_i \sum_{s in S}} nu_i(s) exp(nu_i(s)/T), 
+    where nu is the energy lost in flipping spin i against its current 
+    assignment (the effective field). 
+    
     The problem is a convex root solving problem, and is solved with scipy 
     optimize.
 
@@ -164,8 +160,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
     estimate can be interpretted as characterizing only a rate of local 
     excitations. In the case of sample sets obtained from D-Wave quantum 
     annealing the temperature can be identified with a physical temperature via
-    a late-anneal freeze-out phenomena. Further context is provided in this 
-    paper:
+    a late-anneal freeze-out phenomena.
     
     Args:
         bqm (:obj:`dimod.BinaryQuadraticModel`, optional):
@@ -181,7 +176,6 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             denote spins, columns samples.
             An effective field matrix derived from the 
             bqm and sampleset if not provided.
-        dtype=None
         bootstrap_size (int, optional, default=0):
             Number of bootstrap estimators to calculate.
         seed (int, optional)
@@ -223,6 +217,8 @@ def maximum_pseudolikelihood_temperature(bqm = None,
        
     See also:
         https://doi.org/10.3389/fict.2016.00023
+        https://www.jstor.org/stable/25464568
+        
     '''
     
     T_estimate = 0
@@ -235,7 +231,6 @@ def maximum_pseudolikelihood_temperature(bqm = None,
                              'bqm and sampleset are provided as arguments')
         site_energy = effective_field(bqm,
                                       sampleset,
-                                      dtype=dtype,
                                       current_state_energy = True)
         
     max_excitation = np.max(site_energy,axis=1)
@@ -338,11 +333,14 @@ def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',unit
     Examples:
        This example uses the published parameters for the Advantage_system4.1
        solver: B(s=0.612) = 3.91 GHz , T = 15.4mK.
+       https://docs.dwavesys.com/docs/latest/doc_physical_properties.html 
+       accessed November 22nd 2021.
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91,
                                                temperature = 15.4)
        >>> print('Effective temperature at single qubit freeze-out is',T)
+    
     '''
     
     #Convert units_B to Joules
@@ -371,24 +369,32 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     ''' Provides a single programming estimate to the effective temperature.
     
     A set of single qubit problems are submitted to the sampler, and excitations
-    are counted - allowing an inference of the maximum-pseudolikelihood estimator
-    for temperature (for special case of single spins, equivalent to maximum 
-    likelihood estimator).
+    are counted - allowing an inference of the maximum-pseudolikelihood 
+    estimator for temperature (for special case of single spins, equivalent to 
+    maximum likelihood estimator).  
+
+    This method is closely related to chi^2 fitting procedure for T, where
+    <x_i> = tanh(h/T), as described in documentation.  
+    Maximum-likelihood however places greater weight on the rare (but 
+    informative) fluctuations in the strongly biased portion of the tanh 
+    curve, relative to chi^2 fitting. This causes differences for non-Boltzmann
+    distributions, particularly those with rare non-thermal high energy 
+    excitations. When the distribution is Boltzmann, both methods yield the same
+    temperature up to sampling error. Maximum likelihood estimation generalizes
+    to temperature estimates over samples drawn from arbitrary Hamiltonians,
+    pseudo-likelihood estimation is efficient for arbitrary Hamiltonians.
+    
+    The Advantage QPU has known deviations from an ideal Boltzmann sampler such,
+    as flux noise, please refer to literature and documentation for more 
+    details. Estimators accounting for such non-idealities may produce
+    different results.
 
     For statistical efficiency, and in the case of QPU to avoid poor performance
     [due to noise and calibration non-idealities], it can be useful to submit 
-    problems with biases comparable to 1/Temperature. The default value
+    problems with energies comparable to 1/Temperature. The default value
     is based upon the single-qubit freeze-out hypothesis: B(s*)/kB T, for the 
-    online system at temperature of 12mK, freeze-out value s*
+    online system at temperature of 12mK, freeze-out value s*.
 
-    This method is closely related to a <x_i> = tanh(h/T) chi^2 fitting 
-    procedure, in effect the gradient is returned by this method. 
-    Maximum-likelihood however places greater weight on the rare (but 
-    informative) fluctuations in the strongly biased portion of the tanh 
-    curve relative to chi^2 fitting. Both methods yield the same 
-    temperature up to sampling error. Maximum pseudo-likelihood generalizes
-    to temperature estimates over samples drawn from arbitrary Hamiltonians.
-    
     We need to probe problems at an energy scale where excitations
     are common, but at which a sampler is not dominated by noise (precision).
     For Advantage_system1.1 the longitudinal field value at 
@@ -409,10 +415,12 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
             from pseudo-random samplers.
 
         T_guess (int, optional, default = 6.1):
-            Determines the range of biases probed for temperature
+            Determines the range of external fields (h_i) probed for temperature
             inference; an accurate choice raises the efficiency
-            of the estimator. A very bad choice may lead to
-            pathological behaviour.
+            of the estimator. An inappropriate choice may lead to
+            pathological behaviour. Default is based on D-Wave Advantage 
+            processor temperature and energy scales, and is also suitable for 
+            D-Wave 2000Q processor inference.
             
     See also:
         https://doi.org/10.3389/fict.2016.00023
@@ -452,4 +460,3 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     sampleset = sampler.sample(bqm, **sampler_params)
     T,estimators = maximum_pseudolikelihood_temperature(bqm, sampleset)
     return T
-    
