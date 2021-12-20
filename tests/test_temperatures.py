@@ -60,7 +60,6 @@ class TestTemperatures(unittest.TestCase):
         print(E_ising,E_bqm)
         self.assertTrue(np.array_equal(E_ising, E_bqm))
    
-
     def test_maximum_pseudolikelihood_temperature(self):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.

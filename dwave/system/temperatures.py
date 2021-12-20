@@ -105,7 +105,7 @@ def effective_field(bqm,
     '''
     if bqm.vartype == dimod.vartypes.Vartype.BINARY:
         #Copy and convert to spin type.
-        #Not efficient, but useful for clarity.
+        #Not most efficient, but useful for clarity.
         bqm = bqm.change_vartype('SPIN', inplace=False)
        
     if samples_like is None:
