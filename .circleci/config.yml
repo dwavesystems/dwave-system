@@ -25,8 +25,9 @@ jobs:
           command: |
             python -m venv env
             . env/bin/activate
+            pip install -U pip
             pip install -r requirements.txt -r tests/requirements.txt
-            pip install --upgrade 'dimod<< parameters.dimod-version >>'
+            pip install 'dimod<< parameters.dimod-version >>'
 
       - save_cache: &save-test-cache-template
           paths:
@@ -93,7 +94,7 @@ jobs:
         type: string
 
     macos:
-      xcode: "12.2.0"
+      xcode: "13.2.0"
 
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
@@ -108,7 +109,21 @@ jobs:
 
       - restore_cache:
           keys:
-            - pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-12.2.0
+            - pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-13.2.0
+
+      - when:
+          # backport https://github.com/python/cpython/pull/21113 to support macOS 11 when building py36
+          # see also: https://github.com/pyenv/pyenv/issues/1737.
+          condition:
+            matches:
+              pattern: "^3\\.6.*$"
+              value: << parameters.python-version >>
+          steps:
+            - run:
+                name: Install Python 3.6 with a patch for macOS 11
+                command: |
+                  curl -LO https://github.com/python/cpython/commit/8ea6353.patch
+                  pyenv install << parameters.python-version>> -s -p < 8ea6353.patch
 
       - run:
           name: install python
@@ -118,17 +133,19 @@ jobs:
       - save_cache:
           paths:
             - ~/.pyenv
-          key: pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-12.2.0
+          key: pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-13.2.0
 
       - restore_cache: *restore-test-cache-template
 
       - run:
           name: create virtual env and install dependencies
           command: |
+            eval "$(pyenv init --path 2>/dev/null || true)"
             eval "$(pyenv init -)"
-            pyenv local << parameters.python-version >>
+            pyenv shell << parameters.python-version >>
             python -m venv env
             . env/bin/activate
+            pip install -U pip
             pip install -r requirements.txt -r tests/requirements.txt
 
       - save_cache: *save-test-cache-template
@@ -137,7 +154,7 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:3.6-jessie
+      - image: circleci/python:3.9
 
     steps:
       - checkout
@@ -176,10 +193,14 @@ workflows:
           name: test-linux-<< matrix.python-version >>-dimod<< matrix.dimod-version >>
           matrix:
             parameters:
-              python-version: &python-versions [3.6.8, 3.7.9, 3.8.9, &latest-python 3.9.4]
+              python-version: &python-versions ["3.6.8", "3.7.9", "3.8.9", "3.9.4", &latest-python "3.10.0"]
               integration-test-python-version: &integration-python-versions [*latest-python]
-
-              dimod-version: [==0.10.0, <0.11]
+              dimod-version: ["==0.10.0", "~=0.10.0"]
+            exclude:
+              # py310 is supported in dimod>=0.10.8
+              - python-version: "3.10.0"
+                integration-test-python-version: *latest-python
+                dimod-version: "==0.10.0"
       - test-osx:
           name: test-osx-<< matrix.python-version >>
           matrix:
