@@ -16,7 +16,7 @@ import unittest
 import itertools
 import random
 
-from collections import Mapping
+from collections.abc import Mapping
 
 import networkx as nx
 import numpy as np

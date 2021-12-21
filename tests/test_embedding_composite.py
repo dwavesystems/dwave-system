@@ -16,7 +16,7 @@ import itertools
 import unittest
 import warnings
 
-from collections import Mapping
+from collections.abc import Mapping
 
 import dimod
 import dwave_networkx as dnx

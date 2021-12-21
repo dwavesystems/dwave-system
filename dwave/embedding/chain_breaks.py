@@ -14,7 +14,7 @@
 
 """Unembedding samples with broken chains."""
 
-from collections import Callable
+from collections.abc import Callable
 from heapq import heapify, heappop
 
 import numpy as np
