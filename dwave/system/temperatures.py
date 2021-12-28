@@ -100,9 +100,7 @@ def effective_field(bqm,
        >>> import numpy as np
        >>> from dwave.system.temperatures import effective_field
        >>> N = 5
-       >>> bqm = dimod.BinaryQuadraticModel.from_ising(
-                     {}, 
-                     {(i,i+1) : -1 for i in range(N-1)})
+       >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {(i,i+1) : -1 for i in range(N-1)})
        >>> var_labels = list(range(N))
        >>> samples_like = (np.ones(shape=(1,N)), var_labels)
        >>> E = effective_field(bqm,samples_like,current_state_energy=True)
@@ -172,7 +170,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         bqm (:obj:`dimod.BinaryQuadraticModel`, optional):
             Binary quadratic model describing sample distribution.
             If bqm and site_energy are both None, then by default 
-            100 samples are drawn from the default DWaveSolver(), 
+            100 samples are drawn from the default DWaveSampler(), 
             with bqm defaulted as described.
         sampleset (:class:`dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
@@ -220,8 +218,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
                      {e : 1-2*random() for e in sampler.edgelist})     # doctest: +SKIP
        >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)     # doctest: +SKIP
        >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm,sampleset)     # doctest: +SKIP
-       >>> print('Effective temperature '
-                 ,T)     # doctest: +SKIP
+       >>> print('Effective temperature ',T)     # doctest: +SKIP
        
     See also:
         https://doi.org/10.3389/fict.2016.00023
@@ -450,7 +447,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
        
        >>> from dwave.system.temperatures import fast_effective_temperature
        >>> from dwave.system.samplers import DWaveSampler
-       >>> sampler = DWaveSampler()
+       >>> sampler = DWaveSampler() # doctest: +SKIP
        >>> T = fast_effective_temperature(sampler)     # doctest: +SKIP
        >>> print('Effective temperature at freeze-out is',T)     # doctest: +SKIP
     '''
