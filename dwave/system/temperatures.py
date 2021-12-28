@@ -213,9 +213,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
        >>> from dwave.system.samplers import DWaveSampler
        >>> from random import random
        >>> sampler = DWaveSampler()     # doctest: +SKIP
-       >>> bqm = dimod.BinaryQuadraticModel.from_ising(
-                     {}, 
-                     {e : 1-2*random() for e in sampler.edgelist})     # doctest: +SKIP
+       >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})     # doctest: +SKIP
        >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)     # doctest: +SKIP
        >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm,sampleset)     # doctest: +SKIP
        >>> print('Effective temperature ',T)     # doctest: +SKIP
