@@ -55,10 +55,11 @@ def effective_field(bqm,
     If all values are negative  (positive) within a sample, that sample is a 
     local minima (maxima).  
 
-    In context of the Ising model formalism (any BQM can be converted to an 
-    Ising model with unique values of J and h):
+    Any BQM can be converted to an Ising model with
+    
+    H(s) = Constant + sum_ij J_ij s_i s_j + sum_i h_i s_i
 
-    For H(s) = sum_ij J_ij s_i s_j + sum_i h_i s_i
+    with unique values of J and h. Returned values are then defined
 
     if current_state_energy == False:
         effective_field(i,s) = sum_j (J_ij  s_j + J_ji s_i) + h_i
