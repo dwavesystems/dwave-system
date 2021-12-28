@@ -19,7 +19,7 @@ describing a classical Boltzmann distribution P(x) = exp(-H(x)/T)/Z(T)
 given samples from that distribution, where H(x) is the classical energy 
 function. This estimator is implemented.
 See also: https://doi.org/10.3389/fict.2016.00023 
-https://www.jstor.org/stable/25464568
+https://www.jstor.org/stable/25464568 # doctest: +SKIP
 
 A temperature can also be inferred from an assumed freeze-out phenomena in 
 combination with the schedule energy scale [B(s), the energy of the problem 
