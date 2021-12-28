@@ -104,7 +104,7 @@ def effective_field(bqm,
        >>> var_labels = list(range(N))
        >>> samples_like = (np.ones(shape=(1,N)), var_labels)
        >>> E = effective_field(bqm,samples_like,current_state_energy=True)
-       >>> print('Cost to flip spin against current assignment', E)
+       >>> print('Cost to flip spin against current assignment', E)      # doctest: +SKIP
        
     '''
     if bqm.vartype == dimod.vartypes.Vartype.BINARY:
@@ -343,7 +343,7 @@ def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',unit
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)
-       >>> print('Effective temperature at single qubit freeze-out is',T)
+       >>> print('Effective temperature at single qubit freeze-out is',T)     # doctest: +SKIP
     
     '''
     
