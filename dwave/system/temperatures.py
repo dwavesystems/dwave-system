@@ -344,8 +344,7 @@ def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',unit
        accessed November 22nd 2021.
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
-       >>> T = freezeout_effective_temperature(freezeout_B = 3.91,
-                                               temperature = 15.4)
+       >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)
        >>> print('Effective temperature at single qubit freeze-out is',T)
     
     '''
