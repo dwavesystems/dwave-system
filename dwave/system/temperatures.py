@@ -238,7 +238,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         
     max_excitation = np.max(site_energy,axis=1)
     max_excitation_all =  np.max(max_excitation)
-    if max_excitation_all < 0:
+    if max_excitation_all <= 0:
         #There are no local excitations present in the sample set, therefore
         #the temperature is estimated as 0. 
         pass
@@ -246,10 +246,10 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         def f(x):
             #O = sum_i sum_s log P(s,i)
             #log P(s,i) = - log(1 + exp[- 2 beta nu_i(s)])
-            expFactor = np.exp(site_energy*x)
+            expFactor = np.exp((site_energy-max_excitation_all)*x)
             return np.sum(site_energy/(1 + expFactor))        
         def fprime(x):
-            expFactor = np.exp(site_energy*x)
+            expFactor = np.exp((site_energy-max_excitation_all)*x)
             return np.sum(-site_energy*site_energy/((1 + expFactor)*(1 + 1/expFactor)))
         
         #Ensures good gradient method, except pathological cases
@@ -257,7 +257,6 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             x0 = -1/max_excitation_all
         else:
             x0 = -1/Tguess
-        
         #Root finding trivial for this application, any naive root finder will
         #succeed to find the unique root:
         root_results = optimize.root_scalar(f=f, fprime=fprime, x0 = x0)
