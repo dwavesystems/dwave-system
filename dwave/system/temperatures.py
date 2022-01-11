@@ -79,8 +79,10 @@ def effective_field(bqm,
                 Returns effective field, the energy cost (lost) by 
                 inclusion of a variable in state 1.
             *True*:
-                Returns energy gained in flipping the value of a variable
-                against that determined by samples_like. 
+                Returns energy lost in flipping the value of a variable
+                against that determined by samples_like. Note this 
+                is typically negative for positive temperature samples,
+                i.e. energy goes up when a variable is flipped.
     Returns:
         numpy.array: 
             An array of effective fields for each variable in each 
@@ -243,14 +245,22 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         #the temperature is estimated as 0. 
         pass
     else:
-        def f(x):
-            #O = sum_i sum_s log P(s,i)
-            #log P(s,i) = - log(1 + exp[- 2 beta nu_i(s)])
-            expFactor = np.exp((site_energy-max_excitation_all)*x)
-            return np.sum(site_energy/(1 + expFactor))        
-        def fprime(x):
-            expFactor = np.exp((site_energy-max_excitation_all)*x)
-            return np.sum(-site_energy*site_energy/((1 + expFactor)*(1 + 1/expFactor)))
+        
+        def d_mean_log_pseudo_likelihood(x):
+            #Derivative of mean (w.r.t samples) log pseudo liklihood amounts
+            #to local energy matching criteria
+            #O = sum_i sum_s e_i(s) P(s,i) #s = sample, i = variable index
+            #e_i(s) is energy lost in flipping spin s_i against current assignment.
+            #P(s,i) = 1/(1 + exp[x e_i(s)]), probability to flip against current state.
+            #x = -1/T
+            expFactor = np.exp(site_energy*x)
+            return np.sum(site_energy/(1 + expFactor))
+        
+        def dd_mean_log_pseudo_likelihood(x):
+            #For very large or small site energies this may be numerically
+            #unstable, therefore we prefer a bisection section.
+            expFactor = np.exp(site_energy*x)
+            return np.sum(-site_energy*site_energy/(expFactor + 2 + 1/expFactor))
         
         #Ensures good gradient method, except pathological cases
         if Tguess == None:
@@ -259,7 +269,29 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             x0 = -1/Tguess
         #Root finding trivial for this application, any naive root finder will
         #succeed to find the unique root:
-        root_results = optimize.root_scalar(f=f, fprime=fprime, x0 = x0)
+        bracket=[-1e-3,-1000]
+        if d_mean_log_pseudo_likelihood(bracket[0])>0:
+            warnings.warn(
+                'Temperature is greater than 1000, or perhaps negative:' 
+                'rescaling the Hamiltonian appropriately will allow estimations'
+                'of higher temperatures, but more likely there is a precision'
+                'issue. '
+                'Automated precision requirements mean that this routine works'
+                'best when energy gaps are O(1).')
+            root_results = bracket[0]
+        elif d_mean_log_pseudo_likelihood(bracket[1])<0:
+            warnings.warn(
+                'Temperature is less than 1/1000:'
+                'rescaling the Hamiltonian appropriately will allow estimations'
+                'of lower temperatures, but more likely there is a precision'
+                'issue or you have a sign error (negative temperature).'
+                'Automated precision requirements mean that this routine works'
+                'best when energy gaps are O(1).')
+            root_results = bracket[1]
+        else:
+            root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood,
+                                                #fprime=dd_mean_log_pseudo_likelihood,
+                                                x0 = x0, method='bisect',bracket=bracket)
         T_estimate = -1/(root_results.root)
         if bootstrap_size > 0:
             #By bootstrapping with respect to samples we 
