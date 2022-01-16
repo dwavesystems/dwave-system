@@ -149,6 +149,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         properties["problem_run_duration_range"] = [0.0, 1000000.0]
         properties["programming_thermalization_range"] = [0.0, 10000.0]
         properties["readout_thermalization_range"] = [0.0, 10000.0]
+        properties["qubits"] = self.nodelist.copy()
+        properties["couplers"] = self.edgelist.copy()
 
         
     @dimod.bqm_structured
