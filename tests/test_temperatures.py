@@ -57,7 +57,6 @@ class TestTemperatures(unittest.TestCase):
         E_ising = effective_field(bqm,current_state_energy=True)
         bqm.change_vartype('BINARY',inplace=True)
         E_bqm = effective_field(bqm,current_state_energy=True)
-        print(E_ising,E_bqm)
         self.assertTrue(np.array_equal(E_ising, E_bqm))
    
     def test_maximum_pseudolikelihood_temperature(self):

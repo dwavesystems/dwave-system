@@ -1,4 +1,4 @@
-# Copyright 2021 D-Wave Systems Inc.
+# Copyright 2022 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ describing a classical Boltzmann distribution P(x) = exp(-H(x)/T)/Z(T)
 given samples from that distribution, where H(x) is the classical energy 
 function. This estimator is implemented.
 See also: https://doi.org/10.3389/fict.2016.00023 
-https://www.jstor.org/stable/25464568 # doctest: +SKIP
+https://www.jstor.org/stable/25464568
 
 A temperature can also be inferred from an assumed freeze-out phenomena in 
 combination with the schedule energy scale [B(s), the energy of the problem 
@@ -278,7 +278,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
                 'issue. '
                 'Automated precision requirements mean that this routine works'
                 'best when energy gaps are O(1).')
-            root_results = bracket[0]
+            T_estimate = -1/bracket[0]
         elif d_mean_log_pseudo_likelihood(bracket[1])<0:
             warnings.warn(
                 'Temperature is less than 1/1000:'
@@ -287,12 +287,13 @@ def maximum_pseudolikelihood_temperature(bqm = None,
                 'issue or you have a sign error (negative temperature).'
                 'Automated precision requirements mean that this routine works'
                 'best when energy gaps are O(1).')
-            root_results = bracket[1]
+            
+            T_estimate = -1/bracket[1]
         else:
             root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood,
                                                 #fprime=dd_mean_log_pseudo_likelihood,
                                                 x0 = x0, method='bisect',bracket=bracket)
-        T_estimate = -1/(root_results.root)
+            T_estimate = -1/(root_results.root)
         if bootstrap_size > 0:
             #By bootstrapping with respect to samples we 
             x0 = root_results.root
@@ -514,7 +515,6 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
     else:
         sampler_params['num_reads'] = num_reads
     sampler_params['auto_scale'] = False
-    print(sampler_params)
     sampleset = sampler.sample(bqm, **sampler_params)
     T,estimators = maximum_pseudolikelihood_temperature(bqm, sampleset)
     return T
