@@ -715,31 +715,40 @@ class LeapHybridCQMSampler:
                              f"({time_limit}s provided), "
                              "see .min_time_limit method")
 
+        contact_sales_str = "Contact D-Wave at sales@dwavesys.com if your " + \
+                            "application requires scale or performance that " + \
+                            "exceeds the currently advertised capabilities of " + \
+                            "this hybrid solver."
+
         if len(cqm.constraints) > self.properties['maximum_number_of_constraints']:
             raise ValueError(
                 "constrained quadratic model must have "
                 f"{self.properties['maximum_number_of_constraints']} or fewer "
-                f"constraints, given model has {len(cqm.constraints)}")
+                f"constraints; given model has {len(cqm.constraints)}. "
+                f"{contact_sales_str}")
 
         if len(cqm.variables) > self.properties['maximum_number_of_variables']:
             raise ValueError(
                 "constrained quadratic model must have "
                 f"{self.properties['maximum_number_of_variables']} or fewer "
-                f"variables, given model has {len(cqm.variables)}")
+                f"variables; given model has {len(cqm.variables)}. "
+                f"{contact_sales_str}")
 
         if cqm.num_biases() > self.properties['maximum_number_of_biases']:
             raise ValueError(
                 "constrained quadratic model must have "
                 f"{self.properties['maximum_number_of_biases']} or fewer "
-                f"biases, given model has {cqm.num_biases()}")
+                f"biases; given model has {cqm.num_biases()}. "
+                f"{contact_sales_str}")
 
         if cqm.num_quadratic_variables() > self.properties['maximum_number_of_quadratic_variables']:
             raise ValueError(
                 "constrained quadratic model must have "
                 f"{self.properties['maximum_number_of_quadratic_variables']} "
                 "or fewer variables with at least one quadratic bias across "
-                "all constraints, given model has "
-                f"{cqm.num_quadratic_variables()}")
+                "all constraints; given model has "
+                f"{cqm.num_quadratic_variables()}. "
+                f"{contact_sales_str}")
 
         return self.solver.sample_cqm(cqm, time_limit=time_limit, **kwargs).sampleset
 
