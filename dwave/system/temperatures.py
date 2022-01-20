@@ -92,7 +92,7 @@ def effective_field(bqm,
             input.
 
     Examples:
-       For a ferromagnetic Ising chain :math:`H = - \sum_i s_i s_{i+1}`
+       For a ferromagnetic Ising chain :math:`H = - 0.5 \sum_i s_i s_{i+1}`
        and for a ground state sample (all +1), the energy lost when flipping
        any spin is equal to the number of couplers frustrated: -2 in the center
        of the chain, and -1 at the end.
@@ -101,11 +101,11 @@ def effective_field(bqm,
        >>> import numpy as np
        >>> from dwave.system.temperatures import effective_field
        >>> N = 5
-       >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {(i,i+1) : -1 for i in range(N-1)})
+       >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {(i,i+1) : -0.5 for i in range(N-1)})
        >>> var_labels = list(range(N))
        >>> samples_like = (np.ones(shape=(1,N)), var_labels)
        >>> E = effective_field(bqm,samples_like,current_state_energy=True)
-       >>> print('Cost to flip spin against current assignment', E)
+       >>> print('Cost to flip spin against current assignment', E)     # doctest: +SKIP
        
     '''
     if bqm.vartype == dimod.vartypes.Vartype.BINARY:
@@ -218,7 +218,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
        >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})
        >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)
        >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm,sampleset) 
-       >>> print('Effective temperature ',T)
+       >>> print('Effective temperature ',T)    # doctest: +SKIP
        
     See also:
 
@@ -381,7 +381,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)
-       >>> print('Effective temperature at single qubit freeze-out is',T)
+       >>> print('Effective temperature at single qubit freeze-out is',T)    # doctest: +SKIP
     
     '''
     
@@ -422,7 +422,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
     curve, relative to chi^2 fitting. This causes differences for non-Boltzmann
     distributions, particularly those with rare non-thermal high energy 
     excitations. When the distribution is Boltzmann, both methods yield the same
-    temperature up to sampling error. Maximum likelihood estimation generalizes
+    temperature up to a sampling error. Maximum likelihood estimation generalizes
     to temperature estimates over samples drawn from arbitrary Hamiltonians;
     pseudo-likelihood estimation is efficient for arbitrary Hamiltonians.
     
@@ -467,8 +467,8 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
             T_guess should be positive, non-zero.
         
         sampler_params (dict, optional):
-            Any additional non-defaulted sampler parameterization. If num_reads
-            is a key, must be compatible with num_reads argument.
+            Any additional non-defaulted sampler parameterization. If ``num_reads``
+            is a key, must be compatible with ``num_reads`` argument.
 
     Returns:
         float:
@@ -482,13 +482,13 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
         https://www.jstor.org/stable/25464568
     
     Examples:
-       Draw samples from the default DWaveSampler(), and establish the temperature
+       Draw samples from a :class:`~dwave.system.samplers.DWaveSampler`, and establish the temperature
        
        >>> from dwave.system.temperatures import fast_effective_temperature
        >>> from dwave.system import DWaveSampler
        >>> sampler = DWaveSampler()
        >>> T = fast_effective_temperature(sampler)
-       >>> print('Effective temperature at freeze-out is',T)
+       >>> print('Effective temperature at freeze-out is',T)    # doctest: +SKIP
     '''
     
     if sampler == None:
