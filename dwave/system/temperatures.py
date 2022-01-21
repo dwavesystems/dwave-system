@@ -220,6 +220,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
        >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)
        >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm,sampleset) 
        >>> print('Effective temperature ',T)    # doctest: +SKIP
+       Effective temperature  0.24066488780293813
        
     See also:
 
