@@ -492,6 +492,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
        >>> sampler = DWaveSampler()
        >>> T = fast_effective_temperature(sampler)
        >>> print('Effective temperature at freeze-out is',T)    # doctest: +SKIP
+       0.21685104745347336
     '''
     
     if sampler == None:
