@@ -105,7 +105,8 @@ def effective_field(bqm,
        >>> var_labels = list(range(N))
        >>> samples_like = (np.ones(shape=(1,N)), var_labels)
        >>> E = effective_field(bqm,samples_like,current_state_energy=True)
-       >>> print('Cost to flip spin against current assignment', E)     # doctest: +SKIP
+       >>> print('Cost to flip spin against current assignment', E)     
+       Cost to flip spin against current assignment [[-1. -2. -2. -2. -1.]]
        
     '''
     if bqm.vartype == dimod.vartypes.Vartype.BINARY:
