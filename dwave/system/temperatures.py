@@ -428,7 +428,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
         The function :class:`~dwave.system.temperatures.fast_effective_temperature` 
         estimates the temperature for single-qubit Hamiltonians, in approximate
         agreement with estimates by this function at reported single-qubit 
-        freeze-out values s* and device physical parameters.
+        freeze-out values :math:`s^*` and device physical parameters.
     '''
     
     #Convert units_B to Joules
@@ -480,8 +480,8 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
     For statistical efficiency, and in the case of QPU to avoid poor performance
     [due to noise and calibration non-idealities], it can be useful to submit 
     problems with energies comparable to 1/Temperature. The default value
-    is based upon the single-qubit freeze-out hypothesis: :math:`B(s*)/kB T`, for the 
-    online system at temperature of 12mK, freeze-out value s*.
+    is based upon the single-qubit freeze-out hypothesis: :math:`B(s^*)/k_B T`, for the 
+    online system at temperature of 12mK, freeze-out value :math:`s^*`.
 
     We need to probe problems at an energy scale where excitations
     are common, but at which a sampler is not dominated by noise (precision).
