@@ -136,7 +136,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
                                          site_energy = None,
                                          bootstrap_size = 0,
                                          seed=None,
-                                         Tguess=None,
+                                         T_guess=None,
                                          optimize_method='bisect',
                                          T_bracket=(1e-3,1000)):
     '''Returns a sampling-based temperature estimate.
@@ -382,7 +382,11 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     Device temperature :math:`T`, annealing schedules {:math:`A(s)`, :math:`B(s)`} and 
     single-qubit freeze-out (:math:`s^*`, for simple uncoupled Hamltonians) are reported 
     device properties: https://docs.dwavesys.com/docs/latest/doc_physical_properties.html 
-    Freeze-out points for other Hamiltonians might be inferred experimentally or by derivation.
+    These values (typically specified in mK and GHz) allows the calculation of an effective 
+    temperature for simple Hamiltonians submitted to D-Wave quantum computers. Complicated 
+    problems exploiting embeddings, or with many coupled variables, may freeze out at 
+    different values of s or piecemeal). Large problems may have slow dynamics at small 
+    values of s, so :math:`A(s)` cannot be ignored as a contributing factor to the distribution.
 
     Note that for QPU solvers this temperature estimate applies to problems
     submitted with no additional scaling factors (sampling with ``auto_scale = False``). 
@@ -393,14 +397,14 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
              :math:`B(s^*)`, the problem Hamiltonian energy scale at freeze-out.
 
         temperature (float):
-            :math:`T`, the physical temperature of the annealer.
+            :math:`T`, the physical temperature of the quantum computer.
         
         units_B (string, optional, 'GHz'):
-            Units in which the schedule is specified. Allowed values:
+            Units in which ``freezeout_B`` is specified. Allowed values:
             'GHz' (Giga-Hertz) and 'J' (Joules).
 
         units_T (string, optional, 'mK'):
-            Units in which the schedule is specified. Allowed values:
+            Units in which the ``temperature`` is specified. Allowed values:
             'mK' (milli-Kelvin) and 'K' (Kelvin).
 
     
@@ -408,10 +412,11 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
         float : The effective (unitless) temperature. 
     
     Examples:
-       This example uses the published parameters for the Advantage_system4.1
-       solver: B(s=0.612) = 3.91 GHz , T = 15.4mK.
-       https://docs.dwavesys.com/docs/latest/doc_physical_properties.html 
-       accessed November 22nd 2021.
+
+       This example uses the 
+       published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>
+       for the Advantage_system4.1 QPU solver as of November 22nd 2021: 
+       :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4`mK.
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)
@@ -450,18 +455,17 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
 
 def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess = 6,
                                sampler_params = None, optimize_method=None):
-    ''' Provides a single programming estimate to the effective temperature.
+    '''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
     
-    A set of single qubit problems are submitted to the sampler, and excitations
-    are counted - allowing an inference of the maximum-pseudolikelihood 
-    estimator for temperature (for special case of single spins, equivalent to 
-    maximum likelihood estimator).  
-
-    This method is closely related to chi^2 fitting procedure for T, where
-    <x_i> = tanh(h/T), as described in documentation.  
+    This function submits a set of single-qubit problems to the specified QPU sampler and
+    counts excitations to infer a maximum-pseudolikelihood estimator for temperature, which, for the
+    special case of single spins, is equivalent to the maximum likelihood estimator.
+     
+    This method is closely related to :math:`chi^2` fitting procedure for T, where
+    :math:`\langle x_i\rangle = \tanh(h/T)`, as described in documentation.  
     Maximum-likelihood however places greater weight on the rare (but 
     informative) fluctuations in the strongly biased portion of the tanh 
-    curve, relative to chi^2 fitting. This causes differences for non-Boltzmann
+    curve, relative to :math:`chi^2` fitting. This causes differences for non-Boltzmann
     distributions, particularly those with rare non-thermal high energy 
     excitations. When the distribution is Boltzmann, both methods yield the same
     temperature up to a sampling error. Maximum likelihood estimation generalizes
@@ -476,7 +480,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
     For statistical efficiency, and in the case of QPU to avoid poor performance
     [due to noise and calibration non-idealities], it can be useful to submit 
     problems with energies comparable to 1/Temperature. The default value
-    is based upon the single-qubit freeze-out hypothesis: B(s*)/kB T, for the 
+    is based upon the single-qubit freeze-out hypothesis: :math:`B(s*)/kB T`, for the 
     online system at temperature of 12mK, freeze-out value s*.
 
     We need to probe problems at an energy scale where excitations
@@ -484,7 +488,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
     For Advantage_system1.1 the longitudinal field value at 
     freeze-out B(s=0.612) = 3.91GHz, and operational temperature of
     15.4mK, imply an effective temperature for single qubits of
-    T_guess = B(s^*)/[2 k_B T] ~ 6 which is used by default; and is 
+    :math:`T_{guess} = B(s^*)/[2 k_B T] \sim 6` which is used by default; and is 
     sufficiently close for related online systems.
 
     Args:
