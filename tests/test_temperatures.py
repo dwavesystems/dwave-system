@@ -42,12 +42,13 @@ class TestTemperatures(unittest.TestCase):
         samples_like = (np.ones(shape=(num_samples,num_var)),var_labels)
         E = effective_field(bqm,
                             samples_like)
-        self.assertTrue(np.array_equal(np.ones(shape=(num_samples,num_var)), E))
+        self.assertTrue(np.array_equal(np.ones(shape=(num_samples,num_var)), E[0]))
+        self.assertTrue(num_var==len(E[1]))
         # energy lost in flipping from sample value (1) to -1 is H(1) - H(-1) = +2.
         E = effective_field(bqm,
                             samples_like,
                             current_state_energy=True)
-        self.assertTrue(np.array_equal(2*np.ones(shape=(num_samples,num_var)), E))
+        self.assertTrue(np.array_equal(2*np.ones(shape=(num_samples,num_var)), E[0]))
 
     def test_effective_field_vartype(self):
         # Check effective fields are identical whether using bqm or ising model
@@ -57,14 +58,17 @@ class TestTemperatures(unittest.TestCase):
         E_ising = effective_field(bqm,current_state_energy=True)
         bqm.change_vartype('BINARY',inplace=True)
         E_bqm = effective_field(bqm,current_state_energy=True)
-        self.assertTrue(np.array_equal(E_ising, E_bqm))
-   
+        self.assertTrue(bqm.vartype==dimod.BINARY) 
+        self.assertTrue(np.array_equal(E_ising[0], E_bqm[0]))
+
     def test_maximum_pseudolikelihood_temperature(self):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.
         # This implies an effective temperature 1/atanh(0.5)
         site_energy = np.array([2]*5 + [-2]*15)
-        T = maximum_pseudolikelihood_temperature(site_energy = site_energy[:,np.newaxis])
+        site_names = ['a']
+        T = maximum_pseudolikelihood_temperature(
+            site_energy = (site_energy[:,np.newaxis],site_names))
         self.assertTrue(type(T) is tuple and len(T)==2)
         self.assertTrue(np.abs(T[0]-1/np.arctanh(0.5))<1e-8)
         
@@ -72,8 +76,32 @@ class TestTemperatures(unittest.TestCase):
         # This implies an infinite temperature (up to numerical tolerance
         # threshold of scipy optimize.)
         site_energy = np.array([1]*5 + [-1]*5)
-        T = maximum_pseudolikelihood_temperature(site_energy = site_energy[:,np.newaxis])
+        T_bracket = [0.1,1]
+        with self.assertWarns(UserWarning) as w:
+            # Returned value should match upper bracket value and
+            # throw a warning.
+            # Temperature is infinite (excitations and relaxations)
+            # are equally likely.
+            T = maximum_pseudolikelihood_temperature(
+                site_energy = (site_energy[:,np.newaxis],[1]),
+                T_bracket=T_bracket)
+            
+            self.assertTrue(type(T) is tuple and len(T)==2)
+            self.assertTrue(T[0]==T_bracket[1])
+        
+        # Single variable H = s_i problem with no sample excitations 
+        # This implies zero temperature 
+        # Any bounds on T_bracket should be ignored. 
+        site_energy = np.array([-1]*5)
+        import warnings
+        with warnings.catch_warnings():
+            #Ignore expected 'out of T_bracket bound' warning:
+            warnings.simplefilter(action='ignore', category=UserWarning)
+            T = maximum_pseudolikelihood_temperature(
+                site_energy = (site_energy[:,np.newaxis],[1]),
+                T_bracket=T_bracket)
         self.assertTrue(type(T) is tuple and len(T)==2)
+        self.assertTrue(T[0]==0)
 
     def test_freezeout_effective_temperature(self):
         # 24mK and 1GHz line up conveniently for T=1.00
@@ -108,10 +136,14 @@ class TestTemperatures(unittest.TestCase):
         # states, hence temperature 0. But exceptions are
         # possible. Hence no assertion on value.
         
-    def test_bqm_versus_ising(self):
-        # Add test to check handling of BQM
-        self.assertTrue(True)
 
     def test_bootstrap_errors(self):
-        # Add test to check bootstrap estimator implementation
-        self.assertTrue(True)
+        site_energy = np.array([2]*25 +  [-2]*75)
+        bootstrap_size = 100
+        
+        T,Tb = maximum_pseudolikelihood_temperature(site_energy = (site_energy[:,np.newaxis],[1]),bootstrap_size = bootstrap_size)
+        
+        # Add test to check bootstrap estimator implementation.
+        # T = 1/np.arctanh(0.5). With high probability bootstrapped values
+        # are finite and will throw no warnings.
+        self.assertTrue(len(Tb) == bootstrap_size)

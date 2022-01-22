@@ -39,7 +39,7 @@ __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature']
 
 def effective_field(bqm,
-                    samples_like=None,
+                    samples=None,
                     current_state_energy=False):
     '''Returns the effective field for all variables and all samples.
     
@@ -73,29 +73,29 @@ def effective_field(bqm,
     Args:
         bqm (:obj:`dimod.BinaryQuadraticModel`): 
             Binary quadratic model.
-        samples_like (samples_like,optional):
+        samples (samples_like or :obj:`.SampleSet`,optional):
             A collection of raw samples. `samples_like` is an extension of
-            NumPy's array like structure. See examples below.
-            When not provided, a single sample with all +1 assignments is
-            created, ordered by bqm.variables. 
+            NumPy's array like structure. See :func:`dimod.sampleset.as_samples`.
+            By default, a single sample with all +1 assignments is used. 
         current_state_energy (bool, optional, default=False): 
             By default, returns the effective field (the energy 
             contribution associated to a state assignment of 1). When set to 
             True, returns the energy lost in flipping the value of each 
-            variable. Note energy lost is typically negative for positive 
-            temperature samples.
+            variable. Note current_state_energy is typically negative for 
+            positive temperature samples, meaning energy is not decreased
+            by flipping the spin against its current assignment.
     Returns:
-        numpy.array: 
-            An array of effective fields for each variable in each 
-            sample. Rows indicate independent samples, columns indicate 
-            independent variables ordered in accordance with the samples_like 
-            input.
+        samples_like: 
+            A Tuple of the effective_fields, and the variable labels.
+            Effective fields are returned as a :obj:`numpy.ndarray`.
+            Rows index samples, and columns index variables in the order
+            returned by variable labels.
 
     Examples:
        For a ferromagnetic Ising chain :math:`H = - 0.5 \sum_i s_i s_{i+1}`
        and for a ground state sample (all +1), the energy lost when flipping
        any spin is equal to the number of couplers frustrated: -2 in the center
-       of the chain, and -1 at the end.
+       of the chain (variables 1,2,..,N-2), and -1 at the end (variables 0 and N-1).
        
        >>> import dimod
        >>> import numpy as np
@@ -103,20 +103,20 @@ def effective_field(bqm,
        >>> N = 5
        >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {(i,i+1) : -0.5 for i in range(N-1)})
        >>> var_labels = list(range(N))
-       >>> samples_like = (np.ones(shape=(1,N)), var_labels)
-       >>> E = effective_field(bqm,samples_like,current_state_energy=True)
+       >>> samples = (np.ones(shape=(1,N)), var_labels)
+       >>> E = effective_field(bqm,samples,current_state_energy=True)
        >>> print('Cost to flip spin against current assignment', E)     
-       Cost to flip spin against current assignment [[-1. -2. -2. -2. -1.]]
+       Cost to flip spin against current assignment ([[-1. -2. -2. -2. -1.]],[0,1,2,3,4])
        
     '''
     if bqm.vartype == dimod.vartypes.Vartype.BINARY:
         bqm = bqm.change_vartype('SPIN', inplace=False)
        
-    if samples_like is None:
+    if samples is None:
         samples = np.ones(shape=(1,bqm.num_variables))
         labels = bqm.variables
     else:
-        samples, labels = dimod.sampleset.as_samples(samples_like)
+        samples, labels = dimod.sampleset.as_samples(samples)
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
         variable_order=labels)
     # eff_field = h + J*s OR diag(Q) + (Q-diag(Q))*b
@@ -129,14 +129,16 @@ def effective_field(bqm,
         #Ising: eff_field = 2*s*(h + J*s)
         effective_fields = 2*samples*effective_fields
         
-    return effective_fields
+    return (effective_fields,labels)
 
 def maximum_pseudolikelihood_temperature(bqm = None,
                                          sampleset = None,
                                          site_energy = None,
                                          bootstrap_size = 0,
                                          seed=None,
-                                         Tguess=None):
+                                         Tguess=None,
+                                         optimize_method='bisect',
+                                         T_bracket=(1e-3,1000)):
     '''Returns a sampling-based temperature estimate.
     
     The temperature T parameterizes the Boltzmann distribution as 
@@ -178,19 +180,27 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         sampleset (:class:`dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
             a Boltzmann distribution characterized by ``bqm``.
-        site_energy (2d NumPy array, optional):
-            The effective fields associated to a ``sampleset`` and ``bqm``. Rows
-            denote spins, columns samples.
-            An effective field matrix derived from the 
-            ``bqm`` and ``sampleset`` if not provided.
+        site_energy (samples_like, optional):
+            A Tuple of effective fields and site labels.
+            Derived from the ``bqm`` and ``sampleset`` if not provided.
         bootstrap_size (int, optional, default=0):
             Number of bootstrap estimators to calculate.
         seed (int, optional)
-            Seeds the bootstap method (if provided) allowing reproducibility
+            Seeds the bootstrap method (if provided) allowing reproducibility
             of the estimators.
-        Tguess (float, optional):
-            Seeding the optimize process can enable faster convergence.
-
+        T_guess (float, optional):
+            User approximation to the effective temperature, must be 
+            a positive scalar value.
+            Seeding the root-search method can enable faster convergence.
+            By default, T_guess is ignored if it falls outside the range
+            of ``T_bracket``.
+        optimize_method (str,optional,default='bisect'):
+            SciPy method used for optimization. Options are 'bisect' and
+            None (the default SciPy optimize method). 
+        T_bracket (list or Tuple of 2 floats, optional, default=(0.001,1000)):
+            By default this defines the range of Temperatures
+            over which to attempt a fit. If excitations are absent, temperature 
+            is still defined as zero. 
     Returns:
         Tuple of float and NumPy array:
             (T_estimate,T_bootstrap_estimates)
@@ -242,7 +252,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
                                       sampleset,
                                       current_state_energy = True)
         
-    max_excitation = np.max(site_energy,axis=1)
+    max_excitation = np.max(site_energy[0],axis=1)
     max_excitation_all =  np.max(max_excitation)
     if max_excitation_all <= 0:
         #There are no local excitations present in the sample set, therefore
@@ -253,115 +263,137 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         def d_mean_log_pseudo_likelihood(x):
             #Derivative of mean (w.r.t samples) log pseudo liklihood amounts
             #to local energy matching criteria
-            #O = sum_i sum_s e_i(s) P(s,i) #s = sample, i = variable index
-            #e_i(s) is energy lost in flipping spin s_i against current assignment.
-            #P(s,i) = 1/(1 + exp[x e_i(s)]), probability to flip against current state.
+            #O = sum_i \sum_s f_i(s) P(s,i) #s = sample, i = variable index
+            #f_i(s) is energy lost in flipping spin s_i against current assignment.
+            #P(s,i) = 1/(1 + exp[x f_i(s)]), probability to flip against current state.
             #x = -1/T
-            expFactor = np.exp(site_energy*x)
-            return np.sum(site_energy/(1 + expFactor))
-        
-        def dd_mean_log_pseudo_likelihood(x):
-            #For very large or small site energies this may be numerically
-            #unstable, therefore we prefer a bisection section.
-            expFactor = np.exp(site_energy*x)
-            return np.sum(-site_energy*site_energy/(expFactor + 2 + 1/expFactor))
+            with warnings.catch_warnings():
+                #Overflow errors are safe:
+                warnings.simplefilter(action='ignore', category=RuntimeWarning)
+                expFactor = np.exp(site_energy[0]*x)
+            return np.sum(site_energy[0]/(1 + expFactor))
         
         #Ensures good gradient method, except pathological cases
-        if Tguess == None:
+        if T_guess == None:
             x0 = -1/max_excitation_all
         else:
-            x0 = -1/Tguess
-        #Root finding trivial for this application, any naive root finder will
-        #succeed to find the unique root:
-        bracket=[-1e-3,-1000]
-        if d_mean_log_pseudo_likelihood(bracket[0])>0:
-            warnings.warn(
-                'Temperature is greater than 1000, or perhaps negative:' 
-                'rescaling the Hamiltonian appropriately will allow estimations'
-                'of higher temperatures, but more likely there is a precision'
-                'issue. '
-                'Automated precision requirements mean that this routine works'
-                'best when energy gaps are O(1).')
-            T_estimate = -1/bracket[0]
-        elif d_mean_log_pseudo_likelihood(bracket[1])<0:
-            warnings.warn(
-                'Temperature is less than 1/1000:'
-                'rescaling the Hamiltonian appropriately will allow estimations'
-                'of lower temperatures, but more likely there is a precision'
-                'issue or you have a sign error (negative temperature).'
-                'Automated precision requirements mean that this routine works'
-                'best when energy gaps are O(1).')
-            
-            T_estimate = -1/bracket[1]
+            x0 = -1/T_guess
+        
+        if optimize_method == 'bisect':
+            if T_bracket[0]<T_bracket[1] and T_bracket[0]>=0:
+                pass
+            else:
+                raise ValueError('Bad T_bracket, must be positive ordered scalars.')
+            if T_bracket[0]>0:
+                bisect_bracket = [-1/T_bracket[1],-1/T_bracket[0]]
+            else:
+                bisect_bracket = [-1/T_bracket[1],-float('Inf')]
+            if d_mean_log_pseudo_likelihood(bisect_bracket[0])>0:
+                warnings.warn(
+                    'Temperature is greater than T_bracket[1], or perhaps negative: ' 
+                    'rescaling the Hamiltonian, modification of T_bracket[1], or '
+                    'a change of the optimize_method (to None) '
+                    'can resolve this issue assuming a numerical precision issue '
+                    'induced by very large or small effective fields is not the cause. '
+                    'Automated precision requirements mean that this routine works '
+                    'best when excitations (effective fields) are O(1).')
+                T_estimate = T_bracket[1]
+            elif d_mean_log_pseudo_likelihood(bisect_bracket[1])<0:
+                warnings.warn(
+                    'Temperature is less than T_bracket[0], or perhaps negative:'
+                    'rescaling the Hamiltonian, modification of T_bracket[0] or '
+                    'a change of the optimize_method (to None) '
+                    'can resolve this issue assuming a numerical precision issue '
+                    'induced by very large or small effective fields is not the cause. '
+                    'Automated precision requirements mean that this routine works '
+                    'best when excitations (effective fields) are O(1).')
+                T_estimate = T_bracket[0]
+            else:
+                if x0 < bisect_bracket[0] or x0 > bisect_bracket[1]:
+                    x0 = (bisect_bracket[0] + bisect_bracket[1])/2 
+                root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0 = x0,
+                                                    method=optimize_method, bracket=bisect_bracket)
+                T_estimate = -1/(root_results.root)
         else:
-            root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood,
-                                                #fprime=dd_mean_log_pseudo_likelihood,
-                                                x0 = x0, method='bisect',bracket=bracket)
-            T_estimate = -1/(root_results.root)
+            #For very large or small site energies this may be numerically
+            #unstable, therefore bisection search is the default.
+            def dd_mean_log_pseudo_likelihood(x):
+                
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter(action='ignore', category=RuntimeWarning)
+                    #overflow errors are harmless, +Inf is a safe value.
+                    expFactor = np.exp(site_energy[0]*x)
+                    #divide by zero (1/expFactor) and divide by +Inf errors are harmless
+                    return np.sum(-site_energy[0]*site_energy[0]/(expFactor + 2 + 1/expFactor))
+        
+            root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0 = x0,
+                                                fprime=dd_mean_log_pseudo_likelihood)
+            
         if bootstrap_size > 0:
             #By bootstrapping with respect to samples we 
             x0 = root_results.root
             prng = np.random.RandomState(seed)
-            num_samples = site_energy.shape[0]
-            
+            num_samples = site_energy[0].shape[0]
             for bs in range(bootstrap_size):
                 indices = np.random.choice(
                     num_samples,
-                    num_samples,
+                    bootstrap_size,
                     replace=True)
                 T_bootstrap_estimates[bs],_ = maximum_pseudolikelihood_temperature(
-                    site_energy = site_energy[indices],
+                    site_energy = (site_energy[0][indices,:],site_energy[1]),
                     bootstrap_size = 0,
-                    Tguess = T_estimate)
+                    T_guess = T_estimate)
     
     return T_estimate, T_bootstrap_estimates
 
 def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK'):
     '''Provides an effective temperature as a function of freezeout information.
     
+    See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a complete
+    summary of D-Wave annealing quantum computer operation.
+    
+
     A D-Wave annealing quantum computer is assumed to implement a Hamiltonian
-    :math:`H(s) = B(s)/2 H_P - A(s)/2 H_D`. :math:`H_P` is the problem (classical) Hamiltonian
-    and :math:`H_D` is the driver Hamiltonian. :math:`B(s)` is the problem energy scale and A(s)
-    is the driver (transverse field) energy scale, :math:`s` is the normalized anneal
+    :math:`H(s) = B(s)/2 H_P - A(s)/2 H_D`, where: :math:`H_P` is the unitless 
+    diagonal problem Hamiltonian,
+    :math:`H_D` is the unitless driver Hamiltonian, :math:`B(s)` is the problem energy scale; A(s)
+    is the driver energy scale, amd :math:`s` is the normalized anneal
     time :math:`s = t/t_a` (in [0,1]).
+    Diagonal elements of :math:`H_P`, indexed by the spin state :math:`x`, are equal to
+    the energy of a classical Ising spin system 
+    
+    .. math::
+        E_{Ising}(x) = \sum_i h_i x_i + \sum_{i>j} J_{i,j} x_i x_j
 
-    If a quantum annealer achieves an equilibrated distribution 
-    over decohered states late in the anneal then the transverse field is 
-    negligible: :math:`A(s) \ll B(s)`. 
-    If in addition dynamics stop abruptly the equilibrated distribution is 
-    described by a classical Boltzmann distribution for classical spin states s 
-    that may be measured in accordance with a probability distribution:
+    If annealing achieves a thermally equilibrated distribution 
+    over decohered states at large :math:`s` where :math:`A(s) \ll B(s)`, 
+    and dynamics stop abruptly at :math:`s=s^*`, the distribution of returned
+    samples is well described by a Boltzmann distribution:
 
     .. math::
-        P(x) = exp(- B(s^*) H_P(x) / 2 k_B T)
-    :math:`B(s^*)` is the schedule energy scale associated to the problem Hamiltonian, 
-    T is the physical temperature and :math:`k_B` is the Boltzmann constant.
-    We can define a unitless effective temperature, to complement the unitless
-    Hamiltonian, definition as :math:`T_{eff} = 2 kB T/B(s*)`, returned by this function.
+        P(x) = exp(- B(s^*) R E_{Ising}(x) / 2 k_B T)
+    
+    where T is the physical temperature, and :math:`k_B` is the Boltzmann constant.
+    R is a Hamiltonain rescaling factor, if a QPU is operated with auto_scale=False, 
+    then R=1.
+    The function calculates the unitless effective temperature as :math:`T_{eff} = 2 k_B T/B(s^*)`.
 
-    .. math::
-        P(x) = exp(-H_P(x)/T_{eff})
+    Device temperature :math:`T`, annealing schedules {:math:`A(s)`, :math:`B(s)`} and 
+    single-qubit freeze-out (:math:`s^*`, for simple uncoupled Hamltonians) are reported 
+    device properties: https://docs.dwavesys.com/docs/latest/doc_physical_properties.html 
+    Freeze-out points for other Hamiltonians might be inferred experimentally or by derivation.
 
-    Single qubit freeze-out (s*) is well characterized as part of calibration 
-    processes and reported alongside annealing schedules {:math:`A(s)`,:math:`B(s)`} and 
-    device temperature. This allows an effective temperature to be calculated 
-    for online solvers, appropriate for some simple Hamiltonians. Values are
-    typically specified in mK and GHz. More complicated systems such as chains
-    may freeze-out differently (at different s, or asynchronously). Large
-    problems may have slow dynamics at small s, where :math:`A(s)` cannot be ignored.
-    One should also be aware of known noise model properties for purposes 
-    of interpreting a temperature.
-
-    Note that for QPU solvers this temperature applies to programmed 
-    Hamiltonians H_P submitted with auto_scale = False. If auto_scale=True 
-    (default) an additional scaling factor is required.
+    Note that for QPU solvers this temperature estimate applies to problems
+    submitted with no additional scaling factors (sampling with ``auto_scale = False``). 
+    If ``auto_scale=True`` (default) additional scaling factors must be accounted for. 
 
     Args:
         freezeout_B (float):
-            The schedule value for the problem Hamiltonian at freeze-out.
+             :math:`B(s^*)`, the problem Hamiltonian energy scale at freeze-out.
 
         temperature (float):
-            The physical temperature of the annealer.
+            :math:`T`, the physical temperature of the annealer.
         
         units_B (string, optional, 'GHz'):
             Units in which the schedule is specified. Allowed values:
@@ -386,6 +418,12 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
        >>> print('Effective temperature at single qubit freeze-out is', T)  # doctest: +ELLIPSIS
        Effective temperature at single qubit freeze-out is 0.164...
     
+    See also:
+
+        The function :class:`~dwave.system.temperatures.fast_effective_temperature` 
+        estimates the temperature for single-qubit Hamiltonians, in approximate
+        agreement with estimates by this function at reported single-qubit 
+        freeze-out values s* and device physical parameters.
     '''
     
     #Convert units_B to Joules
@@ -410,7 +448,8 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     
     return 2*temperature*kB/freezeout_B
 
-def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess = 6, sampler_params = None):
+def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess = 6,
+                               sampler_params = None, optimize_method=None):
     ''' Provides a single programming estimate to the effective temperature.
     
     A set of single qubit problems are submitted to the sampler, and excitations
@@ -473,6 +512,11 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
             Any additional non-defaulted sampler parameterization. If ``num_reads``
             is a key, must be compatible with ``num_reads`` argument.
 
+        optimize_method (str, optional):
+            Optimize method used by SciPy root_scalar method. The default
+            method works well under default operation, 'bisect' can be 
+            numerically more stable when operated without defaults.
+
     Returns:
         float:
             The effective temperature describing single qubit problems in an
@@ -493,6 +537,11 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
        >>> T = fast_effective_temperature(sampler)
        >>> print('Effective temperature at freeze-out is',T)    # doctest: +SKIP
        0.21685104745347336
+    
+    See also:
+        The function :class:`~dwave.system.temperatures.freezeout_effective_temperature` 
+        may be used in combination with published device values to estimate single-qubit 
+        freeze-out, in approximate agreement with empirical estimates of this function.
     '''
     
     if sampler == None:
@@ -542,5 +591,8 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
         sampler_params0['auto_scale'] = False
         
     sampleset = sampler.sample(bqm, **sampler_params0)
-    T,_ = maximum_pseudolikelihood_temperature(bqm, sampleset)
+    
+    T,_ = maximum_pseudolikelihood_temperature(bqm,
+                                               sampleset,
+                                               optimize_method=optimize_method)
     return T
