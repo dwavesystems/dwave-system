@@ -484,11 +484,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
 
     def to_networkx_graph(self):
-        """Converts DWaveSampler's structure to a Chimera or Pegasus NetworkX graph.
+        """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
 
         Returns:
             :class:`networkx.Graph`:
-                Either an (m, n, t) Chimera lattice or a Pegasus lattice of size m.
+                Either an (m, n, t) Chimera lattice, a Pegasus lattice of size m or a
+                Zephyr lattice of size m.
 
         Examples:
             This example converts a selected D-Wave system solver to a graph
@@ -517,7 +518,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         elif topology_type == 'zephyr':
             G = dnx.zephyr_graph(shape[0],
-                                  node_list=self.nodelist,
-                                  edge_list=self.edgelist)
+                                 node_list=self.nodelist,
+                                 edge_list=self.edgelist)
 
         return G
