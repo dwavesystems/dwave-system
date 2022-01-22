@@ -15,7 +15,7 @@
 """The following effective temperature estimators are provided:
 
 - Maximum pseudo-likelihood is an efficient estimator for the temperature 
-  describing a classical Boltzmann distribution P(x) = exp(-H(x)/T)/Z(T) 
+  describing a classical Boltzmann distribution P(x) = \exp(-H(x)/T)/Z(T) 
   given samples from that distribution, where H(x) is the classical energy 
   function. The following links describe features of the estimator in
   application to equilibrium distribution drawn from binary quadratic models and
@@ -59,7 +59,7 @@ def effective_field(bqm,
     Any BQM can be converted to an Ising model with
     
     .. math::
-         H(s) = Constant + \sum_i h_i s_i + 0.5\sum_{i,j} J_{i,j} s_i s_j
+        H(s) = Constant + \sum_i h_i s_i + 0.5 \sum_{i,j} J_{i,j} s_i s_j
 
     with unique values of :math:`J` (symmetric) and :math:`h`. The sample dependent effect field on variable i, :math:`f_i(s)`, is then defined
 
@@ -106,7 +106,7 @@ def effective_field(bqm,
        >>> samples = (np.ones(shape=(1,N)), var_labels)
        >>> E = effective_field(bqm,samples,current_state_energy=True)
        >>> print('Cost to flip spin against current assignment', E)     
-       Cost to flip spin against current assignment ([[-1. -2. -2. -2. -1.]],[0,1,2,3,4])
+       Cost to flip spin against current assignment (array([[-1., -2., -2., -2., -1.]]), [0, 1, 2, 3, 4])
        
     '''
     if bqm.vartype == dimod.vartypes.Vartype.BINARY:
@@ -142,7 +142,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
     '''Returns a sampling-based temperature estimate.
     
     The temperature T parameterizes the Boltzmann distribution as 
-    :math:`P(x) = exp(-H(x)/T)/Z(T)`, where :math:`P(x)` is a probability over a state space, 
+    :math:`P(x) = \exp(-H(x)/T)/Z(T)`, where :math:`P(x)` is a probability over a state space, 
     :math:`H(x)` is the energy function (BQM) and :math:`Z(T)` is a normalization. 
     Given a sample set (:math:`S`), a temperature estimate establishes the 
     temperature that is most likely to have produced the sample set.
@@ -350,8 +350,8 @@ def maximum_pseudolikelihood_temperature(bqm = None,
 def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK'):
     '''Provides an effective temperature as a function of freezeout information.
     
-    See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a complete
-    summary of D-Wave annealing quantum computer operation.
+    See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a 
+    complete summary of D-Wave annealing quantum computer operation.
     
 
     A D-Wave annealing quantum computer is assumed to implement a Hamiltonian
@@ -372,7 +372,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     samples is well described by a Boltzmann distribution:
 
     .. math::
-        P(x) = exp(- B(s^*) R E_{Ising}(x) / 2 k_B T)
+        P(x) = \exp(- B(s^*) R E_{Ising}(x) / 2 k_B T)
     
     where T is the physical temperature, and :math:`k_B` is the Boltzmann constant.
     R is a Hamiltonain rescaling factor, if a QPU is operated with auto_scale=False, 
@@ -453,71 +453,42 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     
     return 2*temperature*kB/freezeout_B
 
-def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess = 6,
-                               sampler_params = None, optimize_method=None):
+def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
+                               T_guess=6, sampler_params=None,
+                               optimize_method=None):
     '''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
     
-    This function submits a set of single-qubit problems to the specified QPU sampler and
-    counts excitations to infer a maximum-pseudolikelihood estimator for temperature, which, for the
-    special case of single spins, is equivalent to the maximum likelihood estimator.
-     
-    This method is closely related to :math:`chi^2` fitting procedure for T, where
-    :math:`\langle x_i\rangle = \tanh(h/T)`, as described in documentation.  
-    Maximum-likelihood however places greater weight on the rare (but 
-    informative) fluctuations in the strongly biased portion of the tanh 
-    curve, relative to :math:`chi^2` fitting. This causes differences for non-Boltzmann
-    distributions, particularly those with rare non-thermal high energy 
-    excitations. When the distribution is Boltzmann, both methods yield the same
-    temperature up to a sampling error. Maximum likelihood estimation generalizes
-    to temperature estimates over samples drawn from arbitrary Hamiltonians;
-    pseudo-likelihood estimation is efficient for arbitrary Hamiltonians.
-    
-    The Advantage QPU has known deviations from an ideal Boltzmann sampler such,
-    as flux noise, please refer to literature and documentation for more 
-    details. Estimators accounting for such non-idealities may produce
-    different results.
-
-    For statistical efficiency, and in the case of QPU to avoid poor performance
-    [due to noise and calibration non-idealities], it can be useful to submit 
-    problems with energies comparable to 1/Temperature. The default value
-    is based upon the single-qubit freeze-out hypothesis: :math:`B(s^*)/k_B T`, for the 
-    online system at temperature of 12mK, freeze-out value :math:`s^*`.
-
-    We need to probe problems at an energy scale where excitations
-    are common, but at which a sampler is not dominated by noise (precision).
-    For Advantage_system1.1 the longitudinal field value at 
-    freeze-out B(s=0.612) = 3.91GHz, and operational temperature of
-    15.4mK, imply an effective temperature for single qubits of
-    :math:`T_{guess} = B(s^*)/[2 k_B T] \sim 6` which is used by default; and is 
-    sufficiently close for related online systems.
+    This function submits a set of single-qubit problems to a sampler and 
+    counts excitations to infer a maximum-likelihood estimate of temperature.
 
     Args:
-        sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`\ ``(client="qpu")``):
-            A D-Wave sampler. 
+        sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`):
+            A dimod sampler. 
 
         num_reads (int, optional):
             Number of reads to use. Default is 100 if not specified in 
-            sampler_params.
+            ``sampler_params``.
 
         seed (int, optional):
             Seeds the problem generation process. Allowing reproducibility
             from pseudo-random samplers.
 
-        T_guess (float, optional, default = 6.1):
-            Determines the range of external fields (h_i) probed for temperature
-            inference; an accurate choice raises the efficiency
-            of the estimator. An inappropriate choice may lead to
-            pathological behaviour. Default is based on a D-Wave Advantage 
-            QPU temperature and energy scales, and is also suitable for 
-            D-Wave 2000Q QPU inference.
-            T_guess should be positive, non-zero.
-        
+        h_range (float, optional, default = [-1/6.1,1/6.1):
+            Determines the range of external fields probed for temperature
+            inference. Default is based on a D-Wave Advantage processor, where
+            single-qubit freeze-out implies an effective temperature of 6.1 
+            (see :class:`~dwave.system.temperatures.freezeout_effective_temperature`).
+            The range should be chosen inversely proportional to the anticipated
+            temperature for statistical efficiency, and to accomodate precision 
+            and other nonidealities such as precision limitations.
+            
         sampler_params (dict, optional):
-            Any additional non-defaulted sampler parameterization. If ``num_reads``
-            is a key, must be compatible with ``num_reads`` argument.
+            Any additional non-defaulted sampler parameterization. If 
+            ``num_reads`` is a key, must be compatible with ``num_reads`` 
+            argument.
 
         optimize_method (str, optional):
-            Optimize method used by SciPy root_scalar method. The default
+            Optimize method used by SciPy ``root_scalar`` method. The default
             method works well under default operation, 'bisect' can be 
             numerically more stable when operated without defaults.
 
@@ -546,27 +517,25 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
         The function :class:`~dwave.system.temperatures.freezeout_effective_temperature` 
         may be used in combination with published device values to estimate single-qubit 
         freeze-out, in approximate agreement with empirical estimates of this function.
+
+        https://doi.org/10.3389/fict.2016.00023
+
+        https://www.jstor.org/stable/25464568
+    
     '''
     
     if sampler == None:
         from dwave.system import DWaveSampler
         sampler = DWaveSampler()
-    if T_guess < 0:
-        raise ValueError('T_guess should be positive, non-zero')
-    h_range = [-2/T_guess, 2/T_guess]
+        
     if hasattr(sampler,'properties') and 'h_range' in sampler.properties:
-        warn_user = False
         if h_range[0] < sampler.properties['h_range'][0]:
-           h_range[0] = sampler.properties['h_range'][0]
-           warn_user = True
+            h_range[0] = sampler.properties['h_range'][0]
+            raise ValueError('h_range[0] exceeds programmable range')
+           
         if h_range[1] > sampler.properties['h_range'][1]:
             h_range[1] = sampler.properties['h_range'][1]
-            warn_user = True
-        if warn_user:
-            warnings.warn(
-                'T_guess is small (relative to programmable h_range). '
-                'Maximum h_range is employed, but this may be '
-                'statistically inefficient.')
+            raise ValueError('h_range[1] exceeds programmable range')
             
     prng = np.random.RandomState(seed)
     h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
