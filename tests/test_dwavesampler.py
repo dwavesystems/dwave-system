@@ -337,6 +337,21 @@ class TestDwaveSampler(unittest.TestCase):
 
         del sampler.solver.properties['topology']
 
+    def test_to_networkx_pegasus(self):
+        sampler = self.sampler
+        sampler.solver.properties.update({'topology': {'type': 'zephyr', 'shape': [4, 4]}})
+        G = sampler.to_networkx_graph()
+
+        # Create pegasus graph for comparison
+        zephyrG = dnx.zephyr_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
+
+        self.assertEqual(set(G), set(zephyrG))
+
+        for u, v in zephyrG.edges:
+            self.assertIn(u, G[v])
+
+        del sampler.solver.properties['topology']
+
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
     def test_typical(self):
         class MockScheduleSampler(DWaveSampler):
