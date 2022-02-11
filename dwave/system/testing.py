@@ -20,6 +20,7 @@ import dimod
 import dwave_networkx as dnx
 from tabu import TabuSampler
 import dwave.cloud.computation
+import warnings
 
 try:
     #Simplest and efficient choice returning low energy states:
@@ -250,7 +251,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                            'max_answers',
                            'num_reads',
                            'label'}
-        if not mock_fallback_substitute:
+        if mock_fallback_substitute:
             pass
             # The fallback sampler (SA) is an inferior choice, but
             # greedy may not always be installed, unlike dimod.
@@ -271,7 +272,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 if (kw not in mocked_parameters
                     and self.parameter_warnings == True):
                     
-                    warnings.warn('parameter is valid for DWaveSampler(), '
+                    warnings.warn(kw + ' parameter is valid for DWaveSampler(), '
                                   'but not mocked in MockDWaveSampler().')
             else:
                 raise NotImplementedError('kwarg ' + kw + ' '
@@ -292,7 +293,14 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         label = kwargs.get('label')
         if label is not None:
             info.update(problem_label=label)
-        
+
+        #Special handling of flux_biases, for compatibility with virtual graphs
+
+        flux_biases = kwargs.get('flux_biases')
+        if flux_biases is not None:
+            self.flux_biases_flag = True
+            
+            
         substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
