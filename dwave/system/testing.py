@@ -150,7 +150,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             #Modified/Simplified properties:
             'num_qubits' : len(solver_graph),
             'qubits' : self.nodelist.copy(),
-            'properties' : self.edgelist.copy(),
+            'couplers' : self.edgelist.copy(),
             'topology' : {'type': topology_type, 'shape': topology_shape},
             'chip_id' : 'MockDWaveSampler',
             'anneal_offset_ranges' : [[-0.5,0.5] if i in self.nodelist
@@ -211,7 +211,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'category': 'qpu',
             'quota_conversion_rate': 1}
         
-        @dimod.bqm_structured
+    @dimod.bqm_structured
     def sample(self, bqm, num_reads=1, flux_biases=[], **kwargs):
         # we are altering the bqm if flux_biases given
 
