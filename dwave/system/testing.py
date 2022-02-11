@@ -269,7 +269,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         for kw in kwargs:
             if kw in self.parameters:
                 if (kw not in mocked_parameters
-                    and self.parameter_warnings == False):
+                    and self.parameter_warnings == True):
                     
                     warnings.warn('parameter is valid for DWaveSampler(), '
                                   'but not mocked in MockDWaveSampler().')
