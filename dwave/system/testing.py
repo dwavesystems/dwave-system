@@ -22,10 +22,12 @@ from tabu import TabuSampler
 import dwave.cloud.computation
 
 try:
-    from neal import SimulatedAnnealingSampler
+    #Simplest and efficient choice returning low energy states:
+    from greedy import SteepestDescentSampler as SubstituteSampler
+    mock_fallback_substitute = False
 except ImportError:
-    from dimod import SimulatedAnnealingSampler
-
+    from dimod import SimulatedAnnealingSampler as SubstituteSampler
+    mock_fallback_substitute = True
 import concurrent.futures
 import numpy as np
 
@@ -33,7 +35,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
     Properties fields are populated matching a legacy device, and a 
-    placeholder sampler routine based on simulated annealing instantiated.
+    placeholder sampler routine based on steepest descent is instantiated.
     
     Args:
         broken_nodes (iterable of ints):
@@ -55,18 +57,20 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     
         parameter_warnings (bool, optional, default=True):
             The MockSampler is adaptive with respect to ``num_reads``,
-            ``answer_mode`` and ``max_answers`` parameters. All other 
-            parameters are ignored and a warning will be raised by default.
+            ``answer_mode`` and ``max_answers`` and ``initial_states`` 
+            parameters. All other parameters are ignored and a warning will be 
+            raised by default.
     """
 
     nodelist = None
     edgelist = None
     properties = None
     parameters = None
-
+    parameter_warnings = True
     def __init__(self, broken_nodes=None, broken_edges=None,
                  topology_type='chimera',topology_shape=None,
                  parameter_warnings=True, **config):
+        self.parameter_warnings = parameter_warnings
         
         if topology_type == 'zephyr':
             if topology_shape is None:
@@ -125,8 +129,11 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         # 'RV7-3_P16-N1_4007890-05-C3_C5R3-device-cal-data-21-10-14-19%3a35'
         # with simplified lists for large parameters, and modified
         # topology arguments per MockSolver initialization:
+        # See also:
+        # https://docs.dwavesys.com/docs/latest/c_solver_parameters.html
         
         self.parameters = parameters = {
+            
             'anneal_offsets': ['parameters'],
             'anneal_schedule': ['parameters'],
             'annealing_time': ['parameters'],
@@ -159,38 +166,53 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'h_range': [-4.0, 4.0],
             'j_range': [-1.0, 1.0],
             'supported_problem_types': ['ising', 'qubo'],
-            'parameters': {'anneal_offsets':
-                           'Anneal offsets for each working qubit, formatted as a list, with NaN specified for unused qubits.',
-                           'anneal_schedule':
-                           "Annealing schedule formatted as a piecewise linear list of floating-point pairs of 't' and 's'.",
-                           'annealing_time':
-                           'Quantum annealing duration, in microseconds, as a positive floating point number.',
-                           'answer_mode':
-                           "Format of returned answers, as 'histogram' or 'raw' samples.",
-                           'auto_scale':
-                           'Automatic rescaling of h and J values to their available range, as a boolean flag.',
-                           'flux_biases':
-                           'Flux biases for each working qubit, in normalized offset units, formatted as a list for all qubits.',
-                           'flux_drift_compensation':
-                           'Activation of flux drift compensation, as a boolean flag.',
-                           'h_gain_schedule':
-                           "h-gain schedule formatted as a piecewise linear list of floating-point pairs of 't' and 'g'.",
-                           'initial_state':
-                           'Initial states to use for a reverse-anneal request, as a list of qubit index and state.',
-                           'max_answers':
-                           'Maximum number of answers to return.',
-                           'num_reads':
-                           'Number of states to read (answers to return), as a positive integer.',
-                           'num_spin_reversal_transforms':
-                           'Number of spin-reversal transforms (gauge transformations) to perform.',
-                           'programming_thermalization':
-                           'Time in microseconds to wait after programming the processor in order for it to cool back to base temperature, as a positive floating point number.',
-                           'readout_thermalization':
-                           'Time in microseconds to wait after each state is read from the processor in order for it to cool back to base temperature, as a positive floating point number.',
-                           'reduce_intersample_correlation':
-                           'Addition of pauses between samples, as a boolean flag.',
-                           'reinitialize_state':
-                           'Reapplication of the initial_state for every read in reverse annealing, as a boolean flag.'},
+            'parameters': {
+                'anneal_offsets':
+                'Anneal offsets for each working qubit, formatted as a list, '
+                'with NaN specified for unused qubits.',
+                'anneal_schedule':
+                "Annealing schedule formatted as a piecewise linear list of "
+                "floating-point pairs of 't' and 's'.",
+                'annealing_time':
+                'Quantum annealing duration, in microseconds, as a positive '
+                'floating point number.',
+                'answer_mode':
+                "Format of returned answers, as 'histogram' or 'raw' samples.",
+                'auto_scale':
+                'Automatic rescaling of h and J values to their available '
+                'range, as a boolean flag.',
+                'flux_biases':
+                'Flux biases for each working qubit, in normalized offset '
+                'units, formatted as a list for all qubits.',
+                'flux_drift_compensation':
+                'Activation of flux drift compensation, as a boolean flag.',
+                'h_gain_schedule':
+                "h-gain schedule formatted as a piecewise linear list of "
+                "floating-point pairs of 't' and 'g'.",
+                'initial_state':
+                'Initial states to use for a reverse-anneal request, as a list '
+                'of qubit index and state.',
+                'max_answers':
+                'Maximum number of answers to return.',
+                'num_reads':
+                'Number of states to read (answers to return), as a positive '
+                'integer.',
+                'num_spin_reversal_transforms':
+                'Number of spin-reversal transforms (gauge transformations) to '
+                'perform.',
+                'programming_thermalization':
+                'Time in microseconds to wait after programming the processor '
+                'in order for it to cool back to base temperature, as a '
+                'positive floating point number.',
+                'readout_thermalization':
+                'Time in microseconds to wait after each state is read from '
+                'the processor in order for it to cool back to base '
+                'temperature, as a positive floating point number.',
+                'reduce_intersample_correlation':
+                'Addition of pauses between samples, as a boolean flag.',
+                'reinitialize_state':
+                'Reapplication of the initial_state for every read in reverse '
+                'annealing, as a boolean flag.'},
             'vfyc': False,
             'anneal_offset_step': -0.0001500217998314891,
             'anneal_offset_step_phi0': 1.4303846404537006e-05,
@@ -212,32 +234,72 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'quota_conversion_rate': 1}
         
     @dimod.bqm_structured
-    def sample(self, bqm, num_reads=1, flux_biases=[], **kwargs):
-        # we are altering the bqm if flux_biases given
+    def sample(self, bqm, **kwargs):
+        
+        #Check kwargs compatibility with parameters and substitute sampler:
 
+        mocked_parameters={'answer_mode',
+                           'max_answers',
+                           'num_reads',
+                           'label'}
+        if not mock_fallback_substitute:
+            mocked_parameters.add('initial_state')
+        
+        for kw in kwargs:
+            if kw in self.parameters:
+                if (kw not in mocked_parameters
+                    and self.parameter_warnings == False):
+                    
+                    warnings.warn('parameter is valid for DWaveSampler(), '
+                                  'but not mocked in MockDWaveSampler().')
+            else:
+                raise NotImplementedError('kwarg ' + kw + ' '
+                                          'invalid for MockDWaveSampler()')
+        
         info = dict(problem_id=str(uuid4()))
         label = kwargs.get('label')
         if label is not None:
             info.update(problem_label=label)
+        substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
+        if substitute_kwargs['num_reads'] is None:
+            substitute_kwargs['num_reads'] = 1
 
-        if not flux_biases:
-            ss = SimulatedAnnealingSampler().sample(bqm, num_reads=num_reads)
-            ss.info.update(info)
-            return ss
-
-        new_bqm = bqm.copy()
-
-        for v, fbo in enumerate(flux_biases):
-            self.flux_biases_flag = True
-            new_bqm.add_variable(v, 1000. * fbo)  # add the bias
-
-        response = SimulatedAnnealingSampler().sample(new_bqm, num_reads=num_reads)
-
-        # recalculate the energies with the old bqm
-        return dimod.SampleSet.from_samples_bqm([{v: sample[v] for v in bqm.variables}
-                                                 for sample in response.samples()],
-                                                bqm, info=info)
-
+        if not mock_fallback_substitute:
+            #mock additional parameters:
+            initial_states0 = kwargs.get('initial_states')
+            if initial_states0 is not None:
+                #Initial state format is a list of (qubit,values)
+                #value=3 denotes an unused variable (should be absent
+                #from bqm). 
+                #Convert to format for substitute
+                initial_states_Substitute = (
+                    np.array([pair[1] for pair in initial_states0
+                              if pair[1]!=3],dtype=float),
+                    [pair[0] for pair in inital_states0 if pair[1]!=3])
+                
+                # For large sample sets, it would be more efficient to
+                # handle ``answer_mode`` and ``max_answers`` within the
+                # lower-level optimized code - just as they are handled server
+                # side in QPU calls.
+        
+            else:
+                initial_states = None
+        #Large QPUs are sparse, and might benefit from large_sparse_opt.
+        ss = SubstituteSampler().sample(bqm, **substitute_kwargs)
+        ss.info.update(info)
+        
+        answer_mode = kwargs.get('answer_mode')
+        if answer_mode is None or answer_mode == 'histogram':
+            #default for DWaveSampler() is 'histogram'
+            ss = ss.aggregate()
+        
+        max_answers = kwargs.get('max_answers')
+        if max_answers is not None:
+            #Truncate sampleset
+            ss = ss.truncate(max_answers)
+        
+        return ss
+    
 class MockLeapHybridDQMSampler:
     """Mock sampler modeled after LeapHybridDQMSampler that can be used for tests."""
     def __init__(self, **config):

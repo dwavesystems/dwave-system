@@ -44,6 +44,41 @@ class TestMockDWaveSampler(unittest.TestCase):
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
         
+    def test_mock_parameters(self):
+        # Single cell Chimera (DW2000Q) solver:
+        sampler = MockDWaveSampler(topology_type='chimera', topology_shape = [1,1,4])
+        num_reads = 10
+        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads)
+        self.assertEqual(sum(ss.record.num_occurrences),num_reads)
+        self.assertTrue(len(ss.record.num_occurrences)<=2) #Binary state histogram
+        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads,
+                                  answer_mode='raw')
+        self.assertEqual(len(ss.record.num_occurrences),num_reads)
+        
+        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads,
+                                  answer_mode='raw', max_answers=2)
+        self.assertEqual(len(ss.record.num_occurrences),2)
+
+            
+        try:
+            from greedy import SteepestDescentSampler as SubstituteSampler
+            mock_fallback_substitute = False
+        except:
+            mock_fallback_substitute = True
+        if not mock_fallback_substitute:
+            # If the greedy is available, we can mock more parameters (than
+            # is possible with the fallback dimod.SimulatedAnnealingSampler()
+            # method
+
+            #QPU format inital states:
+            initial_states = [(0,1),(0,1)] + [(i,3) for i in range(2,8)]
+            ss = sampler.sample_ising({0 : 1, 1 : 1}, {(0,1) : -2},
+                                      num_reads=num_reads,
+                                      answer_mode='raw', max_samples=2)
+            #The initialized state is a local minima, and should
+            #be returned under greedy descent mocking:
+            self.assertEqual(ss.record.energy[0],-1)
+        
     def test_chimera_topology(self):
         grid_parameter = 5
         tile_parameter = 2
