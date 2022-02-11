@@ -20,8 +20,25 @@ from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 import dimod.testing as dit
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
 
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
+from dwave.system import DWaveSampler
+import os
 
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
+
+        
 class TestMockDWaveSampler(unittest.TestCase):
+    def test_properties_and_params(self):
+        try:
+            sampler = DWaveSampler()
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("no QPU available")
+
+        mock = MockDWaveSampler()
+
+        self.assertEqual(set(mock.properties), set(sampler.properties))
+        self.assertEqual(set(mock.parameters), set(sampler.parameters))
+        
     def test_sampler(self):
         sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)

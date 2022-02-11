@@ -29,9 +29,6 @@ except ImportError:
 import concurrent.futures
 import numpy as np
 
-
-
-
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
@@ -56,6 +53,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             A list of one number [m] for Pegasus, defaulted as [3].
             A list of two numbers [m,t] for Zephyr, defaulted as [2,4].  
     
+        parameter_warnings (bool, optional, default=True):
+            The MockSampler is adaptive with respect to ``num_reads``,
+            ``answer_mode`` and ``max_answers`` parameters. All other 
+            parameters are ignored and a warning will be raised by default.
     """
 
     nodelist = None
@@ -64,7 +65,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     parameters = None
 
     def __init__(self, broken_nodes=None, broken_edges=None,
-                 topology_type='chimera',topology_shape=None, **config):
+                 topology_type='chimera',topology_shape=None,
+                 parameter_warnings=True, **config):
         
         if topology_type == 'zephyr':
             if topology_shape is None:
@@ -117,43 +119,99 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                    and v not in broken_nodes
                                    and (u, v) not in broken_edges
                                    and (v, u) not in broken_edges)
-        # mark the sample kwargs
-        self.parameters = parameters = {}
-        parameters['num_reads'] = ['num_reads_range']
-        parameters['flux_biases'] = ['j_range']
-        parameters['label'] = []
-
-        # add the interesting properties manually
-        self.properties = properties = {}
-        properties['j_range'] = [-1.0, 1.0]
-        properties['h_range'] = [-2.0, 2.0]
-        properties['num_reads_range'] = [1, 10000]
-        properties['num_qubits'] = len(solver_graph)
-        properties['category'] = 'qpu'
-        properties['quota_conversion_rate'] = 1
-        properties['topology'] = {'type': topology_type,
-                                  'shape': topology_shape}
-        properties['chip_id'] = 'MockDWaveSampler'
-        properties['annealing_time_range'] = [1.0, 2000.0]
-        properties['num_qubits'] = len(self.nodelist)
-        properties['extended_j_range'] = [-2.0, 1.0]
-        properties["supported_problem_types"] = ['ising', 'qubo']
-        # add some occasionally useful properties
-        properties["default_annealing_time"] = 20.0
-        properties["default_programming_thermalization"] = 1000.0
-        properties["default_readout_thermalization"] = 0.0
-        properties["h_gain_schedule_range"] = [-4.0, 4.0]
-        properties["max_anneal_schedule_points"] = 12
-        properties["max_h_gain_schedule_points"] = 20
-        properties["per_qubit_coupling_range"] = [-18.0, 15.0]
-        properties["problem_run_duration_range"] = [0.0, 1000000.0]
-        properties["programming_thermalization_range"] = [0.0, 10000.0]
-        properties["readout_thermalization_range"] = [0.0, 10000.0]
-        properties["qubits"] = self.nodelist.copy()
-        properties["couplers"] = self.edgelist.copy()
-
         
-    @dimod.bqm_structured
+        # Properties and parameters mocked from
+        # Advantage_system4.1 accessed February 10th 2022
+        # 'RV7-3_P16-N1_4007890-05-C3_C5R3-device-cal-data-21-10-14-19%3a35'
+        # with simplified lists for large parameters, and modified
+        # topology arguments per MockSolver initialization:
+        
+        self.parameters = parameters = {
+            'anneal_offsets': ['parameters'],
+            'anneal_schedule': ['parameters'],
+            'annealing_time': ['parameters'],
+            'answer_mode': ['parameters'],
+            'auto_scale': ['parameters'],
+            'flux_biases': ['parameters'],
+            'flux_drift_compensation': ['parameters'],
+            'h_gain_schedule': ['parameters'],
+            'initial_state': ['parameters'],
+            'max_answers': ['parameters'],
+            'num_reads': ['parameters'],
+            'num_spin_reversal_transforms': ['parameters'],
+            'programming_thermalization': ['parameters'],
+            'readout_thermalization': ['parameters'],
+            'reduce_intersample_correlation': ['parameters'],
+            'reinitialize_state': ['parameters'],
+            'warnings': [],
+            'label': []}
+        
+        self.properties = properties = {
+            #Modified/Simplified properties:
+            'num_qubits' : len(solver_graph),
+            'qubits' : self.nodelist.copy(),
+            'properties' : self.edgelist.copy(),
+            'topology' : {'type': topology_type, 'shape': topology_shape},
+            'chip_id' : 'MockDWaveSampler',
+            'anneal_offset_ranges' : [[-0.5,0.5] if i in self.nodelist
+                                      else [0,0] for i in range(len(self.nodelist))],
+            #Unmodified properties:
+            'h_range': [-4.0, 4.0],
+            'j_range': [-1.0, 1.0],
+            'supported_problem_types': ['ising', 'qubo'],
+            'parameters': {'anneal_offsets':
+                           'Anneal offsets for each working qubit, formatted as a list, with NaN specified for unused qubits.',
+                           'anneal_schedule':
+                           "Annealing schedule formatted as a piecewise linear list of floating-point pairs of 't' and 's'.",
+                           'annealing_time':
+                           'Quantum annealing duration, in microseconds, as a positive floating point number.',
+                           'answer_mode':
+                           "Format of returned answers, as 'histogram' or 'raw' samples.",
+                           'auto_scale':
+                           'Automatic rescaling of h and J values to their available range, as a boolean flag.',
+                           'flux_biases':
+                           'Flux biases for each working qubit, in normalized offset units, formatted as a list for all qubits.',
+                           'flux_drift_compensation':
+                           'Activation of flux drift compensation, as a boolean flag.',
+                           'h_gain_schedule':
+                           "h-gain schedule formatted as a piecewise linear list of floating-point pairs of 't' and 'g'.",
+                           'initial_state':
+                           'Initial states to use for a reverse-anneal request, as a list of qubit index and state.',
+                           'max_answers':
+                           'Maximum number of answers to return.',
+                           'num_reads':
+                           'Number of states to read (answers to return), as a positive integer.',
+                           'num_spin_reversal_transforms':
+                           'Number of spin-reversal transforms (gauge transformations) to perform.',
+                           'programming_thermalization':
+                           'Time in microseconds to wait after programming the processor in order for it to cool back to base temperature, as a positive floating point number.',
+                           'readout_thermalization':
+                           'Time in microseconds to wait after each state is read from the processor in order for it to cool back to base temperature, as a positive floating point number.',
+                           'reduce_intersample_correlation':
+                           'Addition of pauses between samples, as a boolean flag.',
+                           'reinitialize_state':
+                           'Reapplication of the initial_state for every read in reverse annealing, as a boolean flag.'},
+            'vfyc': False,
+            'anneal_offset_step': -0.0001500217998314891,
+            'anneal_offset_step_phi0': 1.4303846404537006e-05,
+            'annealing_time_range': [0.02, 83000.0],
+            'default_annealing_time': 20.0,
+            'default_programming_thermalization': 1000.0,
+            'default_readout_thermalization': 0.0,
+            'extended_j_range': [-2.0, 1.0],
+            'h_gain_schedule_range': [-3.0, 3.0],
+            'max_anneal_schedule_points': 50,
+            'max_h_gain_schedule_points': 20,
+            'num_reads_range': [1, 10000],
+            'per_qubit_coupling_range': [-18.0, 15.0],
+            'problem_run_duration_range': [0.0, 10000000.0],
+            'programming_thermalization_range': [0.0, 10000.0],
+            'readout_thermalization_range': [0.0, 10000.0],
+            'tags': [],
+            'category': 'qpu',
+            'quota_conversion_rate': 1}
+        
+        @dimod.bqm_structured
     def sample(self, bqm, num_reads=1, flux_biases=[], **kwargs):
         # we are altering the bqm if flux_biases given
 
