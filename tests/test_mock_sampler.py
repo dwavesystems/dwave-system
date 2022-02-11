@@ -70,14 +70,15 @@ class TestMockDWaveSampler(unittest.TestCase):
             # is possible with the fallback dimod.SimulatedAnnealingSampler()
             # method
 
-            #QPU format inital states:
-            initial_states = [(0,1),(0,1)] + [(i,3) for i in range(2,8)]
-            ss = sampler.sample_ising({0 : 1, 1 : 1}, {(0,1) : -2},
-                                      num_reads=num_reads,
-                                      answer_mode='raw', max_samples=2)
+            #QPU format initial states:
+            initial_state = [(i,1) if i%4==0 else (i,3) for i in range(8)]
+            ss = sampler.sample_ising({0 : 1, 4 : 1}, {(0,4) : -2},
+                                      num_reads=1,
+                                      answer_mode='raw',
+                                      initial_state=initial_state)
             #The initialized state is a local minima, and should
             #be returned under greedy descent mocking:
-            self.assertEqual(ss.record.energy[0],-1)
+            self.assertEqual(ss.record.energy[0],0)
         
     def test_chimera_topology(self):
         grid_parameter = 5

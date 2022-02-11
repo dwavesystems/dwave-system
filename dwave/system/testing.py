@@ -57,11 +57,14 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     
         parameter_warnings (bool, optional, default=True):
             The MockSampler is adaptive with respect to ``num_reads``,
-            ``answer_mode`` and ``max_answers`` and ``initial_states`` 
-            parameters. All other parameters are ignored and a warning will be 
-            raised by default.
-    """
+            ``answer_mode`` and ``max_answers`` and ``label`` 
+            parameters. By default ``initial_state`` can also be mocked, if
+            dwave-greedy is installed. All other parameters are ignored and a 
+            warning will be raised by default.
 
+    """
+    # Feature suggestion - add seed as an optional input, to allow reproducibility.
+    
     nodelist = None
     edgelist = None
     properties = None
@@ -235,16 +238,34 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
+        ''' dimod sampler for mocking DWaveSampler() interface.
+        
+        Use for in code-correctness testing only, this is not an emulator. 
+        Note that the samplset is dominated by local (or global) minima,
+        but does not respond realistically to variation of input parameters.
+        '''
         
         #Check kwargs compatibility with parameters and substitute sampler:
-
         mocked_parameters={'answer_mode',
                            'max_answers',
                            'num_reads',
                            'label'}
         if not mock_fallback_substitute:
+            pass
+            # The fallback sampler (SA) is an inferior choice, but
+            # greedy may not always be installed, unlike dimod.
+        else:
             mocked_parameters.add('initial_state')
-        
+            # steepest greedy descent is the best substitute to
+            # standardize upon. A few additional considerations as
+            # dwave-greedy is modified and processor scale grows:
+            # (1) For large sample sets, it would be more efficient to
+            # handle ``answer_mode`` and ``max_answers`` within the
+            # lower-level optimized code - just as they are handled server
+            # side in QPU calls.
+            # (2) We could also consider using 'large_sparse_opt' to
+            # exploit fixed connectivity at large scale for current QPU
+            # designs, but unlikely to be a significant inefficiency.
         for kw in kwargs:
             if kw in self.parameters:
                 if (kw not in mocked_parameters
@@ -255,47 +276,50 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             else:
                 raise NotImplementedError('kwarg ' + kw + ' '
                                           'invalid for MockDWaveSampler()')
-        
-        info = dict(problem_id=str(uuid4()))
+
+        # Timing values are for demonstration only. These could be made
+        # adaptive to sampler parameters and mocked topology in principle.
+        info = dict(problem_id=str(uuid4()),
+                    timing={'qpu_sampling_time': 82.08,
+                            'qpu_anneal_time_per_sample': 20.0,
+                            'qpu_readout_time_per_sample': 41.54,
+                            'qpu_access_time': 8550.28,
+                            'qpu_access_overhead_time': 9340.72,
+                            'qpu_programming_time': 8468.2,
+                            'qpu_delay_time_per_sample': 20.54,
+                            'total_post_processing_time': 1124.0,
+                            'post_processing_overhead_time': 1124.0})
         label = kwargs.get('label')
         if label is not None:
             info.update(problem_label=label)
+        
         substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
-
-        if not mock_fallback_substitute:
-            #mock additional parameters:
-            initial_states0 = kwargs.get('initial_states')
-            if initial_states0 is not None:
-                #Initial state format is a list of (qubit,values)
-                #value=3 denotes an unused variable (should be absent
-                #from bqm). 
-                #Convert to format for substitute
-                initial_states_Substitute = (
-                    np.array([pair[1] for pair in initial_states0
-                              if pair[1]!=3],dtype=float),
-                    [pair[0] for pair in inital_states0 if pair[1]!=3])
-                
-                # For large sample sets, it would be more efficient to
-                # handle ``answer_mode`` and ``max_answers`` within the
-                # lower-level optimized code - just as they are handled server
-                # side in QPU calls.
         
-            else:
-                initial_states = None
-        #Large QPUs are sparse, and might benefit from large_sparse_opt.
+        if not mock_fallback_substitute:            
+            initial_state = kwargs.get('initial_state')
+            if initial_state is not None:
+                # Initial state format is a list of (qubit,values)
+                # value=3 denotes an unused variable (should be absent
+                # from bqm). 
+                # Convert to format for substitute (NB: plural key)
+                substitute_kwargs['initial_states'] = (
+                    np.array([pair[1] for pair in initial_state
+                              if pair[1]!=3],dtype=float),
+                    [pair[0] for pair in initial_state if pair[1]!=3])
+                
         ss = SubstituteSampler().sample(bqm, **substitute_kwargs)
         ss.info.update(info)
         
         answer_mode = kwargs.get('answer_mode')
         if answer_mode is None or answer_mode == 'histogram':
-            #default for DWaveSampler() is 'histogram'
+            # Default for DWaveSampler() is 'histogram'
             ss = ss.aggregate()
         
         max_answers = kwargs.get('max_answers')
         if max_answers is not None:
-            #Truncate sampleset
+            # Truncate sampleset if requested. Do not reorder (per DWaveSampler())
             ss = ss.truncate(max_answers)
         
         return ss
