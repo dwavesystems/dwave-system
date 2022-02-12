@@ -67,10 +67,12 @@ class TestTemperatures(unittest.TestCase):
         # This implies an effective temperature 1/atanh(0.5)
         site_energy = np.array([2]*5 + [-2]*15)
         site_names = ['a']
-        T = maximum_pseudolikelihood_temperature(
-            site_energy = (site_energy[:,np.newaxis],site_names))
-        self.assertTrue(type(T) is tuple and len(T)==2)
-        self.assertTrue(np.abs(T[0]-1/np.arctanh(0.5))<1e-8)
+        for optimize_method in [None,'bisect']:
+            T = maximum_pseudolikelihood_temperature(
+                site_energy = (site_energy[:,np.newaxis],site_names),
+                optimize_method = optimize_method)
+            self.assertTrue(type(T) is tuple and len(T)==2)
+            self.assertTrue(np.abs(T[0]-1/np.arctanh(0.5))<1e-8)
         
         # Single variable H = s_i problem with mean energy (-5 + 5)/10 = 0
         # This implies an infinite temperature (up to numerical tolerance
@@ -85,7 +87,6 @@ class TestTemperatures(unittest.TestCase):
             T = maximum_pseudolikelihood_temperature(
                 site_energy = (site_energy[:,np.newaxis],[1]),
                 T_bracket=T_bracket)
-            
             self.assertTrue(type(T) is tuple and len(T)==2)
             self.assertTrue(T[0]==T_bracket[1])
         

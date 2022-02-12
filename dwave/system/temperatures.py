@@ -109,14 +109,16 @@ def effective_field(bqm,
        Cost to flip spin against current assignment (array([[-1., -2., -2., -2., -1.]]), [0, 1, 2, 3, 4])
        
     '''
-    if bqm.vartype == dimod.vartypes.Vartype.BINARY:
-        bqm = bqm.change_vartype('SPIN', inplace=False)
-       
     if samples is None:
         samples = np.ones(shape=(1,bqm.num_variables))
         labels = bqm.variables
     else:
         samples, labels = dimod.sampleset.as_samples(samples)
+
+    if bqm.vartype == dimod.vartypes.Vartype.BINARY:
+        bqm = bqm.change_vartype('SPIN', inplace=False)
+        samples = 2*samples-1
+    
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
         variable_order=labels)
     # eff_field = h + J*s OR diag(Q) + (Q-diag(Q))*b
@@ -251,7 +253,6 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         site_energy = effective_field(bqm,
                                       sampleset,
                                       current_state_energy = True)
-        
     max_excitation = np.max(site_energy[0],axis=1)
     max_excitation_all =  np.max(max_excitation)
     if max_excitation_all <= 0:
@@ -277,38 +278,42 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         if T_guess == None:
             x0 = -1/max_excitation_all
         else:
-            x0 = -1/T_guess
-        
+            if T_guess < T_bracket[0]:
+                x0 = -1/T_bracket[0]
+            elif T_guess > T_bracket[1]:
+                x0 = -1/T_bracket[1]
+            else:
+                x0 = -1/T_guess
+        root_results = None
         if optimize_method == 'bisect':
-            if T_bracket[0]<T_bracket[1] and T_bracket[0]>=0:
-                pass
-            else:
+            #Check T_bracket
+            if not (T_bracket[0]<T_bracket[1] and T_bracket[0]>=0):
                 raise ValueError('Bad T_bracket, must be positive ordered scalars.')
-            if T_bracket[0]>0:
-                bisect_bracket = [-1/T_bracket[1],-1/T_bracket[0]]
-            else:
-                bisect_bracket = [-1/T_bracket[1],-float('Inf')]
-            if d_mean_log_pseudo_likelihood(bisect_bracket[0])>0:
+            #Convert to bisection bracket for -1/T
+            bisect_bracket = [-1/T_bracket[i] for i in range(2)]
+            
+            if d_mean_log_pseudo_likelihood(bisect_bracket[0]) <0:
                 warnings.warn(
-                    'Temperature is greater than T_bracket[1], or perhaps negative: ' 
-                    'rescaling the Hamiltonian, modification of T_bracket[1], or '
-                    'a change of the optimize_method (to None) '
-                    'can resolve this issue assuming a numerical precision issue '
-                    'induced by very large or small effective fields is not the cause. '
-                    'Automated precision requirements mean that this routine works '
-                    'best when excitations (effective fields) are O(1).')
-                T_estimate = T_bracket[1]
-            elif d_mean_log_pseudo_likelihood(bisect_bracket[1])<0:
-                warnings.warn(
-                    'Temperature is less than T_bracket[0], or perhaps negative:'
-                    'rescaling the Hamiltonian, modification of T_bracket[0] or '
+                    'Temperature is less than T_bracket[0], or perhaps negative: ' 
+                    'rescaling the Hamiltonian, modification of T_bracket[0], or '
                     'a change of the optimize_method (to None) '
                     'can resolve this issue assuming a numerical precision issue '
                     'induced by very large or small effective fields is not the cause. '
                     'Automated precision requirements mean that this routine works '
                     'best when excitations (effective fields) are O(1).')
                 T_estimate = T_bracket[0]
+            elif d_mean_log_pseudo_likelihood(bisect_bracket[1]) > 0:
+                warnings.warn(
+                    'Temperature is greater than T_bracket[1], or perhaps negative:'
+                    'rescaling the Hamiltonian, modification of T_bracket[1] or '
+                    'a change of the optimize_method (to None) '
+                    'can resolve this issue assuming a numerical precision issue '
+                    'induced by very large or small effective fields is not the cause. '
+                    'Automated precision requirements mean that this routine works '
+                    'best when excitations (effective fields) are O(1).')
+                T_estimate = T_bracket[1]
             else:
+                #Bounds are good:
                 if x0 < bisect_bracket[0] or x0 > bisect_bracket[1]:
                     x0 = (bisect_bracket[0] + bisect_bracket[1])/2 
                 root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0 = x0,
@@ -329,10 +334,11 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         
             root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0 = x0,
                                                 fprime=dd_mean_log_pseudo_likelihood)
-            
+            T_estimate = -1/root_results.root
         if bootstrap_size > 0:
             #By bootstrapping with respect to samples we 
-            x0 = root_results.root
+            if root_results is not None:
+                x0 = root_results.root
             prng = np.random.RandomState(seed)
             num_samples = site_energy[0].shape[0]
             for bs in range(bootstrap_size):
@@ -454,7 +460,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     return 2*temperature*kB/freezeout_B
 
 def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
-                               T_guess=6, sampler_params=None,
+                               h_range=[-1/6.1,1/6.1], sampler_params=None,
                                optimize_method=None):
     '''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
     
@@ -473,7 +479,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
             Seeds the problem generation process. Allowing reproducibility
             from pseudo-random samplers.
 
-        h_range (float, optional, default = [-1/6.1,1/6.1):
+        h_range (float, optional, default = [-1/6.1,1/6.1]):
             Determines the range of external fields probed for temperature
             inference. Default is based on a D-Wave Advantage processor, where
             single-qubit freeze-out implies an effective temperature of 6.1 
@@ -536,7 +542,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         if h_range[1] > sampler.properties['h_range'][1]:
             h_range[1] = sampler.properties['h_range'][1]
             raise ValueError('h_range[1] exceeds programmable range')
-            
+        
     prng = np.random.RandomState(seed)
     h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
     bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx] for idx,var in enumerate(sampler.nodelist)}, {})
