@@ -14,19 +14,15 @@
 
 """who watches the watchmen?"""
 import unittest
-
-from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
-
+import os
 import dimod.testing as dit
+
+from dwave.system import DWaveSampler
+from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
 
-from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
-from dwave.system import DWaveSampler
-import os
-
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
-
-        
 class TestMockDWaveSampler(unittest.TestCase):
     def test_properties_and_params(self):
         try:
@@ -79,7 +75,21 @@ class TestMockDWaveSampler(unittest.TestCase):
             #The initialized state is a local minima, and should
             #be returned under greedy descent mocking:
             self.assertEqual(ss.record.energy[0],0)
-        
+    def test_unmock_parameters(self):
+        # Check valid DWaveSampler() parameter, that is not mocked throws a warning:
+        sampler = MockDWaveSampler()
+        with self.assertWarns(UserWarning) as w:
+            ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
+        with self.assertRaises(ValueError) as e:
+            ss = sampler.sample_ising({0 : -1}, {}, monkey_time=123)
+        with self.assertRaises(ValueError) as e:
+            sampler = MockDWaveSampler(topology_type="chimera123")
+        sampler = MockDWaveSampler(parameter_warnings=False)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="error", category=UserWarning)
+            ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
+    
     def test_chimera_topology(self):
         grid_parameter = 5
         tile_parameter = 2

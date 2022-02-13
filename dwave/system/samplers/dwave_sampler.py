@@ -35,6 +35,7 @@ from dwave.cloud.exceptions import (
 from dwave.system.warnings import WarningHandler, WarningAction
 
 import dwave_networkx as dnx
+import networkx as nx
 
 __all__ = ['DWaveSampler']
 
@@ -488,8 +489,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Returns:
             :class:`networkx.Graph`:
-                Either an (m, n, t) Chimera lattice, a Pegasus lattice of size m or a
-                Zephyr lattice of size m.
+                Either a Chimera lattice of shape [m, n, t], a Pegasus 
+                lattice of shape [m] or a Zephyr lattice of size [m,t].
 
         Examples:
             This example converts a selected D-Wave system solver to a graph
@@ -507,18 +508,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         shape = self.properties['topology']['shape']
 
         if topology_type == 'chimera':
+            if not (1 <=len(shape) and len(shape)<=3):
+                raise ValueError('shape is incompatible with a chimera lattice.')
             G = dnx.chimera_graph(*shape,
                                   node_list=self.nodelist,
                                   edge_list=self.edgelist)
 
         elif topology_type == 'pegasus':
+            if not len(shape)==1:
+                raise ValueError('shape is incompatible with a pegasus lattice.')
             G = dnx.pegasus_graph(shape[0],
                                   node_list=self.nodelist,
                                   edge_list=self.edgelist)
 
         elif topology_type == 'zephyr':
-            G = dnx.zephyr_graph(shape[0],
+            if not (len(shape)==2 or len(shape)==1):
+                raise ValueError('shape is incompatible with a zephyr lattice.')
+            G = dnx.zephyr_graph(*shape,
                                  node_list=self.nodelist,
                                  edge_list=self.edgelist)
-
+        else:
+            # Alternative could be to create a standard network graph and
+            # issue a warning. Requires new dependency on networkx.
+            raise ValueError('topology_type does not match a known'
+                             'QPU architecure')
         return G
