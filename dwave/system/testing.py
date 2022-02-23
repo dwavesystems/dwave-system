@@ -34,27 +34,49 @@ import numpy as np
 class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
-    Properties fields are populated matching a legacy device, and a 
-    placeholder sampler routine based on steepest descent is instantiated.
-    
+    Properties and topology parameters are populated qualitatively matching
+    online systems, and a placeholder sampler routine based on steepest descent
+    is instantiated.
+
     Args:
+        nodelist (iterable of ints, optional):
+            List of nodes to include. When not specified, all nodes
+            compatible with the default topology type and shape are
+            added.
+
+        edgelist (iterable of (int,int) tuples, optional):
+            List of edges to include. When not specified, all edges
+            compatible with the default topology type and shape are
+            added.
+
+        properties (dictionary, optional):
+            A dictionary of properties, to update default values.
+
         broken_nodes (iterable of ints, optional):
-            List of nodes to exclude (along with associated edges). For 
-            emulation of unyielded qubits.
+            List of nodes to exclude (along with associated edges), for
+            emulation of unyielded qubits. This parameter is made redundant
+            by the use of nodelist.
         
         broken_edges (iterable of (int,int) tuples, optional):
-            List of edges to exclude. For emulation of unyielded edges.
-        
+            List of edges to exclude, for emulation of unyielded edges.
+            This parameter is made redundant by the use of edgelist.
+
         topology_type (string, optional, default='chimera'):
-            QPU topology being emulated. Note that for Pegasus emulation the 
-            fabric_only=True graph is presented. Supported options are
-            'chimera', 'pegasus' or 'zephyr'
+            If 'topology' is in ``properties``, this argument is ignored
+            in favour of ``properties``['topology']['type']. Otherwise
+            it determines the DWaveSampler topology being emulated. Supported
+            options are 'chimera', 'pegasus' or 'zephyr', with 'chimera'
+            being the default. Note that for Pegasus emulation the
+            fabric_only=True graph is presented.
             
         topology_shape (string, optional):
+            If 'topology' is in ``properties`` then this argument is
+            ignored in favour of ``properties``['topology']['shape']. Otherwise
+            it determines a ``topology_type`` compatible shape parameter.
             A list of three numbers [m,n,t] for Chimera, defaulted as [4,4,4]. 
             A list of one number [m] for Pegasus, defaulted as [3].
-            A list of two numbers [m,t] for Zephyr, defaulted as [2,4]. 
-            Defaults are chosen large enough to capture lattice-specific 
+            A list of two numbers [m,t] for Zephyr, defaulted as [2,4].
+            Defaults are chosen large enough to capture lattice-specific
             structure, but small enough to allow rapid testing.
     
         parameter_warnings (bool, optional, default=True):
@@ -64,6 +86,29 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
             dwave-greedy is installed. All other parameters are ignored and a 
             warning will be raised by default.
 
+    Examples
+        The first example creates a MockSampler without reference to a
+        particular online system, with a fully-yielded Chimera C16 structure.
+        The second example creates a MockSampler from the default DWaveSampler:
+        nodelist, edgelist and properties are derived from the sampler.
+        In each case a single qubit problem is sampled.
+
+        >>> from dwave.system.testing import MockDWaveSampler
+        >>> mock_sampler = MockDWaveSampler(topology_type='chimera',
+        ...                                 topology_shape=[16,16,4])
+        >>> ss = mock_sampler.sample_ising({mock_sampler.nodelist[0] : -1}, {},
+        ...                                num_reads = 100)
+        >>> print(ss.first.energy)
+        -1
+        ...
+        >>> from dwave.system import DWaveSampler
+        >>> sampler = DWaveSampler()
+        >>> mock_sampler = MockDWaveSampler.from_qpu_sampler(sampler)
+        >>> ss = mock_sampler.sample_ising({mock_sampler.nodelist[0] : -1}, {},
+        ...                                num_reads = 100)
+        >>> print(ss.first.energy)
+        -1
+
     """
     # Feature suggestion - add seed as an optional input, to allow reproducibility.
     
@@ -71,24 +116,42 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
     edgelist = None
     properties = None
     parameters = None
-    def __init__(self, broken_nodes=None, broken_edges=None,
-                 topology_type='chimera',topology_shape=None,
+    def __init__(self,
+                 nodelist=None, edgelist=None, properties=None,
+                 broken_nodes=None, broken_edges=None,
+                 topology_type=None,topology_shape=None,
                  parameter_warnings=True, **config):
         self.parameter_warnings = parameter_warnings
-        
-        shape_defaults = {'chimera' : [4,4,4],
-                          'pegasus' : [3],
-                          'zephyr' : [2,4]}
-        if topology_type in shape_defaults:
-            if topology_shape is None:
-                topology_shape = shape_defaults[topology_type]
+
+        #Parse or default topology dependent arguments:
+        if properties is not None and 'topology' in properties:
+            if ('type' not in properties['topology']
+                or 'shape' not in properties['topology']):
+                raise ValueError("'shape' and 'type' should be keys in "
+                                 "properties['topology']")
+            topology_type = properties['topology']['type']
+            topology_shape = properties['topology']['shape']
         else:
-            raise ValueError("Only 'chimera', 'pegasus' and 'zephyr' "
-                             "topologies are supported")
+            if topology_type is None:
+                topology_type = 'chimera'
+            shape_defaults = {'chimera' : [4,4,4],
+                              'pegasus' : [3],
+                              'zephyr' : [2,4]}
+            if topology_type in shape_defaults:
+                if topology_shape is None:
+                    topology_shape = shape_defaults[topology_type]
+            else:
+                raise ValueError("Only 'chimera', 'pegasus' and 'zephyr' "
+                                 "topologies are supported")
         self.properties = {
             'chip_id' : 'MockDWaveSampler',
-            'topology' : {'type': topology_type, 'shape': topology_shape}
-        }
+            'topology' : {'type': topology_type, 'shape': topology_shape}}
+        
+        #Create graph object, introduce defects per input arguments
+        if nodelist is not None:
+            self.nodelist = nodelist.copy()
+        if edgelist is not None:
+            self.edgelist = edgelist.copy()
         solver_graph = self.to_networkx_graph()
         
         if broken_nodes is None and broken_edges is None:
@@ -107,16 +170,15 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
                                    and v not in broken_nodes
                                    and (u, v) not in broken_edges
                                    and (v, u) not in broken_edges)
+        #Finalize yield-dependent properties:
         self.properties.update({
             'num_qubits' : len(solver_graph),
             'qubits' : self.nodelist.copy(),
             'couplers' : self.edgelist.copy(),
             'anneal_offset_ranges' : [[-0.5,0.5] if i in self.nodelist
                                       else [0,0] for i in range(len(self.nodelist))]})
-        
-        # Other properties and parameters mocked from
+        # Non-topology-dependent properties and parameters mocked from
         # Advantage_system4.1 accessed February 10th 2022
-        # 'RV7-3_P16-N1_4007890-05-C3_C5R3-device-cal-data-21-10-14-19%3a35'
         # with simplified lists for large parameters, and modified
         # topology arguments per MockSolver initialization:
         # See also:
@@ -142,6 +204,7 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
             'reinitialize_state': ['parameters'],
             'warnings': [],
             'label': []}
+        
         
         self.properties.update({
             'h_range': [-4.0, 4.0],
@@ -214,10 +277,20 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
             'category': 'qpu',
             'quota_conversion_rate': 1})
         
+        if properties is not None:
+            # provided properties overwrite defaults, note that
+            # particular care should be taken with respect to
+            # topology-dependent arguments:
+            self.properties.update(properties)
+        
+    @classmethod
+    def from_qpu_sampler(cls, sampler):
+        return cls(properties=sampler.properties,nodelist=sampler.nodelist,edgelist=sampler.edgelist)
+
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
         
-        #Check kwargs compatibility with parameters and substitute sampler:
+        # Check kwargs compatibility with parameters and substitute sampler:
         mocked_parameters={'answer_mode',
                            'max_answers',
                            'num_reads',
@@ -299,6 +372,7 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
             ss = ss.truncate(max_answers)
         
         return ss
+
     
 class MockLeapHybridDQMSampler:
     """Mock sampler modeled after LeapHybridDQMSampler that can be used for tests."""

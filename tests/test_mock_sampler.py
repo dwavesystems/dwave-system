@@ -34,6 +34,12 @@ class TestMockDWaveSampler(unittest.TestCase):
 
         self.assertEqual(set(mock.properties), set(sampler.properties))
         self.assertEqual(set(mock.parameters), set(sampler.parameters))
+
+        #Check extraction of nodelist, edgelist and properties from 
+        mock = MockDWaveSampler.from_qpu_sampler(sampler)
+        self.assertEqual(mock.nodelist.sort(),sampler.nodelist.sort())
+        self.assertEqual(mock.edgelist.sort(),sampler.edgelist.sort())
+        
         
     def test_sampler(self):
         sampler = MockDWaveSampler()
@@ -123,7 +129,22 @@ class TestMockDWaveSampler(unittest.TestCase):
                         tile_parameter*grid_parameter*(8*grid_parameter + 4))
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
-    
+
+    def test_properties(self):
+        properties = {'topology' : {
+            'type' : 'pegasus',
+            'shape' : [16]}}
+        #Note, topology_type and topology_shape are unchecked and
+        #ignored
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=[3,3,4],
+                                   properties=properties)
+        self.assertTrue(sampler.properties['topology']['type']=='pegasus')
+        self.assertTrue(sampler.properties['topology']['shape'][-1]==16)
+        properties['category'] = 'test_choice'
+        sampler = MockDWaveSampler(properties=properties)
+        self.assertTrue(sampler.properties['category']=='test_choice')
+        
     def test_yield_arguments(self):
         # Request 1 node and 1 edge deletion, check resulting graph 
         #    1      3
@@ -145,6 +166,24 @@ class TestMockDWaveSampler(unittest.TestCase):
                                    broken_edges=delete_edges)
         self.assertTrue(len(sampler.nodelist)==7)
         self.assertTrue(len(sampler.edgelist)==5)
+
+        nodelist = [0,4,5,6,7]
+        edgelist = [(5,7),(4,6)]
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=chimera_shape,
+                                   nodelist=nodelist,
+                                   edgelist=edgelist)
+        self.assertTrue(len(sampler.nodelist)==5)
+        self.assertTrue(len(sampler.edgelist)==2)
+        
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=chimera_shape,
+                                   nodelist=nodelist,
+                                   edgelist=edgelist,
+                                   broken_nodes=delete_nodes,
+                                   broken_edges=delete_edges)
+        self.assertTrue(len(sampler.nodelist)==4)
+        self.assertTrue(len(sampler.edgelist)==1)
         
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
