@@ -239,10 +239,8 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
             # greedy may not always be installed, unlike dimod.
         for kw in kwargs:
             if kw in self.parameters:
-                if (kw not in mocked_parameters
-                    and self.parameter_warnings == True):
-                    
-                    warnings.warn(kw + ' parameter is valid for DWaveSampler(), '
+                if self.parameter_warnings and kw not in mocked_parameters:
+                    warnings.warn(f'{kw!r} parameter is valid for DWaveSampler(), '
                                   'but not mocked in MockDWaveSampler().')
             else:
                 raise ValueError('kwarg ' + kw + ' '
