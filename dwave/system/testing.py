@@ -316,8 +316,7 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
                     warnings.warn(f'{kw!r} parameter is valid for DWaveSampler(), '
                                   'but not mocked in MockDWaveSampler().')
             else:
-                raise ValueError('kwarg ' + kw + ' '
-                                 'invalid for MockDWaveSampler()')
+                raise ValueError(f'kwarg {kw!r} invalid for MockDWaveSampler()')
 
         # Timing values are for demonstration only. These could be made
         # adaptive to sampler parameters and mocked topology in principle.
