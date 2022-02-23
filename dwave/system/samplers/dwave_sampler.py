@@ -508,7 +508,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         shape = self.properties['topology']['shape']
 
         if topology_type == 'chimera':
-            if not (1 <=len(shape) and len(shape)<=3):
+            if not (1 <= len(shape) <=3):
                 raise ValueError('shape is incompatible with a chimera lattice.')
             G = dnx.chimera_graph(*shape,
                                   node_list=self.nodelist,
