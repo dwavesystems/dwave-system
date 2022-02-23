@@ -515,7 +515,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                   edge_list=self.edgelist)
 
         elif topology_type == 'pegasus':
-            if not len(shape)==1:
+            if len(shape) != 1:
                 raise ValueError('shape is incompatible with a pegasus lattice.')
             G = dnx.pegasus_graph(shape[0],
                                   node_list=self.nodelist,
