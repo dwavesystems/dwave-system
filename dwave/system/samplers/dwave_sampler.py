@@ -522,7 +522,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                   edge_list=self.edgelist)
 
         elif topology_type == 'zephyr':
-            if not (len(shape)==2 or len(shape)==1):
+            if len(shape) not in (1, 2):
                 raise ValueError('shape is incompatible with a zephyr lattice.')
             G = dnx.zephyr_graph(*shape,
                                  node_list=self.nodelist,
