@@ -34,13 +34,14 @@ import warnings
 import numpy as np
 import dimod
 from scipy import optimize
+from typing import Tuple
 
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature']
 
 def effective_field(bqm,
                     samples=None,
-                    current_state_energy=False):
+                    current_state_energy=False) -> (np.ndarray,list):
     '''Returns the effective field for all variables and all samples.
     
     The effective field with ``current_state_energy = False`` is the energy
@@ -136,11 +137,11 @@ def effective_field(bqm,
 def maximum_pseudolikelihood_temperature(bqm = None,
                                          sampleset = None,
                                          site_energy = None,
-                                         bootstrap_size = 0,
+                                         num_bootstrap_samples = 0,
                                          seed=None,
                                          T_guess=None,
                                          optimize_method='bisect',
-                                         T_bracket=(1e-3,1000)):
+                                         T_bracket=(1e-3,1000)) -> Tuple[float,np.ndarray]:
     '''Returns a sampling-based temperature estimate.
     
     The temperature T parameterizes the Boltzmann distribution as 
@@ -185,7 +186,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         site_energy (samples_like, optional):
             A Tuple of effective fields and site labels.
             Derived from the ``bqm`` and ``sampleset`` if not provided.
-        bootstrap_size (int, optional, default=0):
+        num_bootstrap_samples (int, optional, default=0):
             Number of bootstrap estimators to calculate.
         seed (int, optional)
             Seeds the bootstrap method (if provided) allowing reproducibility
@@ -200,9 +201,10 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             SciPy method used for optimization. Options are 'bisect' and
             None (the default SciPy optimize method). 
         T_bracket (list or Tuple of 2 floats, optional, default=(0.001,1000)):
-            By default this defines the range of Temperatures
-            over which to attempt a fit. If excitations are absent, temperature 
-            is still defined as zero. 
+            If excitations are absent, temperature is defined as zero, otherwise 
+            this defines the range of Temperatures over which to attempt a fit when
+            using the 'bisect' ``optimize_method`` (the default).
+
     Returns:
         Tuple of float and NumPy array:
             (T_estimate,T_bootstrap_estimates)
@@ -243,7 +245,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
     '''
     
     T_estimate = 0
-    T_bootstrap_estimates = np.zeros(bootstrap_size)
+    T_bootstrap_estimates = np.zeros(num_bootstrap_samples)
 
     #Check for largest local excitation in every sample, and over all samples
     if site_energy is None:
@@ -335,25 +337,25 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0 = x0,
                                                 fprime=dd_mean_log_pseudo_likelihood)
             T_estimate = -1/root_results.root
-        if bootstrap_size > 0:
+        if num_bootstrap_samples > 0:
             #By bootstrapping with respect to samples we 
             if root_results is not None:
                 x0 = root_results.root
             prng = np.random.RandomState(seed)
             num_samples = site_energy[0].shape[0]
-            for bs in range(bootstrap_size):
+            for bs in range(num_bootstrap_samples):
                 indices = np.random.choice(
                     num_samples,
-                    bootstrap_size,
+                    num_bootstrap_samples,
                     replace=True)
                 T_bootstrap_estimates[bs],_ = maximum_pseudolikelihood_temperature(
                     site_energy = (site_energy[0][indices,:],site_energy[1]),
-                    bootstrap_size = 0,
+                    num_bootstrap_samples = 0,
                     T_guess = T_estimate)
     
     return T_estimate, T_bootstrap_estimates
 
-def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK'):
+def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK') -> float:
     '''Provides an effective temperature as a function of freezeout information.
     
     See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a 
@@ -461,11 +463,12 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
 
 def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
                                h_range=[-1/6.1,1/6.1], sampler_params=None,
-                               optimize_method=None):
+                               optimize_method=None,
+                               num_bootstrap_samples=0) -> Tuple[np.float64,np.float64]:
     '''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
     
     This function submits a set of single-qubit problems to a sampler and 
-    counts excitations to infer a maximum-likelihood estimate of temperature.
+    uses the rate of excitations to infer a maximum-likelihood estimate of temperature.
 
     Args:
         sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`):
@@ -498,11 +501,17 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
             method works well under default operation, 'bisect' can be 
             numerically more stable when operated without defaults.
 
-    Returns:
-        float:
-            The effective temperature describing single qubit problems in an
-            external field.
+        num_bootstrap_samples (int, optional, default=0):
+            Number of bootstrap samples to use for estimation of the
+            standard error. By default no bootstrapping is performed
+            and the standard error is defaulted to 0.
 
+    Returns:
+        Tuple[float, float]:
+            The effective temperature describing single qubit problems in an
+            external field, and a standard error (+/- 1 sigma). 
+            By default the confidence interval is set as 0.
+             
     See also:
 
         https://doi.org/10.3389/fict.2016.00023
@@ -515,7 +524,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
        >>> from dwave.system.temperatures import fast_effective_temperature
        >>> from dwave.system import DWaveSampler
        >>> sampler = DWaveSampler()
-       >>> T = fast_effective_temperature(sampler)
+       >>> T, _ = fast_effective_temperature(sampler)
        >>> print('Effective temperature at freeze-out is',T)    # doctest: +SKIP
        0.21685104745347336
     
@@ -546,7 +555,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
     prng = np.random.RandomState(seed)
     h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
     bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx] for idx,var in enumerate(sampler.nodelist)}, {})
-
+    
     #Create local sampling_params copy - default necessary additional fields:
     if sampler_params == None:
         sampler_params0 = {}
@@ -568,10 +577,20 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
                          "is required by this method.")
     else:
         sampler_params0['auto_scale'] = False
+
+    if num_bootstrap_samples == None:
+        num_bootstrap_samples = sampler_params0['num_reads'] 
         
     sampleset = sampler.sample(bqm, **sampler_params0)
+
+    T,Tboot = maximum_pseudolikelihood_temperature(
+        bqm,
+        sampleset,
+        optimize_method=optimize_method,
+        num_bootstrap_samples=num_bootstrap_samples)
+
     
-    T,_ = maximum_pseudolikelihood_temperature(bqm,
-                                               sampleset,
-                                               optimize_method=optimize_method)
-    return T
+    if num_bootstrap_samples == 0:
+        return T, np.float64(0.0)
+    else:
+        return T, np.sqrt(np.var(Tboot))

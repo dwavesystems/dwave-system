@@ -132,7 +132,7 @@ class TestTemperatures(unittest.TestCase):
         # Initializing in a ground state, all effective
         # fields must be non-negative.
         sampler = MockDWaveSampler()
-        T = fast_effective_temperature(sampler=sampler)
+        T, sigma = fast_effective_temperature(sampler=sampler)
         # Simulated Annealer will tend to return only ground
         # states, hence temperature 0. But exceptions are
         # possible. Hence no assertion on value.
@@ -140,11 +140,11 @@ class TestTemperatures(unittest.TestCase):
 
     def test_bootstrap_errors(self):
         site_energy = np.array([2]*25 +  [-2]*75)
-        bootstrap_size = 100
+        num_bootstrap_samples = 100
         
-        T,Tb = maximum_pseudolikelihood_temperature(site_energy = (site_energy[:,np.newaxis],[1]),bootstrap_size = bootstrap_size)
+        T,Tb = maximum_pseudolikelihood_temperature(site_energy = (site_energy[:,np.newaxis],[1]),num_bootstrap_samples = num_bootstrap_samples)
         
         # Add test to check bootstrap estimator implementation.
         # T = 1/np.arctanh(0.5). With high probability bootstrapped values
         # are finite and will throw no warnings.
-        self.assertTrue(len(Tb) == bootstrap_size)
+        self.assertTrue(len(Tb) == num_bootstrap_samples)
