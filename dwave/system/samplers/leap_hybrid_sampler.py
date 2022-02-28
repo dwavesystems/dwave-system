@@ -533,8 +533,12 @@ class LeapHybridDQMSampler:
             first two pairs that represent problems with "density" between 1 to
             100).
         """
-        ec = (dqm.num_variable_interactions() * dqm.num_cases() /
-              max(dqm.num_variables(), 1))
+        from dimod.discrete.discrete_quadratic_model import DiscreteQuadraticModel
+        if isinstance(dqm, DiscreteQuadraticModel):
+            ec = (dqm.num_variable_interactions() * dqm.num_cases() /
+                max(dqm.num_variables(), 1))
+        else:
+            raise TypeError(f"Expecting DiscreteQuadraticModel object, got {type(dqm)}")
         limits = np.array(self.properties['minimum_time_limit'])
         t = np.interp(ec, limits[:, 0], limits[:, 1])
         return max([5, t])

@@ -54,12 +54,16 @@ class TestLeapHybridDQMSampler(unittest.TestCase):
             sampler = LeapHybridDQMSampler()
 
             dqm = dimod.DQM()
+            bqm = dimod.BinaryQuadraticModel('SPIN')
 
         with self.assertRaises(ValueError):
             sampler.sample_dqm(dqm, time_limit=1)
 
         with self.assertRaises(ValueError):
             sampler.sample_dqm(dqm, time_limit=10000000)
+
+        with self.assertRaises(TypeError):
+            sampler.sample_dqm(bqm)
 
     def test_DQM_subclass_without_serialization_can_be_sampled(self):
         """Test that DQM subclasses that do not implement serialization can
