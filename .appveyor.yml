@@ -3,15 +3,9 @@ environment:
 
     # https://www.appveyor.com/docs/build-environment/#python
 
-    - PYTHON: "C:\\Python36"
-    - PYTHON: "C:\\Python36-x64"
-    - PYTHON: "C:\\Python37"
     - PYTHON: "C:\\Python37-x64"
-    - PYTHON: "C:\\Python38"
     - PYTHON: "C:\\Python38-x64"
-    - PYTHON: "C:\\Python39"
     - PYTHON: "C:\\Python39-x64"
-    # we omit "C:\\Python310", because numpy doesn't support py310 on win32
     - PYTHON: "C:\\Python310-x64"
 
 matrix:
