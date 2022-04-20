@@ -29,6 +29,54 @@ __all__ = ['broken_chains',
            ]
 
 
+def break_points(samples, embedding):
+    """Identify breakpoints in each chain.
+
+    Args:
+        samples (array_like):
+            Samples as a nS x nV array_like object where nS is the number of samples and nV is the
+            number of variables. The values should all be 0/1 or -1/+1.
+        embedding (dwave.embedding.transforms.EmbeddedStructure):
+            Mapping from source graph to target graph as a dict of form {s: [t, ...], ...},
+            where s is a source-model variable and t is a target-model variable.
+
+    Returns:
+        list: A list, of size nS, of `dict`:
+
+            dict: A dictionary whose keys are variables of a BQM, and values are lists of
+            2-tuples `(u, v)` representing edges in the target graph. The existent of an edge indicates
+            `u` and `v` disagree in its value, constituting a chain break.
+
+            The index of the list corresponds to the index of the sample in `samples`.
+
+    Examples:
+
+        >>> from dwave.embedding.transforms import EmbeddedStructure
+
+        >>> embedding = EmbeddedStructure([(0,1), (1,2)], {0: [0, 1, 2]})
+        >>> samples = np.array([[-1, +1, -1], [-1, -1, -1]], dtype=np.int8)
+        >>> dwave.embedding.break_points(samples, embedding)
+        [{0: [(0, 1), (1, 2)]}, {}]
+
+        >>> embedding = EmbeddedStructure([(0,1), (1,2), (0,2)], {0: [0, 1, 2]})
+        >>> samples = np.array([[-1, +1, -1], [-1, +1, +1]], dtype=np.int8)
+        >>> dwave.embedding.break_points(samples, embedding)
+        [{0: [(0, 1), (0, 2)]}, {0: [(0, 1), (1, 2)]}]
+    """
+
+    result = []
+    for sample in samples:
+        bps = {}
+        for node in embedding.keys():
+            chain_edges = embedding.chain_edges(node)
+            broken_edges = [(u, v) for u, v in chain_edges if sample[u] != sample[v]]
+            if len(broken_edges) > 0:
+                bps[node] = broken_edges
+        result.append(bps)
+
+    return result
+
+
 def broken_chains(samples, chains):
     """Find the broken chains.
 
