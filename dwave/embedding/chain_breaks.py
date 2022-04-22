@@ -26,6 +26,7 @@ __all__ = ['broken_chains',
            'majority_vote',
            'weighted_random',
            'MinimizeEnergy',
+           'break_points',
            ]
 
 
@@ -61,7 +62,7 @@ def break_points(samples, embedding):
         >>> embedding = EmbeddedStructure([(0,1), (1,2), (0,2)], {0: [0, 1, 2]})
         >>> samples = np.array([[-1, +1, -1], [-1, +1, +1]], dtype=np.int8)
         >>> dwave.embedding.break_points(samples, embedding)
-        [{0: [(0, 1), (0, 2)]}, {0: [(0, 1), (1, 2)]}]
+        [{0: [(0, 1), (1, 2)]}, {0: [(0, 1), (0, 2)]}]
     """
 
     result = []

@@ -248,6 +248,10 @@ class TestEmbeddingComposite(unittest.TestCase):
         embedding = sampleset.info['embedding_context']['embedding']
         self.assertEqual(set(embedding), {'a', 'c'})
 
+        self.assertIn('break_points', sampleset.info['embedding_context'])
+        break_points = sampleset.info['embedding_context']['break_points']
+        self.assertEqual(break_points, [])
+
         self.assertIn('chain_break_method', sampleset.info['embedding_context'])
         self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
 
@@ -276,6 +280,10 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertIn('embedding', sampleset.info['embedding_context'])
         embedding = sampleset.info['embedding_context']['embedding']
         self.assertEqual(set(embedding), {'a', 'c'})
+
+        self.assertIn('break_points', sampleset.info['embedding_context'])
+        break_points = sampleset.info['embedding_context']['break_points']
+        self.assertEqual(break_points, [])
 
         self.assertIn('chain_break_method', sampleset.info['embedding_context'])
         self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
