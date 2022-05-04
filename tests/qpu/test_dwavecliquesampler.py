@@ -53,3 +53,18 @@ class TestDWaveCliqueSampler(unittest.TestCase):
             bqm.quadratic[u, v] = -1
 
         sampler.sample(bqm).resolve()
+
+    def test_zephyr(self):
+        try:
+            sampler = DWaveCliqueSampler(solver=dict(topology__type='zephyr'))
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("no Zephyr-structured QPU available")
+
+        dimod.testing.assert_sampler_api(sampler)
+
+        # submit a maximum ferromagnet
+        bqm = dimod.BinaryQuadraticModel('SPIN')
+        for u, v in itertools.combinations(sampler.largest_clique(), 2):
+            bqm.quadratic[u, v] = -1
+
+        sampler.sample(bqm).resolve()

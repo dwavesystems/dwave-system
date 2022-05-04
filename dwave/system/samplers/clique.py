@@ -258,32 +258,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         except AttributeError:
             pass
 
-        child = self.child
-
-        # do some topology checking
-        try:
-            topology_type = child.properties['topology']['type']
-            shape = child.properties['topology']['shape']
-        except KeyError:
-            raise ValueError("given sampler has unknown topology format")
-
-        # We need a networkx graph with certain properties. In the
-        # future it would be good for DWaveSampler to handle this.
-        # See https://github.com/dwavesystems/dimod/issues/647
-        if topology_type == 'chimera':
-            G = dnx.chimera_graph(*shape,
-                                  node_list=child.nodelist,
-                                  edge_list=child.edgelist,
-                                  )
-        elif topology_type == 'pegasus':
-            G = dnx.pegasus_graph(shape[0],
-                                  node_list=child.nodelist,
-                                  edge_list=child.edgelist,
-                                  )
-        else:
-            raise ValueError("unknown topology type")
-
-        self._target_graph = G
+        self._target_graph = G = self.child.to_networkx_graph()
 
         return G
 

@@ -21,7 +21,7 @@ import dwave_networkx as dnx
 
 from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
-from dwave.system import DWaveCliqueSampler
+from dwave.system import DWaveCliqueSampler, DWaveSampler
 
 
 class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):
@@ -53,6 +53,8 @@ class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):
 
     def trigger_failover(self):
         pass
+
+    to_networkx_graph = DWaveSampler.to_networkx_graph
 
 
 class MockChimeraDWaveSampler(MockDWaveSampler):
