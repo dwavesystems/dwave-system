@@ -337,12 +337,12 @@ class TestDwaveSampler(unittest.TestCase):
 
         del sampler.solver.properties['topology']
 
-    def test_to_networkx_pegasus(self):
+    def test_to_networkx_zephyr(self):
         sampler = self.sampler
         sampler.solver.properties.update({'topology': {'type': 'zephyr', 'shape': [4, 4]}})
         G = sampler.to_networkx_graph()
 
-        # Create pegasus graph for comparison
+        # Create zephyr graph for comparison
         zephyrG = dnx.zephyr_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
 
         self.assertEqual(set(G), set(zephyrG))
