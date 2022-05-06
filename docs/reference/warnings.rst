@@ -6,10 +6,10 @@ Warnings
 
 .. currentmodule:: dwave.system.warnings
 
-.. autoclass:: WarningAction
 .. autoclass:: ChainBreakWarning
 .. autoclass:: ChainLengthWarning
-.. autoclass:: TooFewSamplesWarning
 .. autoclass:: ChainStrengthWarning
 .. autoclass:: EnergyScaleWarning
+.. autoclass:: TooFewSamplesWarning
+.. autoclass:: WarningAction
 .. autoclass:: WarningHandler
