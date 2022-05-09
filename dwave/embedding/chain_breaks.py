@@ -30,25 +30,28 @@ __all__ = ['broken_chains',
            ]
 
 
-def break_points(samples, embedding):
+def break_points(samples_like, embedding):
     """Identify breakpoints in each chain.
 
     Args:
-        samples (array_like):
-            Samples as a nS x nV array_like object where nS is the number of samples and nV is the
-            number of variables. The values should all be 0/1 or -1/+1.
+        samples_like (dimod.typing.SamplesLike):
+            A collection of raw samples for the embedded problem.
+            Each sample's variables' values should be 0/1 or -1/+1.
+
         embedding (dwave.embedding.transforms.EmbeddedStructure):
             Mapping from source graph to target graph as a dict of form {s: [t, ...], ...},
             where s is a source-model variable and t is a target-model variable.
 
     Returns:
-        list: A list, of size nS, of `dict`:
+        list: A list of `dict`. The size of the list is equal to number of input samples:
 
-            dict: A dictionary whose keys are variables of a BQM, and values are lists of
-            2-tuples `(u, v)` representing edges in the target graph. The existent of an edge indicates
-            `u` and `v` disagree in its value, constituting a chain break.
+            dict: A dictionary whose keys are variable labels of the logical BQM 
+            (the problem you care about), and values are lists of 2-tuples `(u, v)`
+            representing edges in the target graph (the QPU graph). The existence 
+            of an edge (u, v) indicates `u` and `v` disagree in its value, i.e.,
+            a break point in the chain.
 
-            The index of the list corresponds to the index of the sample in `samples`.
+            The index of the list corresponds to the index of the sample in `samples_like`.
 
     Examples:
 
@@ -63,16 +66,30 @@ def break_points(samples, embedding):
         >>> samples = np.array([[-1, +1, -1], [-1, +1, +1]], dtype=np.int8)
         >>> dwave.embedding.break_points(samples, embedding)
         [{0: [(0, 1), (1, 2)]}, {0: [(0, 1), (0, 2)]}]
-    """
 
+        >>> samples = [{"a": -1, "b": +1, "c": -1}, {"a": -1, "b": -1, "c": -1},]
+        >>> target_edges = [("a", "b"), ("b", "c")]
+        >>> chains = {"x": ["a", "b", "c"]}
+        >>> embedding = EmbeddedStructure(target_edges, chains)
+        >>> dwave.embedding.break_points(samples, embedding)
+        [{"x": [("a", "b"), ("b", "c")]}, {}]
+    """
     result = []
+    samples, labels = dimod.as_samples(samples_like)
+    label_to_i = {label: idx for idx, label in enumerate(labels)}
     for sample in samples:
         bps = {}
         for node in embedding.keys():
-            chain_edges = embedding.chain_edges(node)
-            broken_edges = [(u, v) for u, v in chain_edges if sample[u] != sample[v]]
+            try:
+                chain_edges = embedding.chain_edges(node)
+            except AttributeError:
+                raise TypeError("'embedding' must be a dwave.embedding.EmbeddedStructure") from None
+
+            broken_edges = [(u, v) for u, v in chain_edges
+                            if sample[label_to_i[u]] != sample[label_to_i[v]]]
             if len(broken_edges) > 0:
                 bps[node] = broken_edges
+
         result.append(bps)
 
     return result

@@ -66,6 +66,23 @@ class TestBreakPoints(unittest.TestCase):
 
         np.testing.assert_array_equal(answer, break_points)
 
+    def test_break_points_chain_string_labels(self):
+        # Target chain of length 3, one embedded variable, but labels are strings
+        target_edges = [("a", "b"), ("b", "c")]
+        chains = {"x": ["a", "b", "c"]}
+        embedding = EmbeddedStructure(target_edges, chains)
+
+        # samples = np.array([[-1, +1, -1],
+        #                     [-1, -1, -1]], dtype=np.int8)
+        samples = [{"a": -1, "b": +1, "c": -1},
+                   {"a": -1, "b": -1, "c": -1},]
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{"x": [("a", "b"), ("b", "c")]},
+                  {}]
+
+        np.testing.assert_array_equal(answer, break_points)
+
     def test_break_points_loop(self):
         # Target triangle, one embedded variable
         target_edges = [(0, 1), (1, 2), (0, 2)]
