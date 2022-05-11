@@ -24,14 +24,18 @@ from dwave.system import DWaveCliqueSampler
 from parameterized import parameterized
 
 
+def get_sampler(topology):
+    try:
+        return DWaveCliqueSampler(solver=dict(topology__type=topology.lower()))
+    except (ValueError, ConfigFileError, SolverNotFoundError):
+        raise unittest.SkipTest(f"no {topology}-structured QPU available")
+
+
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
     @parameterized.expand([['Chimera'], ['Pegasus'], ['Zephyr']])
     def test_maximum_ferromagnet(self, topology):
-        try:
-            sampler = DWaveCliqueSampler(solver=dict(topology__type=topology.lower()))
-        except (ValueError, ConfigFileError, SolverNotFoundError):
-            raise unittest.SkipTest(f"no {topology}-structured QPU available")
+        sampler = get_sampler(topology)
 
         dimod.testing.assert_sampler_api(sampler)
 
