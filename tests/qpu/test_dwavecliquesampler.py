@@ -21,48 +21,20 @@ import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.system import DWaveCliqueSampler
 
+from parameterized import parameterized
+
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
-    def test_chimera(self):
+    @parameterized.expand([['Chimera'], ['Pegasus'], ['Zephyr']])
+    def test_maximum_ferromagnet(self, topology):
         try:
-            sampler = DWaveCliqueSampler(solver=dict(topology__type='chimera'))
+            sampler = DWaveCliqueSampler(solver=dict(topology__type=topology.lower()))
         except (ValueError, ConfigFileError, SolverNotFoundError):
-            raise unittest.SkipTest("no Chimera-structured QPU available")
+            raise unittest.SkipTest(f"no {topology}-structured QPU available")
 
         dimod.testing.assert_sampler_api(sampler)
 
-        # submit a maximum ferromagnet
-        bqm = dimod.BinaryQuadraticModel('SPIN')
-        for u, v in itertools.combinations(sampler.largest_clique(), 2):
-            bqm.quadratic[u, v] = -1
-
-        sampler.sample(bqm).resolve()
-
-    def test_pegasus(self):
-        try:
-            sampler = DWaveCliqueSampler(solver=dict(topology__type='pegasus'))
-        except (ValueError, ConfigFileError, SolverNotFoundError):
-            raise unittest.SkipTest("no Pegasus-structured QPU available")
-
-        dimod.testing.assert_sampler_api(sampler)
-
-        # submit a maximum ferromagnet
-        bqm = dimod.BinaryQuadraticModel('SPIN')
-        for u, v in itertools.combinations(sampler.largest_clique(), 2):
-            bqm.quadratic[u, v] = -1
-
-        sampler.sample(bqm).resolve()
-
-    def test_zephyr(self):
-        try:
-            sampler = DWaveCliqueSampler(solver=dict(topology__type='zephyr'))
-        except (ValueError, ConfigFileError, SolverNotFoundError):
-            raise unittest.SkipTest("no Zephyr-structured QPU available")
-
-        dimod.testing.assert_sampler_api(sampler)
-
-        # submit a maximum ferromagnet
         bqm = dimod.BinaryQuadraticModel('SPIN')
         for u, v in itertools.combinations(sampler.largest_clique(), 2):
             bqm.quadratic[u, v] = -1
