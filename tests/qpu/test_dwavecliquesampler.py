@@ -15,6 +15,7 @@
 import itertools
 import os
 import unittest
+import warnings
 
 import dimod
 
@@ -49,3 +50,25 @@ class TestDWaveCliqueSampler(unittest.TestCase):
             bqm.quadratic[u, v] = -1
 
         sampler.sample(bqm).resolve()
+
+    @parameterized.expand(itertools.product(('Pegasus', 'Zephyr'), (None, 0.5)))
+    def test_per_qubit_coupling_range(self, topology, chain_strength):
+        sampler = get_sampler(topology)
+        n = sampler.largest_clique_size
+
+        bqm = dimod.BinaryQuadraticModel({},
+                {(u, v): -2 for u in range(n) for v in range(u+1, n)}, 'SPIN')
+
+        with warnings.catch_warnings(record=True) as w:
+            sampler.sample(bqm, chain_strength=chain_strength).resolve()
+
+        if topology == 'Pegasus':
+            limit_name = 'per_qubit_coupling_range'
+        else:
+            limit_name = 'per_group_coupling_range'
+
+        if chain_strength is not None:
+            self.assertEqual(len(w), 1)
+            self.assertIn(f'{limit_name} is violated', str(w[0].message))
+        else:
+            self.assertEqual(w, [])
