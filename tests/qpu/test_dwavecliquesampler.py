@@ -23,10 +23,15 @@ from dwave.system import DWaveCliqueSampler
 
 from parameterized import parameterized
 
+_SAMPLERS = {}
+
 
 def get_sampler(topology):
+    if topology in _SAMPLERS:
+        return _SAMPLERS[topology]
     try:
-        return DWaveCliqueSampler(solver=dict(topology__type=topology.lower()))
+        _SAMPLERS[topology] = DWaveCliqueSampler(solver=dict(topology__type=topology.lower()))
+        return _SAMPLERS[topology]
     except (ValueError, ConfigFileError, SolverNotFoundError):
         raise unittest.SkipTest(f"no {topology}-structured QPU available")
 
