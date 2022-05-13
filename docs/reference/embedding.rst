@@ -53,7 +53,7 @@ Minor-embedding in :term:`Pegasus`\ -structured target graphs.
 Zephyr
 -------
 
-Minor-embedding in :term:`Zephyr`\ -structured target graphs.
+Minor-embedding in :term:`Zephyr`-structured target graphs.
 
 .. autosummary::
    :toctree: generated/

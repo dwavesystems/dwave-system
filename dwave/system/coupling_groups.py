@@ -16,14 +16,14 @@ import dwave_networkx as dnx
 
 
 def coupling_groups(hardware_graph):
-    """Generate groups of couplers for which :class:`.DWaveSampler` applies a limit on total
-    coupling.
+    """Generate groups of couplers for which a limit on total coupling applies for each group.
 
     Args:
-        hardware_graph (:class:`networkx.Graph`)
+        hardware_graph (:class:`networkx.Graph`): The hardware graph of a QPU.  Note that only
+            :term:`Zephyr` graphs have coupling groups.
 
     Yields:
-        Lists of tuples, where each list is a group of couplers in `hardware_graph`.
+        Lists of tuples, where each list is a group of couplers in ``hardware_graph``.
     """
 
     if hardware_graph.graph.get('family') != 'zephyr':

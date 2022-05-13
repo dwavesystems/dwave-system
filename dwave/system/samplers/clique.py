@@ -38,7 +38,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
     """Composite that scales variables of a problem.
 
     Checks whether the per qubit (or per group) coupling range is violated for
-    the qpu and rescale accordingly. Scales the variables of a binary quadratic
+    the QPU and rescales accordingly. Scales the variables of a binary quadratic
     model (BQM) and modifies linear and quadratic terms accordingly.
 
     Args:

@@ -38,10 +38,10 @@ def find_clique_embedding(k, m=None, target_graph=None):
             formatted as a number of nodes, node labels, or a NetworkX graph.
 
         m (int): Number of tiles in a row of a square Zephyr graph.  Required
-            to generate an m-by-m Zephyr graph when `target_graph` is None.
+            to generate an ``m``-by-``m`` Zephyr graph when ``target_graph`` is None.
 
         target_graph (:obj:`networkx.Graph`): A Zephyr graph.  Required when
-            `m` is None.
+            ``m`` is None.
 
     Returns:
         dict: An embedding as a dict, where keys represent the clique's nodes
@@ -76,21 +76,21 @@ def find_biclique_embedding(a, b, m=None, target_graph=None):
 
     Args:
         a (int/iterable):
-            Describes the left shore of the biclique to embed.  If `a` is an
-            integer, the left shore will be labelled [0,a-1].  If `a` is an
-            iterable, the left shore will be labelled by `a`.
+            Describes the left shore of the biclique to embed.  If ``a`` is an
+            integer, the left shore will be labelled [0, a-1].  If ``a`` is an
+            iterable, the left shore will be labelled by ``a``.
 
         b (int/iterable):
-            Describes the right shore of the biclique to embed.  If `b` is an
-            integer and `a` is an iterable, the right shore will be labelled
-            [0,b-1].  If both `a` and `b` are integers, the right shore will be
-            labelled [a,a+b-1].  If `b` is an iterable, the right shore will be
-            labelled by `b`.
+            Describes the right shore of the biclique to embed.  If ``b`` is an
+            integer and ``a`` is an iterable, the right shore will be labelled
+            [0, b-1].  If both ``a`` and ``b`` are integers, the right shore
+            will be labelled [a, a+b-1].  If ``b`` is an iterable, the right
+            shore will be labelled by ``b``.
 
         m (int): Number of tiles in a row of a square Zephyr graph.  Required to
-            generate an m-by-m Zephyr graph when `target_graph` is None.
+            generate an ``m``-by-``m`` Zephyr graph when ``target_graph`` is None.
 
-        target_graph (:obj:`networkx.Graph`): A Zephyr graph.  Required when `m`
+        target_graph (:obj:`networkx.Graph`): A Zephyr graph.  Required when ``m``
             is None.
 
     Returns:
