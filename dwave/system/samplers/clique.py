@@ -82,14 +82,14 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
         if any(('per_qubit_coupling_range' in self.child.properties.keys(),
                 'per_group_coupling_range' in self.child.properties.keys())):
 
-            try:
+            if 'per_qubit_coupling_range' in self.child.properties.keys():
                 min_lim = self.child.properties['per_qubit_coupling_range'][0]
                 max_lim = self.child.properties['per_qubit_coupling_range'][1]
                 limit_name = 'per_qubit_coupling_range'
 
                 total_coupling_range = {v: sum(bqm.adj[v].values())
                                         for v in bqm.variables}
-            except KeyError:
+            else:
                 min_lim = self.child.properties['per_group_coupling_range'][0]
                 max_lim = self.child.properties['per_group_coupling_range'][1]
                 limit_name = 'per_group_coupling_range'
