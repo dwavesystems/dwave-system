@@ -30,14 +30,15 @@ except ImportError:
     from dimod import ScaleComposite
 
 from dwave.system.samplers.dwave_sampler import DWaveSampler, _failover
+from dwave.system.coupling_groups import coupling_groups
 
 __all__ = ['DWaveCliqueSampler']
 
 class _QubitCouplingComposite(dimod.ComposedSampler):
     """Composite that scales variables of a problem.
 
-    Checks whether the per qubit coupling range is violated for the qpu 
-    and rescale accordingly. Scales the variables of a binary quadratic 
+    Checks whether the per qubit (or per group) coupling range is violated for
+    the QPU and rescales accordingly. Scales the variables of a binary quadratic
     model (BQM) and modifies linear and quadratic terms accordingly.
 
     Args:
@@ -78,20 +79,31 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
         Returns:
             :obj:`dimod.SampleSet`
         """
-        if 'per_qubit_coupling_range' in self.child.properties.keys():
+        if any(('per_qubit_coupling_range' in self.child.properties.keys(),
+                'per_group_coupling_range' in self.child.properties.keys())):
 
-            min_lim = self.child.properties['per_qubit_coupling_range'][0]
-            max_lim = self.child.properties['per_qubit_coupling_range'][1]
+            if 'per_qubit_coupling_range' in self.child.properties.keys():
+                min_lim = self.child.properties['per_qubit_coupling_range'][0]
+                max_lim = self.child.properties['per_qubit_coupling_range'][1]
+                limit_name = 'per_qubit_coupling_range'
 
-            total_coupling_range = {v: sum(bqm.adj[v].values()) 
-                                    for v in bqm.variables}
+                total_coupling_range = {v: sum(bqm.adj[v].values())
+                                        for v in bqm.variables}
+            else:
+                min_lim = self.child.properties['per_group_coupling_range'][0]
+                max_lim = self.child.properties['per_group_coupling_range'][1]
+                limit_name = 'per_group_coupling_range'
+
+                hardware_graph = self.child.to_networkx_graph()
+                total_coupling_range = {_: sum(bqm.quadratic.get(edge, 0) for edge in group)
+                                        for _, group in enumerate(coupling_groups(hardware_graph))}
 
             min_coupling_range = min(total_coupling_range.values())
             max_coupling_range = max(total_coupling_range.values())
 
             if (min_coupling_range < min_lim or max_coupling_range > max_lim):
                 warnings.warn(
-                    f'The per_qubit_coupling_range is violated after scaling.'
+                    f'The {limit_name} is violated after scaling.'
                     ' The problem is rescaled with respect to coupling range.'
                     ' No variables, interactions, or offset are ignored.')
 
@@ -258,32 +270,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         except AttributeError:
             pass
 
-        child = self.child
-
-        # do some topology checking
-        try:
-            topology_type = child.properties['topology']['type']
-            shape = child.properties['topology']['shape']
-        except KeyError:
-            raise ValueError("given sampler has unknown topology format")
-
-        # We need a networkx graph with certain properties. In the
-        # future it would be good for DWaveSampler to handle this.
-        # See https://github.com/dwavesystems/dimod/issues/647
-        if topology_type == 'chimera':
-            G = dnx.chimera_graph(*shape,
-                                  node_list=child.nodelist,
-                                  edge_list=child.edgelist,
-                                  )
-        elif topology_type == 'pegasus':
-            G = dnx.pegasus_graph(shape[0],
-                                  node_list=child.nodelist,
-                                  edge_list=child.edgelist,
-                                  )
-        else:
-            raise ValueError("unknown topology type")
-
-        self._target_graph = G
+        self._target_graph = G = self.child.to_networkx_graph()
 
         return G
 
