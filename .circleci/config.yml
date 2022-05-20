@@ -26,6 +26,7 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -U pip
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
             pip install 'dimod<< parameters.dimod-version >>'
 
@@ -132,6 +133,7 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -U pip
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
       - save_cache: *save-test-cache-template
@@ -150,6 +152,7 @@ jobs:
           command: |
             python -m virtualenv env
             . env/bin/activate
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt
             pip install twine wheel
 
@@ -157,7 +160,6 @@ jobs:
           name: verify version matches tag
           command: |
             . env/bin/activate
-            pip install .
             [[ "$(pip show dwave-system 2>/dev/null | grep Version)" == "Version: $CIRCLE_TAG" ]]
 
       - run:
@@ -181,7 +183,7 @@ workflows:
             parameters:
               python-version: &python-versions ["3.7.9", "3.8.9", "3.9.4", &latest-python "3.10.0"]
               integration-test-python-version: &integration-python-versions [*latest-python]
-              dimod-version: ["==0.10.0", "~=0.10.0", "==0.11.0rc0"]
+              dimod-version: ["==0.10.0", "~=0.10.0", "~=0.11.0"]
             exclude:
               # py310 is supported in dimod>=0.10.8
               - python-version: "3.10.0"
