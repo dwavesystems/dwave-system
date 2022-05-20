@@ -49,6 +49,7 @@ Minor-embedding in :term:`Pegasus`\ -structured target graphs.
    :toctree: generated/
 
    pegasus.find_clique_embedding
+   pegasus.find_biclique_embedding
 
 Zephyr
 -------
