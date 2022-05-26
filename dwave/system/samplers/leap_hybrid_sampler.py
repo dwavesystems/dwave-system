@@ -261,7 +261,7 @@ class LeapHybridSampler(dimod.Sampler):
         sampleset = self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
 
         # relabel, as of dimod 0.9.5+ this is not blocking
-        mapping = dict(enumerate(bqm.iter_variables()))
+        mapping = dict(enumerate(bqm.variables))
         return sampleset.relabel_variables(mapping)
 
     def min_time_limit(self, bqm):
