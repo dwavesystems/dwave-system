@@ -12,8 +12,8 @@
 
 .. index-start-marker
 
-dwave-system
-============
+dwave-system test
+=================
 
 `dwave-system` is a basic API for easily incorporating the D-Wave system as a
 sampler in the
