@@ -144,6 +144,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         self.failover = failover
         self.retry_interval = retry_interval
+    def __del__(self):
+        self.client.close()
 
     warnings_default = WarningAction.IGNORE
     """Defines the default behavior for :meth:`.sample_ising`'s  and
