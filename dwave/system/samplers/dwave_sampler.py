@@ -23,6 +23,7 @@ import time
 import functools
 import collections.abc as abc
 
+from typing import Optional
 from warnings import warn
 
 import dimod
@@ -522,3 +523,74 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                  edge_list=self.edgelist)
 
         return G
+
+    def estimate_qpu_access_time(self,
+                                 reverse_anneal: bool = False,
+                                 reinitialize_state: bool = False,
+                                 programming_thermalization: Optional[float] = None,
+                                 ) -> float:
+        """Estimates the qpu_access_time.
+
+        Args:
+            reverse_anneal:
+                Set to ``True`` if your submission uses reverse annealing.
+            reinitialize_state:
+                Set to ``True`` if your submission sets ``reinitialize_state``.
+
+        Raises:
+            ValueError: If the schedule violates any of the conditions listed below.
+
+            RuntimeError: If the sampler does not accept the `anneal_schedule` parameter or
+                if it does not have `annealing_time_range` or `max_anneal_schedule_points`
+                properties.
+
+        As described in
+        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_,
+
+        Examples:
+            This example sets a quench schedule on a D-Wave system.
+
+            >>> from dwave.system import DWaveSampler
+            >>> sampler = DWaveSampler()
+            >>> quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
+            >>> DWaveSampler().validate_anneal_schedule(quench_schedule)    # doctest: +SKIP
+            >>>
+
+        """
+        if 'anneal_schedule' not in self.parameters:
+            raise RuntimeError("anneal_schedule is not an accepted parameter for this sampler")
+
+        properties = self.properties
+
+        try:
+            problem_timing_data = properties['problem_timing_data']
+            version_timing_model = problem_timing_data['version']
+            typical_programming_time = problem_timing_data['typical_programming_time']
+            ra_with_reinit_prog_time_delta = problem_timing_data['reverse_annealing_with_reinit_prog_time_delta']
+            ra_without_reinit_prog_time_delta = problem_timing_data['reverse_annealing_without_reinit_prog_time_delta']
+            default_programming_thermalization = problem_timing_data['default_programming_thermalization']
+
+        except KeyError:
+            raise RuntimeError("QPU access time estimation is not support for the selected solver")
+
+        # Support for model versions 1.0.x
+        version_tuple = tuple(int(i) for i in version_timing_model.split("."))
+        if not version_tuple[0] == 1 and version_tuple[1] == 0:
+            raise RuntimeError("Ocean does not currently support the timing model used by the selected solver")
+
+        ra_programming_time = 0
+        if reverse_anneal:
+            if reinitialize_state:
+                ra_programming_time = ra_with_reinit_prog_time_delta
+            else:
+                ra_programming_time = ra_without_reinit_prog_time_delta
+
+        if programming_thermalization:
+            programming_thermalization_time = programming_thermalization
+        else:
+            programming_thermalization_time = default_programming_thermalization
+
+        programming_time = typical_programming_time + ra_programming_time + \
+            programming_thermalization_time
+
+        return programming_thermalization_time
