@@ -595,13 +595,50 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 uses an unsupported timing model.
 
         Examples:
-            This example sets a quench schedule on a D-Wave system.
+
+            This example compares the estimation with the QPU access time from a
+            run on a particular quantum computer for a ferromagnetic problem using
+            all the QPU qubits.
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
-            >>> DWaveSampler().validate_anneal_schedule(quench_schedule)    # doctest: +SKIP
-            >>>
+            >>> import dimod
+            ...
+            >>> qpu = DWaveSampler()
+            >>> bqm = dimod.BinaryQuadraticModel({}, {edge: -1 for edge in qpu.edgelist}, "BINARY")
+            >>> num_qubits = len(qpu.nodelist)
+            >>> estimated_runtime = qpu.estimate_qpu_access_time(num_qubits, num_reads=100)    # doctest: +SKIP
+            >>> print("%.0f" % estimated_runtime) # doctest: +SKIP
+            42657
+            >>> sampleset = qpu.sample(bqm, num_reads=100)
+            >>> print(sampleset.info["timing"]["qpu_access_time"])     # doctest: +SKIP
+            42643.96
+
+            This example estimates the QPU access time for a random problem
+            with a 50-node complete graph using an anneal schedule that sets a
+            ~1 ms pause on a D-Wave system.
+
+            >>> from dwave.system import DWaveSampler, FixedEmbeddingComposite
+            >>> from minorminer import find_embedding
+            >>> import dimod
+            >>> import random
+            >>> import networkx as nx
+            ...
+            >>> G = nx.generators.complete_graph(100)
+            >>> bqm = dimod.from_networkx_graph(G, "BINARY")
+            >>> bqm.add_linear_from({node: random.choices([-0.5, 0.5])[0] for node in bqm.linear.keys()})
+            >>> bqm.add_quadratic_from({edge: random.choices([-1, 1])[0] for edge in bqm.quadratic.keys()})
+            ...
+            >>> qpu = DWaveSampler()
+            >>> embedding = find_embedding(bqm.quadratic.keys(), qpu.edgelist)  # doctest: +SKIP
+            >>> num_qubits = sum(len(chain) for chain in embedding.values())    # doctest: +SKIP
+            ...
+            >>> reads = 500
+            >>> anneal_schedule = [[0.0, 0.0], [40.0, 0.4], [1040.0, 0.4], [1042, 1.0]]
+            >>> estimated_runtime = qpu.estimate_qpu_access_time(num_qubits,
+            ...                          num_reads=reads,
+            ...                          anneal_schedule=anneal_schedule)    # doctest: +SKIP
+            >>> print("%.1f" % estimated_runtime)  # doctest: +SKIP
+            83952.1
 
         """
         if anneal_schedule and annealing_time:
