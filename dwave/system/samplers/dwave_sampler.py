@@ -545,7 +545,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         described in the
         `system documentation <https://docs.dwavesys.com/docs/latest/c_qpu_timing.html>`_.
 
-        Requires that you provide the number of qubits to be embedded for your
+        Requires that you provide the number of qubits to be used for your
         problem submission. :term:`Embedding` is typically heuristic and the number
         of required qubits can vary between executions. If you are using a heuristic
         embedding tool such as
@@ -569,18 +569,21 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 Number of qubits required to represent your binary quadratic model
                 on the selected solver.
             num_reads:
-                Provide the value if you explictly set ``num_reads`` in your submission.
+                Number of reads. Provide this value if you explictly set ``num_reads``
+                in your submission.
             reverse_anneal:
                 Set to ``True`` if your submission uses reverse annealing.
             reinitialize_state:
                 Set to ``True`` if your submission sets ``reinitialize_state``.
             programming_thermalization:
-                Provide the value if you explictly set a value for ``programming_thermalization``
-                in your submission.
+                programming thermalization time. Provide this value if you explictly
+                set a value for ``programming_thermalization`` in your submission.
             anneal_schedule:
-                Provide the ``anneal_schedule`` if you set it in your submission.
+                Anneal schedule. Provide the ``anneal_schedule`` if you set it in
+                your submission.
             annealing_time:
-                Provide the value of if you set ``annealing_time`` in your submission.
+                Annealing duration. Provide this value of if you set
+                ``annealing_time`` in your submission.
             readout_thermalization:
                 Set to ``True`` if your submission sets ``readout_thermalization``.
             reduce_intersample_correlation:
@@ -676,8 +679,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         # Support for sapi timing model versions: 1.0.x
         version_tuple = tuple(int(i) for i in version_timing_model.split("."))
         if not version_tuple[0] == 1 and not version_tuple[1] == 0:
-            raise ValueError(f"Ocean does not currently support the timing model "
-                              "{version_timing_model} used by the selected solver")
+            raise ValueError(f"``estimate_qpu_access_time`` does not currently "
+                             f"support timing model {version_timing_model} "
+                             "used by the selected solver")
 
         ra_programming_time = 0
         ra_delay_time = 0
@@ -717,7 +721,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         elif readout_time_model == 'pwl_linear':
             readout_time = np.interp(num_qubits, q, t)
         else:
-            raise ValueError("QPU access time estimation is not supported for "
+            raise ValueError("``estimate_qpu_access_time`` does not support "
                              f"``readout_time_model`` value {readout_time_model} "
                              f"in version {version_timing_model}")
 
