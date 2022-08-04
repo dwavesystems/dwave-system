@@ -527,7 +527,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     def estimate_qpu_access_time(self,
                                  num_qubits: int,
-                                 num_reads: Optional[int] = None,
+                                 num_reads: int = 1,
                                  reverse_anneal: bool = False,
                                  reinitialize_state: bool = False,
                                  programming_thermalization: Optional[float] = None,
@@ -536,51 +536,63 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                                  readout_thermalization: Optional[float] = None,
                                  reduce_intersample_correlation: bool = False
                                  ) -> float:
-        """Estimates the qpu_access_time.
+        """Estimates QPU access time for a submission to the selected solver.
+
+        Estimates a problem’s quantum processing unit (QPU) access time from the
+        parameter values you specify, timing data provided in the ``problem_timing_data``
+        `solver property <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_,
+        and the number of qubits used to embed the problem on the selected QPU, as
+        described in the
+        `system documentation <https://docs.dwavesys.com/docs/latest/c_qpu_timing.html>`_.
+
+        Requires that you provide the number of qubits to be embedded for your
+        problem submission. :term:`Embedding` is typically heuristic and the number
+        of required qubits can vary between executions. If you are using a heuristic
+        embedding tool such as
+        :std:doc:`minorminer <oceandocs:docs_minorminer/source/sdk_index>` indirectly
+        through your sampler (e.g., by using the :class:`~dwave.system.composites.EmbeddingComposite`
+        or :class:`~DWaveCliqueSampler` classes), you can use the same tool on
+        your problem to estimate the expected number of qubits: for large, complex
+        problems you might run the tool several times and take the number of qubits
+        from the produced average or worst-case embedding; for small, simple
+        problems even a single run might be sufficient. If you are using such a
+        tool directly (e.g., in conjunction with the
+        :class:`~dwave.system.composites.FixedEmbeddingComposite`)
+        or otherwise generating a heuristic or non-heuristic embedding, take
+        the required number of qubits from your embedding. Because embedding
+        depends on a QPU’s working graph, such embeddings should be for
+        the particular QPU for which you are estimating the access time.
+        See examples below.
 
         Args:
             num_qubits:
                 Number of qubits required to represent your binary quadratic model
-                on the selected quantum processing unit (QPU). Embedding is typically
-                heuristic and the number of required qubits can vary between
-                executions. If you are using a heuristic embedding tool such as
-                minorminor indirectly through your sampler (e.g., by using Ocean’s
-                EmbeddingComposite or DWaveCliqueSampler), you can use the same
-                tool on your problem to estimate the expected number of qubits:
-                for large, complex problems you might run the tool several times
-                and take the number of qubits from the produced average or
-                worst-case embedding; for small, simple problems even a single
-                run might be sufficient. If you are using such a tool directly
-                (e.g., in conjunction with Ocean’s FixedEmbeddingComposite) or
-                otherwise generating a heuristic or non-heuristic embedding, take
-                the required number of qubits from your embedding. Because embedding
-                depends on a QPU’s working graph, such embeddings should be for
-                the particular QPU for which you are estimating the access time.
-                See examples below.
+                on the selected solver.
             num_reads:
-                Provide the value if you explictly set one
+                Provide the value if you explictly set ``num_reads`` in your submission.
             reverse_anneal:
                 Set to ``True`` if your submission uses reverse annealing.
             reinitialize_state:
                 Set to ``True`` if your submission sets ``reinitialize_state``.
             programming_thermalization:
-                Provide the value if you explictly set one
+                Provide the value if you explictly set a value for ``programming_thermalization``
+                in your submission.
             anneal_schedule:
-                Provide the anneal_schedule if you set that.
+                Provide the ``anneal_schedule`` if you set it in your submission.
             annealing_time:
-                Provide the value of annealing_time if you set that.
+                Provide the value of if you set ``annealing_time`` in your submission.
             readout_thermalization:
-                Set to ``True`` if your submission does.
+                Set to ``True`` if your submission sets ``readout_thermalization``.
             reduce_intersample_correlation:
-                Set to ``True`` if your submission does.
+                Set to ``True`` if your submission sets ``reduce_intersample_correlation``.
 
         Raises:
-            ValueError: If
+            KeyError: If a solver property, or a field in the ``problem_timing_data``
+                solver property, required by the timing model is missing for the
+                selected solver.
 
-            RuntimeError: If the .
-
-        As described in the
-        `D-Wave system documentation <https://docs.dwavesys.com/docs/latest/c_qpu_timing.html>`_,
+            ValueError: If conflicting parameters are set or the selected solver
+                uses an unsupported timing model.
 
         Examples:
             This example sets a quench schedule on a D-Wave system.
@@ -593,11 +605,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         """
         if anneal_schedule and annealing_time:
-            raise ValueError("Set only one of anneal_schedule or annealing_time")
+            raise ValueError("Set only one of ``anneal_schedule`` or ``annealing_time``")
 
         try:
-            default_readout_thermalization = self.properties['default_readout_thermalization']
             problem_timing_data = self.properties['problem_timing_data']
+
             version_timing_model = problem_timing_data['version']
             typical_programming_time = problem_timing_data['typical_programming_time']
             ra_with_reinit_prog_time_delta = problem_timing_data['reverse_annealing_with_reinit_prog_time_delta']
@@ -612,13 +624,23 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             decorrelation_max_nominal_anneal_time = problem_timing_data['decorrelation_max_nominal_anneal_time']
             decorrelation_time_range = problem_timing_data['decorrelation_time_range']
 
-        except KeyError:
-            raise RuntimeError("QPU access time estimation is not support for the selected solver")
+            default_readout_thermalization = self.properties['default_readout_thermalization']
+
+        except KeyError as err:
+            if err == 'problem_timing_data':
+                err_msg = f"selected solver is missing required property {err}"
+            elif err == 'version':
+                err_msg = f"selected solver is missing ``problem_timing_data`` field {err}"
+            else:
+                err_msg = f"selected solver is missing ``problem_timing_data`` field " + \
+                          f"{err} required by timing model version {version_timing_model}"
+            raise ValueError(err_msg)
 
         # Support for sapi timing model versions: 1.0.x
         version_tuple = tuple(int(i) for i in version_timing_model.split("."))
         if not version_tuple[0] == 1 and not version_tuple[1] == 0:
-            raise RuntimeError("Ocean does not currently support the timing model used by the selected solver")
+            raise ValueError(f"Ocean does not currently support the timing model "
+                              "{version_timing_model} used by the selected solver")
 
         ra_programming_time = 0
         ra_delay_time = 0
@@ -636,7 +658,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             programming_thermalization_time = default_programming_thermalization
 
         programming_time = typical_programming_time + ra_programming_time + \
-            programming_thermalization_time
+                           programming_thermalization_time
 
         anneal_time = default_annealing_time
         if annealing_time:
@@ -644,15 +666,23 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         elif anneal_schedule:
             anneal_time = anneal_schedule[-1][0]
 
-        n = int(len(readout_time_model_parameters)/2)
-        q = readout_time_model_parameters[:n]
-        t = readout_time_model_parameters[n:]
+        n = len(readout_time_model_parameters)
+        if n % 2:
+             raise ValueError(f"for the selected solver, ``problem_timing_data`` "
+                              f"property field ``readout_time_model_parameters`` "
+                              f"is not of an even length as required by timing "
+                              f"model version {version_timing_model}")
+
+        q = readout_time_model_parameters[:int(n/2)]
+        t = readout_time_model_parameters[int(n/2):]
         if readout_time_model == 'pwl_log_log':
             readout_time = pow(10, np.interp(np.emath.log10(num_qubits), q, t))
         elif readout_time_model == 'pwl_linear':
             readout_time = np.interp(num_qubits, q, t)
         else:
-            raise RuntimeError("QPU access time estimation is not supported for the timing model")
+            raise ValueError("QPU access time estimation is not supported for "
+                             f"``readout_time_model`` value {readout_time_model} "
+                             f"in version {version_timing_model}")
 
         if readout_thermalization:
             readout_thermalization_time = readout_thermalization
@@ -663,14 +693,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         if reduce_intersample_correlation:
             r_min = decorrelation_time_range[0]
             r_max = decorrelation_time_range[1]
-            decorrelation_time = anneal_time/decorrelation_max_nominal_anneal_time * (r_min - r_max) + r_min
+            decorrelation_time = anneal_time/decorrelation_max_nominal_anneal_time * (r_max - r_min) + r_min
 
-        per_read_sampling_time = anneal_time + readout_time + qpu_delay_time_per_sample + \
+        sampling_time_per_read = anneal_time + readout_time + qpu_delay_time_per_sample + \
             ra_delay_time + max(readout_thermalization_time, decorrelation_time)
 
-        if not num_reads:
-            num_reads = 1
-
-        sampling_time = num_reads * per_read_sampling_time
+        sampling_time = num_reads * sampling_time_per_read
 
         return sampling_time + programming_time

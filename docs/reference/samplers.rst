@@ -52,6 +52,7 @@ Methods
 .. autosummary::
    :toctree: generated/
 
+   DWaveSampler.estimate_qpu_access_time
    DWaveSampler.sample
    DWaveSampler.sample_ising
    DWaveSampler.sample_qubo
