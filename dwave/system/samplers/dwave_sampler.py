@@ -589,6 +589,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             reduce_intersample_correlation:
                 Set to ``True`` if your submission sets ``reduce_intersample_correlation``.
 
+        Returns:
+            Estimated QPU access time, in microseconds.
+
         Raises:
             KeyError: If a solver property, or a field in the ``problem_timing_data``
                 solver property, required by the timing model is missing for the
@@ -663,8 +666,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ra_without_reinit_delay_time_delta = problem_timing_data['reverse_annealing_without_reinit_delay_time_delta']
             decorrelation_max_nominal_anneal_time = problem_timing_data['decorrelation_max_nominal_anneal_time']
             decorrelation_time_range = problem_timing_data['decorrelation_time_range']
-
-            default_readout_thermalization = self.properties['default_readout_thermalization']
+            default_readout_thermalization = problem_timing_data['default_readout_thermalization']
 
         except KeyError as err:
             if err == 'problem_timing_data':
