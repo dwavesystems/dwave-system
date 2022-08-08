@@ -528,14 +528,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def estimate_qpu_access_time(self,
                                  num_qubits: int,
                                  num_reads: int = 1,
+                                 annealing_time: Optional[float] = None,
+                                 anneal_schedule: Optional[List[Tuple[float, float]]] = None,
+                                 initial_state:  Optional[List[Tuple[float, float]]] = None,
                                  reverse_anneal: bool = False,
                                  reinitialize_state: bool = False,
                                  programming_thermalization: Optional[float] = None,
-                                 anneal_schedule: Optional[List[Tuple[float, float]]] = None,
-                                 annealing_time: Optional[float] = None,
                                  readout_thermalization: Optional[float] = None,
-                                 reduce_intersample_correlation: bool = False
-                                 ) -> float:
+                                 reduce_intersample_correlation: bool = False,
+                                 **kwargs) -> float:
         """Estimates QPU access time for a submission to the selected solver.
 
         Estimates a problem’s quantum processing unit (QPU) access time from the
@@ -571,19 +572,20 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             num_reads:
                 Number of reads. Provide this value if you explictly set ``num_reads``
                 in your submission.
-            reverse_anneal:
-                Set to ``True`` if your submission uses reverse annealing.
+            annealing_time:
+                Annealing duration. Provide this value of if you set
+                ``annealing_time`` in your submission.
+            anneal_schedule:
+                Anneal schedule. Provide the ``anneal_schedule`` if you set it in
+                your submission.
+            initial_state:
+                Initial state. Provide the ``initial_state`` if your submission
+                uses reverse annealing.
             reinitialize_state:
                 Set to ``True`` if your submission sets ``reinitialize_state``.
             programming_thermalization:
                 programming thermalization time. Provide this value if you explictly
                 set a value for ``programming_thermalization`` in your submission.
-            anneal_schedule:
-                Anneal schedule. Provide the ``anneal_schedule`` if you set it in
-                your submission.
-            annealing_time:
-                Annealing duration. Provide this value of if you set
-                ``annealing_time`` in your submission.
             readout_thermalization:
                 Set to ``True`` if your submission sets ``readout_thermalization``.
             reduce_intersample_correlation:
@@ -648,7 +650,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         """
         if anneal_schedule and annealing_time:
-            raise ValueError("Set only one of ``anneal_schedule`` or ``annealing_time``")
+            raise ValueError("set only one of ``anneal_schedule`` or ``annealing_time``")
+
+        if anneal_schedule and anneal_schedule[0][1] == 1 and not initial_state:
+            raise ValueError("reverse annealing requested (``anneal_schedule`` "
+                             "starts with s==1) but ``initial_state`` not provided")
 
         try:
             problem_timing_data = self.properties['problem_timing_data']
@@ -687,7 +693,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         ra_programming_time = 0
         ra_delay_time = 0
-        if reverse_anneal:
+        if anneal_schedule and anneal_schedule[0][1] == 1:
             if reinitialize_state:
                 ra_programming_time = ra_with_reinit_prog_time_delta
                 ra_delay_time = ra_with_reinit_delay_time_delta
@@ -705,7 +711,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         anneal_time = default_annealing_time
         if annealing_time:
-            anneal_time = anneal_time
+            anneal_time = annealing_time
+            print(anneal_time)
         elif anneal_schedule:
             anneal_time = anneal_schedule[-1][0]
 
