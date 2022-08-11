@@ -324,7 +324,7 @@ class TestDwaveSampler(unittest.TestCase):
 
     def test_to_networkx_pegasus(self):
         sampler = self.sampler
-        sampler.solver.properties.update({'topology': {'type': 'pegasus', 'shape': [4, 4, 12]}})
+        sampler.solver.properties.update({'topology': {'type': 'pegasus', 'shape': [4]}})
         G = sampler.to_networkx_graph()
 
         # Create pegasus graph for comparison
