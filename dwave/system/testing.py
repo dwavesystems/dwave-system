@@ -31,7 +31,56 @@ except ImportError:
 import concurrent.futures
 import numpy as np
 
-class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
+def _dnx_graph(topology_type, shape, nodelist, edgelist):
+    """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
+       
+       This code mirrors the to_networkx_graph method in dwave.system.samplers.DWaveSampler.
+       
+       Returns:
+            :class:`networkx.Graph`:
+                Either a Chimera lattice of shape [m, n, t], a Pegasus 
+                lattice of shape [m] or a Zephyr lattice of size [m,t].
+
+        Examples:
+            This example converts a selected D-Wave system solver to a graph
+            and verifies it has over 2000 nodes.
+
+            >>> from dwave.system import DWaveSampler
+            ...
+            >>> sampler = DWaveSampler()
+            >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
+            >>> len(g.nodes) > 2000                  # doctest: +SKIP
+            True
+    """
+
+    if topology_type == 'chimera':
+        if not (1 <= len(shape) <=3):
+            raise ValueError('shape is incompatible with a chimera lattice.')
+        G = dnx.chimera_graph(*shape,
+                              node_list=nodelist,
+                              edge_list=edgelist)
+        
+    elif topology_type == 'pegasus':
+        if len(shape) != 1:
+            raise ValueError('shape is incompatible with a pegasus lattice.')
+        G = dnx.pegasus_graph(shape[0],
+                              node_list=nodelist,
+                              edge_list=edgelist)
+
+    elif topology_type == 'zephyr':
+        if len(shape) not in (1, 2):
+            raise ValueError('shape is incompatible with a zephyr lattice.')
+        G = dnx.zephyr_graph(*shape,
+                             node_list=nodelist,
+                             edge_list=edgelist)
+    else:
+        # Alternative could be to create a standard network graph and
+        # issue a warning. Requires new dependency on networkx.
+        raise ValueError('topology_type does not match a known'
+                         'QPU architecure')
+    return G
+    
+class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
     Properties and topology parameters are populated qualitatively matching
@@ -152,7 +201,12 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
             self.nodelist = nodelist.copy()
         if edgelist is not None:
             self.edgelist = edgelist.copy()
-        solver_graph = self.to_networkx_graph()
+        # Note that self.to_networkx_graph would point to an inherited
+        # version rather than the class method here, without topology
+        # information, for clarity helper function is separated.
+        solver_graph = _dnx_graph(self.properties['topology']['type'],
+                                  self.properties['topology']['shape'],
+                                  self.nodelist, self.edgelist)
         
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
@@ -397,6 +451,11 @@ class MockDWaveSampler(dwave.system.samplers.DWaveSampler):
         
         return ss
 
+    def to_networkx_graph(self):
+        return _dnx_graph(self.properties['topology']['type'],
+                          self.properties['topology']['shape'],
+                          self.nodelist, self.edgelist)
+    
     
 class MockLeapHybridDQMSampler:
     """Mock sampler modeled after LeapHybridDQMSampler that can be used for tests."""
@@ -434,7 +493,7 @@ class MockLeapHybridDQMSampler:
     def min_time_limit(self, dqm):
         # not caring about the problem, just returning the min
         return self.properties['minimum_time_limit'][0][1]
-
+    
 class MockLeapHybridSolver:
 
     properties = {'supported_problem_types': ['bqm'],
