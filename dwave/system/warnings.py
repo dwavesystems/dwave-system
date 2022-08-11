@@ -23,6 +23,11 @@ from dwave.embedding import broken_chains
 
 
 class WarningAction(enum.Enum):
+    """Settings for raising warnings.
+
+    An enum with values ``IGNORE`` and ``SAVE``.
+    """
+
     IGNORE = 'ignore'
     SAVE = 'save'
 
@@ -49,14 +54,17 @@ def as_action(action):
 
 
 class ChainBreakWarning(UserWarning):
+    """Raised if a chain's qubits are in different states for lowest-energy samples."""
     pass
 
 
 class ChainLengthWarning(UserWarning):
+    """Raised if the number of qubits forming a chain is high."""
     pass
 
 
 class TooFewSamplesWarning(UserWarning):
+    """Raised if lowest-energy samples are a small fraction of the total samples."""
     pass
 
 

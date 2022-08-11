@@ -15,41 +15,60 @@
 import itertools
 import os
 import unittest
+import warnings
 
 import dimod
 
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.system import DWaveCliqueSampler
 
+from parameterized import parameterized
+
+_SAMPLERS = {}
+
+
+def get_sampler(topology):
+    if topology in _SAMPLERS:
+        return _SAMPLERS[topology]
+    try:
+        _SAMPLERS[topology] = DWaveCliqueSampler(solver=dict(topology__type=topology.lower()))
+        return _SAMPLERS[topology]
+    except (ValueError, ConfigFileError, SolverNotFoundError):
+        raise unittest.SkipTest(f"no {topology}-structured QPU available")
+
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
-    def test_chimera(self):
-        try:
-            sampler = DWaveCliqueSampler(solver=dict(topology__type='chimera'))
-        except (ValueError, ConfigFileError, SolverNotFoundError):
-            raise unittest.SkipTest("no Chimera-structured QPU available")
+    @parameterized.expand([['Chimera'], ['Pegasus'], ['Zephyr']])
+    def test_maximum_ferromagnet(self, topology):
+        sampler = get_sampler(topology)
 
         dimod.testing.assert_sampler_api(sampler)
 
-        # submit a maximum ferromagnet
         bqm = dimod.BinaryQuadraticModel('SPIN')
         for u, v in itertools.combinations(sampler.largest_clique(), 2):
             bqm.quadratic[u, v] = -1
 
         sampler.sample(bqm).resolve()
 
-    def test_pegasus(self):
-        try:
-            sampler = DWaveCliqueSampler(solver=dict(topology__type='pegasus'))
-        except (ValueError, ConfigFileError, SolverNotFoundError):
-            raise unittest.SkipTest("no Pegasus-structured QPU available")
+    @parameterized.expand(itertools.product(('Pegasus', 'Zephyr'), (None, 0.5)))
+    def test_per_qubit_coupling_range(self, topology, chain_strength):
+        sampler = get_sampler(topology)
+        n = sampler.largest_clique_size
 
-        dimod.testing.assert_sampler_api(sampler)
+        bqm = dimod.BinaryQuadraticModel({},
+                {(u, v): -2 for u in range(n) for v in range(u+1, n)}, 'SPIN')
 
-        # submit a maximum ferromagnet
-        bqm = dimod.BinaryQuadraticModel('SPIN')
-        for u, v in itertools.combinations(sampler.largest_clique(), 2):
-            bqm.quadratic[u, v] = -1
+        with warnings.catch_warnings(record=True) as w:
+            sampler.sample(bqm, chain_strength=chain_strength).resolve()
 
-        sampler.sample(bqm).resolve()
+        if topology == 'Pegasus':
+            limit_name = 'per_qubit_coupling_range'
+        else:
+            limit_name = 'per_group_coupling_range'
+
+        if chain_strength is not None:
+            self.assertEqual(len(w), 1)
+            self.assertIn(f'{limit_name} is violated', str(w[0].message))
+        else:
+            self.assertEqual(w, [])

@@ -26,6 +26,7 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -U pip
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
             pip install 'dimod<< parameters.dimod-version >>'
 
@@ -111,20 +112,6 @@ jobs:
           keys:
             - pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-13.2.0
 
-      - when:
-          # backport https://github.com/python/cpython/pull/21113 to support macOS 11 when building py36
-          # see also: https://github.com/pyenv/pyenv/issues/1737.
-          condition:
-            matches:
-              pattern: "^3\\.6.*$"
-              value: << parameters.python-version >>
-          steps:
-            - run:
-                name: Install Python 3.6 with a patch for macOS 11
-                command: |
-                  curl -LO https://github.com/python/cpython/commit/8ea6353.patch
-                  pyenv install << parameters.python-version>> -s -p < 8ea6353.patch
-
       - run:
           name: install python
           command: |
@@ -146,6 +133,7 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -U pip
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
       - save_cache: *save-test-cache-template
@@ -164,6 +152,7 @@ jobs:
           command: |
             python -m virtualenv env
             . env/bin/activate
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt
             pip install twine wheel
 
@@ -171,7 +160,6 @@ jobs:
           name: verify version matches tag
           command: |
             . env/bin/activate
-            pip install .
             [[ "$(pip show dwave-system 2>/dev/null | grep Version)" == "Version: $CIRCLE_TAG" ]]
 
       - run:
@@ -193,9 +181,9 @@ workflows:
           name: test-linux-<< matrix.python-version >>-dimod<< matrix.dimod-version >>
           matrix:
             parameters:
-              python-version: &python-versions ["3.6.8", "3.7.9", "3.8.9", "3.9.4", &latest-python "3.10.0"]
+              python-version: &python-versions ["3.7.9", "3.8.9", "3.9.4", &latest-python "3.10.0"]
               integration-test-python-version: &integration-python-versions [*latest-python]
-              dimod-version: ["==0.10.0", "~=0.10.0"]
+              dimod-version: ["==0.10.0", "~=0.10.0", "~=0.11.0"]
             exclude:
               # py310 is supported in dimod>=0.10.8
               - python-version: "3.10.0"

@@ -25,13 +25,13 @@ os.chdir(setup_folder_loc)
 exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.10.0,<0.11.0',
-                    'dwave-cloud-client>=0.9.1,<0.10.0',
+install_requires = ['dimod>=0.10.0,<0.13.0',
+                    'dwave-cloud-client>=0.9.1,<0.11.0',
                     'dwave-networkx>=0.8.10',
-                    'dwave-preprocessing>=0.3,<0.4',
+                    'dwave-preprocessing>=0.3,<0.5',
                     'networkx>=2.0,<3.0',
                     'homebase>=1.0.0,<2.0.0',
-                    'minorminer>=0.2.4,<0.3.0',
+                    'minorminer>=0.2.8,<0.3.0',
                     'numpy>=1.17.3,<2.0.0',
                     'dwave-tabu>=0.4.2',
                     ]
@@ -42,7 +42,7 @@ install_requires = ['dimod>=0.10.0,<0.11.0',
 extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
                   }
 
-python_requires = '>=3.6'
+python_requires = '>=3.7'
 
 packages = ['dwave',
             'dwave.embedding',
