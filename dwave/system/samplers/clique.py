@@ -302,12 +302,12 @@ class DWaveCliqueSampler(dimod.Sampler):
         Args:
               payload required
               
-              Output of busgraph_cache(g).get_clique_cache()
+              Output of busgraph_cache(self.target_graph).get_clique_cache()
         Returns:
                 success
 
         """
-        return busclique.busgraph_cache(g).update_clique_cache(payload)
+        return busgraph_cache(self.target_graph).update_clique_cache(payload)
 
     def trigger_failover(self):
         """Trigger a failover and connect to a new solver.
