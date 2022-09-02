@@ -297,6 +297,18 @@ class DWaveCliqueSampler(dimod.Sampler):
         """
         return busgraph_cache(self.target_graph).largest_clique()
 
+    def update_clique_cache(self, payload):
+        """Provide the cliques so they don't have to be calculated at run time, prime the cache! 
+        Args:
+              payload required
+              
+              Output of busgraph_cache(g).get_clique_cache()
+        Returns:
+                success
+
+        """
+        return busclique.busgraph_cache(g).update_clique_cache(payload)
+
     def trigger_failover(self):
         """Trigger a failover and connect to a new solver.
 
