@@ -22,8 +22,8 @@ from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
 
-@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestMockDWaveSampler(unittest.TestCase):
+    @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
     def test_properties_and_params(self):
         try:
             sampler = DWaveSampler()
@@ -133,14 +133,18 @@ class TestMockDWaveSampler(unittest.TestCase):
     def test_properties(self):
         properties = {'topology' : {
             'type' : 'pegasus',
-            'shape' : [16]}}
-        #Note, topology_type and topology_shape are unchecked and
-        #ignored
-        sampler = MockDWaveSampler(topology_type='chimera',
-                                   topology_shape=[3,3,4],
-                                   properties=properties)
+            'shape' : [5]}}
+        # Note, topology_type and topology_shape must be consistent
+        # or None.
+        with self.assertRaises(ValueError) as e:
+            sampler = MockDWaveSampler(topology_type='chimera',
+                                       properties=properties)
+        with self.assertRaises(ValueError) as e:
+            sampler = MockDWaveSampler(topology_shape=[4],
+                                       properties=properties)
+        sampler = MockDWaveSampler(properties=properties)
         self.assertTrue(sampler.properties['topology']['type']=='pegasus')
-        self.assertTrue(sampler.properties['topology']['shape'][-1]==16)
+        self.assertTrue(sampler.properties['topology']['shape'][-1]==5)
         properties['category'] = 'test_choice'
         sampler = MockDWaveSampler(properties=properties)
         self.assertTrue(sampler.properties['category']=='test_choice')

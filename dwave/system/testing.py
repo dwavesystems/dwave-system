@@ -19,6 +19,7 @@ import dwave.cloud.computation
 import unittest.mock as mock
 import dwave_networkx as dnx
 
+from dwave.system import to_dnx_graph
 from uuid import uuid4
 from tabu import TabuSampler
 
@@ -31,55 +32,6 @@ except ImportError:
 import concurrent.futures
 import numpy as np
 
-def _dnx_graph(topology_type, shape, nodelist, edgelist):
-    """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
-       
-       This code mirrors the to_networkx_graph method in dwave.system.samplers.DWaveSampler.
-       
-       Returns:
-            :class:`networkx.Graph`:
-                Either a Chimera lattice of shape [m, n, t], a Pegasus 
-                lattice of shape [m] or a Zephyr lattice of size [m,t].
-
-        Examples:
-            This example converts a selected D-Wave system solver to a graph
-            and verifies it has over 2000 nodes.
-
-            >>> from dwave.system import DWaveSampler
-            ...
-            >>> sampler = DWaveSampler()
-            >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
-            >>> len(g.nodes) > 2000                  # doctest: +SKIP
-            True
-    """
-
-    if topology_type == 'chimera':
-        if not (1 <= len(shape) <=3):
-            raise ValueError('shape is incompatible with a chimera lattice.')
-        G = dnx.chimera_graph(*shape,
-                              node_list=nodelist,
-                              edge_list=edgelist)
-        
-    elif topology_type == 'pegasus':
-        if len(shape) != 1:
-            raise ValueError('shape is incompatible with a pegasus lattice.')
-        G = dnx.pegasus_graph(shape[0],
-                              node_list=nodelist,
-                              edge_list=edgelist)
-
-    elif topology_type == 'zephyr':
-        if len(shape) not in (1, 2):
-            raise ValueError('shape is incompatible with a zephyr lattice.')
-        G = dnx.zephyr_graph(*shape,
-                             node_list=nodelist,
-                             edge_list=edgelist)
-    else:
-        # Alternative could be to create a standard network graph and
-        # issue a warning. Requires new dependency on networkx.
-        raise ValueError('topology_type does not match a known'
-                         'QPU architecure')
-    return G
-    
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
@@ -111,23 +63,17 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             This parameter is made redundant by the use of edgelist.
 
         topology_type (string, optional, default='chimera'):
-            If 'topology' is in ``properties``, this argument is ignored
-            in favour of ``properties``['topology']['type']. Otherwise
-            it determines the DWaveSampler topology being emulated. Supported
-            options are 'chimera', 'pegasus' or 'zephyr', with 'chimera'
-            being the default. Note that for Pegasus emulation the
-            fabric_only=True graph is presented.
+            Supported options are 'chimera', 'pegasus' or 'zephyr'.
+            The default is 'chimera' when the value is not specified as part 
+            of the from the ``properties`` argument.
             
         topology_shape (string, optional):
-            If 'topology' is in ``properties`` then this argument is
-            ignored in favour of ``properties``['topology']['shape']. Otherwise
-            it determines a ``topology_type`` compatible shape parameter.
             A list of three numbers [m,n,t] for Chimera, defaulted as [4,4,4]. 
             A list of one number [m] for Pegasus, defaulted as [3].
             A list of two numbers [m,t] for Zephyr, defaulted as [2,4].
-            Defaults are chosen large enough to capture lattice-specific
-            structure, but small enough to allow rapid testing.
-    
+            The default above apply only when the value is not 
+            specified as part of the from the ``properties`` argument.
+            
         parameter_warnings (bool, optional, default=True):
             The MockSampler is adaptive with respect to ``num_reads``,
             ``answer_mode`` and ``max_answers`` and ``label`` 
@@ -178,7 +124,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 or 'shape' not in properties['topology']):
                 raise ValueError("'shape' and 'type' should be keys in "
                                  "properties['topology']")
+            if topology_type is not None and topology_type != properties['topology']['type']:
+                raise ValueError("topology_type must be compatible with "
+                                 "properties['topology']['type'] when specified")
             topology_type = properties['topology']['type']
+            if topology_shape is not None and topology_shape != properties['topology']['shape']:
+                raise ValueError("topology_shape must be compatible with " 
+                                 "properties['topology']['shape'] when specified")
             topology_shape = properties['topology']['shape']
         else:
             if topology_type is None:
@@ -204,9 +156,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         # Note that self.to_networkx_graph would point to an inherited
         # version rather than the class method here, without topology
         # information, for clarity helper function is separated.
-        solver_graph = _dnx_graph(self.properties['topology']['type'],
-                                  self.properties['topology']['shape'],
-                                  self.nodelist, self.edgelist)
+        solver_graph = to_dnx_graph(self.properties['topology']['type'],
+                                    self.properties['topology']['shape'],
+                                    self.nodelist, self.edgelist)
         
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
@@ -377,6 +329,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         # Timing values are for demonstration only. These could be made
         # adaptive to sampler parameters and mocked topology in principle.
+        # we should do it in a follow-up PR, using estimate_qpu_access_time,
+        # once dwavesystems/dwave-cloud-client#530 is merged.
         info = dict(problem_id=str(uuid4()),
                     timing={'qpu_sampling_time': 82.08,
                             'qpu_anneal_time_per_sample': 20.0,
@@ -430,9 +384,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         return ss
 
     def to_networkx_graph(self):
-        return _dnx_graph(self.properties['topology']['type'],
-                          self.properties['topology']['shape'],
-                          self.nodelist, self.edgelist)
+        return to_dnx_graph(self.properties['topology']['type'],
+                            self.properties['topology']['shape'],
+                            self.nodelist, self.edgelist)
     
     
 class MockLeapHybridDQMSampler:

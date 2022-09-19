@@ -37,8 +37,53 @@ from dwave.system.warnings import WarningHandler, WarningAction
 import dwave_networkx as dnx
 import networkx as nx
 
-__all__ = ['DWaveSampler']
+__all__ = ['DWaveSampler', 'to_dnx_graph']
 
+
+def to_dnx_graph(topology_type, topology_shape, nodelist, edgelist):
+    """Converts sampler structure to a dwave-networkx compatible graph.
+
+    Creates a D-Wave Chimera, Pegasus or Zephyr graph compatible with
+    dwave-networkx libraries. 
+
+    Args:
+        topology_type (string):
+            The type of lattice. Valid strings are `chimera`, `pegasus`
+            and `zephyr`.
+        topology_shape(iterable of ints):
+            Specifies dimensions of the lattice.
+        nodelist (list of ints):
+            List of nodes in the graph. Node labeling is integer,
+            and compatible with the topology_type linear labeling scheme.
+        edgelist (list of Tuples):
+            List of edges in the graph, each edge consisting of a pair
+            of nodes.
+    """
+    
+    if topology_type == 'chimera':
+        if not (1 <= len(topology_shape) <=3):
+            raise ValueError('topology_shape is incompatible with a chimera lattice.')
+        G = dnx.chimera_graph(*topology_shape,
+                              node_list=nodelist,
+                              edge_list=edgelist)
+    elif topology_type == 'pegasus':
+        if len(topology_shape) != 1:
+            raise ValueError('topology_shape is incompatible with a pegasus lattice.')
+        G = dnx.pegasus_graph(topology_shape[0],
+                                  node_list=nodelist,
+                                  edge_list=edgelist)
+    elif topology_type == 'zephyr':
+        if len(topology_shape) not in (1, 2):
+            raise ValueError('topology_shape is incompatible with a zephyr lattice.')
+        G = dnx.zephyr_graph(*topology_shape,
+                                 node_list=nodelist,
+                                 edge_list=edgelist)
+    else:
+        # Alternative could be to create a standard network graph and
+        # issue a warning. Requires new dependency on networkx.
+        raise ValueError('topology_type does not match a known'
+                         'QPU architecure')
+    return G
 
 def _failover(f):
     """Decorator for methods that might raise SolverOfflineError. Assumes that
@@ -483,7 +528,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
-
+    
+        
+    
     def to_networkx_graph(self):
         """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
 
@@ -503,33 +550,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> len(g.nodes) > 2000                  # doctest: +SKIP
             True
         """
-
-        topology_type = self.properties['topology']['type']
-        shape = self.properties['topology']['shape']
-
-        if topology_type == 'chimera':
-            if not (1 <= len(shape) <=3):
-                raise ValueError('shape is incompatible with a chimera lattice.')
-            G = dnx.chimera_graph(*shape,
-                                  node_list=self.nodelist,
-                                  edge_list=self.edgelist)
-
-        elif topology_type == 'pegasus':
-            if len(shape) != 1:
-                raise ValueError('shape is incompatible with a pegasus lattice.')
-            G = dnx.pegasus_graph(shape[0],
-                                  node_list=self.nodelist,
-                                  edge_list=self.edgelist)
-
-        elif topology_type == 'zephyr':
-            if len(shape) not in (1, 2):
-                raise ValueError('shape is incompatible with a zephyr lattice.')
-            G = dnx.zephyr_graph(*shape,
-                                 node_list=self.nodelist,
-                                 edge_list=self.edgelist)
-        else:
-            # Alternative could be to create a standard network graph and
-            # issue a warning. Requires new dependency on networkx.
-            raise ValueError('topology_type does not match a known'
-                             'QPU architecure')
-        return G
+        return to_dnx_graph(self.properties['topology']['type'],
+                            self.properties['topology']['shape'],
+                            self.nodelist, self.edgelist)
+        
