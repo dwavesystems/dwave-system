@@ -21,7 +21,6 @@ import dwave_networkx as dnx
 
 from dwave.system import qpu_graph
 from uuid import uuid4
-from tabu import TabuSampler
 
 
 try:
@@ -444,12 +443,14 @@ class MockLeapHybridSolver:
         return future
 
     def sample_bqm(self, sapi_problem_id, time_limit):
-        #Workaround until TabuSampler supports C BQMs
+        
         bqm = dimod.BQM(sapi_problem_id.linear,
                                     sapi_problem_id.quadratic,
                                     sapi_problem_id.offset,
                                     sapi_problem_id.vartype)
-        result = TabuSampler().sample(bqm, timeout=1000*int(time_limit))
+        sampler = SubstituteSampler()
+        result = sampler.sample(bqm, timeout=1000*int(time_limit))
+        result = sampler.sample(bqm, timeout=1000*int(time_limit))
         future = dwave.cloud.computation.Future('fake_solver', None)
         future._result = {'sampleset': result, 'problem_type': 'bqm'}
         return future
