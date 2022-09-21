@@ -143,11 +143,11 @@ class TestMockDWaveSampler(unittest.TestCase):
             sampler = MockDWaveSampler(topology_shape=[4],
                                        properties=properties)
         sampler = MockDWaveSampler(properties=properties)
-        self.assertTrue(sampler.properties['topology']['type']=='pegasus')
-        self.assertTrue(sampler.properties['topology']['shape'][-1]==5)
+        self.assertEqual(sampler.properties['topology']['type'],'pegasus')
+        self.assertEqual(sampler.properties['topology']['shape'][-1],5)
         properties['category'] = 'test_choice'
         sampler = MockDWaveSampler(properties=properties)
-        self.assertTrue(sampler.properties['category']=='test_choice')
+        self.assertEqual(sampler.properties['category'],'test_choice')
         
     def test_yield_arguments(self):
         # Request 1 node and 1 edge deletion, check resulting graph 

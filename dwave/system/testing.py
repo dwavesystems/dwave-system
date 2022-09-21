@@ -19,7 +19,7 @@ import dwave.cloud.computation
 import unittest.mock as mock
 import dwave_networkx as dnx
 
-from dwave.system import to_dnx_graph
+from dwave.system import qpu_graph
 from uuid import uuid4
 from tabu import TabuSampler
 
@@ -156,9 +156,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         # Note that self.to_networkx_graph would point to an inherited
         # version rather than the class method here, without topology
         # information, for clarity helper function is separated.
-        solver_graph = to_dnx_graph(self.properties['topology']['type'],
-                                    self.properties['topology']['shape'],
-                                    self.nodelist, self.edgelist)
+        solver_graph = qpu_graph(self.properties['topology']['type'],
+                                 self.properties['topology']['shape'],
+                                 self.nodelist, self.edgelist)
         
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
@@ -384,9 +384,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         return ss
 
     def to_networkx_graph(self):
-        return to_dnx_graph(self.properties['topology']['type'],
-                            self.properties['topology']['shape'],
-                            self.nodelist, self.edgelist)
+        return qpu_graph(self.properties['topology']['type'],
+                         self.properties['topology']['shape'],
+                         self.nodelist, self.edgelist)
     
     
 class MockLeapHybridDQMSampler:

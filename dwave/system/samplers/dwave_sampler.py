@@ -37,11 +37,11 @@ from dwave.system.warnings import WarningHandler, WarningAction
 import dwave_networkx as dnx
 import networkx as nx
 
-__all__ = ['DWaveSampler', 'to_dnx_graph']
+__all__ = ['DWaveSampler', 'qpu_graph']
 
 
-def to_dnx_graph(topology_type, topology_shape, nodelist, edgelist):
-    """Converts sampler structure to a dwave-networkx compatible graph.
+def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
+    """Converts node and edge lists to a dwave-networkx compatible graph.
 
     Creates a D-Wave Chimera, Pegasus or Zephyr graph compatible with
     dwave-networkx libraries. 
@@ -550,7 +550,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> len(g.nodes) > 2000                  # doctest: +SKIP
             True
         """
-        return to_dnx_graph(self.properties['topology']['type'],
-                            self.properties['topology']['shape'],
-                            self.nodelist, self.edgelist)
+        return qpu_graph(self.properties['topology']['type'],
+                         self.properties['topology']['shape'],
+                         self.nodelist, self.edgelist)
         

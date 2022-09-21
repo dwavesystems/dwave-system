@@ -29,7 +29,7 @@ import dwave_networkx as dnx
 
 from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 
-from dwave.system.samplers import DWaveSampler, to_dnx_graph
+from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
 
 from networkx.utils.misc import graphs_equal
@@ -312,10 +312,10 @@ class TestDwaveSampler(unittest.TestCase):
         sampler = self.sampler
         sampler.solver.properties.update({'topology': {'type': 'chimera', 'shape': [4, 4, 4]}})
         G = sampler.to_networkx_graph()
-        G2 = to_dnx_graph(sampler.properties['topology']['type'],
-                          sampler.properties['topology']['shape'],
-                          sampler.nodelist,
-                          sampler.edgelist)
+        G2 = qpu_graph(sampler.properties['topology']['type'],
+                       sampler.properties['topology']['shape'],
+                       sampler.nodelist,
+                       sampler.edgelist)
         self.assertTrue(graphs_equal(G,G2))
         # Create chimera graph for comparison
         chimeraG = dnx.chimera_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
