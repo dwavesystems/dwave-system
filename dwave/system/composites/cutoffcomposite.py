@@ -57,19 +57,19 @@ class CutOffComposite(dimod.ComposedSampler):
     Examples:
         This example removes one interaction, ``'ac': -0.7``, before embedding
         on a D-Wave system. Note that the lowest-energy sample for the embedded problem
-        is ``{'a': 1, 'b': -1, 'c': -1}`` but with a large enough number of samples
-        (here ``num_reads=1000``), the lowest-energy solution to the complete BQM is
-        likely found and its energy recalculated by the composite.
+        is unchanged ``{'a': 1, 'b': -1, 'c': -1}`` and this solution is found.
+        However, the sample is attributed the energy appropriate to the bqm
+        without thresholding.
 
         >>> import dimod
         >>> sampler = DWaveSampler(solver={'qpu': True})
         >>> bqm = dimod.BinaryQuadraticModel({'a': -1, 'b': 1, 'c': 1},
-        ...                            {'ab': -0.8, 'ac': -0.7, 'bc': -1},
+        ...                            {'ab': 0.8, 'ac': 0.7, 'bc': -1},
         ...                            0,
         ...                            dimod.SPIN)
         >>> CutOffComposite(AutoEmbeddingComposite(sampler), 0.75).sample(bqm,
         ...                 num_reads=1000).first.energy
-        -3.5
+        -5.5
 
     """
 

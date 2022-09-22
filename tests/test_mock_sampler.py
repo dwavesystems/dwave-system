@@ -14,19 +14,88 @@
 
 """who watches the watchmen?"""
 import unittest
-
-from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
-
+import os
 import dimod.testing as dit
+
+from dwave.system import DWaveSampler
+from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
 
-
 class TestMockDWaveSampler(unittest.TestCase):
+    @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
+    def test_properties_and_params(self):
+        try:
+            sampler = DWaveSampler()
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("no QPU available")
+
+        mock = MockDWaveSampler()
+
+        self.assertEqual(set(mock.properties), set(sampler.properties))
+        self.assertEqual(set(mock.parameters), set(sampler.parameters))
+
+        #Check extraction of nodelist, edgelist and properties from 
+        mock = MockDWaveSampler.from_qpu_sampler(sampler)
+        self.assertEqual(mock.nodelist.sort(),sampler.nodelist.sort())
+        self.assertEqual(mock.edgelist.sort(),sampler.edgelist.sort())
+        
+        
     def test_sampler(self):
         sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
         
+    def test_mock_parameters(self):
+        # Single cell Chimera (DW2000Q) solver:
+        sampler = MockDWaveSampler(topology_type='chimera', topology_shape = [1,1,4])
+        num_reads = 10
+        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads)
+        self.assertEqual(sum(ss.record.num_occurrences),num_reads)
+        self.assertTrue(len(ss.record.num_occurrences)<=2) #Binary state histogram
+        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads,
+                                  answer_mode='raw')
+        self.assertEqual(len(ss.record.num_occurrences),num_reads)
+        
+        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads,
+                                  answer_mode='raw', max_answers=2)
+        self.assertEqual(len(ss.record.num_occurrences),2)
+
+            
+        try:
+            from greedy import SteepestDescentSampler as SubstituteSampler
+            mock_fallback_substitute = False
+        except:
+            mock_fallback_substitute = True
+        if not mock_fallback_substitute:
+            # If the greedy is available, we can mock more parameters (than
+            # is possible with the fallback dimod.SimulatedAnnealingSampler()
+            # method
+
+            #QPU format initial states:
+            initial_state = [(i,1) if i%4==0 else (i,3) for i in range(8)]
+            ss = sampler.sample_ising({0 : 1, 4 : 1}, {(0,4) : -2},
+                                      num_reads=1,
+                                      answer_mode='raw',
+                                      initial_state=initial_state)
+            #The initialized state is a local minima, and should
+            #be returned under greedy descent mocking:
+            self.assertEqual(ss.record.energy[0],0)
+    def test_unmock_parameters(self):
+        # Check valid DWaveSampler() parameter, that is not mocked throws a warning:
+        sampler = MockDWaveSampler()
+        with self.assertWarns(UserWarning) as w:
+            ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
+        with self.assertRaises(ValueError) as e:
+            ss = sampler.sample_ising({0 : -1}, {}, monkey_time=123)
+        with self.assertRaises(ValueError) as e:
+            sampler = MockDWaveSampler(topology_type="chimera123")
+        sampler = MockDWaveSampler(parameter_warnings=False)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="error", category=UserWarning)
+            ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
+    
     def test_chimera_topology(self):
         grid_parameter = 5
         tile_parameter = 2
@@ -60,7 +129,26 @@ class TestMockDWaveSampler(unittest.TestCase):
                         tile_parameter*grid_parameter*(8*grid_parameter + 4))
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
-    
+
+    def test_properties(self):
+        properties = {'topology' : {
+            'type' : 'pegasus',
+            'shape' : [5]}}
+        # Note, topology_type and topology_shape must be consistent
+        # or None.
+        with self.assertRaises(ValueError) as e:
+            sampler = MockDWaveSampler(topology_type='chimera',
+                                       properties=properties)
+        with self.assertRaises(ValueError) as e:
+            sampler = MockDWaveSampler(topology_shape=[4],
+                                       properties=properties)
+        sampler = MockDWaveSampler(properties=properties)
+        self.assertEqual(sampler.properties['topology']['type'],'pegasus')
+        self.assertEqual(sampler.properties['topology']['shape'][-1],5)
+        properties['category'] = 'test_choice'
+        sampler = MockDWaveSampler(properties=properties)
+        self.assertEqual(sampler.properties['category'],'test_choice')
+        
     def test_yield_arguments(self):
         # Request 1 node and 1 edge deletion, check resulting graph 
         #    1      3
@@ -82,6 +170,24 @@ class TestMockDWaveSampler(unittest.TestCase):
                                    broken_edges=delete_edges)
         self.assertTrue(len(sampler.nodelist)==7)
         self.assertTrue(len(sampler.edgelist)==5)
+
+        nodelist = [0,4,5,6,7]
+        edgelist = [(5,7),(4,6)]
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=chimera_shape,
+                                   nodelist=nodelist,
+                                   edgelist=edgelist)
+        self.assertTrue(len(sampler.nodelist)==5)
+        self.assertTrue(len(sampler.edgelist)==2)
+        
+        sampler = MockDWaveSampler(topology_type='chimera',
+                                   topology_shape=chimera_shape,
+                                   nodelist=nodelist,
+                                   edgelist=edgelist,
+                                   broken_nodes=delete_nodes,
+                                   broken_edges=delete_edges)
+        self.assertTrue(len(sampler.nodelist)==4)
+        self.assertTrue(len(sampler.edgelist)==1)
         
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):

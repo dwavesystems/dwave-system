@@ -5,7 +5,7 @@ dwave-preprocessing==0.4.0
 dwave-cloud-client==0.10.0
 dwave-networkx==0.8.10
 dwave-drivers==0.4.4
-dwave-tabu==0.4.4
+dwave-greedy
 homebase==1.0.1
 minorminer==0.2.8.post1
 numpy==1.20.0; python_version < "3.10"
