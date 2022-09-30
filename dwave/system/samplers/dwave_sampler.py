@@ -314,7 +314,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         # the requested features are saved on the client object, so
         # we just need to request a new solver
-        self.solver = self.client.get_solver()
+        self.solver = self.client.get_solver(refresh=True)
 
         # delete the lazily-constructed attributes
         try:
