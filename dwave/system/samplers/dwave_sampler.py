@@ -139,17 +139,29 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Args:
         failover (bool, optional, default=False):
-            Switch to a new QPU in the rare event that the currently connected
-            system goes offline. Note that different QPUs may have different
-            hardware graphs and a failover will result in a regenerated
-            :attr:`.nodelist`, :attr:`.edgelist`, :attr:`.properties` and
-            :attr:`.parameters`.
+            Set to ``True`` in order to signal a failover condition on sampling error.
+            Failover is signalled by raising :exc:`.FailoverCondition` or
+            :exc:`.RetryCondition` on sampleset resolve.
+
+            Actual failover, i.e. selection of a new solver, has to be handled
+            by the user. A convenience method :meth:`.trigger_failover` is available
+            for this. Note that different QPUs may have different hardware graphs and a
+            failover will result in a regenerated :attr:`.nodelist`, :attr:`.edgelist`,
+            :attr:`.properties` and :attr:`.parameters`.
+
+            .. versionchanged:: 1.16.0
+
+               Some time ago, in the era of blocking :meth:`sample` response,
+               ``failover=True`` would cause QPU/solver failover and sampling
+               retry. However, ever since :meth:`sample` is non-blocking/async,
+               failover is broken, i.e. setting ``failover=True`` does nothing.
 
         retry_interval (number, optional, default=-1):
-            The amount of time (in seconds) to wait to poll for a solver in
-            the case that no solver is found. If `retry_interval` is negative
-            then it will instead propogate the `SolverNotFoundError` to the
-            user.
+            Ignored, but kept for backward compatibility.
+
+            .. versionchanged:: 1.16.0
+
+               Ignored since 1.16.0. See note for ``failover`` parameter above.
 
         **config:
             Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
@@ -352,7 +364,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         except AttributeError:
             pass
 
-    @_failover
     def sample(self, bqm, warnings=None, **kwargs):
         """Sample from the specified binary quadratic model.
 
