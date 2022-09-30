@@ -30,7 +30,10 @@ import dimod
 from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave.cloud import Client
 from dwave.cloud.exceptions import (
-    SolverOfflineError, SolverNotFoundError, ProblemStructureError)
+    SolverError, SolverAuthenticationError, InvalidAPIResponseError,
+    RequestTimeout, PollingTimeout, ProblemUploadError,
+    SolverOfflineError, SolverNotFoundError, ProblemStructureError,
+)
 
 from dwave.system.warnings import WarningHandler, WarningAction
 
@@ -38,6 +41,17 @@ import dwave_networkx as dnx
 import networkx as nx
 
 __all__ = ['DWaveSampler', 'qpu_graph']
+
+
+class FailoverCondition(Exception):
+    """QPU SolverAPI call failed with an error that might be mitigated by
+    retrying on a different solver.
+    """
+
+class RetryCondition(FailoverCondition):
+    """QPU SolverAPI call failed with an error that might be mitigated by
+    retrying on the same solver.
+    """
 
 
 def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
@@ -84,6 +98,7 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
         raise ValueError('topology_type does not match a known'
                          'QPU architecure')
     return G
+
 
 def _failover(f):
     """Decorator for methods that might raise SolverOfflineError. Assumes that
@@ -404,17 +419,44 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         warninghandler = WarningHandler(warnings)
         warninghandler.energy_scale(bqm)
 
-        # need a hook so that we can check the sampleset (lazily) for
-        # warnings
+        # need a hook so that we can lazily check the sampleset for warnings
+        # and handle failover consistently
         def _hook(computation):
-            sampleset = computation.sampleset
+            def resolve(computation):
+                sampleset = computation.sampleset
+                sampleset.resolve()
 
-            if warninghandler is not None:
-                warninghandler.too_few_samples(sampleset)
-                if warninghandler.action is WarningAction.SAVE:
-                    sampleset.info['warnings'] = warninghandler.saved
+                if warninghandler is not None:
+                    warninghandler.too_few_samples(sampleset)
+                    if warninghandler.action is WarningAction.SAVE:
+                        sampleset.info['warnings'] = warninghandler.saved
 
-            return sampleset
+                return sampleset
+
+            try:
+                return resolve(computation)
+
+            except (ProblemUploadError, RequestTimeout, PollingTimeout) as exc:
+                if not self.failover:
+                    raise exc
+
+                # failover with retry on:
+                # - request or polling timeout
+                # - upload errors
+                raise RetryCondition("resubmit problem") from exc
+
+            except (SolverError, InvalidAPIResponseError) as exc:
+                if not self.failover:
+                    raise exc
+                if isinstance(exc, SolverAuthenticationError):
+                    raise exc
+
+                # failover on:
+                # - solver offline, solver disabled or not found
+                # - internal SAPI errors (like malformed response)
+                # - generic solver errors
+                # but NOT on auth errors
+                raise FailoverCondition("switch solver and resubmit problem") from exc
 
         return dimod.SampleSet.from_future(future, _hook)
 
