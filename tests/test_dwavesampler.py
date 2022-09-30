@@ -14,15 +14,13 @@
 
 import sys
 import unittest
-import random
-import warnings
 
-from collections import namedtuple
 from concurrent.futures import Future
 from unittest import mock
 from uuid import uuid4
 
 import numpy as np
+from networkx.utils import graphs_equal
 
 import dimod
 import dwave_networkx as dnx
@@ -32,7 +30,6 @@ from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
 from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
 
-from networkx.utils.misc import graphs_equal
 
 C16 = dnx.chimera_graph(16)
 

@@ -1,4 +1,5 @@
 parameterized==0.7.4
+networkx>=2.6
 
 coverage
 codecov
