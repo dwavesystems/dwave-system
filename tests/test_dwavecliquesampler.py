@@ -24,7 +24,7 @@ import dwave_networkx as dnx
 from dwave.cloud import exceptions
 from dwave.cloud import computation
 from dwave.system import DWaveCliqueSampler, DWaveSampler
-from dwave.system.samplers.dwave_sampler import FailoverCondition, RetryCondition
+from dwave.system.exceptions import FailoverCondition, RetryCondition
 
 
 class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):

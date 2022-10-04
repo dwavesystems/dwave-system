@@ -19,11 +19,7 @@ See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
-import time
-import functools
 import collections.abc as abc
-
-from warnings import warn
 
 import dimod
 
@@ -34,23 +30,13 @@ from dwave.cloud.exceptions import (
     RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,
 )
 
+from dwave.system.exceptions import FailoverCondition, RetryCondition
 from dwave.system.warnings import WarningHandler, WarningAction
 
 import dwave_networkx as dnx
 import networkx as nx
 
 __all__ = ['DWaveSampler', 'qpu_graph']
-
-
-class FailoverCondition(Exception):
-    """QPU/SolverAPI call failed with an error that might be mitigated by
-    retrying on a different solver.
-    """
-
-class RetryCondition(FailoverCondition):
-    """QPU/SolverAPI call failed with an error that might be mitigated by
-    retrying on the same solver.
-    """
 
 
 def qpu_graph(topology_type, topology_shape, nodelist, edgelist):

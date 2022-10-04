@@ -12,12 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import sys
 import unittest
-
-from concurrent.futures import Future
-from unittest import mock
 from uuid import uuid4
+from unittest import mock
+from concurrent.futures import Future
 
 import numpy as np
 from networkx.utils import graphs_equal
@@ -31,7 +29,7 @@ from dwave.cloud import computation
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
-from dwave.system.samplers.dwave_sampler import RetryCondition, FailoverCondition
+from dwave.system.exceptions import FailoverCondition, RetryCondition
 
 
 C16 = dnx.chimera_graph(16)
