@@ -28,11 +28,10 @@ from warnings import warn
 import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
-from dwave.cloud import Client
+from dwave.cloud.client import Client
 from dwave.cloud.exceptions import (
     SolverError, SolverAuthenticationError, InvalidAPIResponseError,
-    RequestTimeout, PollingTimeout, ProblemUploadError,
-    SolverOfflineError, SolverNotFoundError, ProblemStructureError,
+    RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,
 )
 
 from dwave.system.warnings import WarningHandler, WarningAction
@@ -44,12 +43,12 @@ __all__ = ['DWaveSampler', 'qpu_graph']
 
 
 class FailoverCondition(Exception):
-    """QPU SolverAPI call failed with an error that might be mitigated by
+    """QPU/SolverAPI call failed with an error that might be mitigated by
     retrying on a different solver.
     """
 
 class RetryCondition(FailoverCondition):
-    """QPU SolverAPI call failed with an error that might be mitigated by
+    """QPU/SolverAPI call failed with an error that might be mitigated by
     retrying on the same solver.
     """
 
@@ -95,34 +94,8 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
     else:
         # Alternative could be to create a standard network graph and
         # issue a warning. Requires new dependency on networkx.
-        raise ValueError('topology_type does not match a known'
-                         'QPU architecure')
+        raise ValueError('topology_type does not match a known QPU architecure')
     return G
-
-
-def _failover(f):
-    """Decorator for methods that might raise SolverOfflineError. Assumes that
-    the method is on a class with a `trigger_failover` method and a truthy
-    `failover` attribute.
-    """
-    @functools.wraps(f)
-    def wrapper(sampler, *args, **kwargs):
-        while True:
-            try:
-                return f(sampler, *args, **kwargs)
-            except SolverOfflineError as err:
-                if not sampler.failover:
-                    raise err
-
-            try:
-                sampler.trigger_failover()
-            except SolverNotFoundError as err:
-                if sampler.retry_interval < 0:
-                    raise err
-
-                time.sleep(sampler.retry_interval)
-
-    return wrapper
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
@@ -153,8 +126,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
                Some time ago, in the era of blocking :meth:`sample` response,
                ``failover=True`` would cause QPU/solver failover and sampling
-               retry. However, ever since :meth:`sample` is non-blocking/async,
-               failover is broken, i.e. setting ``failover=True`` does nothing.
+               retry. However, ever since we made :meth:`sample` non-blocking/async,
+               failover was broken (setting ``failover=True`` had no effect).
 
         retry_interval (number, optional, default=-1):
             Ignored, but kept for backward compatibility.
