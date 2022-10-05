@@ -16,12 +16,15 @@ import itertools
 import unittest
 import unittest.mock
 
+from parameterized import parameterized
+
 import dimod
 import dwave_networkx as dnx
 
-from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
-
+from dwave.cloud import exceptions
+from dwave.cloud import computation
 from dwave.system import DWaveCliqueSampler, DWaveSampler
+from dwave.system.exceptions import FailoverCondition, RetryCondition
 
 
 class MockDWaveSampler(dimod.RandomSampler, dimod.Structured):
@@ -146,62 +149,67 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 
 
 class TestFailover(unittest.TestCase):
-    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
-                         MockChimeraDWaveSampler)
-    def test_default(self):
+
+    @staticmethod
+    def patch_solver(solver, exc):
+        """Patch mock `solver` to fail with `exc` on sampleset resolve."""
+
+        # clique sampler needs a valid topology
+        solver.properties = {
+            'topology': {
+                'type': 'pegasus',
+                'shape': [4]
+            },
+            'parameters': {},
+            'h_range': [-2, 2],
+            'j_range': [-1, 1]
+        }
+
+        # simulate solver failure on sampleset resolve
+        fut = computation.Future(solver, None)
+        fut._set_exception(exc)
+        solver.sample_bqm = unittest.mock.Mock()
+        solver.sample_bqm.return_value = fut
+
+        return solver
+
+    @unittest.mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_default(self, mock_client):
         sampler = DWaveCliqueSampler()
 
-        def mocksample(*args, **kwargs):
-            raise SolverOfflineError
+        self.patch_solver(sampler.child.solver, exceptions.SolverOfflineError)
 
-        sampler.child.sample = mocksample
+        with self.assertRaises(exceptions.SolverOfflineError):
+            sampler.sample_ising({}, {}).resolve()
 
-        with self.assertRaises(SolverOfflineError):
-            sampler.sample_ising({}, {})
-
-    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
-                         MockChimeraDWaveSampler)
-    def test_noretry(self):
-        sampler = DWaveCliqueSampler(failover=True, retry_interval=-1)
-
-        def mocksample(*args, **kwargs):
-            raise SolverOfflineError
-
-        sampler.child.sample = mocksample
-
-        def mocktrigger(*args, **kwargs):
-            raise SolverNotFoundError
-
-        sampler.child.trigger_failover = mocktrigger
-
-        with self.assertRaises(SolverNotFoundError):
-            sampler.sample_ising({}, {})
-
-    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
-                         MockChimeraDWaveSampler)
-    def test_properties(self):
+    @parameterized.expand([
+        (exceptions.InvalidAPIResponseError, FailoverCondition),
+        (exceptions.SolverNotFoundError, FailoverCondition),
+        (exceptions.SolverOfflineError, FailoverCondition),
+        (exceptions.SolverError, FailoverCondition),
+        (exceptions.PollingTimeout, RetryCondition),
+        (exceptions.SolverAuthenticationError, exceptions.SolverAuthenticationError),   # auth error propagated
+        (KeyError, KeyError),   # unrelated errors propagated
+    ])
+    @unittest.mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_async_failover(self, source_exc, target_exc, mock_client):
         sampler = DWaveCliqueSampler(failover=True)
 
-        def mocksample(*args, **kwargs):
-            count = getattr(mocksample, 'count', 0)
+        self.patch_solver(sampler.child.solver, source_exc)
 
-            if count:
-                return dimod.SampleSet.from_samples([], energy=0., vartype='SPIN')
-            else:
-                mocksample.count = count + 1
-                raise SolverOfflineError
+        with self.assertRaises(target_exc):
+            sampler.sample_ising({}, {}).resolve()
 
-        sampler.child.sample = mocksample
+    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler',
+                         MockChimeraDWaveSampler)
+    def test_properties_reinit(self):
+        sampler = DWaveCliqueSampler()
 
         G = sampler.target_graph
         qlr = sampler.qpu_linear_range
         qqr = sampler.qpu_quadratic_range
 
-        self.assertIs(G, sampler.target_graph)
-        self.assertIs(qlr, sampler.qpu_linear_range)
-        self.assertIs(qqr, sampler.qpu_quadratic_range)
-
-        sampler.sample_ising({}, {})
+        sampler.trigger_failover()
 
         self.assertIsNot(G, sampler.target_graph)
         self.assertIsNot(qlr, sampler.qpu_linear_range)

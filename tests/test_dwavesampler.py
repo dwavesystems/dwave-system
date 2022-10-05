@@ -12,27 +12,25 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import sys
 import unittest
-import random
-import warnings
-
-from collections import namedtuple
-from concurrent.futures import Future
-from unittest import mock
 from uuid import uuid4
+from unittest import mock
+from concurrent.futures import Future
 
 import numpy as np
+from networkx.utils import graphs_equal
+from parameterized import parameterized
 
 import dimod
 import dwave_networkx as dnx
 
-from dwave.cloud.exceptions import SolverOfflineError, SolverNotFoundError
+from dwave.cloud import exceptions
+from dwave.cloud import computation
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
+from dwave.system.exceptions import FailoverCondition, RetryCondition
 
-from networkx.utils.misc import graphs_equal
 
 C16 = dnx.chimera_graph(16)
 
@@ -94,7 +92,7 @@ class MockSolver():
         return future
 
 
-class TestDwaveSampler(unittest.TestCase):
+class TestDWaveSampler(unittest.TestCase):
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def setUp(self, MockClient):
 
@@ -203,28 +201,32 @@ class TestDwaveSampler(unittest.TestCase):
         self.assertEqual(ss.info.get('problem_label'), label)
 
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
-    def test_failover_false(self, MockClient):
+    def test_failover_off(self, MockClient):
         sampler = DWaveSampler(failover=False)
 
-        sampler.solver.sample_ising.side_effect = SolverOfflineError
-        sampler.solver.sample_qubo.side_effect = SolverOfflineError
-        sampler.solver.sample_bqm.side_effect = SolverOfflineError
+        sampler.solver.sample_bqm.side_effect = exceptions.SolverOfflineError
 
-        with self.assertRaises(SolverOfflineError):
+        with self.assertRaises(exceptions.SolverOfflineError):
             sampler.sample_ising({}, {})
 
+    @parameterized.expand([
+        (exceptions.InvalidAPIResponseError, FailoverCondition),
+        (exceptions.SolverNotFoundError, FailoverCondition),
+        (exceptions.SolverOfflineError, FailoverCondition),
+        (exceptions.SolverError, FailoverCondition),
+        (exceptions.PollingTimeout, RetryCondition),
+        (exceptions.SolverAuthenticationError, exceptions.SolverAuthenticationError),   # auth error propagated
+        (KeyError, KeyError),   # unrelated errors propagated
+    ])
     @mock.patch('dwave.system.samplers.dwave_sampler.Client')
-    def test_failover_offline(self, MockClient):
-        if sys.version_info.major <= 2 or sys.version_info.minor < 6:
-            raise unittest.SkipTest("need mock features only available in 3.6+")
-
+    def test_async_failover(self, source_exc, target_exc, MockClient):
         sampler = DWaveSampler(failover=True)
 
         mocksolver = sampler.solver
         edgelist = sampler.edgelist
 
-        # call once
-        ss = sampler.sample_ising({}, {})
+        # call once (async, no need to resolve)
+        sampler.sample_ising({}, {})
 
         self.assertIs(mocksolver, sampler.solver)  # still same solver
 
@@ -233,36 +235,25 @@ class TestDwaveSampler(unittest.TestCase):
                          + sampler.solver.sample_qubo.call_count
                          + sampler.solver.sample_bqm.call_count, 1)
 
-        # add a side-effect
-        sampler.solver.sample_ising.side_effect = SolverOfflineError
-        sampler.solver.sample_qubo.side_effect = SolverOfflineError
-        sampler.solver.sample_bqm.side_effect = SolverOfflineError
+        # simulate solver exception on sampleset resolve
+        fut = computation.Future(mocksolver, None)
+        fut._set_exception(source_exc)
+        sampler.solver.sample_bqm = mock.Mock()
+        sampler.solver.sample_bqm.return_value = fut
 
-        # and make sure get_solver makes a new mock solver
+        # verify failover signalled
+        with self.assertRaises(target_exc):
+            sampler.sample_ising({}, {}).resolve()
+
+        # make sure get_solver makes a new mock solver
         sampler.client.get_solver.reset_mock(return_value=True)
 
-        ss = sampler.sample_ising({}, {})
+        # trigger failover
+        sampler.trigger_failover()
 
+        # verify failover
         self.assertIsNot(mocksolver, sampler.solver)  # new solver
         self.assertIsNot(edgelist, sampler.edgelist)  # also should be new
-
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
-    def test_failover_notfound_noretry(self, MockClient):
-
-        sampler = DWaveSampler(failover=True, retry_interval=-1)
-
-        mocksolver = sampler.solver
-
-        # add a side-effect
-        sampler.solver.sample_ising.side_effect = SolverOfflineError
-        sampler.solver.sample_qubo.side_effect = SolverOfflineError
-        sampler.solver.sample_bqm.side_effect = SolverOfflineError
-
-        # and make sure get_solver makes a new mock solver
-        sampler.client.get_solver.side_effect = SolverNotFoundError
-
-        with self.assertRaises(SolverNotFoundError):
-            sampler.sample_ising({}, {})
 
     def test_warnings_energy_range(self):
         sampler = self.sampler

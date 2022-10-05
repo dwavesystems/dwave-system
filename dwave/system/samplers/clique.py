@@ -29,7 +29,7 @@ except ImportError:
     # fall back on dimod of dwave.preprocessing is not installed
     from dimod import ScaleComposite
 
-from dwave.system.samplers.dwave_sampler import DWaveSampler, _failover
+from dwave.system.samplers.dwave_sampler import DWaveSampler
 from dwave.system.coupling_groups import coupling_groups
 
 __all__ = ['DWaveCliqueSampler']
@@ -142,18 +142,32 @@ class DWaveCliqueSampler(dimod.Sampler):
     :class:`.DWaveSampler`.
 
     Args:
-        failover (optional, default=False):
-            Switch to a new QPU in the rare event that the currently connected
-            system goes offline. Note that different QPUs may have different
-            hardware graphs and a failover will result in a regenerated
-            :attr:`.nodelist`, :attr:`.edgelist`, :attr:`.properties` and
-            :attr:`.parameters`.
+        failover (bool, optional, default=False):
+            Signal a failover condition if a sampling error occurs. When ``True``,
+            raises :exc:`~dwave.system.exceptions.FailoverCondition` or
+            :exc:`~dwave.system.exceptions.RetryCondition` on sampleset resolve
+            to signal failover.
 
-        retry_interval (optional, default=-1):
-            The amount of time (in seconds) to wait to poll for a solver in
-            the case that no solver is found. If `retry_interval` is negative
-            then it will instead propogate the `SolverNotFoundError` to the
-            user.
+            Actual failover, i.e. selection of a new solver, has to be handled
+            by the user. A convenience method :meth:`.trigger_failover` is available
+            for this. Note that hardware graphs vary between QPUs, so triggering
+            failover results in regenerated :attr:`.nodelist`, :attr:`.edgelist`,
+            :attr:`.properties` and :attr:`.parameters`.
+
+            .. versionchanged:: 1.16.0
+
+               In the past, the :meth:`.sample` method was blocking and
+               ``failover=True`` caused a solver failover and sampling retry.
+               However, this failover implementation broke when :meth:`sample`
+               became non-blocking (asynchronous), Setting ``failover=True`` had
+               no effect.
+
+        retry_interval (number, optional, default=-1):
+            Ignored, but kept for backward compatibility.
+
+            .. versionchanged:: 1.16.0
+
+               Ignored since 1.16.0. See note for ``failover`` parameter above.
 
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`
@@ -162,7 +176,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         This example creates a BQM based on a 6-node clique (complete graph),
         with random :math:`\pm 1` values assigned to nodes, and submits it to
         a D-Wave system. Parameters for communication with the system, such
-        as its URL and an autentication token, are implicitly set in a
+        as its URL and an authentication token, are implicitly set in a
         configuration file or as environment variables, as described in
         `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
 
@@ -180,10 +194,8 @@ class DWaveCliqueSampler(dimod.Sampler):
     def __init__(self, *,
                  failover: bool = False, retry_interval: Number = -1,
                  **config):
-        self.child = DWaveSampler(failover=False, **config)
-
-        self.failover = failover
-        self.retry_interval = retry_interval
+        self.child = DWaveSampler(
+            failover=failover, retry_interval=retry_interval, **config)
 
     @property
     def parameters(self) -> dict:
@@ -229,7 +241,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             energy_range = tuple(self.child.properties['h_range'])
         except KeyError as err:
             # for backwards compatibility with old software solvers
-            if self.child.solver.is_software:
+            if self.child.solver.software:
                 energy_range = (-2, 2)
             else:
                 raise err
@@ -253,7 +265,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                                           self.child.properties['j_range']))
         except KeyError as err:
             # for backwards compatibility with old software solvers
-            if self.child.solver.is_software:
+            if self.child.solver.software:
                 energy_range = (-1, 1)
             else:
                 raise err
@@ -298,15 +310,8 @@ class DWaveCliqueSampler(dimod.Sampler):
         return busgraph_cache(self.target_graph).largest_clique()
 
     def trigger_failover(self):
-        """Trigger a failover and connect to a new solver.
+        """Trigger a failover and connect to a new solver."""
 
-        retry_interval (number, optional):
-            The amount of time (in seconds) to wait to poll for a solver in
-            the case that no solver is found. If `retry_interval` is negative
-            then it will instead propogate the `SolverNotFoundError` to the
-            user. Defaults to :attr:`DWaveSampler.retry_interval`.
-
-        """
         self.child.trigger_failover()
 
         try:
@@ -324,7 +329,6 @@ class DWaveCliqueSampler(dimod.Sampler):
         except AttributeError:
             pass
 
-    @_failover
     def sample(self, bqm, chain_strength=None, **kwargs):
         """Sample from the specified binary quadratic model.
 

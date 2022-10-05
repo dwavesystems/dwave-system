@@ -19,19 +19,18 @@ See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
-import time
-import functools
 import collections.abc as abc
-
-from warnings import warn
 
 import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
-from dwave.cloud import Client
+from dwave.cloud.client import Client
 from dwave.cloud.exceptions import (
-    SolverOfflineError, SolverNotFoundError, ProblemStructureError)
+    SolverError, SolverAuthenticationError, InvalidAPIResponseError,
+    RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,
+)
 
+from dwave.system.exceptions import FailoverCondition, RetryCondition
 from dwave.system.warnings import WarningHandler, WarningAction
 
 import dwave_networkx as dnx
@@ -81,33 +80,8 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
     else:
         # Alternative could be to create a standard network graph and
         # issue a warning. Requires new dependency on networkx.
-        raise ValueError('topology_type does not match a known'
-                         'QPU architecure')
+        raise ValueError('topology_type does not match a known QPU architecure')
     return G
-
-def _failover(f):
-    """Decorator for methods that might raise SolverOfflineError. Assumes that
-    the method is on a class with a `trigger_failover` method and a truthy
-    `failover` attribute.
-    """
-    @functools.wraps(f)
-    def wrapper(sampler, *args, **kwargs):
-        while True:
-            try:
-                return f(sampler, *args, **kwargs)
-            except SolverOfflineError as err:
-                if not sampler.failover:
-                    raise err
-
-            try:
-                sampler.trigger_failover()
-            except SolverNotFoundError as err:
-                if sampler.retry_interval < 0:
-                    raise err
-
-                time.sleep(sampler.retry_interval)
-
-    return wrapper
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
@@ -124,17 +98,31 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Args:
         failover (bool, optional, default=False):
-            Switch to a new QPU in the rare event that the currently connected
-            system goes offline. Note that different QPUs may have different
-            hardware graphs and a failover will result in a regenerated
-            :attr:`.nodelist`, :attr:`.edgelist`, :attr:`.properties` and
-            :attr:`.parameters`.
+            Signal a failover condition if a sampling error occurs. When ``True``,
+            raises :exc:`~dwave.system.exceptions.FailoverCondition` or
+            :exc:`~dwave.system.exceptions.RetryCondition` on sampleset resolve
+            to signal failover.
+
+            Actual failover, i.e. selection of a new solver, has to be handled
+            by the user. A convenience method :meth:`.trigger_failover` is available
+            for this. Note that hardware graphs vary between QPUs, so triggering
+            failover results in regenerated :attr:`.nodelist`, :attr:`.edgelist`,
+            :attr:`.properties` and :attr:`.parameters`.
+
+            .. versionchanged:: 1.16.0
+
+               In the past, the :meth:`.sample` method was blocking and
+               ``failover=True`` caused a solver failover and sampling retry.
+               However, this failover implementation broke when :meth:`sample`
+               became non-blocking (asynchronous), Setting ``failover=True`` had
+               no effect.
 
         retry_interval (number, optional, default=-1):
-            The amount of time (in seconds) to wait to poll for a solver in
-            the case that no solver is found. If `retry_interval` is negative
-            then it will instead propogate the `SolverNotFoundError` to the
-            user.
+            Ignored, but kept for backward compatibility.
+
+            .. versionchanged:: 1.16.0
+
+               Ignored since 1.16.0. See note for ``failover`` parameter above.
 
         **config:
             Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
@@ -150,7 +138,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         adjacent qubits on a D-Wave system. ``qubit_a`` is the first qubit in
         the QPU's indexed list of qubits and ``qubit_b`` is one of the qubits
         coupled to it. Other required parameters for communication with the system, such
-        as its URL and an autentication token, are implicitly set in a configuration file
+        as its URL and an authentication token, are implicitly set in a configuration file
         or as environment variables, as described in
         `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
         Given sufficient reads (here 100), the quantum
@@ -314,7 +302,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         # the requested features are saved on the client object, so
         # we just need to request a new solver
-        self.solver = self.client.get_solver()
+        self.solver = self.client.get_solver(refresh=True)
 
         # delete the lazily-constructed attributes
         try:
@@ -337,7 +325,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         except AttributeError:
             pass
 
-    @_failover
     def sample(self, bqm, warnings=None, **kwargs):
         """Sample from the specified binary quadratic model.
 
@@ -404,17 +391,44 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         warninghandler = WarningHandler(warnings)
         warninghandler.energy_scale(bqm)
 
-        # need a hook so that we can check the sampleset (lazily) for
-        # warnings
+        # need a hook so that we can lazily check the sampleset for warnings
+        # and handle failover consistently
         def _hook(computation):
-            sampleset = computation.sampleset
+            def resolve(computation):
+                sampleset = computation.sampleset
+                sampleset.resolve()
 
-            if warninghandler is not None:
-                warninghandler.too_few_samples(sampleset)
-                if warninghandler.action is WarningAction.SAVE:
-                    sampleset.info['warnings'] = warninghandler.saved
+                if warninghandler is not None:
+                    warninghandler.too_few_samples(sampleset)
+                    if warninghandler.action is WarningAction.SAVE:
+                        sampleset.info['warnings'] = warninghandler.saved
 
-            return sampleset
+                return sampleset
+
+            try:
+                return resolve(computation)
+
+            except (ProblemUploadError, RequestTimeout, PollingTimeout) as exc:
+                if not self.failover:
+                    raise exc
+
+                # failover with retry on:
+                # - request or polling timeout
+                # - upload errors
+                raise RetryCondition("resubmit problem") from exc
+
+            except (SolverError, InvalidAPIResponseError) as exc:
+                if not self.failover:
+                    raise exc
+                if isinstance(exc, SolverAuthenticationError):
+                    raise exc
+
+                # failover on:
+                # - solver offline, solver disabled or not found
+                # - internal SAPI errors (like malformed response)
+                # - generic solver errors
+                # but NOT on auth errors
+                raise FailoverCondition("switch solver and resubmit problem") from exc
 
         return dimod.SampleSet.from_future(future, _hook)
 
