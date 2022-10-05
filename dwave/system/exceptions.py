@@ -18,12 +18,12 @@ class MissingFluxBias(Exception):
 
 
 class FailoverCondition(Exception):
-    """QPU/SolverAPI call failed with an error that might be mitigated by
+    """QPU or Solver API call failed with an error that might be mitigated by
     retrying on a different solver.
     """
 
 
 class RetryCondition(FailoverCondition):
-    """QPU/SolverAPI call failed with an error that might be mitigated by
+    """QPU or Solver API call failed with an error that might be mitigated by
     retrying on the same solver.
     """

@@ -98,22 +98,24 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Args:
         failover (bool, optional, default=False):
-            Set to ``True`` in order to signal a failover condition on sampling error.
-            Failover is signalled by raising :exc:`.FailoverCondition` or
-            :exc:`.RetryCondition` on sampleset resolve.
+            Signal a failover condition if a sampling error occurs. When ``True``,
+            raises :exc:`~dwave.system.exceptions.FailoverCondition` or
+            :exc:`~dwave.system.exceptions.RetryCondition` on sampleset resolve
+            to signal failover.
 
             Actual failover, i.e. selection of a new solver, has to be handled
             by the user. A convenience method :meth:`.trigger_failover` is available
-            for this. Note that different QPUs may have different hardware graphs and a
-            failover will result in a regenerated :attr:`.nodelist`, :attr:`.edgelist`,
+            for this. Note that hardware graphs vary between QPUs, so triggering
+            failover results in regenerated :attr:`.nodelist`, :attr:`.edgelist`,
             :attr:`.properties` and :attr:`.parameters`.
 
             .. versionchanged:: 1.16.0
 
-               Some time ago, in the era of blocking :meth:`sample` response,
-               ``failover=True`` would cause QPU/solver failover and sampling
-               retry. However, ever since we made :meth:`sample` non-blocking/async,
-               failover was broken (setting ``failover=True`` had no effect).
+               In the past, the :meth:`.sample` method was blocking and
+               ``failover=True`` caused a solver failover and sampling retry.
+               However, this failover implementation broke when :meth:`sample`
+               became non-blocking (asynchronous), Setting ``failover=True`` had
+               no effect.
 
         retry_interval (number, optional, default=-1):
             Ignored, but kept for backward compatibility.
@@ -136,7 +138,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         adjacent qubits on a D-Wave system. ``qubit_a`` is the first qubit in
         the QPU's indexed list of qubits and ``qubit_b`` is one of the qubits
         coupled to it. Other required parameters for communication with the system, such
-        as its URL and an autentication token, are implicitly set in a configuration file
+        as its URL and an authentication token, are implicitly set in a configuration file
         or as environment variables, as described in
         `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
         Given sufficient reads (here 100), the quantum
