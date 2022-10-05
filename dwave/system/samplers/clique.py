@@ -241,7 +241,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             energy_range = tuple(self.child.properties['h_range'])
         except KeyError as err:
             # for backwards compatibility with old software solvers
-            if self.child.solver.is_software:
+            if self.child.solver.software:
                 energy_range = (-2, 2)
             else:
                 raise err
@@ -265,7 +265,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                                           self.child.properties['j_range']))
         except KeyError as err:
             # for backwards compatibility with old software solvers
-            if self.child.solver.is_software:
+            if self.child.solver.software:
                 energy_range = (-1, 1)
             else:
                 raise err
