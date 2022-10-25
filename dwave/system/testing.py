@@ -108,6 +108,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     properties = None
     parameters = None
 
+    # use ExactSolver for problems up to size:
+    EXACT_SOLVER_MAX_SIZE = 16
+
     def __init__(self,
                  nodelist=None, edgelist=None, properties=None,
                  broken_nodes=None, broken_edges=None,
@@ -355,7 +358,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
 
-        if SubstituteSampler is not dimod.SimulatedAnnealingSampler:            
+        if SubstituteSampler is not dimod.SimulatedAnnealingSampler:
             initial_state = kwargs.get('initial_state')
             if initial_state is not None:
                 # Initial state format is a list of (qubit,values)
@@ -369,6 +372,12 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         ss = SubstituteSampler().sample(bqm, **substitute_kwargs)
         ss.info.update(info)
+
+        # determine ground state exactly for small problems
+        if len(bqm) <= self.EXACT_SOLVER_MAX_SIZE:
+            ground = dimod.ExactSolver().sample(bqm).truncate(1)
+            ss.record[0].sample = ground.record[0].sample
+            ss.record[0].energy = ground.record[0].energy
 
         answer_mode = kwargs.get('answer_mode')
         if answer_mode is None or answer_mode == 'histogram':
