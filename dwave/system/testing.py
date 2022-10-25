@@ -12,24 +12,21 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import concurrent.futures
 import warnings
-import collections
-import dimod
-import dwave.cloud.computation
-import unittest.mock as mock
-import dwave_networkx as dnx
-
-from dwave.system import qpu_graph
 from uuid import uuid4
 
+import numpy as np
+import dimod
+import dwave.cloud.computation
+from dwave.system import qpu_graph
 
 try:
     #Simplest and efficient choice returning low energy states:
     from greedy import SteepestDescentSampler as SubstituteSampler
 except ImportError:
     from dimod import SimulatedAnnealingSampler as SubstituteSampler
-import concurrent.futures
-import numpy as np
+
 
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
@@ -56,7 +53,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             List of nodes to exclude (along with associated edges), for
             emulation of unyielded qubits. This parameter is made redundant
             by the use of nodelist.
-        
+
         broken_edges (iterable of (int,int) tuples, optional):
             List of edges to exclude, for emulation of unyielded edges.
             This parameter is made redundant by the use of edgelist.
@@ -65,14 +62,14 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             Supported options are 'chimera', 'pegasus' or 'zephyr'.
             The default is 'chimera' when the value is not specified as part 
             of the from the ``properties`` argument.
-            
+
         topology_shape (string, optional):
             A list of three numbers [m,n,t] for Chimera, defaulted as [4,4,4]. 
             A list of one number [m] for Pegasus, defaulted as [3].
             A list of two numbers [m,t] for Zephyr, defaulted as [2,4].
             The default above apply only when the value is not 
             specified as part of the from the ``properties`` argument.
-            
+
         parameter_warnings (bool, optional, default=True):
             The MockSampler is adaptive with respect to ``num_reads``,
             ``answer_mode`` and ``max_answers`` and ``label`` 
@@ -105,15 +102,16 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
     """
     # Feature suggestion - add seed as an optional input, to allow reproducibility.
-    
+
     nodelist = None
     edgelist = None
     properties = None
     parameters = None
+
     def __init__(self,
                  nodelist=None, edgelist=None, properties=None,
                  broken_nodes=None, broken_edges=None,
-                 topology_type=None,topology_shape=None,
+                 topology_type=None, topology_shape=None,
                  parameter_warnings=True, **config):
         self.parameter_warnings = parameter_warnings
 
@@ -134,9 +132,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         else:
             if topology_type is None:
                 topology_type = 'chimera'
-            shape_defaults = {'chimera' : [4,4,4],
-                              'pegasus' : [3],
-                              'zephyr' : [2,4]}
+            shape_defaults = {'chimera': [4,4,4],
+                              'pegasus': [3],
+                              'zephyr': [2,4]}
             if topology_type in shape_defaults:
                 if topology_shape is None:
                     topology_shape = shape_defaults[topology_type]
@@ -144,9 +142,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("Only 'chimera', 'pegasus' and 'zephyr' "
                                  "topologies are supported")
         self.properties = {
-            'chip_id' : 'MockDWaveSampler',
-            'topology' : {'type': topology_type, 'shape': topology_shape}}
-        
+            'chip_id': 'MockDWaveSampler',
+            'topology': {'type': topology_type, 'shape': topology_shape}
+        }
+
         #Create graph object, introduce defects per input arguments
         if nodelist is not None:
             self.nodelist = nodelist.copy()
@@ -158,7 +157,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         solver_graph = qpu_graph(self.properties['topology']['type'],
                                  self.properties['topology']['shape'],
                                  self.nodelist, self.edgelist)
-        
+
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
             self.edgelist = sorted(tuple(sorted(edge))
@@ -167,7 +166,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             if broken_nodes is None:
                 broken_nodes = []
             self.nodelist = sorted(set(solver_graph.nodes).difference(broken_nodes))
-            if broken_edges == None:
+            if broken_edges is None:
                 broken_edges = []
             self.edgelist = sorted(tuple(sorted((u, v))) for
                                    u, v in solver_graph.edges
@@ -177,20 +176,19 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                    and (v, u) not in broken_edges)
         #Finalize yield-dependent properties:
         self.properties.update({
-            'num_qubits' : len(solver_graph),
-            'qubits' : self.nodelist.copy(),
-            'couplers' : self.edgelist.copy(),
-            'anneal_offset_ranges' : [[-0.5,0.5] if i in self.nodelist
-                                      else [0,0] for i in range(len(self.nodelist))]})
+            'num_qubits': len(solver_graph),
+            'qubits': self.nodelist.copy(),
+            'couplers': self.edgelist.copy(),
+            'anneal_offset_ranges': [[-0.5, 0.5] if i in self.nodelist
+                                     else [0, 0] for i in range(len(self.nodelist))]})
         # Non-topology-dependent properties and parameters mocked from
         # Advantage_system4.1 accessed February 10th 2022
         # with simplified lists for large parameters, and modified
         # topology arguments per MockSolver initialization:
         # See also:
         # https://docs.dwavesys.com/docs/latest/c_solver_parameters.html
-        
+
         self.parameters = {
-            
             'anneal_offsets': ['parameters'],
             'anneal_schedule': ['parameters'],
             'annealing_time': ['parameters'],
@@ -208,9 +206,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'reduce_intersample_correlation': ['parameters'],
             'reinitialize_state': ['parameters'],
             'warnings': [],
-            'label': []}
-        
-        
+            'label': [],
+        }
+
         self.properties.update({
             'h_range': [-4.0, 4.0],
             'j_range': [-1.0, 1.0],
@@ -283,21 +281,24 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'readout_thermalization_range': [0.0, 10000.0],
             'tags': [],
             'category': 'qpu',
-            'quota_conversion_rate': 1})
-        
+            'quota_conversion_rate': 1,
+        })
+
         if properties is not None:
             # provided properties overwrite defaults, note that
             # particular care should be taken with respect to
             # topology-dependent arguments:
             self.properties.update(properties)
-        
+
     @classmethod
     def from_qpu_sampler(cls, sampler):
-        return cls(properties=sampler.properties,nodelist=sampler.nodelist,edgelist=sampler.edgelist)
+        return cls(properties=sampler.properties,
+                   nodelist=sampler.nodelist,
+                   edgelist=sampler.edgelist)
 
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
-        
+
         # Check kwargs compatibility with parameters and substitute sampler:
         mocked_parameters={'answer_mode',
                            'max_answers',
@@ -315,7 +316,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # (2) We could also consider using 'large_sparse_opt' to
             # exploit fixed connectivity at large scale for current QPU
             # designs, but unlikely to be a significant inefficiency.
-            
+
             # The fallback sampler (SA) is an inferior choice, but
             # greedy may not always be installed, unlike dimod.
         for kw in kwargs:
@@ -349,12 +350,11 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         flux_biases = kwargs.get('flux_biases')
         if flux_biases is not None:
             self.flux_biases_flag = True
-            
-            
+
         substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
-        
+
         if SubstituteSampler is not dimod.SimulatedAnnealingSampler:            
             initial_state = kwargs.get('initial_state')
             if initial_state is not None:
@@ -366,20 +366,20 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                     np.array([pair[1] for pair in initial_state
                               if pair[1]!=3],dtype=float),
                     [pair[0] for pair in initial_state if pair[1]!=3])
-                
+
         ss = SubstituteSampler().sample(bqm, **substitute_kwargs)
         ss.info.update(info)
-        
+
         answer_mode = kwargs.get('answer_mode')
         if answer_mode is None or answer_mode == 'histogram':
             # Default for DWaveSampler() is 'histogram'
             ss = ss.aggregate()
-        
+
         max_answers = kwargs.get('max_answers')
         if max_answers is not None:
             # Truncate sampleset if requested. Do not reorder (per DWaveSampler())
             ss = ss.truncate(max_answers)
-        
+
         return ss
 
     def to_networkx_graph(self):
@@ -424,7 +424,8 @@ class MockLeapHybridDQMSampler:
     def min_time_limit(self, dqm):
         # not caring about the problem, just returning the min
         return self.properties['minimum_time_limit'][0][1]
-    
+
+
 class MockLeapHybridSolver:
 
     properties = {'supported_problem_types': ['bqm'],
