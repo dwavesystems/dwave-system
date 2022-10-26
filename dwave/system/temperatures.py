@@ -116,9 +116,9 @@ def effective_field(bqm,
     else:
         samples, labels = dimod.sampleset.as_samples(samples)
 
-    if bqm.vartype == dimod.vartypes.Vartype.BINARY:
+    if bqm.vartype is dimod.BINARY:
         bqm = bqm.change_vartype('SPIN', inplace=False)
-        samples = 2*samples-1
+        samples = 2*samples - 1
     
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
         variable_order=labels)
@@ -134,10 +134,10 @@ def effective_field(bqm,
         
     return (effective_fields,labels)
 
-def maximum_pseudolikelihood_temperature(bqm = None,
-                                         sampleset = None,
-                                         site_energy = None,
-                                         num_bootstrap_samples = 0,
+def maximum_pseudolikelihood_temperature(bqm=None,
+                                         sampleset=None,
+                                         site_energy=None,
+                                         num_bootstrap_samples=0,
                                          seed=None,
                                          T_guess=None,
                                          optimize_method='bisect',
@@ -249,7 +249,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
 
     #Check for largest local excitation in every sample, and over all samples
     if site_energy is None:
-        if bqm == None or sampleset == None:
+        if bqm is None or sampleset is None:
             raise ValueError('site_energy can only be derived if both'
                              'bqm and sampleset are provided as arguments')
         site_energy = effective_field(bqm,
@@ -277,7 +277,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             return np.sum(site_energy[0]/(1 + expFactor))
         
         #Ensures good gradient method, except pathological cases
-        if T_guess == None:
+        if T_guess is None:
             x0 = -1/max_excitation_all
         else:
             if T_guess < T_bracket[0]:
@@ -289,7 +289,7 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         root_results = None
         if optimize_method == 'bisect':
             #Check T_bracket
-            if not (T_bracket[0]<T_bracket[1] and T_bracket[0]>=0):
+            if not 0 <= T_bracket[0] < T_bracket[1]:
                 raise ValueError('Bad T_bracket, must be positive ordered scalars.')
             #Convert to bisection bracket for -1/T
             bisect_bracket = [-1/T_bracket[i] for i in range(2)]
@@ -462,7 +462,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     return 2*temperature*kB/freezeout_B
 
 def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
-                               h_range=[-1/6.1,1/6.1], sampler_params=None,
+                               h_range=(-1/6.1,1/6.1), sampler_params=None,
                                optimize_method=None,
                                num_bootstrap_samples=0) -> Tuple[np.float64,np.float64]:
     '''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
@@ -539,17 +539,15 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
     
     '''
     
-    if sampler == None:
+    if sampler is None:
         from dwave.system import DWaveSampler
         sampler = DWaveSampler()
         
-    if hasattr(sampler,'properties') and 'h_range' in sampler.properties:
+    if 'h_range' in sampler.properties:
         if h_range[0] < sampler.properties['h_range'][0]:
-            h_range[0] = sampler.properties['h_range'][0]
             raise ValueError('h_range[0] exceeds programmable range')
            
         if h_range[1] > sampler.properties['h_range'][1]:
-            h_range[1] = sampler.properties['h_range'][1]
             raise ValueError('h_range[1] exceeds programmable range')
         
     prng = np.random.RandomState(seed)
@@ -557,11 +555,11 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
     bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx] for idx,var in enumerate(sampler.nodelist)}, {})
     
     #Create local sampling_params copy - default necessary additional fields:
-    if sampler_params == None:
+    if sampler_params is None:
         sampler_params0 = {}
     else:
         sampler_params0 = sampler_params.copy()
-    if num_reads == None:
+    if num_reads is None:
         #Default is 100, makes efficient use of QPU access time:
         if 'num_reads' not in sampler_params0:
             sampler_params0['num_reads'] = 100 
@@ -578,7 +576,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
     else:
         sampler_params0['auto_scale'] = False
 
-    if num_bootstrap_samples == None:
+    if num_bootstrap_samples is None:
         num_bootstrap_samples = sampler_params0['num_reads'] 
         
     sampleset = sampler.sample(bqm, **sampler_params0)

@@ -23,12 +23,6 @@ from dwave.system.temperatures import (maximum_pseudolikelihood_temperature,
 
 from dwave.system.testing import MockDWaveSampler
 
-try:
-    from neal import SimulatedAnnealingSampler
-except ImportError:
-    from dimod import SimulatedAnnealingSampler
-
-
 class TestTemperatures(unittest.TestCase):
     
     def test_effective_field(self):
