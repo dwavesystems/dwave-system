@@ -77,6 +77,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             dwave-greedy is installed. All other parameters are ignored and a 
             warning will be raised by default.
 
+        exact_solver_cutoff (int, optional, default=:attr:`EXACT_SOLVER_CUTOFF_DEFAULT`):
+            Maximum problem size for which the :class:`~dimod.ExactSolver` is used in
+            ground state calculation. Larger problems are sampled only with
+            :class:`~greedy.SteepestDescentSampler` (if ``dwave-greedy`` is available),
+            or with :class:`dimod.SimulatedAnnealingSampler`.
+            Set to zero to disable ``ExactSolver`` run.
+
     Examples
         The first example creates a MockSampler without reference to a
         particular online system, with a fully-yielded Chimera C16 structure.
@@ -108,15 +115,18 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     properties = None
     parameters = None
 
-    # use ExactSolver for problems up to size:
-    EXACT_SOLVER_MAX_SIZE = 16
+    # by default, use ExactSolver for problems up to size (inclusive):
+    EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
     def __init__(self,
                  nodelist=None, edgelist=None, properties=None,
                  broken_nodes=None, broken_edges=None,
                  topology_type=None, topology_shape=None,
-                 parameter_warnings=True, **config):
+                 parameter_warnings=True,
+                 exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
+                 **config):
         self.parameter_warnings = parameter_warnings
+        self.exact_solver_cutoff = exact_solver_cutoff
 
         #Parse or default topology dependent arguments:
         if properties is not None and 'topology' in properties:
@@ -374,7 +384,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         ss.info.update(info)
 
         # determine ground state exactly for small problems
-        if len(bqm) <= self.EXACT_SOLVER_MAX_SIZE:
+        if len(bqm) <= self.exact_solver_cutoff:
             ground = dimod.ExactSolver().sample(bqm).truncate(1)
             ss.record[0].sample = ground.record[0].sample
             ss.record[0].energy = ground.record[0].energy

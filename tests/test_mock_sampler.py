@@ -26,6 +26,7 @@ from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
 
+
 class TestMockDWaveSampler(unittest.TestCase):
     @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
     def test_properties_and_params(self):
@@ -66,7 +67,7 @@ class TestMockDWaveSampler(unittest.TestCase):
 
         # note: greedy should be available; it's a package/test requirement
         # disable exact ground state calc
-        with mock.patch.object(sampler, 'EXACT_SOLVER_MAX_SIZE', 0):
+        with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
             #QPU format initial states:
             initial_state = [(i,1) if i%4==0 else (i,3) for i in range(8)]
             ss = sampler.sample_ising({0: 1, 4: 1}, {(0, 4): -2},
@@ -93,25 +94,28 @@ class TestMockDWaveSampler(unittest.TestCase):
             ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
 
     def test_ground_override(self):
-        # simple two connected variables sampler (path(2))
-        sampler = MockDWaveSampler(nodelist=['a', 'b'], edgelist=[('a', 'b')])
         # bqm with a local minimum at (-1, -1)
         bqm = dimod.BQM.from_ising({'a': -1, 'b': -1}, {'ab': -2})
         local_minimum = [-1, -1]    # energy: 0
         ground_state = [1, 1]       # energy: -4
         local_minimum_state = list(zip(bqm.variables, local_minimum))
 
+        # simple two connected variables sampler (path(2))
+        sampler = MockDWaveSampler(nodelist=['a', 'b'], edgelist=[('a', 'b')],
+                                   exact_solver_cutoff=len(bqm.variables))
+
         # disable exact ground state calc and start from a local minimum -> greedy should stay stuck
-        with mock.patch.object(sampler, 'EXACT_SOLVER_MAX_SIZE', 0):
+        with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
             ss = sampler.sample(bqm, initial_state=local_minimum_state)
             np.testing.assert_array_equal(ss.record[0].sample, local_minimum)
 
         # boundary on which exact ground state calc kicks in
-        with mock.patch.object(sampler, 'EXACT_SOLVER_MAX_SIZE', len(bqm.variables)):
+        with mock.patch.object(sampler, 'exact_solver_cutoff', len(bqm.variables)):
             ss = sampler.sample(bqm, initial_state=local_minimum_state)
             np.testing.assert_array_equal(ss.record[0].sample, ground_state)
 
         # double-check the default
+        self.assertEqual(sampler.exact_solver_cutoff, len(bqm.variables))
         ss = sampler.sample(bqm)
         np.testing.assert_array_equal(ss.record[0].sample, ground_state)
 
