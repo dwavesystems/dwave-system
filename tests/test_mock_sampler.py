@@ -119,6 +119,12 @@ class TestMockDWaveSampler(unittest.TestCase):
         ss = sampler.sample(bqm)
         np.testing.assert_array_equal(ss.record[0].sample, ground_state)
 
+    def test_empty_bqm(self):
+        sampler = MockDWaveSampler()
+        bqm = dimod.BQM('SPIN')
+        ss = sampler.sample(bqm)
+        self.assertIs(ss.vartype, bqm.vartype)
+
     def test_chimera_topology(self):
         grid_parameter = 5
         tile_parameter = 2
