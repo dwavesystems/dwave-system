@@ -98,8 +98,6 @@ todo_include_todos = True
 modindex_common_prefix = ['dwave-system.']
 
 doctest_global_setup = """
-from __future__ import print_function, division
-
 import dimod
 from dwave.embedding import *
 

@@ -17,6 +17,7 @@ import unittest
 import warnings
 
 from collections.abc import Mapping
+from unittest import mock
 
 import dimod
 import dwave_networkx as dnx
@@ -31,7 +32,7 @@ from dwave.system.composites import (EmbeddingComposite,
                                      AutoEmbeddingComposite,
                                      )
 
-from dwave.system.testing import MockDWaveSampler, mock
+from dwave.system.testing import MockDWaveSampler
 from dwave.embedding import chain_breaks
 from dwave.system.warnings import ChainStrengthWarning
 
