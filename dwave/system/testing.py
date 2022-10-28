@@ -78,11 +78,14 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             warning will be raised by default.
 
         exact_solver_cutoff (int, optional, default=:attr:`EXACT_SOLVER_CUTOFF_DEFAULT`):
-            Maximum problem size for which the :class:`~dimod.ExactSolver` is used in
-            ground state calculation. Larger problems are sampled only with
-            :class:`~greedy.SteepestDescentSampler` (if ``dwave-greedy`` is available),
-            or with :class:`dimod.SimulatedAnnealingSampler`.
-            Set to zero to disable ``ExactSolver`` run.
+            For problems smaller or equal in size to ``exact_solver_cutoff``, the
+            first sample in any sampleset returned by the sampling routines
+            is replaced by a reproducible ground state (determined exactly with
+            a brute-force :class:`~dimod.ExactSolver`). Only small cut offs
+            should be used since solution time increases exponentially with
+            problem size.
+            Set ``exact_solver_cutoff`` to zero to disable exact ground state
+            calculation.
 
     Examples
         The first example creates a MockSampler without reference to a
