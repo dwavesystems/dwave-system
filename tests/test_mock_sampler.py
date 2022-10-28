@@ -13,14 +13,19 @@
 #    limitations under the License.
 
 """who watches the watchmen?"""
-import unittest
 import os
+import unittest
+from unittest import mock
+
+import numpy as np
+import dimod
 import dimod.testing as dit
 
 from dwave.system import DWaveSampler
 from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
+
 
 class TestMockDWaveSampler(unittest.TestCase):
     @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
@@ -39,48 +44,40 @@ class TestMockDWaveSampler(unittest.TestCase):
         mock = MockDWaveSampler.from_qpu_sampler(sampler)
         self.assertEqual(mock.nodelist.sort(),sampler.nodelist.sort())
         self.assertEqual(mock.edgelist.sort(),sampler.edgelist.sort())
-        
-        
+
     def test_sampler(self):
         sampler = MockDWaveSampler()
         dit.assert_sampler_api(sampler)
         dit.assert_structured_api(sampler)
-        
+
     def test_mock_parameters(self):
         # Single cell Chimera (DW2000Q) solver:
         sampler = MockDWaveSampler(topology_type='chimera', topology_shape = [1,1,4])
         num_reads = 10
-        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads)
+        ss = sampler.sample_ising({0: -1}, {}, num_reads=num_reads)
         self.assertEqual(sum(ss.record.num_occurrences),num_reads)
-        self.assertTrue(len(ss.record.num_occurrences)<=2) #Binary state histogram
-        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads,
+        self.assertTrue(len(ss.record.num_occurrences) <= 2) #Binary state histogram
+        ss = sampler.sample_ising({0: -1}, {}, num_reads=num_reads,
                                   answer_mode='raw')
-        self.assertEqual(len(ss.record.num_occurrences),num_reads)
+        self.assertEqual(len(ss.record.num_occurrences), num_reads)
         
-        ss = sampler.sample_ising({0 : -1}, {}, num_reads=num_reads,
+        ss = sampler.sample_ising({0: -1}, {}, num_reads=num_reads,
                                   answer_mode='raw', max_answers=2)
-        self.assertEqual(len(ss.record.num_occurrences),2)
+        self.assertEqual(len(ss.record.num_occurrences), 2)
 
-            
-        try:
-            from greedy import SteepestDescentSampler as SubstituteSampler
-            mock_fallback_substitute = False
-        except:
-            mock_fallback_substitute = True
-        if not mock_fallback_substitute:
-            # If the greedy is available, we can mock more parameters (than
-            # is possible with the fallback dimod.SimulatedAnnealingSampler()
-            # method
-
+        # note: greedy should be available; it's a package/test requirement
+        # disable exact ground state calc
+        with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
             #QPU format initial states:
             initial_state = [(i,1) if i%4==0 else (i,3) for i in range(8)]
-            ss = sampler.sample_ising({0 : 1, 4 : 1}, {(0,4) : -2},
+            ss = sampler.sample_ising({0: 1, 4: 1}, {(0, 4): -2},
                                       num_reads=1,
                                       answer_mode='raw',
                                       initial_state=initial_state)
             #The initialized state is a local minima, and should
             #be returned under greedy descent mocking:
             self.assertEqual(ss.record.energy[0],0)
+
     def test_unmock_parameters(self):
         # Check valid DWaveSampler() parameter, that is not mocked throws a warning:
         sampler = MockDWaveSampler()
@@ -95,7 +92,39 @@ class TestMockDWaveSampler(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter(action="error", category=UserWarning)
             ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
-    
+
+    def test_ground_override(self):
+        # bqm with a local minimum at (-1, -1)
+        bqm = dimod.BQM.from_ising({'a': -1, 'b': -1}, {'ab': -2})
+        local_minimum = [-1, -1]    # energy: 0
+        ground_state = [1, 1]       # energy: -4
+        local_minimum_state = list(zip(bqm.variables, local_minimum))
+
+        # simple two connected variables sampler (path(2))
+        sampler = MockDWaveSampler(nodelist=['a', 'b'], edgelist=[('a', 'b')],
+                                   exact_solver_cutoff=len(bqm.variables))
+
+        # disable exact ground state calc and start from a local minimum -> greedy should stay stuck
+        with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
+            ss = sampler.sample(bqm, initial_state=local_minimum_state)
+            np.testing.assert_array_equal(ss.record[0].sample, local_minimum)
+
+        # boundary on which exact ground state calc kicks in
+        with mock.patch.object(sampler, 'exact_solver_cutoff', len(bqm.variables)):
+            ss = sampler.sample(bqm, initial_state=local_minimum_state)
+            np.testing.assert_array_equal(ss.record[0].sample, ground_state)
+
+        # double-check the default
+        self.assertEqual(sampler.exact_solver_cutoff, len(bqm.variables))
+        ss = sampler.sample(bqm)
+        np.testing.assert_array_equal(ss.record[0].sample, ground_state)
+
+    def test_empty_bqm(self):
+        sampler = MockDWaveSampler()
+        bqm = dimod.BQM('SPIN')
+        ss = sampler.sample(bqm)
+        self.assertIs(ss.vartype, bqm.vartype)
+
     def test_chimera_topology(self):
         grid_parameter = 5
         tile_parameter = 2
