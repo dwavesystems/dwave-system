@@ -255,6 +255,8 @@ def maximum_pseudolikelihood_temperature(bqm = None,
         else:
             x0 = -1/Tguess
         
+        #Root finding trivial for this application, any naive root finder will
+        #succeed to find the unique root:
         root_results = optimize.root_scalar(f=f, fprime=fprime, x0 = x0)
         T_estimate = -1/(root_results.root)
         if bootstrap_size > 0:
@@ -365,7 +367,7 @@ def freezeout_effective_temperature(freezeout_B,temperature,units_B = 'GHz',unit
     
     return 2*temperature*kB/freezeout_B
 
-def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 6):
+def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess = 6, sampler_params = None):
     ''' Provides a single programming estimate to the effective temperature.
     
     A set of single qubit problems are submitted to the sampler, and excitations
@@ -407,8 +409,9 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
         sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`\ ``(client="qpu")``):
             A D-Wave sampler. 
 
-        num_reads (int, optional, default = 100):
-            Number of reads to use.
+        num_reads (int, optional):
+            Number of reads to use. default is 100 if not specified in 
+            sampler_params.
 
         seed (int, optional):
             Seeds the problem generation process. Allowing reproducibility
@@ -421,7 +424,10 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
             pathological behaviour. Default is based on D-Wave Advantage 
             processor temperature and energy scales, and is also suitable for 
             D-Wave 2000Q processor inference.
-            
+        
+        sampler_params (dict, optional):
+            Any additional non-defaulted sampler parameterization. If num_reads
+            is a key, must be compatible with num_reads argument.
     See also:
         https://doi.org/10.3389/fict.2016.00023
     
@@ -456,7 +462,20 @@ def fast_effective_temperature(sampler=None,num_reads=100, seed=None, T_guess = 
     prng = np.random.RandomState(seed)
     h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
     bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx] for idx,var in enumerate(sampler.nodelist)}, {})
-    sampler_params = {'num_reads' : num_reads, 'auto_scale' : False}
+    if sampler_params == None:
+        sampler_params = {}
+    if num_reads == None:
+        #Default is 100, makes efficient use of QPU access time:
+        if 'num_reads' not in sampler_params:
+            sampler_params['num_reads'] = 100 
+    elif ('num_reads' in sampler_params
+        and sampler_params['num_reads'] != num_reads):
+        raise ValueError("sampler_params['num_reads'] != num_reads, "
+                         "incompatible input arguments.")
+    else:
+        sampler_params['num_reads'] = num_reads
+    sampler_params['auto_scale'] = False
+    print(sampler_params)
     sampleset = sampler.sample(bqm, **sampler_params)
     T,estimators = maximum_pseudolikelihood_temperature(bqm, sampleset)
     return T
