@@ -9,3 +9,4 @@ dwave-greedy==0.2.5
 homebase==1.0.1
 minorminer==0.2.9
 numpy==1.21.6
+scipy==1.7.3    # fix py310/win curve_fit import error in 1.9.3
