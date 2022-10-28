@@ -49,7 +49,7 @@ def effective_field(bqm,
     
     The effective field with current_state_energy = True is the energy gained
     by flipping the variable state against its current value (from say -1 to 1 
-    in the Ising case, or 1 to 0 in the QUBO case). A positive value indicates 
+    in the Ising case, or 0 to 1 in the QUBO case). A positive value indicates 
     that the energy can be decreased by flipping the variable, hence the 
     variable is in a locally excited state.
     If all values are negative  (positive) within a sample, that sample is a 
@@ -57,10 +57,12 @@ def effective_field(bqm,
 
     In context of the Ising model formalism (any BQM can be converted to an 
     Ising model with unique values of J and h):
+
     For H(s) = sum_ij J_ij s_i s_j + sum_i h_i s_i
-    With current_state_energy == False:
+
+    if current_state_energy == False:
         effective_field(i,s) = sum_j (J_ij  s_j + J_ji s_i) + h_i
-    With current_state_energy == True:
+    else:
         effective_field(i,s) = 2 s_i [sum_j (J_ij  s_j + J_ji s_i) + h_i]
     
     Args:
@@ -68,16 +70,19 @@ def effective_field(bqm,
             Binary Quadratic Model Object
         samples_like (samples_like,optional):
             A collection of raw samples. `samples_like` is an extension of
-            NumPy's array_like_ structure. See examples below.
+            NumPy's array like structure. See examples below.
             When not provided, a single sample with all +1 assignments is
             created, ordered by bqm.variables. 
         current_state_energy (bool, optional, default=False): 
-            * False * Returns effective field, the energy cost (lost) by 
+            *False*:
+                Returns effective field, the energy cost (lost) by 
                 inclusion of a variable in state 1.
-            * True * Returns energy gained in flipping the value of a variable
+            *True*:
+                Returns energy gained in flipping the value of a variable
                 against that determined by samples_like. 
     Returns:
-        numpy.array: An array of effective fields for each variable in each 
+        numpy.array: 
+            An array of effective fields for each variable in each 
             sample. rows indicate independent samples, columns indicate 
             independent variables ordered in accordance with the samples_like 
             input.
@@ -185,9 +190,11 @@ def maximum_pseudolikelihood_temperature(bqm = None,
             Seeding the optimize process can enable faster convergence.
 
     Returns:
-        tuple of float and numpy array (T_estimate,T_bootstrap_estimates)
-            T_estimate: a temperature estimate
-            T_bootstrap_estimates: a numpy array of bootstrap estimators
+        tuple of float and numpy array:
+            (T_estimate,T_bootstrap_estimates)
+
+            *T_estimate*: a temperature estimate
+            *T_bootstrap_estimates*: a numpy array of bootstrap estimators
 
     Examples:
        Draw samples from the default DWaveSampler() for a large spin-glass 
@@ -410,7 +417,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
             A D-Wave sampler. 
 
         num_reads (int, optional):
-            Number of reads to use. default is 100 if not specified in 
+            Number of reads to use. Default is 100 if not specified in 
             sampler_params.
 
         seed (int, optional):
@@ -428,6 +435,12 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None, T_guess 
         sampler_params (dict, optional):
             Any additional non-defaulted sampler parameterization. If num_reads
             is a key, must be compatible with num_reads argument.
+
+    Returns:
+        float:
+            The effective temperature describing single qubit problems in an
+            external field.
+
     See also:
         https://doi.org/10.3389/fict.2016.00023
     
