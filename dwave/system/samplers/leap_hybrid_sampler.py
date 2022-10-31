@@ -37,6 +37,7 @@ except ImportError:
 
     bqm_to_file = FileView
 
+from dimod.discrete.discrete_quadratic_model import DiscreteQuadraticModel
 from dwave.cloud import Client
 from dwave.system.utilities import classproperty, FeatureFlags
 
@@ -465,6 +466,8 @@ class LeapHybridDQMSampler:
             See the example in :class:`LeapHybridDQMSampler`.
 
         """
+        if not isinstance(dqm, DiscreteQuadraticModel):
+            raise TypeError(f"Expecting DiscreteQuadraticModel object, got {type(dqm)}")
         if time_limit is None:
             time_limit = self.min_time_limit(dqm)
         elif time_limit < self.min_time_limit(dqm):
