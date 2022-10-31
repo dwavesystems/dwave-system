@@ -87,7 +87,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'sdk_index.rst']
 linkcheck_retries = 2
 linkcheck_anchors = False
 linkcheck_ignore = [r'https://cloud.dwavesys.com/leap',  # redirects, many checks
-                    ]
+                    r'https://www.jstor.org/stable']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
