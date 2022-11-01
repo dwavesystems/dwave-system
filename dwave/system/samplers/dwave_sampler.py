@@ -20,11 +20,13 @@ for explanations of technical terms in descriptions of Ocean tools.
 """
 
 import collections.abc as abc
+from collections import defaultdict
 
 import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave.cloud.client import Client
+from dwave.cloud.solver import Solver
 from dwave.cloud.exceptions import (
     SolverError, SolverAuthenticationError, InvalidAPIResponseError,
     RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,
@@ -34,7 +36,6 @@ from dwave.system.exceptions import FailoverCondition, RetryCondition
 from dwave.system.warnings import WarningHandler, WarningAction
 
 import dwave_networkx as dnx
-import networkx as nx
 
 __all__ = ['DWaveSampler', 'qpu_graph']
 
@@ -177,6 +178,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.solver = self.client.get_solver()
 
         self.failover = failover
+        self._solver_penalty = defaultdict(int)
         self.retry_interval = retry_interval
 
     warnings_default = WarningAction.IGNORE
@@ -300,9 +302,19 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def trigger_failover(self):
         """Trigger a failover and connect to a new solver."""
 
+        # penalize the solver that just failed
+        self._solver_penalty[self.solver.id] += 1
+
+        # cloud-client guarantees sort stability, so relative order
+        # of unpenalized solver is preserved. Effectively, we implement a FIFO
+        # queue over feature-based solver selection.
+        def solver_order(solver: Solver) -> int:
+            return self._solver_penalty[solver.id]
+
         # the requested features are saved on the client object, so
-        # we just need to request a new solver
-        self.solver = self.client.get_solver(refresh=True)
+        # we just need to request a new solver.
+        # note: default/user solver preference is overridden!
+        self.solver = self.client.get_solver(refresh=True, order_by=solver_order)
 
         # delete the lazily-constructed attributes
         try:
