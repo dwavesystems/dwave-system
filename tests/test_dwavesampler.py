@@ -26,6 +26,9 @@ import dwave_networkx as dnx
 
 from dwave.cloud import exceptions
 from dwave.cloud import computation
+from dwave.cloud.testing import mocks
+from dwave.cloud.solver import StructuredSolver
+from dwave.cloud.client.base import Client
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
@@ -255,6 +258,25 @@ class TestDWaveSampler(unittest.TestCase):
         self.assertIsNot(mocksolver, sampler.solver)  # new solver
         self.assertIsNot(edgelist, sampler.edgelist)  # also should be new
 
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_failover_penalization(self, MockClient):
+        # create a working client instance that returns a few mock solvers
+        client = Client(endpoint='endpoint', token='token')
+        client._fetch_solvers = lambda **kw: [
+            StructuredSolver(data=mocks.qpu_pegasus_solver_data(4), client=None),
+            StructuredSolver(data=mocks.qpu_chimera_solver_data(4), client=None),
+        ]
+
+        # make sure sampler instance uses our client instance
+        MockClient.from_config.return_value = client
+
+        # verify we get a different solver after failover
+        sampler = DWaveSampler(failover=True)
+        initial_solver = sampler.solver
+
+        sampler.trigger_failover()
+        self.assertNotEqual(sampler.solver, initial_solver)
+
     def test_warnings_energy_range(self):
         sampler = self.sampler
 
@@ -347,6 +369,7 @@ class TestDWaveSampler(unittest.TestCase):
             self.assertIn(u, G[v])
 
         del sampler.solver.properties['topology']
+
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
     def test_typical(self):
