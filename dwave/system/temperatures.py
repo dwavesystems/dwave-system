@@ -34,7 +34,7 @@ import warnings
 import numpy as np
 import dimod
 from scipy import optimize
-from typing import Tuple
+from typing import Tuple, Union
 
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature']
@@ -355,6 +355,35 @@ def maximum_pseudolikelihood_temperature(bqm=None,
     
     return T_estimate, T_bootstrap_estimates
 
+def unitless_flux_offset(B: Union[float,np.array]=1.391, MAFM: float=6.4,
+                         units_B : str='GHz', units_MAFM : str='pH') -> float:
+    """Estimates the flux bias in Phi0 required to produce a gap of order 2GHz as a function of the schedule. 
+
+        H(flux offset phi) = phi Ip(s) sigma^z_i. Ip(s) is the persistent current.
+        B(s) = 2 MAFM Ip(s)^2. B(s) is the standard schedule.
+        
+        By unitless combination flux_offset_scale = 1/Ip(s) = sqrt(MAFM/B(s))
+        
+        Note that under a simple freeze-out model, flux perturbations may substitute for h perturbations.
+        The scale required to emulate a unitless perturbation of h can be determined by division by B(s)/2
+        since H(dh) = B(s) dh sigma^z_i
+    """
+    h = 6.62607e-34 #J s
+    e = 1.60217e-19 #C
+    Phi0 = 2.0678e-15 #(h/e) Webber=J s /C = J/A
+    
+    if units_B == 'GHz':
+        B = B*1e9*h #J
+    else:
+        raise ValueError('Unsupported unit conversion')
+    if units_MAFM == 'pH':
+        MAFM = MAFM*1e-12 # J/A^2 = J s^2/C^2
+    else:
+        raise ValueError('Unsupported unit conversion')
+    Ips = np.sqrt(B/(2*MAFM)) #O(1uA) Units of A = C/s
+    
+    return (1/Ips)/Phi0*h*1e9
+    
 def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK') -> float:
     '''Provides an effective temperature as a function of freezeout information.
     
@@ -441,7 +470,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     
     #Convert units_B to Joules
     if units_B == 'GHz':
-        h = 6.626068e-34 #J/Hz
+        h = 6.62607e-34 #J/Hz
         freezeout_B = freezeout_B *h
         freezeout_B *= 1e9
     elif units_B == 'J':
