@@ -19,8 +19,10 @@ See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
+import copy
 import collections.abc as abc
 from collections import defaultdict
+from typing import Optional, Dict
 
 import dimod
 
@@ -30,6 +32,7 @@ from dwave.cloud.solver import Solver
 from dwave.cloud.exceptions import (
     SolverError, SolverAuthenticationError, InvalidAPIResponseError,
     RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,
+    SolverNotFoundError,
 )
 
 from dwave.system.exceptions import FailoverCondition, RetryCondition
@@ -174,12 +177,35 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             raise TypeError("mapping expected for 'defaults'")
         defaults.update(solver=dict(order_by='-num_active_qubits'))
 
-        self.client = Client.from_config(**config)
-        self.solver = self.client.get_solver()
-
         self.failover = failover
-        self._solver_penalty = defaultdict(int)
         self.retry_interval = retry_interval
+        self._solver_penalty = defaultdict(int)
+
+        self.client = Client.from_config(**config)
+        self.solver = self._get_solver(penalty=self._solver_penalty)
+
+    def _get_solver(self, *, refresh: bool = False, penalty: Optional[Dict[str, int]] = None):
+        """Get the least penalized solver from the list of solvers filtered and
+        ordered according to user config.
+
+        Note: we need to partially replicate :class:`dwave.cloud.Client.get_solver` logic.
+        """
+        if penalty is None:
+            penalty = {}
+
+        # the only solver filters used by `DWaveSampler` are those
+        # propagated to `Client.from_config` on construction
+        filters = copy.deepcopy(self.client.default_solver)
+        order_by = filters.pop('order_by', 'avg_load')
+        solvers = self.client.get_solvers(refresh=refresh, order_by=order_by, **filters)
+
+        # we now just need to de-prioritize penalized solvers
+        solvers.sort(key=lambda solver: penalty.get(solver.id, 0))
+
+        try:
+            return solvers[0]
+        except IndexError:
+            raise SolverNotFoundError("Solver with the requested features not available")
 
     warnings_default = WarningAction.IGNORE
     """Defines the default behavior for :meth:`.sample_ising`'s  and
@@ -305,16 +331,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         # penalize the solver that just failed
         self._solver_penalty[self.solver.id] += 1
 
-        # cloud-client guarantees sort stability, so relative order
-        # of unpenalized solver is preserved. Effectively, we implement a FIFO
-        # queue over feature-based solver selection.
-        def solver_order(solver: Solver) -> int:
-            return self._solver_penalty[solver.id]
-
-        # the requested features are saved on the client object, so
-        # we just need to request a new solver.
-        # note: default/user solver preference is overridden!
-        self.solver = self.client.get_solver(refresh=True, order_by=solver_order)
+        # select the next solver in user-defined preference order, but try to
+        # avoid the penalized (failed) ones
+        self.solver = self._get_solver(refresh=True, penalty=self._solver_penalty)
 
         # delete the lazily-constructed attributes
         try:
