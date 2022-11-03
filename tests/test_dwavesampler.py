@@ -28,9 +28,9 @@ from dwave.cloud import exceptions
 from dwave.cloud import computation
 from dwave.cloud.testing import mocks
 from dwave.cloud.solver import StructuredSolver
-from dwave.cloud.client.base import Client
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
+from dwave.system.samplers.dwave_sampler import Client
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
 from dwave.system.exceptions import FailoverCondition, RetryCondition
 
@@ -344,7 +344,7 @@ class TestDWaveSamplerFailover(unittest.TestCase):
             sampler.sample_ising({}, {}).resolve()
 
         # make sure get_solver makes a new mock solver
-        sampler.client.get_solver.reset_mock(return_value=True)
+        sampler.client.get_solvers.reset_mock(return_value=True)
 
         # trigger failover
         sampler.trigger_failover()
@@ -352,6 +352,33 @@ class TestDWaveSamplerFailover(unittest.TestCase):
         # verify failover
         self.assertIsNot(mocksolver, sampler.solver)  # new solver
         self.assertIsNot(edgelist, sampler.edgelist)  # also should be new
+
+    @mock.patch.object(Client, 'create_session', lambda client: mock.Mock())
+    def test_failover_penalization(self):
+
+        # a few mock solvers with varying number of qubits
+        p4 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(4), client=None)
+        p6 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(6), client=None)
+        c4 = StructuredSolver(data=mocks.qpu_chimera_solver_data(4), client=None)
+
+        with mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [p4, p6, c4]):
+
+            # verify we get solvers in order that respects user (in this case default)
+            # sort order -- by number of qubits descending
+            sampler = DWaveSampler(failover=True, token='mock')
+
+            # expected solver order (after each failover) is: p6, p4, c4
+            self.assertEqual(sampler.solver, p6)
+
+            sampler.trigger_failover()
+            self.assertEqual(sampler.solver, p4)
+
+            sampler.trigger_failover()
+            self.assertEqual(sampler.solver, c4)
+
+            # verify wrap-around in case all solvers fail same number of times
+            sampler.trigger_failover()
+            self.assertEqual(sampler.solver, p6)
 
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
