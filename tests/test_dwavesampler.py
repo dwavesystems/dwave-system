@@ -380,6 +380,45 @@ class TestDWaveSamplerFailover(unittest.TestCase):
             sampler.trigger_failover()
             self.assertEqual(sampler.solver, p6)
 
+    @mock.patch.object(Client, 'create_session', lambda client: mock.Mock())
+    def test_failover_config_invariance(self):
+        # verify failover preserves user-specified solver order
+
+        # a few mock solvers with varying number of qubits and topology
+        p1 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(1), client=None)
+        c1 = StructuredSolver(data=mocks.qpu_chimera_solver_data(1), client=None)
+        p4 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(4), client=None)
+        c4 = StructuredSolver(data=mocks.qpu_chimera_solver_data(4), client=None)
+
+        with mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [p4, c4, p1, c1]):
+
+            # request chimeras only, preferring smaller ones
+            solver_def = dict(topology__type='chimera', order_by='num_active_qubits')
+            sampler = DWaveSampler(failover=True, token='mock', solver=solver_def)
+
+            self.assertEqual(sampler.solver, c1)
+
+            sampler.trigger_failover()
+            self.assertEqual(sampler.solver, c4)
+
+            # verify wrap-around
+            sampler.trigger_failover()
+            self.assertEqual(sampler.solver, c1)
+
+    @mock.patch.object(Client, 'create_session', lambda client: mock.Mock())
+    def test_solver_not_found(self):
+        # verify DWaveSampler still fails in case no solvers are available
+
+        # only pegasus is available
+        p1 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(1), client=None)
+
+        with mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [p1]):
+
+            # but we request a chimera
+            solver_def = dict(topology__type='chimera')
+            with self.assertRaises(exceptions.SolverNotFoundError):
+                DWaveSampler(failover=True, token='mock', solver=solver_def)
+
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
     def test_typical(self):
