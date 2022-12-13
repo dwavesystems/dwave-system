@@ -20,7 +20,7 @@ import numpy as np
 import dimod
 import dwave.cloud.computation
 
-from dwave.samplers import SteepestDescentSampler as SubstituteSampler
+from dwave.samplers import SteepestDescentSampler
 from dwave.system import qpu_graph
 
 
@@ -315,22 +315,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         mocked_parameters={'answer_mode',
                            'max_answers',
                            'num_reads',
-                           'label'}
-        if SubstituteSampler is not dimod.SimulatedAnnealingSampler:
-            mocked_parameters.add('initial_state')
-            # steepest greedy descent is the best substitute to
-            # standardize upon. A few additional considerations as
-            # dwave-greedy is modified and processor scale grows:
-            # (1) For large sample sets, it would be more efficient to
-            # handle ``answer_mode`` and ``max_answers`` within the
-            # lower-level optimized code - just as they are handled server
-            # side in QPU calls.
-            # (2) We could also consider using 'large_sparse_opt' to
-            # exploit fixed connectivity at large scale for current QPU
-            # designs, but unlikely to be a significant inefficiency.
-
-            # The fallback sampler (SA) is an inferior choice, but
-            # greedy may not always be installed, unlike dimod.
+                           'label',
+                           'initial_state',
+                           }
         for kw in kwargs:
             if kw in self.parameters:
                 if self.parameter_warnings and kw not in mocked_parameters:
@@ -367,19 +354,18 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
 
-        if SubstituteSampler is not dimod.SimulatedAnnealingSampler:
-            initial_state = kwargs.get('initial_state')
-            if initial_state is not None:
-                # Initial state format is a list of (qubit,values)
-                # value=3 denotes an unused variable (should be absent
-                # from bqm). 
-                # Convert to format for substitute (NB: plural key)
-                substitute_kwargs['initial_states'] = (
-                    np.array([pair[1] for pair in initial_state
-                              if pair[1]!=3],dtype=float),
-                    [pair[0] for pair in initial_state if pair[1]!=3])
+        initial_state = kwargs.get('initial_state')
+        if initial_state is not None:
+            # Initial state format is a list of (qubit,values)
+            # value=3 denotes an unused variable (should be absent
+            # from bqm). 
+            # Convert to format for substitute (NB: plural key)
+            substitute_kwargs['initial_states'] = (
+                np.array([pair[1] for pair in initial_state
+                          if pair[1]!=3],dtype=float),
+                [pair[0] for pair in initial_state if pair[1]!=3])
 
-        ss = SubstituteSampler().sample(bqm, **substitute_kwargs)
+        ss = SteepestDescentSampler().sample(bqm, **substitute_kwargs)
         ss.info.update(info)
 
         # determine ground state exactly for small problems
@@ -467,7 +453,7 @@ class MockLeapHybridSolver:
                                     sapi_problem_id.quadratic,
                                     sapi_problem_id.offset,
                                     sapi_problem_id.vartype)
-        sampler = SubstituteSampler()
+        sampler = SteepestDescentSampler()
         result = sampler.sample(bqm, timeout=1000*int(time_limit))
         result = sampler.sample(bqm, timeout=1000*int(time_limit))
         future = dwave.cloud.computation.Future('fake_solver', None)
