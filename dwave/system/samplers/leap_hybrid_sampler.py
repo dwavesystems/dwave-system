@@ -25,18 +25,6 @@ from collections import abc
 
 import dimod
 
-try:
-    # dimod 0.10.x
-    from dimod.binary.binary_quadratic_model import BQM
-
-    bqm_to_file = BQM.to_file
-except ImportError:
-    # dimod 0.9.x
-    from dimod import AdjVectorBQM as BQM
-    from dimod.serialization.fileview import FileView
-
-    bqm_to_file = FileView
-
 from dwave.cloud import Client
 from dwave.system.utilities import classproperty, FeatureFlags
 
@@ -221,8 +209,8 @@ class LeapHybridSampler(dimod.Sampler):
             >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
 
         """
-        if not isinstance(bqm, BQM):
-            bqm = BQM(bqm)
+        if not isinstance(bqm, dimod.BQM):
+            bqm = dimod.BQM(bqm)
 
         num_vars = bqm.num_variables
 
@@ -246,7 +234,7 @@ class LeapHybridSampler(dimod.Sampler):
 
     def _sample(self, bqm, **kwargs):
         """Sample from the given BQM."""
-        with bqm_to_file(bqm, version=2) as fv:
+        with bqm.to_file(version=2) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
 
         return self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
@@ -255,7 +243,7 @@ class LeapHybridSampler(dimod.Sampler):
         """Sample from the unlabelled version of the BQM, then apply the
         labels to the returned sampleset.
         """
-        with bqm_to_file(bqm, version=2, ignore_labels=True) as fv:
+        with bqm.to_file(version=2, ignore_labels=True) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
 
         sampleset = self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
