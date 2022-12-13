@@ -25,16 +25,16 @@ os.chdir(setup_folder_loc)
 exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.10.0,<0.13.0',
+install_requires = ['dimod>=0.12.0,<0.14.0',
                     'dwave-cloud-client>=0.9.1,<0.11.0',
                     'dwave-networkx>=0.8.10',
-                    'dwave-preprocessing>=0.3',
+                    'dwave-preprocessing>=0.5.0',
                     'networkx>=2.0,<3.0',
                     'homebase>=1.0.0,<2.0.0',
                     'minorminer>=0.2.8,<0.3.0',
-                    'numpy>=1.17.3,<2.0.0',
-                    'dwave-greedy>=0.2.0',
-                    'scipy>=1.5.2,<2.0.0',
+                    'numpy>=1.20.0',
+                    'dwave-samplers>=1.0.0',
+                    'scipy>=1.7.3',
                     ]
 
 # NOTE: dwave-drivers can also be installed with `dwave install drivers`,

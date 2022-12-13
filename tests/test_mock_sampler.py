@@ -65,7 +65,6 @@ class TestMockDWaveSampler(unittest.TestCase):
                                   answer_mode='raw', max_answers=2)
         self.assertEqual(len(ss.record.num_occurrences), 2)
 
-        # note: greedy should be available; it's a package/test requirement
         # disable exact ground state calc
         with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
             #QPU format initial states:
