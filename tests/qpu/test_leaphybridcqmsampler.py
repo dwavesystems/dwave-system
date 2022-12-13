@@ -54,7 +54,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             with self.subTest(f"one constraint, vartype={vartype}"):
                 cqm = dimod.ConstrainedQuadraticModel()
                 cqm.set_objective(model)
-                cqm.add_constraint(model, rhs=1, sense='==')
+                cqm.add_constraint(model, rhs=0, sense='==')
                 sampleset = sampler.sample_cqm(cqm)
                 self.assertConsistent(cqm, sampleset)
 
@@ -86,7 +86,7 @@ class TestLeapHybridSampler(unittest.TestCase):
             with self.subTest(f"one constraint, vartype={vartype}"):
                 cqm = dimod.ConstrainedQuadraticModel()
                 cqm.set_objective(model)
-                cqm.add_constraint(model, rhs=1, sense='==')
+                cqm.add_constraint(model, rhs=0, sense='==')
                 sampleset = sampler.sample_cqm(cqm)
                 self.assertConsistent(cqm, sampleset)
 
