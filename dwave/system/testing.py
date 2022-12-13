@@ -19,13 +19,9 @@ from uuid import uuid4
 import numpy as np
 import dimod
 import dwave.cloud.computation
-from dwave.system import qpu_graph
 
-try:
-    #Simplest and efficient choice returning low energy states:
-    from greedy import SteepestDescentSampler as SubstituteSampler
-except ImportError:
-    from dimod import SimulatedAnnealingSampler as SubstituteSampler
+from dwave.samplers import SteepestDescentSampler as SubstituteSampler
+from dwave.system import qpu_graph
 
 
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):

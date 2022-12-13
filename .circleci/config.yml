@@ -3,37 +3,25 @@ version: 2.1
 jobs:
   test-linux: &test-linux-template
     parameters:
-      dimod-version:
-        type: string
       python-version:
         type: string
       integration-test-python-version:
         type: string
 
     docker:
-      - image: circleci/python:<< parameters.python-version >>
+      - image: cimg/python:<< parameters.python-version >>
 
     steps:
       - checkout
-
-      - restore_cache: &restore-test-cache-template
-          keys:
-          - v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: create virtual env and install dependencies
           command: |
             python -m venv env
             . env/bin/activate
-            pip install -U pip
+            pip install -U pip setuptools
             pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
-            pip install 'dimod<< parameters.dimod-version >>'
-
-      - save_cache: &save-test-cache-template
-          paths:
-            - ./env
-          key: v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "tests/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run: &run-tests-template
           name: run unittests
@@ -44,6 +32,18 @@ jobs:
             fi
             coverage run -m unittest discover
 
+      - run:
+          name: create virtual env and install latest dependencies
+          command: |
+            rm -rf env/
+            python -m venv env
+            . env/bin/activate
+            pip install -U pip setuptools
+            pip install -r tests/requirements.txt
+            pip install .[drivers] -I --no-cache-dir --extra-index-url https://pypi.dwavesys.com/simple
+
+      - run: *run-tests-template
+
       - run: &codecov-template
           name: codecov
           command: |
@@ -52,16 +52,12 @@ jobs:
 
   test-doctest:
     docker:
-      - image: circleci/python:3.7-stretch # as of march 2019 RTD uses 3.7
+      - image: cimg/python:3.7 # as of march 2019 RTD uses 3.7
 
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-          - v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: create virtual env and install dependencies
@@ -69,11 +65,6 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -r requirements.txt -r docs/requirements.txt
-
-      - save_cache:
-          paths:
-            - ./env
-          key: v2-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "docs/requirements.txt" }}-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: doctest
@@ -122,8 +113,6 @@ jobs:
             - ~/.pyenv
           key: pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-13.2.0
 
-      - restore_cache: *restore-test-cache-template
-
       - run:
           name: create virtual env and install dependencies
           command: |
@@ -136,13 +125,12 @@ jobs:
             pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
-      - save_cache: *save-test-cache-template
       - run: *run-tests-template
       - run: *codecov-template
 
   deploy:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     steps:
       - checkout
@@ -178,17 +166,11 @@ workflows:
   test:
     jobs:
       - test-linux:
-          name: test-linux-<< matrix.python-version >>-dimod<< matrix.dimod-version >>
+          name: test-linux-<< matrix.python-version >>
           matrix:
             parameters:
               python-version: &python-versions ["3.7.9", "3.8.9", "3.9.4", &latest-python "3.10.0"]
               integration-test-python-version: &integration-python-versions [*latest-python]
-              dimod-version: ["==0.10.0", "~=0.10.0", "~=0.11.0"]
-            exclude:
-              # py310 is supported in dimod>=0.10.8
-              - python-version: "3.10.0"
-                integration-test-python-version: *latest-python
-                dimod-version: "==0.10.0"
       - test-osx:
           name: test-osx-<< matrix.python-version >>
           matrix:
