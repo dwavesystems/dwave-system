@@ -22,13 +22,7 @@ import networkx as nx
 import dwave_networkx as dnx
 
 from minorminer.busclique import find_clique_embedding, busgraph_cache
-
-try:
-    from dwave.preprocessing import ScaleComposite
-except ImportError:
-    # fall back on dimod of dwave.preprocessing is not installed
-    from dimod import ScaleComposite
-
+from dwave.preprocessing import ScaleComposite
 from dwave.system.samplers.dwave_sampler import DWaveSampler
 from dwave.system.coupling_groups import coupling_groups
 

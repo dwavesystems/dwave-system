@@ -25,18 +25,6 @@ from collections import abc
 
 import dimod
 
-try:
-    # dimod 0.10.x
-    from dimod.binary.binary_quadratic_model import BQM
-
-    bqm_to_file = BQM.to_file
-except ImportError:
-    # dimod 0.9.x
-    from dimod import AdjVectorBQM as BQM
-    from dimod.serialization.fileview import FileView
-
-    bqm_to_file = FileView
-
 from dwave.cloud import Client
 from dwave.system.utilities import classproperty, FeatureFlags
 
@@ -221,8 +209,8 @@ class LeapHybridSampler(dimod.Sampler):
             >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
 
         """
-        if not isinstance(bqm, BQM):
-            bqm = BQM(bqm)
+        if not isinstance(bqm, dimod.BQM):
+            bqm = dimod.BQM(bqm)
 
         num_vars = bqm.num_variables
 
@@ -246,7 +234,7 @@ class LeapHybridSampler(dimod.Sampler):
 
     def _sample(self, bqm, **kwargs):
         """Sample from the given BQM."""
-        with bqm_to_file(bqm, version=2) as fv:
+        with bqm.to_file(version=2) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
 
         return self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
@@ -255,7 +243,7 @@ class LeapHybridSampler(dimod.Sampler):
         """Sample from the unlabelled version of the BQM, then apply the
         labels to the returned sampleset.
         """
-        with bqm_to_file(bqm, version=2, ignore_labels=True) as fv:
+        with bqm.to_file(version=2, ignore_labels=True) as fv:
             sapi_problem_id = self.solver.upload_bqm(fv).result()
 
         sampleset = self.solver.sample_bqm(sapi_problem_id, **kwargs).sampleset
@@ -707,11 +695,32 @@ class LeapHybridCQMSampler:
             raise TypeError("first argument 'cqm' must be a ConstrainedQuadraticModel, "
                             f"recieved {type(cqm).__name__}")
 
+        # developer note: this is a temporary fix until
+        # https://github.com/dwavesystems/dimod/issues/1303 is fixed
+        # and should be reverted afterwards
+        fcqm = cqm.to_file()
+        data = dimod.serialization.fileview.read_header(
+            fcqm,
+            dimod.constrained.CQM_MAGIC_PREFIX,
+            ).data
+
+        class _cqm:
+            # a fake CQM that has the same properties as the real thing,
+            # except it reports the num_biases of the serialized model.
+            # To remove once https://github.com/dwavesystems/dimod/issues/1303
+            # is fixed.
+            variables = cqm.variables
+            constraints = cqm.constraints
+
+            @staticmethod
+            def num_biases():
+                return data['num_biases']
+
         if time_limit is None:
-            time_limit = self.min_time_limit(cqm)
-        elif time_limit < self.min_time_limit(cqm):
+            time_limit = self.min_time_limit(_cqm)
+        elif time_limit < self.min_time_limit(_cqm):
             raise ValueError("the minimum time limit for this problem is "
-                             f"{self.min_time_limit(cqm)} seconds "
+                             f"{self.min_time_limit(_cqm)} seconds "
                              f"({time_limit}s provided), "
                              "see .min_time_limit method")
 
@@ -734,7 +743,7 @@ class LeapHybridCQMSampler:
                 f"variables; given model has {len(cqm.variables)}. "
                 f"{contact_sales_str}")
 
-        if cqm.num_biases() > self.properties['maximum_number_of_biases']:
+        if _cqm.num_biases() > self.properties['maximum_number_of_biases']:
             raise ValueError(
                 "constrained quadratic model must have "
                 f"{self.properties['maximum_number_of_biases']} or fewer "
@@ -750,7 +759,7 @@ class LeapHybridCQMSampler:
                 f"{cqm.num_quadratic_variables()}. "
                 f"{contact_sales_str}")
 
-        return self.solver.sample_cqm(cqm, time_limit=time_limit, **kwargs).sampleset
+        return self.solver.sample_cqm(fcqm, time_limit=time_limit, **kwargs).sampleset
 
     def min_time_limit(self, cqm: dimod.ConstrainedQuadraticModel) -> float:
         """Return the minimum `time_limit` accepted for the given problem."""
