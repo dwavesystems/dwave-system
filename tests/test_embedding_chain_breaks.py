@@ -61,7 +61,7 @@ class TestBrokenChains(unittest.TestCase):
         broken = dwave.embedding.broken_chains(samples_matrix, chain_list)
 
 
-class TestChainBreakResolutionAPI():
+class ChainBreakResolutionAPI():
     chains = [[0, 1], [2, 4], [3]]  # needs to be available to MinimizeEnergy
 
     def test_api(self):
@@ -96,7 +96,7 @@ class TestChainBreakResolutionAPI():
                 self.assertEqual(resolved.shape[0], len(idxs))
 
 
-class TestDiscard(TestChainBreakResolutionAPI, unittest.TestCase, ):
+class TestDiscard(ChainBreakResolutionAPI, unittest.TestCase, ):
 
     # for the API tests
     def setUp(self):
@@ -142,7 +142,7 @@ class TestDiscard(TestChainBreakResolutionAPI, unittest.TestCase, ):
         np.testing.assert_array_equal(idx, [0])
 
 
-class TestMajorityVote(TestChainBreakResolutionAPI, unittest.TestCase):
+class TestMajorityVote(ChainBreakResolutionAPI, unittest.TestCase):
 
     # for the API tests
     def setUp(self):
@@ -197,7 +197,7 @@ class TestMajorityVote(TestChainBreakResolutionAPI, unittest.TestCase):
         self.assertEqual(set().union(*samples), {-1, 1})  # should be spin-valued
 
 
-class TestMinimizeEnergy(TestChainBreakResolutionAPI, unittest.TestCase):
+class TestMinimizeEnergy(ChainBreakResolutionAPI, unittest.TestCase):
     # for the API tests
     def setUp(self):
         embedding = dict(zip('abcdefghijk', self.chains))
@@ -329,7 +329,7 @@ class TestMinimizeEnergy(TestChainBreakResolutionAPI, unittest.TestCase):
         unembedded, idx = cbm(sampleset, [[55], [48], [50, 53], [52, 51]])
 
 
-class TestWeightedRandom(TestChainBreakResolutionAPI, unittest.TestCase):
+class TestWeightedRandom(ChainBreakResolutionAPI, unittest.TestCase):
     # for the API tests
     def setUp(self):
         self.chain_break_method = dwave.embedding.weighted_random
