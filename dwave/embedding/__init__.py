@@ -14,8 +14,9 @@
 
 import minorminer  # into this namespace
 import dwave.embedding.chimera
-import dwave.embedding.drawing
 import dwave.embedding.pegasus
+import dwave.embedding.zephyr
+import dwave.embedding.drawing
 import dwave.embedding.exceptions
 
 from dwave.embedding.diagnostic import diagnose_embedding, is_valid_embedding, verify_embedding
