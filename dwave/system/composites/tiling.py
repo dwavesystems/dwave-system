@@ -17,10 +17,11 @@ A :ref:`dimod composite <oceandocs:samplers_index>` that tiles small problems
 multiple times to a structured sampler.
 
 The :class:`.TilingComposite` class takes a problem that can fit on a small
-:term:`Chimera` graph and replicates it across a larger Pegasus or
-Chimera graph to obtain samples from multiple areas of the solver in one call.
-For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a
-fully-yielded D-Wave 2000Q system (16x16).
+:term:`Chimera` graph and replicates it across the larger working graph of
+a quantum processing unit (QPU) to obtain samples from multiple areas of 
+the QPU in one call.
+For example, a single Chimera unit cell could be tiled over 600 times on a
+fully-yielded Advantage system.
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
@@ -65,8 +66,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     A problem that can be minor-embedded in a single chimera unit cell, for
     example, can therefore be tiled as 3x15x15 duplicates across an Advantage 
     QPU (or, previously, over the unit cells of a D-Wave 2000Q as 16x16 
-    duplicates), subject to solver yield. This enables up to 625 (256) parallel 
-    samples per read.
+    duplicates), subject to solver yield. This enables over 600 (256 for the 
+    D-Wave 2000Q) parallel samples per read.
 
     Args:
        sampler (:class:`dimod.Sampler`): Structured dimod sampler such as a
