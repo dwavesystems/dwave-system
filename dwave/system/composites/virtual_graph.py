@@ -76,38 +76,40 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
             be considered valid.
 
     .. attention::
-       D-Wave's *virtual graphs* feature can require many seconds of D-Wave system time to calibrate
-       qubits to compensate for the effects of biases. If your account has limited
-       D-Wave system access, consider using :class:`.FixedEmbeddingComposite` instead.
+        D-Wave's *virtual graphs* feature can require many seconds of D-Wave system time to calibrate
+        qubits to compensate for the effects of biases. If your account has limited
+        D-Wave system access, consider using :class:`.FixedEmbeddingComposite` instead.
 
     Examples:
-       This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-       that submits a QUBO problem to a D-Wave solver.
-       The problem represents a logical
-       AND gate using penalty function :math:`P = xy - 2(x+y)z +3z`, where variables x and y
-       are the gate's inputs and z the output. This simple three-variable problem is manually
-       minor-embedded to a single :std:doc:`Chimera <oceandocs:docs_system/intro>` unit cell:
-       variables x and y are represented by qubits 1 and 5, respectively, and z by a
-       two-qubit chain consisting of qubits 0 and 4.
-       The chain strength is set to the maximum allowed found from querying the solver's extended
-       J range. In this example, the ten returned samples all represent valid states of
-       the AND gate.
+        This example uses :class:`.VirtualGraphComposite` to instantiate a 
+        composed sampler that submits an Ising problem to a D-Wave solver. 
+        This simple three-variable problem is manually minor-embedded such that
+        variables ``a`` and ``b`` are represented by single qubits while variable 
+        ``c`` is represented by a four-qubit chain. The chain strength is set to 
+        the maximum allowed found from querying the solver's extended J range. 
+        The minor embedding shown below was for an execution of this example on a 
+        particular Advantage system; select a suitable embedding for the QPU you 
+        use.
 
-       >>> from dwave.system import DWaveSampler, VirtualGraphComposite
-       >>> embedding = {'x': {1}, 'y': {5}, 'z': {0, 4}}
-       >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
-       >>> qpu_2000q.properties['extended_j_range']
-       [-2.0, 1.0]
-       >>> sampler = VirtualGraphComposite(qpu_2000q, embedding, chain_strength=2) # doctest: +SKIP
-       >>> Q = {('x', 'y'): 1, ('x', 'z'): -2, ('y', 'z'): -2, ('z', 'z'): 3}
-       >>> sampleset = sampler.sample_qubo(Q, num_reads=10) # doctest: +SKIP
-       >>> print(sampleset)    # doctest: +SKIP
-          x  y  z energy num_oc. chain_.
-       0  1  0  0    0.0       2     0.0
-       1  0  1  0    0.0       3     0.0
-       2  1  1  1    0.0       3     0.0
-       3  0  0  0    0.0       2     0.0
-       ['BINARY', 4 rows, 10 samples, 3 variables]
+        >>> from dwave.system import DWaveSampler, VirtualGraphComposite
+        ...
+        >>> h = {'a': 1, 'b': -1}
+        >>> J = {('b', 'c'): -1, ('a', 'c'): -1}
+        ...
+        >>> qpu = DWaveSampler()
+        >>> embedding = {'a': [2656], 'c': [2641, 2642, 2643, 2644], 'b': [2659]}
+        >>> qpu.properties['extended_j_range']
+        [-2.0, 1.0]
+        ...
+        >>> sampler = VirtualGraphComposite(qpu, embedding, chain_strength=2) # doctest: +SKIP
+        >>> sampleset = sampler.sample_ising(h, J, num_reads=100) # doctest: +SKIP
+        >>> print(sampleset)    # doctest: +SKIP
+            a  b  c energy num_oc. chain_.
+        0 +1 +1 +1   -2.0      21     0.0
+        1 -1 +1 +1   -2.0      66     0.0
+        2 -1 -1 -1   -2.0       8     0.0
+        3 -1 +1 -1   -2.0       5     0.0
+        ['SPIN', 4 rows, 100 samples, 3 variables]
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
@@ -164,32 +166,35 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
                 Optional keyword arguments for the sampling method, specified per solver.
 
         Examples:
-           This example uses :class:`.VirtualGraphComposite` to instantiate a composed sampler
-           that submits an Ising problem to a D-Wave solver.
-           The problem represents a logical
-           NOT gate using penalty function :math:`P = xy`, where variable x is the gate's input
-           and y the output. This simple two-variable problem is manually minor-embedded
-           to a single :std:doc:`Chimera <oceandocs:docs_system/intro>` unit cell: each variable
-           is represented by a chain of half the cell's qubits, x as qubits 0, 1, 4, 5,
-           and y as qubits 2, 3, 6, 7.
-           The chain strength is set to half the maximum allowed found from querying the solver's extended
-           J range. In this example, the ten returned samples all represent valid states of
-           the NOT gate.
+            This example uses :class:`.VirtualGraphComposite` to instantiate a 
+            composed sampler that submits an Ising problem to a D-Wave solver. 
+            This simple three-variable problem is manually minor-embedded such that
+            variables ``a`` and ``b`` are represented by single qubits while variable 
+            ``c`` is represented by a four-qubit chain. The chain strength is set to 
+            the maximum allowed found from querying the solver's extended J range. 
+            The minor embedding shown below was for an execution of this example on a 
+            particular Advantage system; select a suitable embedding for the QPU you 
+            use.
 
-           >>> from dwave.system import DWaveSampler, VirtualGraphComposite
-           >>> embedding = {'x': {0, 4, 1, 5}, 'y': {2, 6, 3, 7}}
-           >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
-           >>> qpu_2000q.properties['extended_j_range']
-           [-2.0, 1.0]
-           >>> sampler = VirtualGraphComposite(qpu_2000q, embedding, chain_strength=1) # doctest: +SKIP
-           >>> h = {}
-           >>> J = {('x', 'y'): 1}
-           >>> sampleset = sampler.sample_ising(h, J, num_reads=10) # doctest: +SKIP
-           >>> print(sampleset)    # doctest: +SKIP
-              x  y energy num_oc. chain_.
-           0 -1 +1   -1.0       6     0.0
-           1 +1 -1   -1.0       4     0.0
-           ['SPIN', 2 rows, 10 samples, 2 variables]
+            >>> from dwave.system import DWaveSampler, VirtualGraphComposite
+            ...
+            >>> h = {'a': 1, 'b': -1}
+            >>> J = {('b', 'c'): -1, ('a', 'c'): -1}
+            ...
+            >>> qpu = DWaveSampler()
+            >>> embedding = {'a': [2656], 'c': [2641, 2642, 2643, 2644], 'b': [2659]}
+            >>> qpu.properties['extended_j_range']
+            [-2.0, 1.0]
+            ...
+            >>> sampler = VirtualGraphComposite(qpu, embedding, chain_strength=2) # doctest: +SKIP
+            >>> sampleset = sampler.sample_ising(h, J, num_reads=100) # doctest: +SKIP
+            >>> print(sampleset)    # doctest: +SKIP
+                a  b  c energy num_oc. chain_.
+            0 +1 +1 +1   -2.0      21     0.0
+            1 -1 +1 +1   -2.0      66     0.0
+            2 -1 -1 -1   -2.0       8     0.0
+            3 -1 +1 -1   -2.0       5     0.0
+            ['SPIN', 4 rows, 100 samples, 3 variables]
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
