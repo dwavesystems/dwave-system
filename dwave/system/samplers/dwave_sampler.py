@@ -283,12 +283,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active couplers for the D-Wave solver.
 
         Examples:
-            Coupler list for one D-Wave 2000Q system (output snipped for brevity).
+            First 5 entries of the coupler list for one Advantage system.
 
             >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
-            >>> sampler.edgelist
-            [(0, 4), (0, 5), (0, 6), (0, 7), ...
+            >>> sampler.edgelist[:5]    # doctest: +SKIP
+            [(30, 31), (30, 45), (30, 2940), (30, 2955), (30, 2970)]
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -307,12 +307,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """list: List of active qubits for the D-Wave solver.
 
         Examples:
-            Node list for one D-Wave 2000Q system (output snipped for brevity).
+            First 5 entries of the node list for one Advantage system.
 
             >>> from dwave.system import DWaveSampler
             >>> sampler = DWaveSampler()
-            >>> sampler.nodelist
-            [0, 1, 2, ...
+            >>> sampler.nodelist[:5]    # doctest: +SKIP
+            [30, 31, 32, 33, 34]
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
@@ -586,13 +586,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Examples:
             This example converts a selected D-Wave system solver to a graph
-            and verifies it has over 2000 nodes.
+            and verifies it has over 5000 nodes.
 
             >>> from dwave.system import DWaveSampler
             ...
             >>> sampler = DWaveSampler()
             >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
-            >>> len(g.nodes) > 2000                  # doctest: +SKIP
+            >>> len(g.nodes) > 5000                  # doctest: +SKIP
             True
         """
         return qpu_graph(self.properties['topology']['type'],

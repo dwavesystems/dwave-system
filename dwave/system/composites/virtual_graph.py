@@ -100,7 +100,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
         >>> embedding = {'a': [2656], 'c': [2641, 2642, 2643, 2644], 'b': [2659]}
         >>> qpu.properties['extended_j_range']
         [-2.0, 1.0]
-        ...
+        >>> # Sample using VirtualGraphComposite
         >>> sampler = VirtualGraphComposite(qpu, embedding, chain_strength=2) # doctest: +SKIP
         >>> sampleset = sampler.sample_ising(h, J, num_reads=100) # doctest: +SKIP
         >>> print(sampleset)    # doctest: +SKIP
@@ -185,7 +185,7 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
             >>> embedding = {'a': [2656], 'c': [2641, 2642, 2643, 2644], 'b': [2659]}
             >>> qpu.properties['extended_j_range']
             [-2.0, 1.0]
-            ...
+            >>> # Sample using VirtualGraphComposite
             >>> sampler = VirtualGraphComposite(qpu, embedding, chain_strength=2) # doctest: +SKIP
             >>> sampleset = sampler.sample_ising(h, J, num_reads=100) # doctest: +SKIP
             >>> print(sampleset)    # doctest: +SKIP
