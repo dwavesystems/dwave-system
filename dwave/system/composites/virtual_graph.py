@@ -165,37 +165,6 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
 
-        Examples:
-            This example uses :class:`.VirtualGraphComposite` to instantiate a 
-            composed sampler that submits an Ising problem to a D-Wave solver. 
-            This simple three-variable problem is manually minor-embedded such that
-            variables ``a`` and ``b`` are represented by single qubits while variable 
-            ``c`` is represented by a four-qubit chain. The chain strength is set to 
-            the maximum allowed found from querying the solver's extended J range. 
-            The minor embedding shown below was for an execution of this example on a 
-            particular Advantage system; select a suitable embedding for the QPU you 
-            use.
-
-            >>> from dwave.system import DWaveSampler, VirtualGraphComposite
-            ...
-            >>> h = {'a': 1, 'b': -1}
-            >>> J = {('b', 'c'): -1, ('a', 'c'): -1}
-            ...
-            >>> qpu = DWaveSampler()
-            >>> embedding = {'a': [2656], 'c': [2641, 2642, 2643, 2644], 'b': [2659]}
-            >>> qpu.properties['extended_j_range']
-            [-2.0, 1.0]
-            >>> # Sample using VirtualGraphComposite
-            >>> sampler = VirtualGraphComposite(qpu, embedding, chain_strength=2) # doctest: +SKIP
-            >>> sampleset = sampler.sample_ising(h, J, num_reads=100) # doctest: +SKIP
-            >>> print(sampleset)    # doctest: +SKIP
-                a  b  c energy num_oc. chain_.
-            0 +1 +1 +1   -2.0      21     0.0
-            1 -1 +1 +1   -2.0      66     0.0
-            2 -1 -1 -1   -2.0       8     0.0
-            3 -1 +1 -1   -2.0       5     0.0
-            ['SPIN', 4 rows, 100 samples, 3 variables]
-
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.
 
