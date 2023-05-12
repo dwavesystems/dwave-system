@@ -49,15 +49,15 @@ def common_working_graph(graph0, graph1):
 
     Examples:
 
-        This example creates a graph that represents a quarter (4 by 4 Chimera tiles)
-        of a particular D-Wave system's working graph.
+        This example creates a graph that represents a part of a particular 
+        Advantage quantum computer's working graph.
 
         >>> import dwave_networkx as dnx
         >>> from dwave.system import DWaveSampler, common_working_graph
         ...
-        >>> sampler = DWaveSampler()
-        >>> C4 = dnx.chimera_graph(4)  # a 4x4 lattice of Chimera tiles
-        >>> c4_working_graph = common_working_graph(C4, sampler.adjacency)   
+        >>> sampler = DWaveSampler(solver={'topology__type': 'pegasus'})
+        >>> P3 = dnx.pegasus_graph(3)  
+        >>> p3_working_graph = common_working_graph(P3, sampler.adjacency)   
 
     """
 
