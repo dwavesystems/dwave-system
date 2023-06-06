@@ -481,12 +481,11 @@ class LeapHybridDQMSampler:
                 )
             compress = compressed or compress
 
-        try:
-            f = dqm.to_file(compress=compress, ignore_labels=True)._file
-        except NotImplementedError:
-            f = dimod.DQM.to_file(dqm, compress=compress, ignore_labels=True)._file
+        with dqm.to_file(compress=compress, ignore_labels=True) as f:
+            sapi_problem_id = self.solver.upload_problem(f).result()
 
-        future = self.solver.sample_dqm(f, time_limit=time_limit, **kwargs)
+        future = self.solver.sample_dqm(sapi_problem_id, time_limit=time_limit, **kwargs)
+
         yield future
 
         sampleset = future.sampleset.relabel_variables(dict(enumerate(dqm.variables)))
@@ -698,68 +697,70 @@ class LeapHybridCQMSampler:
         # developer note: this is a temporary fix until
         # https://github.com/dwavesystems/dimod/issues/1303 is fixed
         # and should be reverted afterwards
-        fcqm = cqm.to_file()
-        data = dimod.serialization.fileview.read_header(
-            fcqm,
-            dimod.constrained.CQM_MAGIC_PREFIX,
-            ).data
+        with cqm.to_file() as fcqm:
+            data = dimod.serialization.fileview.read_header(
+                fcqm,
+                dimod.constrained.CQM_MAGIC_PREFIX,
+                ).data
 
-        class _cqm:
-            # a fake CQM that has the same properties as the real thing,
-            # except it reports the num_biases of the serialized model.
-            # To remove once https://github.com/dwavesystems/dimod/issues/1303
-            # is fixed.
-            variables = cqm.variables
-            constraints = cqm.constraints
+            class _cqm:
+                # a fake CQM that has the same properties as the real thing,
+                # except it reports the num_biases of the serialized model.
+                # To remove once https://github.com/dwavesystems/dimod/issues/1303
+                # is fixed.
+                variables = cqm.variables
+                constraints = cqm.constraints
 
-            @staticmethod
-            def num_biases():
-                return data['num_biases']
+                @staticmethod
+                def num_biases():
+                    return data['num_biases']
 
-        if time_limit is None:
-            time_limit = self.min_time_limit(_cqm)
-        elif time_limit < self.min_time_limit(_cqm):
-            raise ValueError("the minimum time limit for this problem is "
-                             f"{self.min_time_limit(_cqm)} seconds "
-                             f"({time_limit}s provided), "
-                             "see .min_time_limit method")
+            if time_limit is None:
+                time_limit = self.min_time_limit(_cqm)
+            elif time_limit < self.min_time_limit(_cqm):
+                raise ValueError("the minimum time limit for this problem is "
+                                 f"{self.min_time_limit(_cqm)} seconds "
+                                 f"({time_limit}s provided), "
+                                 "see .min_time_limit method")
 
-        contact_sales_str = "Contact D-Wave at sales@dwavesys.com if your " + \
-                            "application requires scale or performance that " + \
-                            "exceeds the currently advertised capabilities of " + \
-                            "this hybrid solver."
+            contact_sales_str = "Contact D-Wave at sales@dwavesys.com if your " + \
+                                "application requires scale or performance that " + \
+                                "exceeds the currently advertised capabilities of " + \
+                                "this hybrid solver."
 
-        if len(cqm.constraints) > self.properties['maximum_number_of_constraints']:
-            raise ValueError(
-                "constrained quadratic model must have "
-                f"{self.properties['maximum_number_of_constraints']} or fewer "
-                f"constraints; given model has {len(cqm.constraints)}. "
-                f"{contact_sales_str}")
+            if len(cqm.constraints) > self.properties['maximum_number_of_constraints']:
+                raise ValueError(
+                    "constrained quadratic model must have "
+                    f"{self.properties['maximum_number_of_constraints']} or fewer "
+                    f"constraints; given model has {len(cqm.constraints)}. "
+                    f"{contact_sales_str}")
 
-        if len(cqm.variables) > self.properties['maximum_number_of_variables']:
-            raise ValueError(
-                "constrained quadratic model must have "
-                f"{self.properties['maximum_number_of_variables']} or fewer "
-                f"variables; given model has {len(cqm.variables)}. "
-                f"{contact_sales_str}")
+            if len(cqm.variables) > self.properties['maximum_number_of_variables']:
+                raise ValueError(
+                    "constrained quadratic model must have "
+                    f"{self.properties['maximum_number_of_variables']} or fewer "
+                    f"variables; given model has {len(cqm.variables)}. "
+                    f"{contact_sales_str}")
 
-        if _cqm.num_biases() > self.properties['maximum_number_of_biases']:
-            raise ValueError(
-                "constrained quadratic model must have "
-                f"{self.properties['maximum_number_of_biases']} or fewer "
-                f"biases; given model has {cqm.num_biases()}. "
-                f"{contact_sales_str}")
+            if _cqm.num_biases() > self.properties['maximum_number_of_biases']:
+                raise ValueError(
+                    "constrained quadratic model must have "
+                    f"{self.properties['maximum_number_of_biases']} or fewer "
+                    f"biases; given model has {cqm.num_biases()}. "
+                    f"{contact_sales_str}")
 
-        if cqm.num_quadratic_variables() > self.properties['maximum_number_of_quadratic_variables']:
-            raise ValueError(
-                "constrained quadratic model must have "
-                f"{self.properties['maximum_number_of_quadratic_variables']} "
-                "or fewer variables with at least one quadratic bias across "
-                "all constraints; given model has "
-                f"{cqm.num_quadratic_variables()}. "
-                f"{contact_sales_str}")
+            if cqm.num_quadratic_variables(include_objective=False) > self.properties['maximum_number_of_quadratic_variables']:
+                raise ValueError(
+                    "constrained quadratic model must have "
+                    f"{self.properties['maximum_number_of_quadratic_variables']} "
+                    "or fewer variables with at least one quadratic bias across "
+                    "all constraints; given model has "
+                    f"{cqm.num_quadratic_variables()}. "
+                    f"{contact_sales_str}")
 
-        return self.solver.sample_cqm(fcqm, time_limit=time_limit, **kwargs).sampleset
+            sapi_problem_id = self.solver.upload_problem(fcqm).result()
+
+        return self.solver.sample_cqm(sapi_problem_id, time_limit=time_limit, **kwargs).sampleset
 
     def min_time_limit(self, cqm: dimod.ConstrainedQuadraticModel) -> float:
         """Return the minimum `time_limit` accepted for the given problem."""

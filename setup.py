@@ -53,6 +53,18 @@ packages = ['dwave',
             'dwave.system.samplers',
             ]
 
+classifiers = [
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: OS Independent',
+    'Development Status :: 3 - Alpha',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+]
+
 setup(
     name='dwave-system',
     version=__version__,
@@ -71,5 +83,6 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=python_requires,
+    classifiers=classifiers,
     zip_safe=False
 )
