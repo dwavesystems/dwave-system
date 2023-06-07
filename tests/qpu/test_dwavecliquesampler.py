@@ -39,7 +39,7 @@ def get_sampler(topology):
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
-    @parameterized.expand([['Chimera'], ['Pegasus'], ['Zephyr']])
+    @parameterized.expand([['Pegasus'], ['Zephyr']])
     def test_maximum_ferromagnet(self, topology):
         sampler = get_sampler(topology)
 

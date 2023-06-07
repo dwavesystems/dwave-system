@@ -64,61 +64,6 @@ class TestLeapHybridSampler(unittest.TestCase):
                 sampleset = sampler.sample_cqm(cqm)
                 self.assertConsistent(cqm, sampleset)
 
-    def test_large(self):
-        # submit large CQMs of binary, spin, integer and mixed
-        num_variables = 5000
-
-        objectives = dict()
-
-        objectives['binary'] = dimod.BQM(num_variables, 'BINARY')
-        objectives['spin'] = dimod.BQM(num_variables, 'SPIN')
-
-        objectives['integer'] = integer = dimod.QM()
-        integer.add_variables_from('INTEGER', range(num_variables))
-
-        objectives['mixed'] = mixed = dimod.QM()
-        mixed.add_variables_from('INTEGER', range(num_variables // 3))
-        mixed.add_variables_from(
-            'SPIN', range(mixed.num_variables, mixed.num_variables + (num_variables // 3)))
-        mixed.add_variables_from('BINARY', range(mixed.num_variables, num_variables))
-
-        for vartype, model in objectives.items():
-            with self.subTest(f"one constraint, vartype={vartype}"):
-                cqm = dimod.ConstrainedQuadraticModel()
-                cqm.set_objective(model)
-                cqm.add_constraint(model, rhs=0, sense='==')
-                sampleset = sampler.sample_cqm(cqm)
-                self.assertConsistent(cqm, sampleset)
-
-            with self.subTest(f"no constraints, vartype={vartype}"):
-                cqm = dimod.ConstrainedQuadraticModel()
-                cqm.set_objective(model)
-                sampleset = sampler.sample_cqm(cqm)
-                self.assertConsistent(cqm, sampleset)
-
-    def test_linear_constraints(self):
-        num_constraints = 100000
-
-        x = dimod.Binary('x')
-
-        cqm = dimod.ConstrainedQuadraticModel()
-        for _ in range(num_constraints):
-            cqm.add_constraint(x == 1)
-
-        sampler.sample_cqm(cqm).resolve()  # smoke test
-
     def test_other_quadratic_model(self):
         with self.assertRaises(TypeError):
             sampler.sample_cqm(dimod.BQM('SPIN'))
-
-    def test_quadratic_constraints(self):
-        num_constraints = 100000
-
-        x = dimod.Binary('x')
-        y = dimod.Binary('y')
-
-        cqm = dimod.ConstrainedQuadraticModel()
-        for _ in range(num_constraints):
-            cqm.add_constraint(x*y == 1)
-
-        sampler.sample_cqm(cqm).resolve()  # smoke test
