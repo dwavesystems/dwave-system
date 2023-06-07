@@ -1,8 +1,8 @@
 .. image:: https://img.shields.io/pypi/v/dwave-system.svg
    :target: https://pypi.org/project/dwave-system
 
-.. image:: https://img.shields.io/pypi/pyversions/dwave-preprocessing.svg?style=flat
-    :target: https://pypi.org/project/dwave-preprocessing/
+.. image:: https://img.shields.io/pypi/pyversions/dwave-system.svg?style=flat
+    :target: https://pypi.org/project/dwave-system
     :alt: PyPI - Python Version
 
 .. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
