@@ -49,6 +49,9 @@ class TestLeapHybridSampler(unittest.TestCase):
         np.testing.assert_array_almost_equal(dqm.energies(sampleset),
                                              sampleset.record.energy)
 
+    @unittest.skipIf(tuple(map(int, dimod.__version__.split(".")[:3])) < (0, 12, 7),
+                     "Skipping for dimod version < 0.12.7, "
+                     "see https://github.com/dwavesystems/dimod/pull/1332")
     def test_smoke_case_label(self):
         try:
             from dimod import CaseLabelDQM
