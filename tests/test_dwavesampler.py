@@ -18,7 +18,6 @@ from unittest import mock
 from concurrent.futures import Future
 
 import numpy as np
-from networkx.utils import graphs_equal
 from parameterized import parameterized
 
 import dimod
@@ -255,7 +254,10 @@ class TestDWaveSampler(unittest.TestCase):
                        sampler.properties['topology']['shape'],
                        sampler.nodelist,
                        sampler.edgelist)
-        self.assertTrue(graphs_equal(G,G2))
+
+        self.assertEqual(set(G.nodes), set(G2.nodes))
+        self.assertEqual(set(frozenset(e) for e in G.edges), set(frozenset(e) for e in G.edges))
+
         # Create chimera graph for comparison
         chimeraG = dnx.chimera_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
 
