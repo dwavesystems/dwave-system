@@ -8,6 +8,7 @@ dwave-drivers==0.4.4
 dwave-samplers==1.0.0
 homebase==1.0.1
 minorminer==0.2.10
+networkx==2.4
 
 numpy==1.20.0;python_version<"3.10"  # oldest supported by dwave-preprocessing
 oldest-supported-numpy;python_version>="3.10"
