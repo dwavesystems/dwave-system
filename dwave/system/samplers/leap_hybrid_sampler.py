@@ -763,7 +763,7 @@ class LeapHybridCQMSampler:
         return self.solver.sample_cqm(sapi_problem_id, time_limit=time_limit, **kwargs).sampleset
 
     def min_time_limit(self, cqm: dimod.ConstrainedQuadraticModel) -> float:
-        """Return the minimum `time_limit` accepted for the given problem."""
+        """Return the minimum `time_limit` accepted for the given problem in seconds."""
 
         # todo: remove the hard-coded defaults
         num_variables_multiplier = self.properties.get('num_variables_multiplier', 1.57e-04)
