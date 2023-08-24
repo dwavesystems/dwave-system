@@ -52,9 +52,7 @@ jobs:
 
   test-doctest:
     docker:
-      - image: cimg/python:3.7 # as of march 2019 RTD uses 3.7
-
-    working_directory: ~/repo
+      - image: cimg/python:3.9
 
     steps:
       - checkout
@@ -171,7 +169,7 @@ workflows:
           name: test-linux-<< matrix.python-version >>
           matrix:
             parameters:
-              python-version: &python-versions ["3.7.9", "3.8.9", "3.9.4", "3.10.0", &latest-python "3.11.0"]
+              python-version: &python-versions ["3.8.9", "3.9.4", "3.10.0", &latest-python "3.11.0"]
               integration-test-python-version: &integration-python-versions [*latest-python]
       - test-osx:
           name: test-osx-<< matrix.python-version >>
