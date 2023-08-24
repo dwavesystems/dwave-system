@@ -5,13 +5,10 @@
     :target: https://pypi.org/project/dwave-system
     :alt: PyPI - Python Version
 
-.. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
-   :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
-
 .. image:: https://codecov.io/gh/dwavesystems/dwave-system/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/dwavesystems/dwave-system
 
-.. image:: https://circleci.com/gh/dwavesystems/dwave-system.svg?style=svg
+.. image:: https://circleci.com/gh/dwavesystems/dwave-system.svg?style=shield
    :target: https://circleci.com/gh/dwavesystems/dwave-system
 
 .. index-start-marker

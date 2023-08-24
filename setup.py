@@ -11,8 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
 import os
 
 from setuptools import setup
@@ -26,7 +25,7 @@ exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
 install_requires = ['dimod>=0.12.7,<0.14.0',
-                    'dwave-cloud-client>=0.9.1,<0.11.0',
+                    'dwave-cloud-client>=0.10.6,<0.11.0',   # 0.10.6+ to avoid pydantic 2.0 backward compat break
                     'dwave-networkx>=0.8.10',
                     'dwave-preprocessing>=0.5.0',
                     'networkx>=2.0,<3.0',
@@ -43,7 +42,7 @@ install_requires = ['dimod>=0.12.7,<0.14.0',
 extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
                   }
 
-python_requires = '>=3.7'
+python_requires = '>=3.8'
 
 packages = ['dwave',
             'dwave.embedding',
@@ -58,7 +57,6 @@ classifiers = [
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
