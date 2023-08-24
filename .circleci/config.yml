@@ -6,6 +6,7 @@ parameters:
     default: 1
 
 orbs:
+  win: circleci/windows@5.0
   codecov: codecov/codecov@3
 
 environment:
@@ -28,6 +29,7 @@ jobs:
       - run:
           name: create virtual env and install dependencies
           command: |
+            python -V
             python -m venv env
             . env/bin/activate
             pip install -U pip setuptools
@@ -48,6 +50,7 @@ jobs:
           name: create virtual env and install latest dependencies
           command: |
             rm -rf env/
+            python -V
             python -m venv env
             . env/bin/activate
             pip install -U pip setuptools
@@ -128,6 +131,7 @@ jobs:
             eval "$(pyenv init --path 2>/dev/null || true)"
             eval "$(pyenv init -)"
             pyenv shell << parameters.python-version >>
+            python -V
             python -m venv env
             . env/bin/activate
             pip install -U pip
@@ -135,6 +139,46 @@ jobs:
             pip install -r requirements.txt -r tests/requirements.txt
 
       - run: *run-python-tests
+
+  test-windows:
+    parameters:
+      python-version:
+        type: string
+
+    executor:
+      name: win/default
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install python and create virtualenv
+          shell: bash -eo pipefail
+          command: |
+            # resolve python MAJOR.MINOR version to latest MAJOR.MINOR.PATCH version available on NuGet
+            full_version=$(
+              curl -s 'https://azuresearch-usnc.nuget.org/query?q=python' \
+              | jq -r '.data[] | select(.id == "python") .versions[] | .version' \
+              | awk -F. -v ver='<< parameters.python-version >>' \
+                  'index($0, ver".") == 1 && $3 > m { m = $3; v = $0 } END { print v }'
+            )
+            nuget install python -Version "$full_version" -ExcludeVersion
+            python/tools/python -V
+            python/tools/python -m venv env
+
+      - run:
+          name: Install requirements and the package
+          command: |
+            env\Scripts\activate.ps1
+            pip install -U pip
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
+            pip install -r requirements.txt -r tests\requirements.txt
+
+      - run:
+          name: Run tests
+          command: |
+            env\Scripts\activate.ps1
+            coverage run -m unittest discover
 
   deploy:
     docker:
@@ -179,12 +223,20 @@ workflows:
             parameters:
               python-version: &python-versions ["3.8", "3.9", "3.10", &latest-python "3.11"]
               integration-test-python-version: &integration-python-versions [*latest-python]
+
       - test-osx:
           name: test-osx-<< matrix.python-version >>
           matrix:
             parameters:
               python-version: *python-versions
               integration-test-python-version: *integration-python-versions
+
+      - test-windows:
+          name: test-windows-<< matrix.python-version >>
+          matrix:
+            parameters:
+              python-version: *python-versions
+
       - test-doctest
 
   deploy:

@@ -5,9 +5,6 @@
     :target: https://pypi.org/project/dwave-system
     :alt: PyPI - Python Version
 
-.. image:: https://ci.appveyor.com/api/projects/status/959r6vpyertcxkhd?svg=true
-   :target: https://ci.appveyor.com/project/dwave-adtt/dwave-system
-
 .. image:: https://codecov.io/gh/dwavesystems/dwave-system/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/dwavesystems/dwave-system
 
