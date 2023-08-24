@@ -1,5 +1,13 @@
 version: 2.1
 
+parameters:
+  cache-generation:
+    type: integer
+    default: 1
+
+environment:
+  PIP_PROGRESS_BAR: 'off'
+
 jobs:
   test-linux: &test-linux-template
     parameters:
@@ -82,11 +90,14 @@ jobs:
         type: string
       integration-test-python-version:
         type: string
+      xcode:
+        type: string
+        default: "14.3.0"
 
     resource_class: macos.x86.medium.gen2   
 
     macos:
-      xcode: "14.3.0"
+      xcode: << parameters.xcode >>
 
     steps:
       - checkout
@@ -98,7 +109,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-14.3.0
+            - v<< pipeline.parameters.cache-generation >>-pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-<< parameters.xcode >>
 
       - run:
           name: install python
@@ -106,9 +117,9 @@ jobs:
             pyenv install << parameters.python-version>> -s
 
       - save_cache:
+          key: v<< pipeline.parameters.cache-generation >>-pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-<< parameters.xcode >>
           paths:
             - ~/.pyenv
-          key: pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-14.3.0
 
       - run:
           name: create virtual env and install dependencies
