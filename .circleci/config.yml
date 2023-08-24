@@ -5,11 +5,14 @@ parameters:
     type: integer
     default: 1
 
+orbs:
+  codecov: codecov/codecov@3
+
 environment:
   PIP_PROGRESS_BAR: 'off'
 
 jobs:
-  test-linux: &test-linux-template
+  test-linux:
     parameters:
       python-version:
         type: string
@@ -31,7 +34,7 @@ jobs:
             pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
-      - run: &run-tests-template
+      - run: &run-python-tests
           name: run unittests
           command: |
             . env/bin/activate
@@ -39,6 +42,7 @@ jobs:
               export SKIP_INT_TESTS=1
             fi
             coverage run -m unittest discover
+            coverage xml
 
       - run:
           name: create virtual env and install latest dependencies
@@ -50,13 +54,10 @@ jobs:
             pip install -r tests/requirements.txt
             pip install .[drivers] -I --no-cache-dir --extra-index-url https://pypi.dwavesys.com/simple
 
-      - run: *run-tests-template
+      - run: *run-python-tests
 
-      - run: &codecov-template
-          name: codecov
-          command: |
-            . env/bin/activate
-            codecov
+      - codecov/upload: &upload-python-code-coverage
+          file: coverage.xml
 
   test-doctest:
     docker:
@@ -133,8 +134,7 @@ jobs:
             pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
-      - run: *run-tests-template
-      - run: *codecov-template
+      - run: *run-python-tests
 
   deploy:
     docker:
