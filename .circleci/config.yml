@@ -88,9 +88,6 @@ jobs:
     macos:
       xcode: "14.3.0"
 
-    environment:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-
     steps:
       - checkout
 
@@ -169,7 +166,7 @@ workflows:
           name: test-linux-<< matrix.python-version >>
           matrix:
             parameters:
-              python-version: &python-versions ["3.8.9", "3.9.4", "3.10.0", &latest-python "3.11.0"]
+              python-version: &python-versions ["3.8", "3.9", "3.10", &latest-python "3.11"]
               integration-test-python-version: &integration-python-versions [*latest-python]
       - test-osx:
           name: test-osx-<< matrix.python-version >>
