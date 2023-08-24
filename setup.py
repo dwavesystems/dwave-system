@@ -25,7 +25,7 @@ exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
 install_requires = ['dimod>=0.12.7,<0.14.0',
-                    'dwave-cloud-client>=0.9.1,<0.11.0',
+                    'dwave-cloud-client>=0.10.6,<0.11.0',   # 0.10.6+ to avoid pydantic 2.0 backward compat break
                     'dwave-networkx>=0.8.10',
                     'dwave-preprocessing>=0.5.0',
                     'networkx>=2.0,<3.0',
