@@ -58,10 +58,11 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
         float: The chain strength, or 1 if chain strength is not applicable.
 
     """
-    # NumPy arrays improves performance through vectorization
-    quadratic_array = np.fromiter(bqm.quadratic.values(), dtype=float)
-
     num_interactions = bqm.num_interactions
+
+    # NumPy arrays improves performance through vectorization
+    quadratic_array = np.fromiter(bqm.quadratic.values(), dtype=float, count=num_interactions)
+
     if num_interactions:
         squared_j = quadratic_array**2
 
