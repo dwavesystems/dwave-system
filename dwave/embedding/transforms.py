@@ -28,16 +28,6 @@ from dwave.embedding.utils import adjacency_to_edges, intlabel_disjointsets
 from dwave.embedding.chain_strength import uniform_torque_compensation
 
 
-try:
-    from dimod import AdjArrayBQM
-    from dimod.core.bqm import BinaryView, SpinView
-except ImportError:
-    # dummy classes for isinstance checks
-    class AdjArrayBQM: pass
-    class BinaryView: pass
-    class SpinView: pass
-
-
 __all__ = ['embed_bqm',
            'embed_ising',
            'embed_qubo',
@@ -194,10 +184,10 @@ class EmbeddedStructure(dict):
                 Binary quadratic model to embed.
 
             chain_strength (float/mapping/callable, optional):
-                Sets the coupling strength between qubits representing variables 
-                that form a :term:`chain`. Mappings should specify the required 
-                chain strength for each variable. Callables should accept the BQM 
-                and embedding and return a float or mapping. By default, 
+                Sets the coupling strength between qubits representing variables
+                that form a :term:`chain`. Mappings should specify the required
+                chain strength for each variable. Callables should accept the BQM
+                and embedding and return a float or mapping. By default,
                 `chain_strength` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -237,85 +227,75 @@ class EmbeddedStructure(dict):
 
         """
         return_vartype = source_bqm.vartype
-        if smear_vartype is dimod.SPIN:
+        if smear_vartype is None:
+            smear_vartype = return_vartype
+        elif smear_vartype is dimod.SPIN:
             source_bqm = source_bqm.spin
-        elif smear_vartype is dimod.BINARY:
+        else:
             source_bqm = source_bqm.binary
-        else:
-            smear_vartype = source_bqm.vartype
 
-        # we need this check to support dimod 0.9.x, where there was one bqm
-        # type that was not shapeable
-        if (isinstance(source_bqm, (AdjArrayBQM, SpinView, BinaryView)) and
-                not source_bqm.shapeable()):
-            # this will never happen in dimod>=0.10.0
-            target_bqm = dimod.AdjVectorBQM.empty(smear_vartype)
-        else:
-            try:
-                # dimod 0.9.x
-                target_bqm = source_bqm.base.empty(smear_vartype)
-            except AttributeError:
-                target_bqm = source_bqm.empty(smear_vartype)
+        target_bqm = source_bqm.empty(smear_vartype)
+        target_bqm.offset = source_bqm.offset
 
-        # add the offset
-        target_bqm.offset += source_bqm.offset
+        linear = source_bqm.linear
+        quadratic = source_bqm.quadratic
 
+        # extract chain strength to iterator; if function, first get value (float or mapping)
         if chain_strength is None:
-            chain_strength = uniform_torque_compensation
-
-        if callable(chain_strength):
+            chain_strength = uniform_torque_compensation(source_bqm, self)
+        elif callable(chain_strength):
             chain_strength = chain_strength(source_bqm, self)
 
         self._chain_strength = chain_strength
 
-        if isinstance(chain_strength, abc.Mapping):
-            strength_iter = (chain_strength[v] for v in source_bqm.linear)
-        else:
+        if isinstance(chain_strength, (int, float)):
             strength_iter = itertools.repeat(chain_strength)
+        else:
+            strength_iter = (chain_strength[v] for v in linear)
 
         offset = 0
         # spread the linear source bias equally over the target variables in the
         # chain and add chain edges as necessary
-        for (v, bias), strength in zip(source_bqm.linear.items(), strength_iter):
-            chain = self.get(v)
-            if chain is None:
+        for (v, bias), strength in zip(linear.items(), strength_iter):
+            try:
+                chain = self[v]
+            except KeyError:
                 raise MissingChainError(v)
 
-            #we check that this is nonzero in __init__
-            b = bias / len(chain)
-
-            target_bqm.add_variables_from({u: b for u in chain})
-
+            # we check that len(chain) is nonzero in __init__
             if len(chain) == 1:
-                # in the case where the chain has length 1, there are no chain
-                # quadratic biases, but we none-the-less want the chain
-                # variables to appear in the target_bqm
-                q, = chain
-                target_bqm.add_variable(q, 0.0)
-            elif smear_vartype is dimod.SPIN:
-                for p, q in self.chain_edges(v):
-                    target_bqm.add_interaction(p, q, -strength)
-                    offset += strength
+                # in the case where the chain has length 1, there are no chain quadratic biases,
+                # but we none-the-less want the chain variables to appear in the target_bqm
+                target_bqm.add_variable(chain[0], 0.0)
             else:
-                # this is in spin, but we need to respect the vartype
-                for p, q in self.chain_edges(v):
-                    target_bqm.add_interaction(p, q, -4*strength)
-                    target_bqm.add_variable(p, 2*strength)
-                    target_bqm.add_variable(q, 2*strength)
+                bias /= len(chain)
+
+                if smear_vartype is dimod.SPIN:
+                    target_bqm.add_quadratic_from((p, q, -strength) for p, q in self.chain_edges(v))
+                    offset += strength * len(self._chain_edges[v])
+                else:  # if smear_vartype is dimod.BINARY
+                    target_bqm.add_variables_from((p, 2 * strength) for p in itertools.chain(*self.chain_edges(v)))
+                    target_bqm.add_quadratic_from((p, q, -4 * strength) for p, q in self.chain_edges(v))
+
+            target_bqm.add_linear_from((u, bias) for u in chain)
 
         target_bqm.offset += offset
 
-        # next up the quadratic biases, spread the quadratic biases evenly over
-        # the available interactions
-        for (u, v), bias in source_bqm.quadratic.items():
-            interactions = list(self.interaction_edges(u, v))
+        for (u, v), bias in quadratic.items():
+            # get the number of interactions for (u, v); quicker than
+            # converting the generator self.interaction_edges to a list
+            num_interactions = len(self._interaction_edges[u, v])
 
-            if not interactions:
+            if num_interactions == 0:
                 raise MissingEdgeError(u, v)
 
-            b = bias / len(interactions)
+            b = bias / num_interactions
 
-            target_bqm.add_interactions_from((u, v, b) for u, v in interactions)
+            interaction_edges = self.interaction_edges(u, v)
+            target_bqm.add_quadratic_from((p, q, b) for p, q in interaction_edges)
+
+        if return_vartype is smear_vartype:
+            return target_bqm
 
         # we made the target BQM so we can safely mutate it in-place
         return target_bqm.change_vartype(return_vartype, inplace=True)
@@ -344,10 +324,10 @@ def embed_bqm(source_bqm, embedding=None, target_adjacency=None,
             EmbeddedStructure object.
 
         chain_strength (float/mapping/callable, optional):
-            Sets the coupling strength between qubits representing variables 
+            Sets the coupling strength between qubits representing variables
             that form a :term:`chain`. Mappings should specify the required chain
-            strength for each variable. Callables should accept the BQM and 
-            embedding and return a float or mapping. By default, 
+            strength for each variable. Callables should accept the BQM and
+            embedding and return a float or mapping. By default,
             `chain_strength` is calculated with
             :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -425,10 +405,10 @@ def embed_ising(source_h, source_J, embedding, target_adjacency, chain_strength=
             where t is a target-graph variable and Nt is its set of neighbours.
 
         chain_strength (float/mapping/callable, optional):
-            Sets the coupling strength between qubits representing variables 
+            Sets the coupling strength between qubits representing variables
             that form a :term:`chain`. Mappings should specify the required chain
-            strength for each variable. Callables should accept the BQM and 
-            embedding and return a float or mapping. By default, 
+            strength for each variable. Callables should accept the BQM and
+            embedding and return a float or mapping. By default,
             `chain_strength` is calculated with
             :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -486,10 +466,10 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
             where t is a target-graph variable and Nt is its set of neighbours.
 
         chain_strength (float/mapping/callable, optional):
-            Sets the coupling strength between qubits representing variables 
+            Sets the coupling strength between qubits representing variables
             that form a :term:`chain`. Mappings should specify the required chain
-            strength for each variable. Callables should accept the BQM and 
-            embedding and return a float or mapping. By default, 
+            strength for each variable. Callables should accept the BQM and
+            embedding and return a float or mapping. By default,
             `chain_strength` is calculated with
             :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
