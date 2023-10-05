@@ -28,7 +28,6 @@ import dimod
 
 from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave.cloud.client import Client
-from dwave.cloud.solver import Solver
 from dwave.cloud.exceptions import (
     SolverError, SolverAuthenticationError, InvalidAPIResponseError,
     RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,

@@ -74,6 +74,7 @@ jobs:
           command: |
             python -m venv env
             . env/bin/activate
+            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r docs/requirements.txt
 
       - run:
