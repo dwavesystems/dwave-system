@@ -212,7 +212,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'initial_state': ['parameters'],
             'max_answers': ['parameters'],
             'num_reads': ['parameters'],
-            'num_spin_reversal_transforms': ['parameters'],
             'programming_thermalization': ['parameters'],
             'readout_thermalization': ['parameters'],
             'reduce_intersample_correlation': ['parameters'],
@@ -256,9 +255,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 'num_reads':
                 'Number of states to read (answers to return), as a positive '
                 'integer.',
-                'num_spin_reversal_transforms':
-                'Number of spin-reversal transforms (gauge transformations) to '
-                'perform.',
                 'programming_thermalization':
                 'Time in microseconds to wait after programming the processor '
                 'in order for it to cool back to base temperature, as a '
