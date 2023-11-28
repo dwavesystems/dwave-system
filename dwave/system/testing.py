@@ -212,7 +212,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'initial_state': ['parameters'],
             'max_answers': ['parameters'],
             'num_reads': ['parameters'],
-            'num_spin_reversal_transforms': ['parameters'],
             'programming_thermalization': ['parameters'],
             'readout_thermalization': ['parameters'],
             'reduce_intersample_correlation': ['parameters'],
@@ -256,9 +255,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 'num_reads':
                 'Number of states to read (answers to return), as a positive '
                 'integer.',
-                'num_spin_reversal_transforms':
-                'Number of spin-reversal transforms (gauge transformations) to '
-                'perform.',
                 'programming_thermalization':
                 'Time in microseconds to wait after programming the processor '
                 'in order for it to cool back to base temperature, as a '
@@ -275,13 +271,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'vfyc': False,
             'anneal_offset_step': -0.0001500217998314891,
             'anneal_offset_step_phi0': 1.4303846404537006e-05,
-            'annealing_time_range': [0.02, 83000.0],
+            'annealing_time_range': [0.5, 2000.0],
             'default_annealing_time': 20.0,
             'default_programming_thermalization': 1000.0,
             'default_readout_thermalization': 0.0,
             'extended_j_range': [-2.0, 1.0],
             'h_gain_schedule_range': [-3.0, 3.0],
-            'max_anneal_schedule_points': 50,
+            'max_anneal_schedule_points': 12,
             'max_h_gain_schedule_points': 20,
             'num_reads_range': [1, 10000],
             'per_qubit_coupling_range': [-18.0, 15.0],
