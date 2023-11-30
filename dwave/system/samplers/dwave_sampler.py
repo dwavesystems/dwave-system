@@ -194,7 +194,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         # the only solver filters used by `DWaveSampler` are those
         # propagated to `Client.from_config` on construction
-        filters = copy.deepcopy(self.client.default_solver)
+        filters = copy.deepcopy(self.client.config.solver)
         order_by = filters.pop('order_by', 'avg_load')
         solvers = self.client.get_solvers(refresh=refresh, order_by=order_by, **filters)
 
