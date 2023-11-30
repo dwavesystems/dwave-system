@@ -1,17 +1,24 @@
 --extra-index-url https://pypi.dwavesys.com/simple
 
-dimod==0.12.7
-dwave-preprocessing==0.5.4
-dwave-cloud-client==0.10.6
+dimod==0.12.7;python_version<"3.12"
+dimod==0.12.13;python_version>="3.12"
+dwave-preprocessing==0.5.4;python_version<"3.12"
+dwave-preprocessing==0.6.4;python_version>="3.12"
+dwave-cloud-client==0.10.6;python_version<"3.12"
+dwave-cloud-client==0.11.2;python_version>="3.12"
 dwave-networkx==0.8.10
 dwave-drivers==0.4.4
-dwave-samplers==1.0.0
+dwave-samplers==1.0.0;python_version<"3.12"
+dwave-samplers==1.2.0;python_version>="3.12"
 homebase==1.0.1
-minorminer==0.2.10
-networkx==2.4
+minorminer==0.2.10;python_version<"3.12"
+minorminer==0.2.13;python_version>="3.12"
+networkx==2.4;python_version<"3.12"
+networkx==2.8.8;python_version>="3.12"
 
 numpy==1.20.0;python_version<"3.10"  # oldest supported by dwave-preprocessing
 oldest-supported-numpy;python_version>="3.10"
 
 scipy==1.7.3;python_version<"3.11"
-scipy==1.9.2;python_version>="3.11"
+scipy==1.9.2;python_version>="3.11" and python_version<"3.12"
+scipy==1.11.2;python_version>="3.12"
