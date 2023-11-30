@@ -59,19 +59,5 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         bqm = dimod.BinaryQuadraticModel({},
                 {(u, v): -2 for u in range(n) for v in range(u+1, n)}, 'SPIN')
 
-        with warnings.catch_warnings(record=True) as w:
-            sampler.sample(bqm, chain_strength=chain_strength).resolve()
-
-        if topology == 'Pegasus':
-            limit_name = 'per_qubit_coupling_range'
-        else:
-            limit_name = 'per_group_coupling_range'
-
-        if chain_strength is not None:
-            self.assertGreaterEqual(len(w), 1)
-            self.assertEqual(sum(f'{limit_name} is violated' in str(w[i].message)
-                                 for i in range(len(w))), 1)
-        else:
-            # this is not very robust, but does the job
-            self.assertEqual(sum(f'{limit_name} is violated' in str(w[i].message)
-                                 for i in range(len(w))), 0)
+        # if the range was not adjusted, this would raise an error.
+        sampler.sample(bqm, chain_strength=chain_strength).resolve()
