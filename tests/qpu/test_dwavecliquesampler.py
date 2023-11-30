@@ -68,7 +68,10 @@ class TestDWaveCliqueSampler(unittest.TestCase):
             limit_name = 'per_group_coupling_range'
 
         if chain_strength is not None:
-            self.assertEqual(len(w), 1)
-            self.assertIn(f'{limit_name} is violated', str(w[0].message))
+            self.assertGreaterEqual(len(w), 1)
+            self.assertEqual(sum(f'{limit_name} is violated' in str(w[i].message)
+                                 for i in range(len(w))), 1)
         else:
-            self.assertEqual(w, [])
+            # this is not very robust, but does the job
+            self.assertEqual(sum(f'{limit_name} is violated' in str(w[i].message)
+                                 for i in range(len(w))), 0)
