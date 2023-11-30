@@ -161,7 +161,7 @@ jobs:
               curl -s 'https://azuresearch-usnc.nuget.org/query?q=python' \
               | jq -r '.data[] | select(.id == "python") .versions[] | .version' \
               | awk -F. -v ver='<< parameters.python-version >>' \
-                  'index($0, ver".") == 1 && $3 > m { m = $3; v = $0 } END { print v }'
+                  'index($0, ver".") == 1 && $3 >= m { m = $3; v = $0 } END { print v }'
             )
             nuget install python -Version "$full_version" -ExcludeVersion
             python/tools/python -V
