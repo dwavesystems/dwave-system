@@ -216,6 +216,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'readout_thermalization': ['parameters'],
             'reduce_intersample_correlation': ['parameters'],
             'reinitialize_state': ['parameters'],
+            'x_simple_anneal_time': ['parameters'],
             'warnings': [],
             'label': [],
         }
