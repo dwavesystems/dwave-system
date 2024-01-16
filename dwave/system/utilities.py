@@ -17,6 +17,7 @@
 import os
 import json
 import networkx as nx
+import warnings
 
 __all__ = ['common_working_graph', 'classproperty']
 
@@ -60,6 +61,9 @@ def common_working_graph(graph0, graph1):
         >>> p3_working_graph = common_working_graph(P3, sampler.adjacency)   
 
     """
+    warnings.warn("dwave.system.common_working_graph() is deprecated as of dwave-system 1.23.0 "
+                  "and will be removed in dwave-system 2.0. Use networkx.intersection() instead.",
+                  DeprecationWarning, stacklevel=2)
 
     G = nx.Graph()
     G.add_nodes_from(v for v in graph0 if v in graph1)
