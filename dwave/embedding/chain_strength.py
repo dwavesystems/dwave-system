@@ -15,7 +15,7 @@
 """Utility functions for calculating chain strength.
 
 Examples:
-    This example uses :func:`uniform_torque_compensation`, given a prefactor of 2, 
+    This example uses :func:`uniform_torque_compensation`, given a prefactor of 2,
     to calculate a chain strength that :class:`EmbeddingComposite` then uses.
 
     >>> from functools import partial
@@ -32,6 +32,7 @@ Examples:
 
 """
 import math
+import numpy as np
 
 __all__ = ['uniform_torque_compensation', 'scaled']
 
@@ -41,30 +42,37 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
 
     The RMS of the problem's quadratic biases is used for calculation.
 
-    Args: 
+    Args:
         bqm (:obj:`.BinaryQuadraticModel`):
             A binary quadratic model.
 
         embedding (dict/:class:`.EmbeddedStructure`, default=None):
-            Included to satisfy the `chain_strength` callable specifications 
-            for `embed_bqm`. 
+            Included to satisfy the `chain_strength` callable specifications
+            for `embed_bqm`.
 
         prefactor (float, optional, default=1.414):
-            Prefactor used for scaling. For non-pathological problems, the recommended 
+            Prefactor used for scaling. For non-pathological problems, the recommended
             range of prefactors to try is [0.5, 2].
 
     Returns:
         float: The chain strength, or 1 if chain strength is not applicable.
 
     """
-    if bqm.num_interactions > 0:
-        squared_j = (j ** 2 for j in bqm.quadratic.values())
-        rms = math.sqrt(sum(squared_j)/bqm.num_interactions)
+    num_interactions = bqm.num_interactions
+
+    # NumPy arrays improves performance through vectorization
+    quadratic_array = np.fromiter(bqm.quadratic.values(), dtype=float, count=num_interactions)
+
+    if num_interactions:
+        squared_j = quadratic_array**2
+
+        rms = math.sqrt(squared_j.sum() / num_interactions)
         avg_degree = bqm.degrees(array=True).mean()
 
         return prefactor * rms * math.sqrt(avg_degree)
-    else:
-        return 1    # won't matter (chain strength isn't needed to embed this problem)
+
+    # won't matter (chain strength isn't needed to embed this problem)
+    return 1
 
 def scaled(bqm, embedding=None, prefactor=1.0):
     """Chain strength that is scaled to the problem bias range.
@@ -74,19 +82,21 @@ def scaled(bqm, embedding=None, prefactor=1.0):
             A binary quadratic model.
 
         embedding (dict/:class:`.EmbeddedStructure`, default=None):
-            Included to satisfy the `chain_strength` callable specifications 
-            for `embed_bqm`. 
+            Included to satisfy the `chain_strength` callable specifications
+            for `embed_bqm`.
 
         prefactor (float, optional, default=1.0):
-            Prefactor used for scaling. 
+            Prefactor used for scaling.
 
     Returns:
         float: The chain strength, or 1 if chain strength is not applicable.
 
-    """  
+    """
     if bqm.num_interactions > 0:
-        max_bias = max(max(bqm.linear.max(), -bqm.linear.min()), 
-                       max(bqm.quadratic.max(), -bqm.quadratic.min()))
+        max_bias = max(
+            bqm.linear.max(), -bqm.linear.min(), bqm.quadratic.max(), -bqm.quadratic.min()
+        )
         return prefactor * max_bias
-    else:
-        return 1    # won't matter (chain strength isn't needed to embed this problem)
+
+    # won't matter (chain strength isn't needed to embed this problem)
+    return 1

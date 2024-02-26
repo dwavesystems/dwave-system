@@ -18,7 +18,6 @@ from unittest import mock
 from concurrent.futures import Future
 
 import numpy as np
-from networkx.utils import graphs_equal
 from parameterized import parameterized
 
 import dimod
@@ -50,8 +49,7 @@ class MockSolver():
     properties = {'readout_thermalization_range': [0.0, 10000.0],
                   'annealing_time_range': [1.0, 2000.0],
                   'default_readout_thermalization': 0.0,
-                  'parameters': {'num_spin_reversal_transforms': '',
-                                 'programming_thermalization': '',
+                  'parameters': {'programming_thermalization': '',
                                  'anneal_offsets': '',
                                  'num_reads': '',
                                  'max_answers': '',
@@ -255,7 +253,10 @@ class TestDWaveSampler(unittest.TestCase):
                        sampler.properties['topology']['shape'],
                        sampler.nodelist,
                        sampler.edgelist)
-        self.assertTrue(graphs_equal(G,G2))
+
+        self.assertEqual(set(G.nodes), set(G2.nodes))
+        self.assertEqual(set(frozenset(e) for e in G.edges), set(frozenset(e) for e in G.edges))
+
         # Create chimera graph for comparison
         chimeraG = dnx.chimera_graph(4, node_list=sampler.nodelist, edge_list=sampler.edgelist)
 

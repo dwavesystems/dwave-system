@@ -15,8 +15,6 @@
 from numbers import Number
 from typing import Tuple
 
-import warnings 
-
 import dimod
 import networkx as nx
 import dwave_networkx as dnx
@@ -96,11 +94,6 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
             max_coupling_range = max(total_coupling_range.values())
 
             if (min_coupling_range < min_lim or max_coupling_range > max_lim):
-                warnings.warn(
-                    f'The {limit_name} is violated after scaling.'
-                    ' The problem is rescaled with respect to coupling range.'
-                    ' No variables, interactions, or offset are ignored.')
-
                 # scaling 
                 inv_scalar = max(min_coupling_range / min_lim, 
                                  max_coupling_range / max_lim)

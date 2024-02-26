@@ -44,6 +44,14 @@ class TestTimeLimit(unittest.TestCase):
                     ret.sampleset = time_limit
                     return ret
 
+                def upload_problem(self, *args, **kwargs):
+                    class MockResult:
+                        @staticmethod
+                        def result():
+                            return
+
+                    return MockResult
+
             return MockSolver()
 
     @unittest.mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client', MockClient)
@@ -59,6 +67,7 @@ class TestTimeLimit(unittest.TestCase):
         cqm.add_variables('INTEGER', 500)
         cqm.add_constraint([(0, 1, 1)], '==', 0)
 
-        new = dimod.ConstrainedQuadraticModel().from_file(cqm.to_file())
+        with cqm.to_file() as f:
+            new = dimod.ConstrainedQuadraticModel().from_file(f)
 
         self.assertEqual(sampler.sample_cqm(new), sampler.sample_cqm(cqm))

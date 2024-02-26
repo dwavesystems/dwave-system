@@ -17,6 +17,7 @@
 import os
 import json
 import networkx as nx
+import warnings
 
 __all__ = ['common_working_graph', 'classproperty']
 
@@ -49,17 +50,20 @@ def common_working_graph(graph0, graph1):
 
     Examples:
 
-        This example creates a graph that represents a quarter (4 by 4 Chimera tiles)
-        of a particular D-Wave system's working graph.
+        This example creates a graph that represents a part of a particular 
+        Advantage quantum computer's working graph.
 
         >>> import dwave_networkx as dnx
         >>> from dwave.system import DWaveSampler, common_working_graph
         ...
-        >>> sampler = DWaveSampler()
-        >>> C4 = dnx.chimera_graph(4)  # a 4x4 lattice of Chimera tiles
-        >>> c4_working_graph = common_working_graph(C4, sampler.adjacency)   
+        >>> sampler = DWaveSampler(solver={'topology__type': 'pegasus'})
+        >>> P3 = dnx.pegasus_graph(3)  
+        >>> p3_working_graph = common_working_graph(P3, sampler.adjacency)   
 
     """
+    warnings.warn("dwave.system.common_working_graph() is deprecated as of dwave-system 1.23.0 "
+                  "and will be removed in dwave-system 2.0. Use networkx.intersection() instead.",
+                  DeprecationWarning, stacklevel=2)
 
     G = nx.Graph()
     G.add_nodes_from(v for v in graph0 if v in graph1)

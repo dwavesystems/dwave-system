@@ -11,8 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#
-# ================================================================================================
+
 import os
 
 from setuptools import setup
@@ -25,14 +24,13 @@ os.chdir(setup_folder_loc)
 exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.12.0,<0.14.0',
-                    'dwave-cloud-client>=0.9.1,<0.11.0',
+install_requires = ['dimod>=0.12.7,<0.14.0',
+                    'dwave-cloud-client>=0.11.0,<0.13.0',
                     'dwave-networkx>=0.8.10',
                     'dwave-preprocessing>=0.5.0',
-                    'networkx>=2.0,<3.0',
                     'homebase>=1.0.0,<2.0.0',
                     'minorminer>=0.2.8,<0.3.0',
-                    'numpy>=1.20.0',
+                    'numpy>=1.21.6',   # minimum inherited from minorminer
                     'dwave-samplers>=1.0.0',
                     'scipy>=1.7.3',
                     ]
@@ -43,7 +41,7 @@ install_requires = ['dimod>=0.12.0,<0.14.0',
 extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
                   }
 
-python_requires = '>=3.7'
+python_requires = '>=3.8'
 
 packages = ['dwave',
             'dwave.embedding',
@@ -52,6 +50,18 @@ packages = ['dwave',
             'dwave.system.composites',
             'dwave.system.samplers',
             ]
+
+classifiers = [
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: OS Independent',
+    'Development Status :: 3 - Alpha',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
 
 setup(
     name='dwave-system',
@@ -71,5 +81,6 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=python_requires,
+    classifiers=classifiers,
     zip_safe=False
 )

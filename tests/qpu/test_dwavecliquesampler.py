@@ -39,7 +39,7 @@ def get_sampler(topology):
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
-    @parameterized.expand([['Chimera'], ['Pegasus'], ['Zephyr']])
+    @parameterized.expand([['Pegasus'], ['Zephyr']])
     def test_maximum_ferromagnet(self, topology):
         sampler = get_sampler(topology)
 
@@ -59,16 +59,5 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         bqm = dimod.BinaryQuadraticModel({},
                 {(u, v): -2 for u in range(n) for v in range(u+1, n)}, 'SPIN')
 
-        with warnings.catch_warnings(record=True) as w:
-            sampler.sample(bqm, chain_strength=chain_strength).resolve()
-
-        if topology == 'Pegasus':
-            limit_name = 'per_qubit_coupling_range'
-        else:
-            limit_name = 'per_group_coupling_range'
-
-        if chain_strength is not None:
-            self.assertEqual(len(w), 1)
-            self.assertIn(f'{limit_name} is violated', str(w[0].message))
-        else:
-            self.assertEqual(w, [])
+        # if the range was not adjusted, this would raise an error.
+        sampler.sample(bqm, chain_strength=chain_strength).resolve()

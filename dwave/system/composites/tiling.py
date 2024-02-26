@@ -17,10 +17,11 @@ A :ref:`dimod composite <oceandocs:samplers_index>` that tiles small problems
 multiple times to a structured sampler.
 
 The :class:`.TilingComposite` class takes a problem that can fit on a small
-:term:`Chimera` graph and replicates it across a larger Pegasus or
-Chimera graph to obtain samples from multiple areas of the solver in one call.
-For example, a 2x2 Chimera lattice could be tiled 64 times (8x8) on a
-fully-yielded D-Wave 2000Q system (16x16).
+:term:`Chimera` graph and replicates it across the larger working graph of
+a quantum processing unit (QPU) to obtain samples from multiple areas of 
+the QPU in one call.
+For example, a single Chimera unit cell could be tiled over 600 times on a
+fully-yielded Advantage system.
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
@@ -46,12 +47,6 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     graph of dimensions ``sub_m``, ``sub_n``, ``t``, or minor-embeddable to
     such a graph.
 
-    Notation *CN* refers to a Chimera graph consisting of an NxN grid of unit
-    cells, where each unit cell is a bipartite graph with shores of size t.
-    The D-Wave 2000Q QPU supports a C16 Chimera graph: its 2048 qubits are
-    logically mapped into a 16x16 matrix of unit cells of 8 qubits (t=4).
-    See also the :func:`dwave_networkx.chimera_graph` function.
-
     Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid
     of cells, where each unit cell is a bipartite graph with shore of size t,
     supplemented with odd couplers (see ``nice_coordinate`` definition in
@@ -61,10 +56,18 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     Chimera-structured problems, with an option of additional odd-couplers,
     onto Pegasus. See also the :func:`dwave_networkx.pegasus_graph` function.
 
+    Notation *CN* refers to a Chimera graph consisting of an NxN grid of unit
+    cells, where each unit cell is a bipartite graph with shores of size t.
+    (An earlier quantum computer, the D-Wave 2000Q, supported a C16 Chimera 
+    graph: its 2048 qubits were logically mapped into a 16x16 matrix of unit 
+    cells of 8 qubits (t=4). See also the :func:`dwave_networkx.chimera_graph` 
+    function.)
+
     A problem that can be minor-embedded in a single chimera unit cell, for
-    example, can therefore be tiled across the unit cells of a D-Wave 2000Q as
-    16x16 duplicates (or Advantage as 3x15x15 duplicates), subject to solver
-    yield. This enables up to 256 (625) parallel samples per read.
+    example, can therefore be tiled as 3x15x15 duplicates across an Advantage 
+    QPU (or, previously, over the unit cells of a D-Wave 2000Q as 16x16 
+    duplicates), subject to solver yield. This enables over 600 (256 for the 
+    D-Wave 2000Q) parallel samples per read.
 
     Args:
        sampler (:class:`dimod.Sampler`): Structured dimod sampler such as a
@@ -87,8 +90,7 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
        >>> from dwave.system import TilingComposite
        ...
-       >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
-       >>> sampler = EmbeddingComposite(TilingComposite(qpu_2000q, 1, 1, 4))
+       >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
        >>> Q = {(1, 1): -1, (1, 2): 2, (2, 1): 0, (2, 2): -1}
        >>> sampleset = sampler.sample_qubo(Q)
        >>> len(sampleset)> 1
@@ -281,11 +283,10 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
             >>> from dwave.system import DWaveSampler, EmbeddingComposite
             >>> from dwave.system import TilingComposite
             ...
-            >>> qpu_2000q = DWaveSampler(solver={'topology__type': 'chimera'})
-            >>> sampler = EmbeddingComposite(TilingComposite(qpu_2000q, 1, 1, 4))
-            >>> response = sampler.sample_ising({},{('a', 'b'): 1})
-            >>> len(response)    # doctest: +SKIP
-            246
+            >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
+            >>> sampleset = sampler.sample_ising({},{('a', 'b'): 1})
+            >>> len(sampleset) > 1    
+            True
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
         for explanations of technical terms in descriptions of Ocean tools.

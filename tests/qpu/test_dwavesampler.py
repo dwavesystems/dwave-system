@@ -112,10 +112,6 @@ class TestDWaveSampler(unittest.TestCase):
             sampler.sample_qubo(Q).resolve()
 
     def test_problem_labelling(self):
-        # NOTE: enable when problem labelling deployed to prod
-        if 'cloud' in self.qpu.client.endpoint:
-            self.skipTest("labels not supported in production")
-
         sampler = self.qpu
         h, J = self.nonzero_ising_problem(sampler)
         label = 'problem label'
