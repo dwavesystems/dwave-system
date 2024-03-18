@@ -34,10 +34,11 @@ import warnings
 import numpy as np
 import dimod
 from scipy import optimize
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
-           'freezeout_effective_temperature', 'fast_effective_temperature']
+           'freezeout_effective_temperature', 'fast_effective_temperature',
+           'Ip_in_units_of_B', 'h_to_fluxbias', 'fluxbias_to_h']
 
 def effective_field(bqm,
                     samples=None,
@@ -355,10 +356,12 @@ def maximum_pseudolikelihood_temperature(bqm=None,
     
     return T_estimate, T_bootstrap_estimates
 
-def Ip_in_units_of_B(Ip: Optional[float, np.ndarray]=None,
-                     B: Optional[float, np.ndarray]=1.391, MAFM: Optional[float]=6.4,
+def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
+                     B: Union[None, float, np.ndarray]=1.391,
+                     MAFM: Optional[float]=6.4,
                      units_Ip: Optional[str]='uA',
-                     units_B : str='GHz', units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
+                     units_B : str='GHz',
+                     units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
     """Estimates Ip(s) with units matching B(s) (the standard Transverse Field Ising Model schedule)
 
     Args:
@@ -369,11 +372,11 @@ def Ip_in_units_of_B(Ip: Optional[float, np.ndarray]=None,
         B:
             :math:`B(s)`, the annealing schedule field associated to the 
             problem Hamiltonian. See QPU documentation and device specific
-            characteristics.
+            characteristics. The B value is ignored when Ip is specified.
         
         MAFM:
             The Mutual inductance, see QPU documentation and device specific
-            characteristics.
+            characteristics. MAFM is ignored when Ip is specified.
 
         units_Ip:
             Units in which the persistent current is specified. Allowed values:
@@ -419,7 +422,7 @@ def Ip_in_units_of_B(Ip: Optional[float, np.ndarray]=None,
         B = B*B_multiplier # To Joules
         if units_MAFM == 'pH':
             MAFM = MAFM*1e-12  # D-Wave convention
-        elif units_MAFM = 'H':
+        elif units_MAFM == 'H':
             pass
         else:
             raise ValueError('MAFM must be in pH or H, ' 
@@ -441,7 +444,8 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
                   Ip: Optional[float]=None,
                   B: float=1.391, MAFM: Optional[float]=6.4,
                   units_Ip: Optional[str]='uA',
-                  units_B : str='GHz', units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
+                  units_B : str='GHz',
+                  units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
     """Converts problem Hamiltonian unitless fields h to equivalent flux biases (units Phi0)
 
     Args:
@@ -480,7 +484,8 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
     Defaults are based on the published physical properties of the  
     Advantage_system4.1 solver at single-qubit freezeout (s=0.612).
     """
-    Ip = Ip_in_units_of_B(Ip, B, MAFM, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
+    Ip = Ip_in_units_of_B(Ip, B, MAFM,
+                          units_Ip, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
     # B(s)/2 h_i = Ip(s) phi_i 
     return B/2/Ip*h
 
@@ -531,7 +536,8 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
     Advantage_system4.1 solver at single-qubit freezeout (s=0.612).
     
     """
-    Ip = Ip_in_units_of_B(Ip, B, MAFM, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
+    Ip = Ip_in_units_of_B(Ip, B, MAFM,
+                          units_Ip, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
     # B(s)/2 h_i = Ip(s) phi_i 
     return 2*Ip/B*fluxbias
 
