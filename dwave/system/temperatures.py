@@ -34,10 +34,11 @@ import warnings
 import numpy as np
 import dimod
 from scipy import optimize
-from typing import Tuple
+from typing import Tuple, Union, Optional, Literal
 
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
-           'freezeout_effective_temperature', 'fast_effective_temperature']
+           'freezeout_effective_temperature', 'fast_effective_temperature',
+           'Ip_in_units_of_B', 'h_to_fluxbias', 'fluxbias_to_h']
 
 def effective_field(bqm,
                     samples=None,
@@ -355,6 +356,192 @@ def maximum_pseudolikelihood_temperature(bqm=None,
     
     return T_estimate, T_bootstrap_estimates
 
+def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
+                     B: Union[None, float, np.ndarray]=1.391,
+                     MAFM: Optional[float]=1.647,
+                     units_Ip: Optional[str]='uA',
+                     units_B: Literal['GHz', 'J'] = 'GHz',
+                     units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
+    """Estimates Ip(s) with units matching B(s) (the standard Transverse Field Ising Model schedule)
+
+    Args:
+        Ip:
+             :math:`I_p(s)`, the persistent current.
+             When not provided, this is inferred from MAFM and and B(s).
+    
+        B:
+            :math:`B(s)`, the annealing schedule field associated to the 
+            problem Hamiltonian. See QPU documentation and device specific
+            characteristics. The B value is ignored when Ip is specified.
+        
+        MAFM:
+            The Mutual inductance, see QPU documentation and device specific
+            characteristics. MAFM is ignored when Ip is specified.
+
+        units_Ip:
+            Units in which the persistent current is specified. Allowed values:
+            'uA' (Micro-Amps) and 'A' (Amps)
+
+        units_B:
+            Units in which the schedule is specified. Allowed values:
+            'GHz' (Giga-Hertz) and 'J' (Joules).
+
+        units_MAFM:
+            Units in which the mutual inductance is specified. Allowed values:
+            'pH' (Pico-Henry) and 'H' (Henry).
+
+    
+    Returns:
+        Ip(s) with units matching the Hamiltonian B(s)
+    
+    Assume a Hamiltonian in our documented form with an additional flux_bias dependent component
+    H(s) -> H(s) - H_F(s) sum_i phi_i sigma^z_i,
+    phi_i are flux_biases (in units of Phi_0), sigma^z_i is the Pauli-z operator,
+    and H_F(s) = Ip(s) Phi_0. Standard documentation presents the schedules in J or GHz
+
+    Ip(s) can be provided in units of amps or micro-amps,
+    or inferred from B(s) and MAFM (documented per solver) as follows:
+        B(s) = 2 MAFM Ip(s)^2. B(s) is the standard schedule.
+        
+    Under a simple noiseless freeze-out model, flux_biases can substitute for programmed h.
+    h perturbations are however not equivalent to flux perturbations with respect to 
+    dynamics because s dependence is different Ip(s) ~ sqrt(B(s)). The physical origin
+    of each term is different, and hence the precision and noise models also differ.
+    """
+    h = 6.62607e-34  # Js
+    Phi0 = 2.0678e-15  # (h/e) Weber=J/A
+    
+    if units_B == 'GHz':
+        B_multiplier = 1e9*h  # D-Wave convention
+    elif units_B == 'J':
+        B_multiplier = 1
+    else:
+        raise ValueError('B (the schedule) must be in GHz or J, ' 
+                         f'but your units are {units_B}')
+    if Ip is None:
+        B = B*B_multiplier # To Joules
+        if units_MAFM == 'pH':
+            MAFM = MAFM*1e-12  # D-Wave convention
+        elif units_MAFM == 'H':
+            pass
+        else:
+            raise ValueError('MAFM must be in pH or H, ' 
+                             f'but your units are {units_MAFM}')
+        Ip = np.sqrt(B/(2*MAFM))  # Units of A = C/s, O(1e-6) 
+    else:
+        if units_Ip == 'uA':
+            Ip = Ip*1e-6  # D-Wave convention
+        elif units_Ip == 'A':
+            pass
+        else:
+            raise ValueError('Ip must be in uA or A, ' 
+                             f'but your units are {units_Ip}')
+
+    return Ip*Phi0/B_multiplier
+
+
+def h_to_fluxbias(h: Union[float, np.ndarray]=1,
+                  Ip: Optional[float]=None,
+                  B: float=1.391, MAFM: Optional[float]=1.647,
+                  units_Ip: Optional[str]='uA',
+                  units_B : str='GHz',
+                  units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
+    """Converts problem Hamiltonian unitless fields h to equivalent flux biases (units Phi0)
+
+    Args:
+        Ip:
+             :math:`I_p(s)`, the persistent current.
+             When not provided, this is inferred from MAFM and and B(s).
+    
+        B:
+            :math:`B(s)`, the annealing schedule field associated to the 
+            problem Hamiltonian. See QPU documentation and device specific
+            characteristics.
+        
+        MAFM:
+            The Mutual inductance, see QPU documentation and device specific
+            characteristics.
+
+        units_Ip:
+            Units in which the persistent current is specified. Allowed values:
+            'uA' (Micro-Amps) and 'A' (Amps)
+
+        units_B:
+            Units in which the schedule is specified. Allowed values:
+            'GHz' (Giga-Hertz) and 'J' (Joules).
+
+        units_MAFM:
+            Units in which the mutual inductance is specified. Allowed values:
+            'pH' (Pico-Henry) and 'H' (Henry).
+
+    
+    Returns:
+        h values producing equivalent longitudinal fields to the fluxbiases
+    
+    Note that dynamics of h and fluxbias differ, see Ip_in_units_of_B.
+    Equivalence at a specific point in the anneal is valid under a 
+    freeze-out (quasi-static) hypothesis.
+    Defaults are based on the published physical properties of the  
+    Advantage_system4.1 solver at single-qubit freezeout (s=0.612).
+    """
+    Ip = Ip_in_units_of_B(Ip, B, MAFM,
+                          units_Ip, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
+    # B(s)/2 h_i = Ip(s) phi_i 
+    return B/2/Ip*h
+
+def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
+                  Ip: Optional[float]=None,
+                  B: float=1.391, MAFM: Optional[float]=1.647, 
+                  units_Ip: Optional[str]='uA',
+                  units_B : str='GHz', units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
+    """Converts flux biases (units Phi0) to equivalent problem Hamiltonian unitless fields
+
+    Args:
+        fluxbias: 
+             A fluxbias in units of Phi0.
+
+        Ip:
+             :math:`I_p(s)`, the persistent current.
+             When not provided, this is inferred from MAFM and and B(s).
+    
+        B:
+            :math:`B(s)`, the annealing schedule field associated to the 
+            problem Hamiltonian. See QPU documentation and device specific
+            characteristics.
+        
+        MAFM:
+            The Mutual inductance, see QPU documentation and device specific
+            characteristics.
+
+        units_Ip:
+            Units in which the persistent current is specified. Allowed values:
+            'uA' (Micro-Amps) and 'A' (Amps)
+
+        units_B:
+            Units in which the schedule is specified. Allowed values:
+            'GHz' (Giga-Hertz) and 'J' (Joules).
+
+        units_MAFM:
+            Units in which the mutual inductance is specified. Allowed values:
+            'pH' (Pico-Henry) and 'H' (Henry).
+
+    
+    Returns:
+        flux_biases values producing equivalent longitudinal fields to h
+    
+    Note that dynamics of h and fluxbias differ, see Ip_in_units_of_B.
+    Equivalence at a specific point in the anneal is valid under a 
+    freeze-out (quasi-static) hypothesis.
+    Defaults are based on the published physical properties of the  
+    Advantage_system4.1 solver at single-qubit freezeout (s=0.612).
+    
+    """
+    Ip = Ip_in_units_of_B(Ip, B, MAFM,
+                          units_Ip, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
+    # B(s)/2 h_i = Ip(s) phi_i 
+    return 2*Ip/B*fluxbias
+
+
 def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK') -> float:
     '''Provides an effective temperature as a function of freezeout information.
     
@@ -441,7 +628,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     
     #Convert units_B to Joules
     if units_B == 'GHz':
-        h = 6.626068e-34 #J/Hz
+        h = 6.62607e-34 #J/Hz
         freezeout_B = freezeout_B *h
         freezeout_B *= 1e9
     elif units_B == 'J':
