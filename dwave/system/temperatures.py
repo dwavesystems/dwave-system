@@ -360,7 +360,7 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
                      B: Union[None, float, np.ndarray]=1.391,
                      MAFM: Optional[float]=6.4,
                      units_Ip: Optional[str]='uA',
-                     units_B : str='GHz',
+                     units_B: typing.Literal['GHz', 'J'] = 'GHz',
                      units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
     """Estimates Ip(s) with units matching B(s) (the standard Transverse Field Ising Model schedule)
 
