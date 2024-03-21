@@ -34,7 +34,7 @@ import warnings
 import numpy as np
 import dimod
 from scipy import optimize
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, Literal
 
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature',
@@ -358,9 +358,9 @@ def maximum_pseudolikelihood_temperature(bqm=None,
 
 def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
                      B: Union[None, float, np.ndarray]=1.391,
-                     MAFM: Optional[float]=6.4,
+                     MAFM: Optional[float]=1.647,
                      units_Ip: Optional[str]='uA',
-                     units_B: typing.Literal['GHz', 'J'] = 'GHz',
+                     units_B: Literal['GHz', 'J'] = 'GHz',
                      units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
     """Estimates Ip(s) with units matching B(s) (the standard Transverse Field Ising Model schedule)
 
@@ -442,7 +442,7 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
 
 def h_to_fluxbias(h: Union[float, np.ndarray]=1,
                   Ip: Optional[float]=None,
-                  B: float=1.391, MAFM: Optional[float]=6.4,
+                  B: float=1.391, MAFM: Optional[float]=1.647,
                   units_Ip: Optional[str]='uA',
                   units_B : str='GHz',
                   units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
@@ -476,7 +476,7 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
 
     
     Returns:
-        Ip(s) with units matching the Hamiltonian B(s).
+        h values producing equivalent longitudinal fields to the fluxbiases
     
     Note that dynamics of h and fluxbias differ, see Ip_in_units_of_B.
     Equivalence at a specific point in the anneal is valid under a 
@@ -491,7 +491,7 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
 
 def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
                   Ip: Optional[float]=None,
-                  B: float=1.391, MAFM: Optional[float]=6.4, 
+                  B: float=1.391, MAFM: Optional[float]=1.647, 
                   units_Ip: Optional[str]='uA',
                   units_B : str='GHz', units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
     """Converts flux biases (units Phi0) to equivalent problem Hamiltonian unitless fields
@@ -527,7 +527,7 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
 
     
     Returns:
-        An equivalent unitless h value.
+        flux_biases values producing equivalent longitudinal fields to h
     
     Note that dynamics of h and fluxbias differ, see Ip_in_units_of_B.
     Equivalence at a specific point in the anneal is valid under a 
