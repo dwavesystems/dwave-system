@@ -397,7 +397,7 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
     Assume a Hamiltonian in our documented form with an additional flux_bias dependent component
     H(s) -> H(s) - H_F(s) sum_i phi_i sigma^z_i,
     phi_i are flux_biases (in units of Phi_0), sigma^z_i is the Pauli-z operator,
-    and H_F(s) = Ip(s) Phi_0. Standard documentation presents the schedules in Joules or GHz
+    and H_F(s) = Ip(s) Phi_0. Standard documentation presents the schedules in J or GHz
 
     Ip(s) can be provided in units of amps or micro-amps,
     or inferred from B(s) and MAFM (documented per solver) as follows:
@@ -413,10 +413,10 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
     
     if units_B == 'GHz':
         B_multiplier = 1e9*h  # D-Wave convention
-    elif units_B == 'Joules':
+    elif units_B == 'J':
         B_multiplier = 1
     else:
-        raise ValueError('B (the schedule) must be in GHz or Joules, ' 
+        raise ValueError('B (the schedule) must be in GHz or J, ' 
                          f'but your units are {units_B}')
     if Ip is None:
         B = B*B_multiplier # To Joules
