@@ -29,7 +29,7 @@ from dwave.system.testing import MockDWaveSampler
 
 class TestTemperatures(unittest.TestCase):
     def test_Ip_in_units_of_B(self):
-        uBs = ['Joules', 'GHz']
+        uBs = ['J', 'GHz']
         uIps = ['A', 'uA']
         uMAFMs = ['H', 'pH']
         for uIp, uB, uMAFM in product(uIps, uBs, uMAFMs):
