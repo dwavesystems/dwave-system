@@ -20,8 +20,9 @@ Utilities
 
    coupling_groups
 
-Temperature Utilities
----------------------
+
+Temperature and Unit Conversion Utilities
+-----------------------------------------
 
 .. automodule:: dwave.system.temperatures
 
@@ -34,3 +35,6 @@ Temperature Utilities
    maximum_pseudolikelihood_temperature
    freezeout_effective_temperature
    fast_effective_temperature
+   Ip_in_units_of_B
+   h_to_fluxbias
+   fluxbias_to_h

@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""The following effective temperature estimators are provided:
+"""The following effective temperature and bias estimators are provided:
 
 - Maximum pseudo-likelihood is an efficient estimator for the temperature 
   describing a classical Boltzmann distribution P(x) = \exp(-H(x)/T)/Z(T) 
@@ -28,6 +28,11 @@
   Necessary device-specific properties are published for online solvers:
   https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
 
+- The biases (h) equivalent to application of flux_bias, or vice-versa,
+  can be inferred as a function of the anneal progress s=t/t_a by
+  device-specific unit conversion. The necessary parameters for estimation
+  [Mafm, B(s)] are published for online solvers:
+  https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
 """ 
 
 import warnings
