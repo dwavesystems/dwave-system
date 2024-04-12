@@ -21,7 +21,7 @@ Utilities
    coupling_groups
 
 
-Temperature and Unit Conversion Utilities
+Temperature and Unit-Conversion Utilities
 -----------------------------------------
 
 .. automodule:: dwave.system.temperatures
@@ -32,9 +32,9 @@ Temperature and Unit Conversion Utilities
    :toctree: generated/
 
    effective_field
-   maximum_pseudolikelihood_temperature
-   freezeout_effective_temperature
    fast_effective_temperature
-   Ip_in_units_of_B
-   h_to_fluxbias
    fluxbias_to_h
+   freezeout_effective_temperature
+   h_to_fluxbias
+   Ip_in_units_of_B
+   maximum_pseudolikelihood_temperature

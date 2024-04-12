@@ -28,7 +28,7 @@
   Necessary device-specific properties are published for online solvers:
   https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
 
-- The biases (h) equivalent to application of flux_bias, or vice-versa,
+- The biases (h) equivalent to application of flux bias, or vice-versa,
   can be inferred as a function of the anneal progress s=t/t_a by
   device-specific unit conversion. The necessary parameters for estimation
   [Mafm, B(s)] are published for online solvers:
