@@ -15,16 +15,38 @@
 import unittest
 import numpy as np
 import dimod
+from itertools import product
 
 from dwave.system.temperatures import (maximum_pseudolikelihood_temperature,
                                        effective_field,
                                        freezeout_effective_temperature,
-                                       fast_effective_temperature)
+                                       fast_effective_temperature,
+                                       Ip_in_units_of_B,
+                                       h_to_fluxbias,
+                                       fluxbias_to_h)
 
 from dwave.system.testing import MockDWaveSampler
 
 class TestTemperatures(unittest.TestCase):
-    
+    def test_Ip_in_units_of_B(self):
+        uBs = ['J', 'GHz']
+        uIps = ['A', 'uA']
+        uMAFMs = ['H', 'pH']
+        for uIp, uB, uMAFM in product(uIps, uBs, uMAFMs):
+            _ = Ip_in_units_of_B(units_Ip=uIp,
+                                 units_B=uB,
+                                 units_MAFM=uMAFM)
+
+    def test_fluxbias_h(self):
+        phi = np.random.random()
+        h = fluxbias_to_h(phi)
+        phi2 = h_to_fluxbias(h)
+        self.assertLess(abs(phi-phi2), 1e-15)
+        phi = np.random.random(10)
+        h = fluxbias_to_h(phi)
+        phi2 = h_to_fluxbias(h)
+        self.assertTrue(np.all(np.abs(phi-phi2) < 1e-15))
+
     def test_effective_field(self):
         # For a simple model of independent spins H = sum_i s_i
         # The effective field is 1 (setting a spin to 1, costs 1 unit of energy,
