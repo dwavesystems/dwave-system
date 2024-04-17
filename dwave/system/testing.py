@@ -14,6 +14,7 @@
 
 import concurrent.futures
 import warnings
+import weakref
 from uuid import uuid4
 
 import numpy as np
@@ -453,5 +454,14 @@ class MockLeapHybridSolver:
         result = sampler.sample(bqm, timeout=1000*int(time_limit))
         result = sampler.sample(bqm, timeout=1000*int(time_limit))
         future = dwave.cloud.computation.Future('fake_solver', None)
+
+        # Note: dwave-cloud-client>=0.11.3 does not keep a strong ref to sampleset,
+        # but we can keep it here for tests to work with older versions of the client
+        # TODO: remove 'sampleset' from _result when we start requiring 0.11.3+
         future._result = {'sampleset': result, 'problem_type': 'bqm'}
+        if hasattr(future, '_sampleset'):
+            # _sampleset is a weakref in 0.11.3+, but a resolved sampleset prior to 0.11.3
+            # (also it's not set until .sampleset property is accessed)
+            future._sampleset = weakref.ref(result)
+
         return future
