@@ -194,7 +194,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
 
 
 class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
-    """Composite that reverse anneals from multiple initial samples. Each submission is independent
+    r"""Composite that reverse anneals from multiple initial samples. Each submission is independent
     from one another.
 
     Args:
@@ -244,7 +244,7 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
 
     def sample(self, bqm, initial_states=None, initial_states_generator='random', num_reads=None, 
                seed=None, **parameters):
-        """Sample the binary quadratic model using reverse annealing from multiple initial states.
+        r"""Sample the binary quadratic model using reverse annealing from multiple initial states.
 
         Args:
             bqm (:obj:`dimod.BinaryQuadraticModel`):
@@ -252,30 +252,30 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
 
             initial_states (samples-like, optional, default=None):
                 One or more samples, each defining an initial state for all the problem variables. 
-                If fewer than `num_reads` initial states are defined, additional values are 
-                generated as specified by `initial_states_generator`. See :func:`dimod.as_samples` 
+                If fewer than ``num_reads`` initial states are defined, additional values are 
+                generated as specified by ``initial_states_generator``. See :func:`dimod.as_samples` 
                 for a description of "samples-like".
 
             initial_states_generator ({'none', 'tile', 'random'}, optional, default='random'):
                 Defines the expansion of `initial_states` if fewer than
-                `num_reads` are specified:
+                ``num_reads`` are specified:
 
                 * "none":
                     If the number of initial states specified is smaller than
-                    `num_reads`, raises ValueError.
+                    ``num_reads``, raises ValueError.
 
                 * "tile":
-                    Reuses the specified initial states if fewer than `num_reads`
+                    Reuses the specified initial states if fewer than ``num_reads``
                     or truncates if greater.
 
                 * "random":
                     Expands the specified initial states with randomly generated
-                    states if fewer than `num_reads` or truncates if greater.
+                    states if fewer than ``num_reads`` or truncates if greater.
 
             num_reads (int, optional, default=len(initial_states) or 1):
                 Equivalent to number of desired initial states. If greater than the number of 
                 provided initial states, additional states will be generated. If not provided, 
-                it is selected to match the length of `initial_states`. If `initial_states` 
+                it is selected to match the length of ``initial_states``. If ``initial_states`` 
                 is not provided, `num_reads` defaults to 1.
 
             seed (int (32-bit unsigned integer), optional):
