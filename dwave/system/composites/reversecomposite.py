@@ -327,12 +327,6 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
         if 'answer_mode' in child.parameters:
             parameters['answer_mode'] = 'histogram'
 
-        # reduce number of network calls if possible by aggregating init states
-        if 'num_reads' in child.parameters:
-            aggreg = parsed.initial_states.aggregate()
-            parsed_initial_states = np.ascontiguousarray(aggreg.record.sample)
-            parameters['num_reads'] = aggreg.record.num_occurrences
-
         samplesets = None
         
         for initial_state in parsed_initial_states:
