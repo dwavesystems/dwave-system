@@ -861,7 +861,7 @@ class LeapHybridNLSampler:
 
     @classproperty
     def default_solver(cls) -> Dict[str, str]:
-        """Features used to select the latest accessible hybrid CQM solver."""
+        """Features used to select the latest accessible hybrid nonlinear-model solver."""
         return dict(supported_problem_types__contains='nl',
                     order_by='-properties.version')
 
@@ -911,12 +911,14 @@ class LeapHybridNLSampler:
                 Nonlinear model.
 
             time_limit (float, optional):
-                Maximum run time, in seconds, to allow the solver to work on the
-                problem. Must be at least the minimum required for the problem,
-                which is calculated and set by default.
+                Maximum runtime, in seconds, the solver should work on the
+                problem. Should be at least the estimated minimum required for the 
+                problem, which is calculated and set by default.
 
                 :meth:`~dwave.system.samplers.LeapHybridNLMSampler.estimated_min_time_limit`
-                estimates (and describes) the minimum time for your problem.
+                estimates the minimum time for your problem.  For ``time_limit `` values shorter 
+                than the estimated minimum, runtime (and charge time) is not guaranteed to be 
+                shorter than the estimated time
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
@@ -962,7 +964,10 @@ class LeapHybridNLSampler:
         return result
 
     def estimated_min_time_limit(self, nlm: dwave.optimization.Model) -> float:
-        """Return the minimum `time_limit`, in seconds, accepted for the given problem."""
+        """Return the minimum `time_limit`, in seconds, estimated for the given problem.
+        
+         Runtime (and charge time) is not guaranteed to be shorter than this minimum time.
+        """
 
         num_nodes_multiplier = self.properties.get('num_nodes_multiplier', 8.306792043756981e-05)
         state_size_multiplier = self.properties.get('state_size_multiplier', 2.8379674360396316e-10)
