@@ -16,16 +16,17 @@
 A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's hybrid solvers.
 """
 
-from typing import Any, Dict, List, Optional
-
-import numpy as np
-from warnings import warn
-from numbers import Number
+import concurrent.futures
+import warnings
 from collections import abc
+from numbers import Number
+from typing import Any, Dict, List, NamedTuple, Optional
 
 import dimod
-
+import dwave.optimization
+import numpy
 from dwave.cloud import Client
+
 from dwave.system.utilities import classproperty, FeatureFlags
 
 
@@ -33,13 +34,14 @@ __all__ = ['LeapHybridSampler',
            'LeapHybridBQMSampler',
            'LeapHybridDQMSampler',
            'LeapHybridCQMSampler',
+           'LeapHybridNLSampler',
            ]
 
 
 class LeapHybridSampler(dimod.Sampler):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
-    Leap’s quantum-classical hybrid BQM solvers are intended to solve arbitrary
+    Leap's quantum-classical hybrid BQM solvers are intended to solve arbitrary
     application problems formulated as binary quadratic models (BQM).
 
     You can configure your :term:`solver` selection and usage by setting parameters,
@@ -273,7 +275,7 @@ class LeapHybridSampler(dimod.Sampler):
         """
 
         xx, yy = zip(*self.properties["minimum_time_limit"])
-        return np.interp([bqm.num_variables], xx, yy)[0]
+        return numpy.interp([bqm.num_variables], xx, yy)[0]
 
 LeapHybridBQMSampler = LeapHybridSampler
 
@@ -281,7 +283,7 @@ LeapHybridBQMSampler = LeapHybridSampler
 class LeapHybridDQMSampler:
     """A class for using Leap's cloud-based hybrid DQM solvers.
 
-    Leap’s quantum-classical hybrid DQM solvers are intended to solve arbitrary
+    Leap's quantum-classical hybrid DQM solvers are intended to solve arbitrary
     application problems formulated as **discrete** quadratic models (DQM).
 
     You can configure your :term:`solver` selection and usage by setting parameters,
@@ -474,11 +476,11 @@ class LeapHybridDQMSampler:
         # (and internal) file-like object for now
 
         if compressed is not None:
-            warn(
+            warnings.warn(
                 "Argument 'compressed' is deprecated and in future will raise an "
                 "exception; please use 'compress' instead.",
                 DeprecationWarning, stacklevel=2
-                )
+            )
             compress = compressed or compress
 
         with dqm.to_file(compress=compress, ignore_labels=True) as f:
@@ -522,15 +524,15 @@ class LeapHybridDQMSampler:
         """
         ec = (dqm.num_variable_interactions() * dqm.num_cases() /
               max(dqm.num_variables(), 1))
-        limits = np.array(self.properties['minimum_time_limit'])
-        t = np.interp(ec, limits[:, 0], limits[:, 1])
+        limits = numpy.array(self.properties['minimum_time_limit'])
+        t = numpy.interp(ec, limits[:, 0], limits[:, 1])
         return max([5, t])
 
 
 class LeapHybridCQMSampler:
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
-    Leap’s quantum-classical hybrid CQM solvers are intended to solve
+    Leap's quantum-classical hybrid CQM solvers are intended to solve
     application problems formulated as
     :ref:`constrained quadratic models (CQM) <cqm_sdk>`.
 
@@ -781,3 +783,200 @@ class LeapHybridCQMSampler:
             num_constraints_multiplier * num_variables * num_constraints,
             minimum_time_limit
             )
+
+
+class LeapHybridNLSampler:
+    r"""A class for using Leap's cloud-based hybrid nonlinear-model solvers.
+
+    Leap's quantum-classical hybrid nonlinear-model solvers are intended to
+    solve application problems formulated as
+    :ref:`nonlinear models <nl_model_sdk>`.
+
+    You can configure your :term:`solver` selection and usage by setting
+    parameters, hierarchically, in a configuration file, as environment
+    variables, or explicitly as input arguments, as described in
+    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
+
+    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you
+    have access to by
+    `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
+    ``category=hybrid`` and ``supported_problem_type=nl``. By default, online
+    hybrid nonlinear-model solvers are returned ordered by latest ``version``.
+
+    Args:
+        **config:
+            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+
+    Examples:
+        This example submits a model for a
+        :class:`flow-shop-scheduling <dwave.optimization.generators.flow_shop_scheduling>`
+        problem.
+
+        >>> from dwave.optimization.generators import flow_shop_scheduling
+        >>> from dwave.system import LeapHybridNLSampler
+        ...
+        >>> sampler = LeapHybridNLSampler()     # doctest: +SKIP
+        ...
+        >>> processing_times = [[10, 5, 7], [20, 10, 15]]
+        >>> model = flow_shop_scheduling(processing_times=processing_times)
+        >>> results = sampler.sample(model, label="Small FSS problem")    # doctest: +SKIP
+        >>> job_order = next(model.iter_decisions())  # doctest: +SKIP
+        >>> print(f"State 0 of {model.objective.state_size()} has an "\   # doctest: +SKIP
+        ... f"objective value {model.objective.state(0)} for order " \    # doctest: +SKIP
+        ... f"{job_order.state(0)}.")     # doctest: +SKIP
+        State 0 of 8 has an objective value 50.0 for order [1. 2. 0.].
+    """
+
+    def __init__(self, **config):
+        # strongly prefer hybrid solvers; requires kwarg-level override
+        config.setdefault('client', 'hybrid')
+
+        # default to short-lived session to prevent resets on slow uploads
+        config.setdefault('connection_close', True)
+
+        if FeatureFlags.hss_solver_config_override:
+            # use legacy behavior (override solver config from env/file)
+            solver = config.setdefault('solver', {})
+            if isinstance(solver, abc.Mapping):
+                solver.update(self.default_solver)
+
+        # prefer the latest hybrid NL solver available, but allow for an easy
+        # override on any config level above the defaults (file/env/kwarg)
+        defaults = config.setdefault('defaults', {})
+        if not isinstance(defaults, abc.Mapping):
+            raise TypeError("mapping expected for 'defaults'")
+        defaults.update(solver=self.default_solver)
+
+        self.client = Client.from_config(**config)
+        self.solver = self.client.get_solver()
+
+        # For explicitly named solvers:
+        if self.properties.get('category') != 'hybrid':
+            raise ValueError("selected solver is not a hybrid solver.")
+        if 'nl' not in self.solver.supported_problem_types:
+            raise ValueError("selected solver does not support the 'nl' problem type.")
+
+        self._executor = concurrent.futures.ThreadPoolExecutor()
+
+    @classproperty
+    def default_solver(cls) -> Dict[str, str]:
+        """Features used to select the latest accessible hybrid CQM solver."""
+        return dict(supported_problem_types__contains='nl',
+                    order_by='-properties.version')
+
+    @property
+    def properties(self) -> Dict[str, Any]:
+        """Solver properties as returned by a SAPI query.
+
+        `Solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
+        are dependent on the selected solver and subject to change.
+        """
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
+
+    @property
+    def parameters(self) -> Dict[str, List[str]]:
+        """Solver parameters in the form of a dict, where keys
+        are keyword parameters accepted by a SAPI query and values are lists of
+        properties in :attr:`~dwave.system.samplers.LeapHybridNLSampler.properties`
+        for each key.
+
+        `Solver parameters <https://docs.dwavesys.com/docs/latest/c_solver_parameters.html>`_
+        are dependent on the selected solver and subject to change.
+        """
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            parameters.update(label=[])
+            self._parameters = parameters
+            return parameters
+
+    class SampleResult(NamedTuple):
+        model: dwave.optimization.Model
+        timing: dict
+
+    def sample(self, model: dwave.optimization.Model,
+               time_limit: Optional[float] = None, **kwargs
+               ) -> 'concurrent.futures.Future[SampleResult]':
+        """Sample from the specified nonlinear model.
+
+        Args:
+            model (:class:`~dwave.optimization.Model`):
+                Nonlinear model.
+
+            time_limit (float, optional):
+                Maximum run time, in seconds, to allow the solver to work on the
+                problem. Must be at least the minimum required for the problem,
+                which is calculated and set by default.
+
+                :meth:`~dwave.system.samplers.LeapHybridNLMSampler.estimated_min_time_limit`
+                estimates (and describes) the minimum time for your problem.
+
+            **kwargs:
+                Optional keyword arguments for the solver, specified in
+                :attr:`~dwave.system.samplers.LeapHybridNLMSampler.parameters`.
+
+        Returns:
+            :class:`concurrent.futures.Future`[SampleResult]:
+                Named tuple containing nonlinear model and timing info, in a Future.
+        """
+
+        if not isinstance(model, dwave.optimization.Model):
+            raise TypeError("first argument 'model' must be a dwave.optimization.Model, "
+                            f"received {type(model).__name__}")
+
+        if time_limit is None:
+            time_limit = self.estimated_min_time_limit(model)
+
+        num_states = len(model.states)
+        max_num_states = min(
+            self.solver.properties.get("maximum_number_of_states", num_states),
+            num_states
+        )
+        problem_data_id = self.solver.upload_nlm(model, max_num_states=max_num_states).result()
+
+        future = self.solver.sample_nlm(problem_data_id, time_limit=time_limit, **kwargs)
+
+        def hook(model, future):
+            # TODO: known dwave-optimization bug, don't check header for now
+            model.states.from_file(future.answer_data, check_header=False)
+
+        model.states.from_future(future, hook)
+
+        def collect():
+            timing = future.timing
+            for msg in timing.get('warnings', []):
+                # note: no point using stacklevel, as this is a different thread
+                warnings.warn(msg, category=UserWarning)
+
+            return LeapHybridNLSampler.SampleResult(model, timing)
+
+        result = self._executor.submit(collect)
+
+        return result
+
+    def estimated_min_time_limit(self, nlm: dwave.optimization.Model) -> float:
+        """Return the minimum `time_limit`, in seconds, accepted for the given problem."""
+
+        num_nodes_multiplier = self.properties.get('num_nodes_multiplier', 8.306792043756981e-05)
+        state_size_multiplier = self.properties.get('state_size_multiplier', 2.8379674360396316e-10)
+        num_nodes_state_size_multiplier = self.properties.get('num_nodes_state_size_multiplier', 2.1097317822863966e-12)
+        offset = self.properties.get('offset', 0.012671678446550175)
+        min_time_limit = self.properties.get('min_time_limit', 5)
+
+        nn = nlm.num_nodes()
+        ss = nlm.state_size()
+
+        return max(
+            num_nodes_multiplier * nn
+            + state_size_multiplier * ss
+            + num_nodes_state_size_multiplier * nn * ss
+            + offset,
+            min_time_limit
+        )
