@@ -217,6 +217,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'readout_thermalization': ['parameters'],
             'reduce_intersample_correlation': ['parameters'],
             'reinitialize_state': ['parameters'],
+            'fast_anneal': ['parameters'],
             'warnings': [],
             'label': [],
         }
@@ -267,8 +268,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 'reduce_intersample_correlation':
                 'Addition of pauses between samples, as a boolean flag.',
                 'reinitialize_state':
-                'Reapplication of the initial_state for every read in reverse '
-                'annealing, as a boolean flag.'},
+                'Reapplication of the initial_state for every read in reverse ',
+                'annealing, as a boolean flag.'
+                'fast_anneal': 
+                'Activation of the fast-anneal protocol, as a boolean flag.'},
             'vfyc': False,
             'anneal_offset_step': -0.0001500217998314891,
             'anneal_offset_step_phi0': 1.4303846404537006e-05,
@@ -277,6 +280,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'default_programming_thermalization': 1000.0,
             'default_readout_thermalization': 0.0,
             'extended_j_range': [-2.0, 1.0],
+            'fast_anneal_time_range': [0.005, 83000.0],
             'h_gain_schedule_range': [-3.0, 3.0],
             'max_anneal_schedule_points': 12,
             'max_h_gain_schedule_points': 20,
