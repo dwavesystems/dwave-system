@@ -128,7 +128,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                Ignored since 1.16.0. See note for ``failover`` parameter above.
 
         **config:
-            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Note:
         Prior to version 1.0.0, :class:`.DWaveSampler` used the ``base`` client,
