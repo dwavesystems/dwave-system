@@ -104,7 +104,8 @@ class LeapHybridSampler(dimod.Sampler):
 
     @classproperty
     def default_solver(cls):
-        """dict: Features used to select the latest accessible hybrid BQM solver."""
+        """dict: Features used to select the latest accessible hybrid BQM solver.
+        """
         return dict(supported_problem_types__contains='bqm',
                     order_by='-properties.version')
 
@@ -255,10 +256,10 @@ class LeapHybridSampler(dimod.Sampler):
         return sampleset.relabel_variables(mapping)
 
     def min_time_limit(self, bqm):
-        """Return the minimum `time_limit` accepted for the given problem.
+        """Return the minimum ``time_limit`` accepted for the given problem.
 
         The minimum time for a hybrid BQM solver is specified as a piecewise-linear
-        curve defined by a set of floating-point pairs, the `minimum_time_limit`
+        curve defined by a set of floating-point pairs, the ``minimum_time_limit``
         field under :attr:`~dwave.system.samplers.LeapHybridSampler.properties`.
         The first element in each pair is the number of problem variables; the
         second is the minimum required time. The minimum time for any number of
@@ -269,7 +270,7 @@ class LeapHybridSampler(dimod.Sampler):
             For a solver where
             `LeapHybridSampler().properties["minimum_time_limit"]` returns
             `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, the minimum time for a
-            problem 50 variales is 5 seconds (the linear interpolation of the
+            problem of 50 variables is 5 seconds (the linear interpolation of the
             first two pairs that represent problems with between 1 to 100
             variables).
         """
@@ -505,7 +506,7 @@ class LeapHybridDQMSampler:
 
         The minimum time for a hybrid DQM solver is specified as a
         piecewise-linear curve defined by a set of floating-point pairs,
-        the `minimum_time_limit` field under
+        the ``minimum_time_limit`` field under
         :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties`.
         The first element in each pair is a combination of the numbers of
         interactions, variables, and cases that reflects the "density" of
