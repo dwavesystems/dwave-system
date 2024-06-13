@@ -140,6 +140,29 @@ Methods
    LeapHybridCQMSampler.sample_cqm
    LeapHybridCQMSampler.min_time_limit
 
+LeapHybridNLSampler
+====================
+
+.. autoclass:: LeapHybridNLSampler
+
+Properties
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   LeapHybridNLSampler.properties
+   LeapHybridNLSampler.parameters
+
+Methods
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   LeapHybridNLSampler.sample
+   LeapHybridNLSampler.estimated_min_time_limit
+
 LeapHybridDQMSampler
 ====================
 
