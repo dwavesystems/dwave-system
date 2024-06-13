@@ -41,8 +41,8 @@ __all__ = ['LeapHybridSampler',
 class LeapHybridSampler(dimod.Sampler):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
-    Leap's quantum-classical hybrid BQM solvers are intended to solve arbitrary
-    application problems formulated as binary quadratic models (BQM).
+    Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are 
+    intended to solve arbitrary application problems formulated as BQMs.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
@@ -63,7 +63,7 @@ class LeapHybridSampler(dimod.Sampler):
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example builds a random sparse graph and uses a hybrid solver to find a
@@ -305,7 +305,7 @@ class LeapHybridDQMSampler:
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example solves a small, illustrative problem: a game of
@@ -549,7 +549,7 @@ class LeapHybridCQMSampler:
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example solves a simple problem of finding the rectangle with the
@@ -806,7 +806,7 @@ class LeapHybridNLSampler:
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example submits a model for a
@@ -915,17 +915,17 @@ class LeapHybridNLSampler:
                 problem. Should be at least the estimated minimum required for the 
                 problem, which is calculated and set by default.
 
-                :meth:`~dwave.system.samplers.LeapHybridNLMSampler.estimated_min_time_limit`
-                estimates the minimum time for your problem.  For ``time_limit `` values shorter 
-                than the estimated minimum, runtime (and charge time) is not guaranteed to be 
-                shorter than the estimated time
+                :meth:`~dwave.system.samplers.LeapHybridNLSampler.estimated_min_time_limit`
+                estimates the minimum time for your problem.  For ``time_limit`` 
+                values shorter than the estimated minimum, runtime (and charge 
+                time) is not guaranteed to be shorter than the estimated time.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
                 :attr:`~dwave.system.samplers.LeapHybridNLMSampler.parameters`.
 
         Returns:
-            :class:`concurrent.futures.Future`[SampleResult]:
+            :class:`~concurrent.futures.Future` [SampleResult]:
                 Named tuple containing nonlinear model and timing info, in a Future.
         """
 
@@ -964,7 +964,7 @@ class LeapHybridNLSampler:
         return result
 
     def estimated_min_time_limit(self, nlm: dwave.optimization.Model) -> float:
-        """Return the minimum `time_limit`, in seconds, estimated for the given problem.
+        """Return the minimum required time, in seconds, estimated for the given problem.
         
          Runtime (and charge time) is not guaranteed to be shorter than this minimum time.
         """

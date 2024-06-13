@@ -4,8 +4,8 @@
 Samplers
 ========
 
-A :term:`sampler` accepts a problem in :term:`binary quadratic model` (BQM) or
-:term:`discrete quadratic model` (DQM) format and returns variable assignments.
+A :term:`sampler` accepts a problem in :term:`quadratic model` (e.g., BQM, CQM) or
+:term:`nonlinear model` format and returns variable assignments.
 Samplers generally try to find minimizing values but can also sample from
 distributions defined by the problem.
 
@@ -153,6 +153,7 @@ Properties
 
    LeapHybridNLSampler.properties
    LeapHybridNLSampler.parameters
+   LeapHybridNLSampler.default_solver
 
 Methods
 -------
