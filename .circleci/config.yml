@@ -3,7 +3,7 @@ version: 2.1
 parameters:
   cache-generation:
     type: integer
-    default: 1
+    default: 2
 
 orbs:
   win: circleci/windows@5.0
@@ -99,7 +99,7 @@ jobs:
         type: string
         default: "14.3.0"
 
-    resource_class: macos.x86.medium.gen2   
+    resource_class: macos.m1.medium.gen1
 
     macos:
       xcode: << parameters.xcode >>
