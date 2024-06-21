@@ -80,7 +80,7 @@ def effective_field(bqm,
     Args:
         bqm (:obj:`dimod.BinaryQuadraticModel`): 
             Binary quadratic model.
-        samples (samples_like or :obj:`.SampleSet`,optional):
+        samples (samples_like or :obj:`~dimod.SampleSet`,optional):
             A collection of raw samples. `samples_like` is an extension of
             NumPy's array like structure. See :func:`dimod.sampleset.as_samples`.
             By default, a single sample with all +1 assignments is used. 
@@ -186,7 +186,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
             If ``bqm`` and ``site_energy`` are both None, then by default 
             100 samples are drawn using :class:`~dwave.system.samplers.DWaveSampler`, 
             with ``bqm`` defaulted as described.
-        sampleset (:class:`dimod.SampleSet`, optional):
+        sampleset (:class:`~dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
             a Boltzmann distribution characterized by ``bqm``.
         site_energy (samples_like, optional):
