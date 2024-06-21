@@ -641,9 +641,9 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     Examples:
 
        This example uses the 
-       published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>
+       `published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>`_
        for the Advantage_system4.1 QPU solver as of November 22nd 2021: 
-       :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4`mK.
+       :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4` mK.
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)
