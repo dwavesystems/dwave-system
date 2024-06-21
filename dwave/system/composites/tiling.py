@@ -50,17 +50,17 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid
     of cells, where each unit cell is a bipartite graph with shore of size t,
     supplemented with odd couplers (see ``nice_coordinate`` definition in
-    the :func:`dwave_networkx.pegasus_graph` function). The
+    the :func:`~dwave_networkx.pegasus_graph` function). The
     Advantage QPU supports a P16 Pegasus graph: its qubits may be mapped to a
     3x15x15 matrix of unit cells, each of 8 qubits. This code supports tiling of
     Chimera-structured problems, with an option of additional odd-couplers,
-    onto Pegasus. See also the :func:`dwave_networkx.pegasus_graph` function.
+    onto Pegasus. See also the :func:`~dwave_networkx.pegasus_graph` function.
 
     Notation *CN* refers to a Chimera graph consisting of an NxN grid of unit
     cells, where each unit cell is a bipartite graph with shores of size t.
     (An earlier quantum computer, the D-Wave 2000Q, supported a C16 Chimera 
     graph: its 2048 qubits were logically mapped into a 16x16 matrix of unit 
-    cells of 8 qubits (t=4). See also the :func:`dwave_networkx.chimera_graph` 
+    cells of 8 qubits (t=4). See also the :func:`~dwave_networkx.chimera_graph` 
     function.)
 
     A problem that can be minor-embedded in a single chimera unit cell, for
@@ -70,8 +70,8 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
     D-Wave 2000Q) parallel samples per read.
 
     Args:
-       sampler (:class:`dimod.Sampler`): Structured dimod sampler such as a
-           :class:`~dwave.system.samplers.DWaveSampler()`.
+       sampler (:class:`~dimod.Sampler`): Structured dimod sampler such as a
+           :class:`~dwave.system.samplers.DWaveSampler`.
        sub_m (int): Minimum number of Chimera unit cell rows required for
            minor-embedding a single instance of the problem.
        sub_n (int): Minimum number of Chimera unit cell columns required for
@@ -264,14 +264,14 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
         """Sample from the specified binary quadratic model.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
 
         Returns:
-            :class:`dimod.SampleSet`
+            :class:`~dimod.SampleSet`
 
         Examples:
             This example submits a simple Ising problem of just two variables on a

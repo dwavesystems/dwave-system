@@ -149,6 +149,7 @@ FixedEmbeddingComposite
 -----------------------
 
 .. autoclass:: FixedEmbeddingComposite
+   :show-inheritance:
 
 Properties
 ~~~~~~~~~~

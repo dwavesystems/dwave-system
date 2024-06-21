@@ -25,8 +25,7 @@ __all__ = ['ReverseAdvanceComposite', 'ReverseBatchStatesComposite']
 
 
 class ReverseAdvanceComposite(dimod.ComposedSampler):
-    """
-    Composite that reverse anneals an initial sample through a sequence of anneal
+    r"""Composite that reverse anneals an initial sample through a sequence of anneal
     schedules.
 
     If you do not specify an initial sample, a random sample is used for the first
@@ -43,7 +42,7 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
        This example runs 100 reverse anneals each for three schedules on a problem
        constructed by setting random :math:`\pm 1` values on a clique (complete
        graph) of 15 nodes, minor-embedded on a D-Wave system using the
-       :class:`.DWaveCliqueSampler` sampler.
+       :class:`DWaveCliqueSampler` sampler.
 
        >>> import dimod
        >>> from dwave.system import DWaveCliqueSampler, ReverseAdvanceComposite
@@ -80,11 +79,11 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
         return {'child_properties': self.child.properties.copy()}
 
     def sample(self, bqm, anneal_schedules=None, **parameters):
-        """Sample the binary quadratic model using reverse annealing along a given set 
+        r"""Sample the binary quadratic model using reverse annealing along a given set 
         of anneal schedules.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             anneal_schedules (list of lists, optional, default=[[[0, 1], [1, 0.35], [9, 0.35], [10, 1]]]): 
@@ -100,7 +99,8 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :obj:`dimod.SampleSet` that has initial_state and schedule_index fields.
+            :obj:`~dimod.SampleSet` that has ``initial_state`` and ``schedule_index`` 
+            fields.
 
         Examples:
            This example runs 100 reverse anneals each for three schedules on a problem
@@ -194,18 +194,19 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
 
 
 class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
-    r"""Composite that reverse anneals from multiple initial samples. Each submission is independent
-    from one another.
+    r"""Composite that reverse anneals from multiple initial samples. 
+    
+    Each submission is independent from one another.
 
     Args:
-       sampler (:obj:`dimod.Sampler`):
+       sampler (:obj:`~dimod.Sampler`):
             A dimod sampler.
 
     Examples:
        This example runs three reverse anneals from two configured and one 
        randomly generated initial states on a problem constructed by setting 
        random :math:`\pm 1` values on a clique (complete graph) of 15 nodes, 
-       minor-embedded on a D-Wave system using the :class:`.DWaveCliqueSampler` 
+       minor-embedded on a D-Wave system using the :class:`DWaveCliqueSampler` 
        sampler. 
 
        >>> import dimod
@@ -247,7 +248,7 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
         r"""Sample the binary quadratic model using reverse annealing from multiple initial states.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             initial_states (samples-like, optional, default=None):
@@ -287,13 +288,13 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :obj:`dimod.SampleSet` that has initial_state field.
+            :obj:`~dimod.SampleSet` that has an ``initial_state`` field.
 
         Examples:
            This example runs three reverse anneals from two configured and one 
            randomly generated initial states on a problem constructed by setting
            random :math:`\pm 1` values on a clique (complete graph) of 15 nodes, 
-           minor-embedded on a D-Wave system using the :class:`.DWaveCliqueSampler` 
+           minor-embedded on a D-Wave system using the :class:`DWaveCliqueSampler` 
            sampler.
            
            >>> import dimod

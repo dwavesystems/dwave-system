@@ -29,6 +29,7 @@ DWaveSampler
 ============
 
 .. autoclass:: DWaveSampler
+   :show-inheritance: 
 
 Properties
 ----------

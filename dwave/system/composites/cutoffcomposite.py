@@ -26,7 +26,7 @@ __all__ = 'CutOffComposite', 'PolyCutOffComposite'
 
 
 class CutOffComposite(dimod.ComposedSampler):
-    """Composite to remove interactions below a specified cutoff value.
+    r"""Composite to remove interactions below a specified cutoff value.
 
     Prunes the binary quadratic model (BQM) submitted to the child sampler by
     retaining only interactions with values commensurate with the sampler's
@@ -89,7 +89,7 @@ class CutOffComposite(dimod.ComposedSampler):
     @property
     def parameters(self):
         """A dict where keys are the keyword parameters accepted by the sampler methods
-        and values are lists of the properties relevent to each parameter."""
+        and values are lists of the properties relevant to each parameter."""
         return self.child.parameters.copy()
 
     @property
@@ -108,14 +108,14 @@ class CutOffComposite(dimod.ComposedSampler):
         that minimize the original BQM's energy for the returned samples.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             **parameters:
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :obj:`dimod.SampleSet`
+            :obj:`~dimod.SampleSet`
 
         Examples:
             See the example in :class:`CutOffComposite`.
@@ -285,7 +285,7 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
                 Parameters for the sampling method, specified by the child sampler.
 
         Returns:
-            :obj:`dimod.SampleSet`
+            :obj:`~dimod.SampleSet`
 
         Examples:
             See the example in :class:`PolyCutOffComposite`.
