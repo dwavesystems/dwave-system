@@ -11,8 +11,8 @@ homebase==1.0.1
 minorminer==0.2.14
 networkx==2.8.8
 
-numpy==1.21.6;python_version<"3.10"  # oldest supported by minorminer
-oldest-supported-numpy;python_version>="3.10"
+numpy==1.23.5;python_version<"3.11"  # for compatibility with scipy 1.9.3
+oldest-supported-numpy;python_version>="3.11"
 
 scipy==1.9.3;python_version<"3.11"
 scipy==1.11.2;python_version>="3.11"
