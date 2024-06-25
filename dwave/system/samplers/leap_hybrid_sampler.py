@@ -41,7 +41,7 @@ __all__ = ['LeapHybridSampler',
 class LeapHybridSampler(dimod.Sampler):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
-    Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are 
+    Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are
     intended to solve arbitrary application problems formulated as BQMs.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
@@ -913,17 +913,17 @@ class LeapHybridNLSampler:
 
             time_limit (float, optional):
                 Maximum runtime, in seconds, the solver should work on the
-                problem. Should be at least the estimated minimum required for the 
+                problem. Should be at least the estimated minimum required for the
                 problem, which is calculated and set by default.
 
                 :meth:`~dwave.system.samplers.LeapHybridNLSampler.estimated_min_time_limit`
-                estimates the minimum time for your problem.  For ``time_limit`` 
-                values shorter than the estimated minimum, runtime (and charge 
+                estimates the minimum time for your problem.  For ``time_limit``
+                values shorter than the estimated minimum, runtime (and charge
                 time) is not guaranteed to be shorter than the estimated time.
 
             **kwargs:
                 Optional keyword arguments for the solver, specified in
-                :attr:`~dwave.system.samplers.LeapHybridNLMSampler.parameters`.
+                :attr:`~dwave.system.samplers.LeapHybridNLSampler.parameters`.
 
         Returns:
             :class:`~concurrent.futures.Future` [SampleResult]:
@@ -966,7 +966,7 @@ class LeapHybridNLSampler:
 
     def estimated_min_time_limit(self, nlm: dwave.optimization.Model) -> float:
         """Return the minimum required time, in seconds, estimated for the given problem.
-        
+
          Runtime (and charge time) is not guaranteed to be shorter than this minimum time.
         """
 
