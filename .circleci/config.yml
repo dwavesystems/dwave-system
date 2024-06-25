@@ -107,23 +107,24 @@ jobs:
     steps:
       - checkout
 
+      - restore_cache: &restore-cache-pyenv
+          key: &brew-pyenv-cache-key v<< pipeline.parameters.cache-generation >>-pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-<< parameters.xcode >>
+
       - run:
           name: install pyenv
           command: |
             brew install pyenv
-
-      - restore_cache:
-          keys:
-            - v<< pipeline.parameters.cache-generation >>-pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-<< parameters.xcode >>
 
       - run:
           name: install python
           command: |
             pyenv install << parameters.python-version>> -s
 
-      - save_cache:
-          key: v<< pipeline.parameters.cache-generation >>-pyenv-{{ .Environment.CIRCLE_JOB }}-xcode-<< parameters.xcode >>
+      - save_cache: &save-cache-pyenv
+          key: *brew-pyenv-cache-key
           paths:
+            - /Users/distiller/Library/Caches/Homebrew
+            - /usr/local/Homebrew
             - ~/.pyenv
 
       - run:
