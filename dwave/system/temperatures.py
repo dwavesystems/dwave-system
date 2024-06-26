@@ -80,7 +80,7 @@ def effective_field(bqm,
     Args:
         bqm (:obj:`dimod.BinaryQuadraticModel`): 
             Binary quadratic model.
-        samples (samples_like or :obj:`.SampleSet`,optional):
+        samples (samples_like or :obj:`~dimod.SampleSet`,optional):
             A collection of raw samples. `samples_like` is an extension of
             NumPy's array like structure. See :func:`dimod.sampleset.as_samples`.
             By default, a single sample with all +1 assignments is used. 
@@ -186,7 +186,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
             If ``bqm`` and ``site_energy`` are both None, then by default 
             100 samples are drawn using :class:`~dwave.system.samplers.DWaveSampler`, 
             with ``bqm`` defaulted as described.
-        sampleset (:class:`dimod.SampleSet`, optional):
+        sampleset (:class:`~dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
             a Boltzmann distribution characterized by ``bqm``.
         site_energy (samples_like, optional):
@@ -641,9 +641,9 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     Examples:
 
        This example uses the 
-       published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>
+       `published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>`_
        for the Advantage_system4.1 QPU solver as of November 22nd 2021: 
-       :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4`mK.
+       :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4` mK.
        
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)

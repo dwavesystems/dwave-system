@@ -34,7 +34,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
     model (BQM) and modifies linear and quadratic terms accordingly.
 
     Args:
-       sampler (:obj:`dimod.ComposedSampler`):
+       sampler (:obj:`~dimod.ComposedSampler`):
             A dimod sampler.
     """
     def __init__(self, child_sampler):
@@ -61,7 +61,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
         that range is exceeded. 
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             **parameters:
@@ -69,7 +69,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
                 sampler.
 
         Returns:
-            :obj:`dimod.SampleSet`
+            :obj:`~dimod.SampleSet`
         """
         if any(('per_qubit_coupling_range' in self.child.properties.keys(),
                 'per_group_coupling_range' in self.child.properties.keys())):
@@ -117,7 +117,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
         yield sampleset 
 
 class DWaveCliqueSampler(dimod.Sampler):
-    """A sampler for solving clique binary quadratic models on the D-Wave system.
+    r"""A sampler for solving clique binary quadratic models on the D-Wave system.
 
     This sampler wraps
     :func:`~minorminer.busclique.find_clique_embedding` to generate embeddings
@@ -138,8 +138,9 @@ class DWaveCliqueSampler(dimod.Sampler):
             Actual failover, i.e. selection of a new solver, has to be handled
             by the user. A convenience method :meth:`.trigger_failover` is available
             for this. Note that hardware graphs vary between QPUs, so triggering
-            failover results in regenerated :attr:`.nodelist`, :attr:`.edgelist`,
-            :attr:`.properties` and :attr:`.parameters`.
+            failover results in regenerated :attr:`~dimod.Structured.nodelist`, 
+            :attr:`~dimod.Structured.edgelist`, :attr:`.properties` and 
+            :attr:`.parameters`.
 
             .. versionchanged:: 1.16.0
 
@@ -330,7 +331,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                 that form a :term:`chain`. Mappings should specify the required
                 chain strength for each variable. Callables should accept the BQM
                 and embedding and return a float or mapping. By default,
-                `chain_strength` is calculated with
+                ``chain_strength`` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             **kwargs:
@@ -339,7 +340,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                 D-Wave System Documentation's
                 `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
                 describes the parameters and properties supported on the D-Wave
-                system. Note that `auto_scale` is not supported by this
+                system. Note that ``auto_scale`` is not supported by this
                 sampler, because it scales the problem as part of the embedding
                 process.
 

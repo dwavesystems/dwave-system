@@ -5,7 +5,7 @@ Warnings
 ========
 
 Settings for raising warnings may be configured by tools such as composites or
-:doc:`docs_inspector/sdk_index`.
+:doc:`oceandocs:docs_inspector/sdk_index`.
 
 This example configures warnings for an instance of the
 :class:`~dwave.system.composites.EmbeddingComposite()` class used on a sampler

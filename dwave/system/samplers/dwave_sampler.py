@@ -13,7 +13,8 @@
 #    limitations under the License.
 
 """
-A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for the D-Wave system.
+A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` 
+for D-Wave quantum computers.
 
 See :std:doc:`Ocean Glossary <oceandocs:glossary>`
 for explanations of technical terms in descriptions of Ocean tools.
@@ -88,7 +89,7 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
-    """A class for using the D-Wave system as a sampler for binary quadratic models.
+    """A class for using D-Wave quantum computers as samplers for binary quadratic models.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
@@ -96,8 +97,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_
     :meth:`~dwave.cloud.client.Client.get_solvers`. By default, online
     D-Wave systems are returned ordered by highest number of qubits.
-
-    Inherits from :class:`dimod.Sampler` and :class:`dimod.Structured`.
 
     Args:
         failover (bool, optional, default=False):
@@ -109,14 +108,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             Actual failover, i.e. selection of a new solver, has to be handled
             by the user. A convenience method :meth:`.trigger_failover` is available
             for this. Note that hardware graphs vary between QPUs, so triggering
-            failover results in regenerated :attr:`.nodelist`, :attr:`.edgelist`,
+            failover results in regenerated :attr:`.nodelist`,  :attr:`.edgelist`, 
             :attr:`.properties` and :attr:`.parameters`.
 
             .. versionchanged:: 1.16.0
 
                In the past, the :meth:`.sample` method was blocking and
                ``failover=True`` caused a solver failover and sampling retry.
-               However, this failover implementation broke when :meth:`sample`
+               However, this failover implementation broke when :meth:`.sample`
                became non-blocking (asynchronous), Setting ``failover=True`` had
                no effect.
 
@@ -244,7 +243,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def parameters(self):
         """dict[str, list]: D-Wave solver parameters in the form of a dict, where keys are
         keyword parameters accepted by a SAPI query and values are lists of properties in
-        :attr:`.properties` for each key.
+        :attr:`~DWaveSampler.properties` for each key.
 
         Solver parameters are dependent on the selected D-Wave solver and subject to change;
         for example, new released features may add parameters.
@@ -360,12 +359,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Args:
             bqm (:class:`~dimod.BinaryQuadraticModel`):
-                The binary quadratic model. Must match :attr:`.nodelist` and
-                :attr:`.edgelist`.
+                The binary quadratic model. Must match 
+                :attr:`~DWaveSampler.nodelist` and :attr:`~DWaveSampler.edgelist`.
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
-                Defines what warning action to take, if any. See
-                :ref:`warnings_system`. The default behaviour is to
+                Defines what warning action to take, if any (see the
+                :ref:`warnings_system` section). The default behavior is to
                 ignore warnings.
 
             **kwargs:
@@ -570,11 +569,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         max_slope = 1.0 / min_anneal_time
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
             if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
-                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
-
-    
+                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))  
         
-    
     def to_networkx_graph(self):
         """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
 

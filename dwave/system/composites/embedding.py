@@ -48,12 +48,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
     """Maps problems to a structured sampler.
 
     Automatically minor-embeds a problem into a structured sampler such as a
-    D-Wave system. A new minor-embedding is calculated each time one of its
-    sampling methods is called.
+    D-Wave quantum computer. A new minor-embedding is calculated each time one 
+    of its sampling methods is called.
 
     Args:
         child_sampler (:class:`dimod.Sampler`):
-            A dimod sampler, such as a :obj:`.DWaveSampler`, that accepts
+            A dimod sampler, such as a :obj:`DWaveSampler`, that accepts
             only binary quadratic models of a particular structure.
 
         find_embedding (function, optional):
@@ -66,12 +66,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
             keyword arguments.
 
         scale_aware (bool, optional, default=False):
-            Pass chain interactions to child samplers that accept an `ignored_interactions`
-            parameter.
+            Pass chain interactions to child samplers that accept an 
+            ``ignored_interactions`` parameter.
 
         child_structure_search (function, optional):
-            A function `child_structure_search(sampler)` that accepts a sampler
-            and returns the :attr:`dimod.Structured.structure`.
+            A function that accepts a sampler and returns the 
+            :attr:`~dimod.Structured.structure` attribute.
             Defaults to :func:`dimod.child_structure_dfs`.
 
     Examples:
@@ -138,12 +138,17 @@ class EmbeddingComposite(dimod.ComposedSampler):
     """
 
     return_embedding_default = False
-    """Defines the default behaviour for :meth:`.sample`'s `return_embedding`
-    kwarg.
+    """Defines the default behavior for returning embeddings. 
+    
+    Sets the default for the :meth:`.sample` method's 
+    ``return_embedding`` optional parameter (``kwarg``).
     """
 
     warnings_default = WarningAction.IGNORE
-    """Defines the default behavior for :meth:`.sample`'s `warnings` kwarg.
+    """Defines the default behavior for warnings. 
+    
+    Sets the default for the :meth:`.sample` method's 
+    ``warnings`` optional parameter (``kwarg``).
     """
 
     def sample(self, bqm, chain_strength=None,
@@ -156,7 +161,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
         """Sample from the provided binary quadratic model.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float/mapping/callable, optional):
@@ -164,37 +169,37 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 that form a :term:`chain`. Mappings should specify the required 
                 chain strength for each variable. Callables should accept the BQM 
                 and embedding and return a float or mapping. By default, 
-                `chain_strength` is calculated with
+                ``chain_strength`` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             chain_break_method (function/list, optional):
                 Method or methods used to resolve chain breaks. If multiple
                 methods are given, the results are concatenated and a new field
-                called "chain_break_method" specifying the index of the method
+                called ``chain_break_method`` specifying the index of the method
                 is appended to the sample set.
                 See :func:`~dwave.embedding.unembed_sampleset` and
-                :mod:`dwave.embedding.chain_breaks`.
+                :mod:`~dwave.embedding.chain_breaks`.
 
             chain_break_fraction (bool, optional, default=True):
-                Add a `chain_break_fraction` field to the unembedded response with
-                the fraction of chains broken before unembedding.
+                Add a ``chain_break_fraction`` field to the unembedded response 
+                with the fraction of chains broken before unembedding.
 
             embedding_parameters (dict, optional):
                 If provided, parameters are passed to the embedding method as
-                keyword arguments. Overrides any `embedding_parameters` passed
+                keyword arguments. Overrides any embedding parameters passed
                 to the constructor.
 
             return_embedding (bool, optional):
                 If True, the embedding, chain strength, chain break method and
-                embedding parameters are added to :attr:`dimod.SampleSet.info`
-                of the returned sample set. The default behaviour is defined
-                by :attr:`return_embedding_default`, which itself defaults to
-                False.
+                embedding parameters are added to the :attr:`~dimod.SampleSet.info`
+                field of the returned sample set. The default behavior is defined
+                by the :attr:`return_embedding_default` attribute, which by default 
+                is False.
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
-                Defines what warning action to take, if any. See
-                :mod:`~dwave.system.warnings`. The default behaviour is defined
-                by :attr:`warnings_default`, which itself defaults to
+                Defines what warning action to take, if any (see the
+                :ref:`warnings_system` section). The default behavior is defined
+                by the :attr:`warnings_default` attribute, which by default is
                 :class:`~dwave.system.warnings.IGNORE`
 
             **parameters:
@@ -202,10 +207,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 sampler.
 
         Returns:
-            :obj:`dimod.SampleSet`
+            :obj:`~dimod.SampleSet`
 
         Examples:
-            See the example in :class:`EmbeddingComposite`.
+            See the example in :class:`.EmbeddingComposite`.
 
         """
         if return_embedding is None:
@@ -318,7 +323,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             Structured dimod sampler.
 
         find_embedding (function, default=:func:`minorminer.find_embedding`):
-            A function `find_embedding(S, T, **kwargs)` where `S` and `T`
+            A function ``find_embedding(S, T, **kwargs)`` where ``S`` and ``T``
             are edgelists. The function can accept additional keyword arguments.
             The function is used to find the embedding for the first problem
             solved.
@@ -339,7 +344,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         ['a', 'b']
 
     """
-
+        
     @property
     def nodelist(self):
         """list: Nodes available to the composed sampler."""
@@ -442,7 +447,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
         sampling methods reuse this embedding.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
+            bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             chain_strength (float/mapping/callable, optional):
@@ -450,7 +455,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 that form a :term:`chain`. Mappings should specify the required 
                 chain strength for each variable. Callables should accept the BQM 
                 and embedding and return a float or mapping. By default, 
-                `chain_strength` is calculated with
+                ``chain_strength`` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
             chain_break_method (function, optional):
@@ -458,12 +463,12 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 See :func:`~dwave.embedding.unembed_sampleset`.
 
             chain_break_fraction (bool, optional, default=True):
-                Add a ‘chain_break_fraction’ field to the unembedded response with
+                Add a ``chain_break_fraction`` field to the unembedded response with
                 the fraction of chains broken before unembedding.
 
             embedding_parameters (dict, optional):
                 If provided, parameters are passed to the embedding method as
-                keyword arguments. Overrides any `embedding_parameters` passed
+                keyword arguments. Overrides any embedding parameters passed
                 to the constructor. Only used on the first call.
 
             **parameters:
@@ -471,7 +476,7 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
                 sampler.
 
         Returns:
-            :obj:`dimod.SampleSet`
+            :obj:`~dimod.SampleSet`
 
         """
         if self.embedding is None:
@@ -504,15 +509,15 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
 
     Args:
         child_sampler (dimod.Sampler):
-            Structured dimod sampler such as a D-Wave system.
+            Structured dimod sampler such as a D-Wave quantum computer.
 
         embedding (dict[hashable, iterable], optional):
-            Mapping from a source graph to the specified sampler’s graph (the
+            Mapping from a source graph to the specified sampler's graph (the
             target graph).
 
         source_adjacency (dict[hashable, iterable]):
-            Deprecated. Dictionary to describe source graph as `{node:
-            {node neighbours}}`.
+            Deprecated. Dictionary to describe source graph as ``{node:
+            {node neighbours}}``.
 
         kwargs:
             See the :class:`EmbeddingComposite` class for additional keyword
@@ -579,7 +584,8 @@ class AutoEmbeddingComposite(EmbeddingComposite):
 
     This composite first tries to submit the binary quadratic model directly
     to the child sampler and only embeds if a
-    :exc:`dimod.exceptions.BinaryQuadraticModelStructureError` is raised.
+    :exc:`~dimod.exceptions.BinaryQuadraticModelStructureError` exception is 
+    raised.
 
     Args:
         child_sampler (:class:`dimod.Sampler`):
@@ -587,7 +593,7 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             :obj:`~dwave.system.samplers.DWaveSampler()`.
 
         find_embedding (function, optional):
-            A function `find_embedding(S, T, **kwargs)` where `S` and `T`
+            A function ``find_embedding(S, T, **kwargs)`` where ``S`` and ``T``
             are edgelists. The function can accept additional keyword arguments.
             Defaults to :func:`minorminer.find_embedding`.
 

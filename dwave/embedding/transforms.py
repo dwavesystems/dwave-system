@@ -548,7 +548,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
             already exists in the sample set then it is overwritten.
 
     Returns:
-        :obj:`.SampleSet`: Sample set in the source BQM.
+        :obj:`~dimod.SampleSet`: Sample set in the source BQM.
 
     Examples:
        This example unembeds from a square target graph samples of a triangular
