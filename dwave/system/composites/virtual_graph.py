@@ -13,14 +13,15 @@
 #    limitations under the License.
 
 """
-A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that uses the D-Wave virtual
-graph feature for improved :std:doc:`minor-embedding <oceandocs:docs_system/intro>`.
+A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that 
+uses the D-Wave virtual graph feature for improved 
+:std:doc:`minor-embedding <oceandocs:docs_system/intro>`.
 
-D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you to more
-easily create, optimize, use, and reuse an embedding for a given working graph. When you submit an
-embedding and specify a chain strength using these tools, they automatically calibrate the qubits
-in a chain to compensate for the effects of biases that may be introduced as a result of strong
-couplings.
+D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you 
+to more easily create, optimize, use, and reuse an embedding for a given working 
+graph. When you submit an embedding and specify a chain strength using these 
+tools, they automatically calibrate the qubits in a chain to compensate for the 
+effects of biases that may be introduced as a result of strong couplings.
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
@@ -43,42 +44,45 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
     Calibrates qubits in chains to compensate for the effects of biases and enables easy
     creation, optimization, use, and reuse of an embedding for a given working graph.
 
-    Inherits from :class:`dimod.ComposedSampler` and :class:`dimod.Structured`.
+    Inherits from :class:`~dimod.ComposedSampler` and :class:`~dimod.Structured`.
 
     Args:
-        sampler (:class:`.DWaveSampler`):
-            A dimod :class:`dimod.Sampler`. Typically a :obj:`.DWaveSampler` or
-            derived composite sampler; other samplers may not work or make sense with
-            this composite layer.
+        sampler (:class:`DWaveSampler`):
+            A dimod :class:`~dimod.Sampler`. Typically a :obj:`DWaveSampler` or
+            derived composite sampler; other samplers may not work or make sense 
+            with this composite layer.
 
         embedding (dict[hashable, iterable]):
-            Mapping from a source graph to the specified sampler's graph (the target graph).
+            Mapping from a source graph to the specified sampler's graph (the 
+            target graph).
 
         chain_strength (float, optional, default=None):
-            Desired chain coupling strength. This is the magnitude of couplings between qubits
-            in a chain. If None, uses the maximum available as returned by a SAPI query
-            to the D-Wave solver.
+            Desired chain coupling strength. This is the magnitude of couplings 
+            between qubits in a chain. If None, uses the maximum available as 
+            returned by a SAPI query to the D-Wave solver.
 
         flux_biases (list/False/None, optional, default=None):
-            Per-qubit flux bias offsets in the form of a list of lists, where each sublist
-            is of length 2 and specifies a variable and the flux bias offset associated with
-            that variable. Qubits in a chain with strong negative J values experience a
-            J-induced bias; this parameter compensates by recalibrating to remove that bias.
-            If False, no flux bias is applied or calculated.
-            If None, flux biases are pulled from the database or calculated empirically.
+            Per-qubit flux bias offsets in the form of a list of lists, where 
+            each sublist is of length 2 and specifies a variable and the flux 
+            bias offset associated with that variable. Qubits in a chain with 
+            strong negative J values experience a J-induced bias; this parameter 
+            compensates by recalibrating to remove that bias. If False, no flux 
+            bias is applied or calculated. If None, flux biases are pulled from 
+            the database or calculated empirically.
 
         flux_bias_num_reads (int, optional, default=1000):
-            Number of samples to collect per flux bias value to calculate calibration
-            information.
+            Number of samples to collect per flux bias value to calculate 
+            calibration information.
 
         flux_bias_max_age (int, optional, default=3600):
-            Maximum age (in seconds) allowed for a previously calculated flux bias offset to
-            be considered valid.
+            Maximum age (in seconds) allowed for a previously calculated flux 
+            bias offset to be considered valid.
 
     .. attention::
-        D-Wave's *virtual graphs* feature can require many seconds of D-Wave system time to calibrate
-        qubits to compensate for the effects of biases. If your account has limited
-        D-Wave system access, consider using :class:`.FixedEmbeddingComposite` instead.
+        D-Wave's *virtual graphs* feature can require many seconds of D-Wave 
+        quantum computer time to calibrate qubits to compensate for the effects 
+        of biases. If your account has limited D-Wave system access, consider 
+        using :class:`FixedEmbeddingComposite` instead.
 
     Examples:
         This example uses :class:`.VirtualGraphComposite` to instantiate a 
@@ -180,13 +184,16 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
 
 
 def _validate_chain_strength(sampler, chain_strength):
-    """Validate the provided chain strength, checking J-ranges of the sampler's children.
+    """Validate the provided chain strength, checking J-ranges of the sampler's 
+    children.
 
     Args:
-        chain_strength (float) The provided chain strength.  Use None to use J-range.
+        chain_strength (float): The provided chain strength.  Use None to use 
+            J-range.
 
     Returns (float):
-        A valid chain strength, either provided or based on available J-range.  Positive finite float.
+        A valid chain strength, either provided or based on available J-range.  
+        Positive finite float.
 
     """
     properties = sampler.properties
