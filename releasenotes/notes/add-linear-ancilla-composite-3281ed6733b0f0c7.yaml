@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Add `LinearAncillaComposite` for implementing linear biases through ancilla qubits 
