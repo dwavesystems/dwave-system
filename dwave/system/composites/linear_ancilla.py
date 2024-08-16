@@ -13,14 +13,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""Embedding composite to implement linear fields as polarized ancilla qubits.
+"""Composite to implement linear coefficients with ancilla qubits biased with flux-bias offsets.
 """
 
-import numbers
-
-from typing import Sequence, Mapping, Any
-
 from collections import defaultdict
+import numbers
+from typing import Sequence, Mapping, Any
 
 import numpy as np
 
@@ -32,7 +30,7 @@ __all__ = ["LinearAncillaComposite"]
 
 
 class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
-    """Implements linear fields as polarized ancilla qubits.
+    """Implements linear fields as ancilla qubits polarized with strong flux biases.
 
     Linear field `h_i` of qubit `i` is implemented through a coupling `J_{ij}` between
     the qubit and a neighbouring qubit `j` that is fully polarized with a large flux bias.
