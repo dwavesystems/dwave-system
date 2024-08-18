@@ -64,9 +64,6 @@ class TestLeapHybridSampler(unittest.TestCase):
         np.testing.assert_array_almost_equal(dqm.energies(sampleset),
                                              sampleset.record.energy)
 
-    # NOTE: enable when problem labelling deployed to prod
-    @unittest.skipIf(sampler is not None and 'cloud' in sampler.client.endpoint,
-                     "labels not supported in production")
     def test_problem_labelling(self):
         dqm = dimod.DQM()
         u = dqm.add_variable(2, 'a')
