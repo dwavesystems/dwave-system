@@ -17,6 +17,8 @@ jobs:
     parameters:
       python-version:
         type: string
+      dependency-specifiers:
+        type: string
       integration-test-python-version:
         type: string
 
@@ -56,6 +58,15 @@ jobs:
             pip install -U pip setuptools
             pip install -r tests/requirements.txt
             pip install .[drivers] -I --no-cache-dir --extra-index-url https://pypi.dwavesys.com/simple
+
+      - when:
+          condition: << parameters.dependency-specifiers >>
+          steps:
+            - run:
+                name: sweep dependencies
+                command: |
+                  . env/bin/activate
+                  pip install << parameters.dependency-specifiers >>
 
       - run: *run-python-tests
 
@@ -220,10 +231,13 @@ workflows:
   test:
     jobs:
       - test-linux:
-          name: test-linux-<< matrix.python-version >>
+          name: test-linux-<< matrix.python-version >> | << matrix.dependency-specifiers >>
           matrix:
             parameters:
               python-version: &python-versions ["3.8", "3.9", "3.10", "3.11", &latest-python "3.12"]
+              dependency-specifiers:
+                - "dwave-cloud-client~=0.12.0"
+                - "dwave-cloud-client~=0.13.0"
               integration-test-python-version: &integration-python-versions [*latest-python]
 
       - test-osx:
