@@ -35,9 +35,6 @@ class TestLeapHybridSampler(unittest.TestCase):
         sampleset = sampler.sample_ising({'a': -1}, {'ab': 1})
         sampleset.resolve()
 
-    # NOTE: enable when problem labelling deployed to prod
-    @unittest.skipIf(sampler is not None and 'cloud' in sampler.client.endpoint,
-                     "labels not supported in production")
     def test_problem_labelling(self):
         bqm = dimod.BQM.from_ising({'a': -1}, {'ab': 1})
         label = 'problem label'

@@ -21,7 +21,6 @@ import numpy
 import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.client import Client
-from dwave_networkx.generators.pegasus import pegasus_graph
 
 from dwave.system.samplers import DWaveSampler
 
@@ -169,14 +168,14 @@ class TestMissingQubits(unittest.TestCase):
 class TestClientSelection(unittest.TestCase):
 
     def test_client_type(self):
-        with mock.patch('dwave.cloud.qpu.Client') as qpu:
+        with mock.patch('dwave.cloud.client.qpu.Client') as qpu:
             self.assertEqual(DWaveSampler().client, qpu())
             self.assertEqual(DWaveSampler(client='qpu').client, qpu())
 
-        with mock.patch('dwave.cloud.sw.Client') as sw:
+        with mock.patch('dwave.cloud.client.sw.Client') as sw:
             self.assertEqual(DWaveSampler(client='sw').client, sw())
 
-        with mock.patch('dwave.cloud.hybrid.Client') as hybrid:
+        with mock.patch('dwave.cloud.client.hybrid.Client') as hybrid:
             self.assertEqual(DWaveSampler(client='hybrid').client, hybrid())
 
     def test_base_client(self):

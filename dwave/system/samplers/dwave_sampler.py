@@ -26,7 +26,7 @@ from collections import defaultdict
 from typing import Optional, Dict
 
 import dimod
-
+import dwave_networkx as dnx
 from dimod.exceptions import BinaryQuadraticModelStructureError
 from dwave.cloud.client import Client
 from dwave.cloud.exceptions import (
@@ -37,8 +37,6 @@ from dwave.cloud.exceptions import (
 
 from dwave.system.exceptions import FailoverCondition, RetryCondition
 from dwave.system.warnings import WarningHandler, WarningAction
-
-import dwave_networkx as dnx
 
 __all__ = ['DWaveSampler', 'qpu_graph']
 
@@ -593,4 +591,3 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return qpu_graph(self.properties['topology']['type'],
                          self.properties['topology']['shape'],
                          self.nodelist, self.edgelist)
-        

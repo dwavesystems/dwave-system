@@ -17,7 +17,6 @@ from typing import Tuple
 
 import dimod
 import networkx as nx
-import dwave_networkx as dnx
 
 from minorminer.busclique import find_clique_embedding, busgraph_cache
 from dwave.preprocessing import ScaleComposite

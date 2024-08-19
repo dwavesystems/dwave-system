@@ -25,7 +25,7 @@ from typing import Any, Dict, List, NamedTuple, Optional
 import dimod
 import dwave.optimization
 import numpy
-from dwave.cloud import Client
+from dwave.cloud.client import Client
 
 from dwave.system.utilities import classproperty, FeatureFlags
 

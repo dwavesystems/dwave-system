@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""The following effective temperature and bias estimators are provided:
+r"""The following effective temperature and bias estimators are provided:
 
 - Maximum pseudo-likelihood is an efficient estimator for the temperature 
   describing a classical Boltzmann distribution P(x) = \exp(-H(x)/T)/Z(T) 
@@ -48,13 +48,13 @@ __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
 def effective_field(bqm,
                     samples=None,
                     current_state_energy=False) -> (np.ndarray,list):
-    '''Returns the effective field for all variables and all samples.
-    
+    r'''Returns the effective field for all variables and all samples.
+
     The effective field with ``current_state_energy = False`` is the energy
     attributable to setting a variable to value 1, conditioned on fixed values 
     for all neighboring variables (relative to exclusion of the variable, and 
     associated energy terms, from the problem). 
-    
+
     The effective field with ``current_state_energy = True`` is the energy gained
     by flipping the variable state against its current value (from say -1 to 1 
     in the Ising case, or 0 to 1 in the QUBO case). A positive value indicates 
@@ -64,11 +64,12 @@ def effective_field(bqm,
     local minima (maxima).  
 
     Any BQM can be converted to an Ising model with
-    
+
     .. math::
         H(s) = Constant + \sum_i h_i s_i + 0.5 \sum_{i,j} J_{i,j} s_i s_j
 
-    with unique values of :math:`J` (symmetric) and :math:`h`. The sample dependent effect field on variable i, :math:`f_i(s)`, is then defined
+    with unique values of :math:`J` (symmetric) and :math:`h`. The sample
+    dependent effect field on variable i, :math:`f_i(s)`, is then defined
 
     if current_state_energy == False:
         .. math::
@@ -76,7 +77,7 @@ def effective_field(bqm,
     else:
         .. math:: 
             f_i(s) = 2 s_i [h_i + \sum_j J_{i,j}  s_j]
-    
+
     Args:
         bqm (:obj:`dimod.BinaryQuadraticModel`): 
             Binary quadratic model.
@@ -103,7 +104,7 @@ def effective_field(bqm,
        and for a ground state sample (all +1), the energy lost when flipping
        any spin is equal to the number of couplers frustrated: -2 in the center
        of the chain (variables 1,2,..,N-2), and -1 at the end (variables 0 and N-1).
-       
+
        >>> import dimod
        >>> import numpy as np
        >>> from dwave.system.temperatures import effective_field
@@ -114,7 +115,7 @@ def effective_field(bqm,
        >>> E = effective_field(bqm,samples,current_state_energy=True)
        >>> print('Cost to flip spin against current assignment', E)     
        Cost to flip spin against current assignment (array([[-1., -2., -2., -2., -1.]]), [0, 1, 2, 3, 4])
-       
+
     '''
     if samples is None:
         samples = np.ones(shape=(1,bqm.num_variables))
@@ -125,7 +126,7 @@ def effective_field(bqm,
     if bqm.vartype is dimod.BINARY:
         bqm = bqm.change_vartype('SPIN', inplace=False)
         samples = 2*samples - 1
-    
+
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
         variable_order=labels)
     # eff_field = h + J*s OR diag(Q) + (Q-diag(Q))*b
@@ -137,7 +138,7 @@ def effective_field(bqm,
     if current_state_energy is True:
         #Ising: eff_field = 2*s*(h + J*s)
         effective_fields = 2*samples*effective_fields
-        
+
     return (effective_fields,labels)
 
 def maximum_pseudolikelihood_temperature(bqm=None,
@@ -148,8 +149,8 @@ def maximum_pseudolikelihood_temperature(bqm=None,
                                          T_guess=None,
                                          optimize_method='bisect',
                                          T_bracket=(1e-3,1000)) -> Tuple[float,np.ndarray]:
-    '''Returns a sampling-based temperature estimate.
-    
+    r'''Returns a sampling-based temperature estimate.
+
     The temperature T parameterizes the Boltzmann distribution as 
     :math:`P(x) = \exp(-H(x)/T)/Z(T)`, where :math:`P(x)` is a probability over a state space, 
     :math:`H(x)` is the energy function (BQM) and :math:`Z(T)` is a normalization. 
@@ -161,15 +162,15 @@ def maximum_pseudolikelihood_temperature(bqm=None,
     temperature efficiently (in compute time and number of samples). If the BQM
     consists of uncoupled variables then the estimator is equivalent to a 
     maximum likelihood estimator.
-    
+
     The effective MPL temperature is defined by the solution T to 
-    
+
     .. math::
        0 = \sum_i \sum_{s \in S} f_i(s) \exp(f_i(s)/T), 
-    
+
     where f is the energy lost in flipping spin i against its current 
     assignment (the effective field).
-    
+
     The problem is a convex root solving problem, and is solved with SciPy 
     optimize.
 
@@ -179,7 +180,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
     excitations. In the case of sample sets obtained from D-Wave annealing 
     quantum computers the temperature can be identified with a physical 
     temperature via a late-anneal freeze-out phenomena.
-    
+
     Args:
         bqm (:obj:`dimod.BinaryQuadraticModel`, optional):
             Binary quadratic model describing sample distribution.
@@ -230,7 +231,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
        of local excitations rates. For example T will be 0 if only 
        local minima are returned (even if some of the local minima are not 
        ground states).
-       
+
        >>> import dimod
        >>> from dwave.system.temperatures import maximum_pseudolikelihood_temperature
        >>> from dwave.system import DWaveSampler
@@ -241,15 +242,15 @@ def maximum_pseudolikelihood_temperature(bqm=None,
        >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm,sampleset) 
        >>> print('Effective temperature ',T)    # doctest: +SKIP
        Effective temperature  0.24066488780293813
-       
+
     See also:
 
         https://doi.org/10.3389/fict.2016.00023
 
         https://www.jstor.org/stable/25464568
-        
+
     '''
-    
+
     T_estimate = 0
     T_bootstrap_estimates = np.zeros(num_bootstrap_samples)
 
@@ -339,7 +340,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
                     expFactor = np.exp(site_energy[0]*x)
                     #divide by zero (1/expFactor) and divide by +Inf errors are harmless
                     return np.sum(-site_energy[0]*site_energy[0]/(expFactor + 2 + 1/expFactor))
-        
+
             root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0 = x0,
                                                 fprime=dd_mean_log_pseudo_likelihood)
             T_estimate = -1/root_results.root
@@ -358,7 +359,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
                     site_energy = (site_energy[0][indices,:],site_energy[1]),
                     num_bootstrap_samples = 0,
                     T_guess = T_estimate)
-    
+
     return T_estimate, T_bootstrap_estimates
 
 def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
@@ -367,7 +368,7 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
                      units_Ip: Optional[str]='uA',
                      units_B: Literal['GHz', 'J'] = 'GHz',
                      units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
-    """Estimate qubit persistent current :math:`I_p(s)` in schedule units. 
+    r"""Estimate qubit persistent current :math:`I_p(s)` in schedule units.
 
     Under a simple, noiseless freeze-out model, you can substitute flux biases 
     for programmed linear biases, ``h``, in the standard transverse-field Ising 
@@ -376,7 +377,7 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
     because of differences in the dependence on the anneal fraction, :math:`s`: 
     :math:`I_p(s) \propto \sqrt(B(s))`. The physical origin of each term is different, 
     and so precision and noise models also differ.
-    
+
     Assume a Hamiltonian in the :ref:`documented form <sysdocs_gettingstarted:doc_qpu>` 
     with an additional flux-bias-dependent component 
     :math:`H(s) \Rightarrow H(s) - H_F(s) \sum_i \Phi_i \sigma^z_i`,
@@ -391,14 +392,14 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
             microamps. When not provided, inferred from :math:`M_{AFM}` 
             and and :math:`B(s)` based on the relation 
             :math:`B(s) = 2 M_{AFM} I_p(s)^2`. 
-    
+
         B:
             Annealing schedule field, :math:`B(s)`, associated with the 
             problem Hamiltonian. Schedules are provided for each quantum 
             computer in the 
             :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
             This parameter is ignored when ``Ip`` is specified.
-        
+
         MAFM:
             Mutual inductance, :math:`M_{AFM}`, specified for each quantum 
             computer in the 
@@ -417,13 +418,12 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
             Units in which the mutual inductance, ``MAFM``, is specified. Allowed 
             values are ``'pH'`` (picohenry) and ``'H'`` (Henry).
 
-    
     Returns:
         :math:`I_p(s)` with units matching the Hamiltonian :math:`B(s)`.
     """
     h = 6.62607e-34  # Plank's constant for converting energy in Hertz to Joules 
     Phi0 = 2.0678e-15  # superconducting magnetic flux quantum (h/2e); units: Weber=J/A
-    
+
     if units_B == 'GHz':
         B_multiplier = 1e9*h  # D-Wave schedules use GHz by convention
     elif units_B == 'J':
@@ -455,7 +455,7 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
                   units_Ip: Optional[str]='uA',
                   units_B : str='GHz',
                   units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
-    """Convert problem Hamiltonian bias ``h`` to equivalent flux bias.
+    r"""Convert problem Hamiltonian bias ``h`` to equivalent flux bias.
 
     Unitless bias ``h`` is converted to the equivalent flux bias in units 
     :math:`\Phi_0`, the magnetic flux quantum.
@@ -475,14 +475,14 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
             microamps. When not provided, inferred from :math:`M_{AFM}` 
             and and :math:`B(s)` based on the relation 
             :math:`B(s) = 2 M_{AFM} I_p(s)^2`. 
-    
+
         B:
             Annealing schedule field, :math:`B(s)`, associated with the 
             problem Hamiltonian. Schedules are provided for each quantum 
             computer in the 
             :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
             This parameter is ignored when ``Ip`` is specified.
-        
+
         MAFM:
             Mutual inductance, :math:`M_{AFM}`, specified for each quantum 
             computer in the 
@@ -501,7 +501,6 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
             Units in which the mutual inductance, ``MAFM``, is specified. Allowed 
             values are ``'pH'`` (picohenry) and ``'H'`` (Henry).
 
-    
     Returns:
         Flux-bias values producing equivalent longitudinal fields to the given 
         ``h`` values.
@@ -516,7 +515,7 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
                   B: float=1.391, MAFM: Optional[float]=1.647, 
                   units_Ip: Optional[str]='uA',
                   units_B : str='GHz', units_MAFM : Optional[str]='pH') -> Union[float, np.ndarray]:
-    """Convert flux biases to equivalent problem Hamiltonian bias ``h``. 
+    r"""Convert flux biases to equivalent problem Hamiltonian bias ``h``.
 
     Converts flux biases in units of :math:`\Phi_0`, the magnetic flux quantum, 
     to equivalent problem Hamiltonian biases ``h``, which are unitless. 
@@ -546,7 +545,7 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
             computer in the 
             :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
             This parameter is ignored when ``Ip`` is specified.
-        
+
         MAFM:
             Mutual inductance, :math:`M_{AFM}`, specified for each quantum 
             computer in the 
@@ -564,7 +563,7 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
         units_MAFM:
             Units in which the mutual inductance, ``MAFM``, is specified. Allowed 
             values are ``'pH'`` (picohenry) and ``'H'`` (Henry).
-    
+
     Returns:
         ``h`` values producing equivalent longitudinal fields to the flux biases.
     """
@@ -575,11 +574,10 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
 
 
 def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK') -> float:
-    '''Provides an effective temperature as a function of freezeout information.
-    
+    r'''Provides an effective temperature as a function of freezeout information.
+
     See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a 
     complete summary of D-Wave annealing quantum computer operation.
-    
 
     A D-Wave annealing quantum computer is assumed to implement a Hamiltonian
     :math:`H(s) = B(s)/2 H_P - A(s)/2 H_D`, where: :math:`H_P` is the unitless 
@@ -589,7 +587,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     time :math:`s = t/t_a` (in [0,1]).
     Diagonal elements of :math:`H_P`, indexed by the spin state :math:`x`, are equal to
     the energy of a classical Ising spin system 
-    
+
     .. math::
         E_{Ising}(x) = \sum_i h_i x_i + \sum_{i>j} J_{i,j} x_i x_j
 
@@ -600,7 +598,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
 
     .. math::
         P(x) = \exp(- B(s^*) R E_{Ising}(x) / 2 k_B T)
-    
+
     where T is the physical temperature, and :math:`k_B` is the Boltzmann constant.
     R is a Hamiltonain rescaling factor, if a QPU is operated with auto_scale=False, 
     then R=1.
@@ -625,7 +623,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
 
         temperature (float):
             :math:`T`, the physical temperature of the quantum computer.
-        
+
         units_B (string, optional, 'GHz'):
             Units in which ``freezeout_B`` is specified. Allowed values:
             'GHz' (Giga-Hertz) and 'J' (Joules).
@@ -634,22 +632,21 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
             Units in which the ``temperature`` is specified. Allowed values:
             'mK' (milli-Kelvin) and 'K' (Kelvin).
 
-    
     Returns:
         float : The effective (unitless) temperature. 
-    
+
     Examples:
 
        This example uses the 
        `published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>`_
        for the Advantage_system4.1 QPU solver as of November 22nd 2021: 
        :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4` mK.
-       
+
        >>> from dwave.system.temperatures import freezeout_effective_temperature
        >>> T = freezeout_effective_temperature(freezeout_B = 3.91, temperature = 15.4)
        >>> print('Effective temperature at single qubit freeze-out is', T)  # doctest: +ELLIPSIS
        Effective temperature at single qubit freeze-out is 0.164...
-    
+
     See also:
 
         The function :class:`~dwave.system.temperatures.fast_effective_temperature` 
@@ -657,7 +654,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
         agreement with estimates by this function at reported single-qubit 
         freeze-out values :math:`s^*` and device physical parameters.
     '''
-    
+
     #Convert units_B to Joules
     if units_B == 'GHz':
         h = 6.62607e-34 #J/Hz
@@ -668,7 +665,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     else:
         raise ValueException("Units must be 'J' (Joules) "
                              "or 'mK' (milli-Kelvin)")
-    
+
     if units_T == 'mK':
         temperature = temperature * 1e-3
     elif units_T == 'K':
@@ -677,15 +674,15 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
         raise ValueException("Units must be 'K' (Kelvin) "
                              "or 'mK' (milli-Kelvin)")
     kB = 1.3806503e-23 # J/K
-    
+
     return 2*temperature*kB/freezeout_B
 
 def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
                                h_range=(-1/6.1,1/6.1), sampler_params=None,
                                optimize_method=None,
                                num_bootstrap_samples=0) -> Tuple[np.float64,np.float64]:
-    '''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
-    
+    r'''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
+
     This function submits a set of single-qubit problems to a sampler and 
     uses the rate of excitations to infer a maximum-likelihood estimate of temperature.
 
@@ -709,7 +706,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
             The range should be chosen inversely proportional to the anticipated
             temperature for statistical efficiency, and to accomodate precision 
             and other nonidealities such as precision limitations.
-            
+
         sampler_params (dict, optional):
             Any additional non-defaulted sampler parameterization. If 
             ``num_reads`` is a key, must be compatible with ``num_reads`` 
@@ -730,23 +727,23 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
             The effective temperature describing single qubit problems in an
             external field, and a standard error (+/- 1 sigma). 
             By default the confidence interval is set as 0.
-             
+
     See also:
 
         https://doi.org/10.3389/fict.2016.00023
 
         https://www.jstor.org/stable/25464568
-    
+
     Examples:
        Draw samples from a :class:`~dwave.system.samplers.DWaveSampler`, and establish the temperature
-       
+
        >>> from dwave.system.temperatures import fast_effective_temperature
        >>> from dwave.system import DWaveSampler
        >>> sampler = DWaveSampler()
        >>> T, _ = fast_effective_temperature(sampler)
        >>> print('Effective temperature at freeze-out is',T)    # doctest: +SKIP
        0.21685104745347336
-    
+
     See also:
         The function :class:`~dwave.system.temperatures.freezeout_effective_temperature` 
         may be used in combination with published device values to estimate single-qubit 
@@ -755,24 +752,23 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         https://doi.org/10.3389/fict.2016.00023
 
         https://www.jstor.org/stable/25464568
-    
     '''
-    
+
     if sampler is None:
         from dwave.system import DWaveSampler
         sampler = DWaveSampler()
-        
+
     if 'h_range' in sampler.properties:
         if h_range[0] < sampler.properties['h_range'][0]:
             raise ValueError('h_range[0] exceeds programmable range')
-           
+
         if h_range[1] > sampler.properties['h_range'][1]:
             raise ValueError('h_range[1] exceeds programmable range')
-        
+
     prng = np.random.RandomState(seed)
     h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
     bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx] for idx,var in enumerate(sampler.nodelist)}, {})
-    
+
     #Create local sampling_params copy - default necessary additional fields:
     if sampler_params is None:
         sampler_params0 = {}
@@ -797,7 +793,7 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
 
     if num_bootstrap_samples is None:
         num_bootstrap_samples = sampler_params0['num_reads'] 
-        
+
     sampleset = sampler.sample(bqm, **sampler_params0)
 
     T,Tboot = maximum_pseudolikelihood_temperature(
@@ -806,7 +802,6 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         optimize_method=optimize_method,
         num_bootstrap_samples=num_bootstrap_samples)
 
-    
     if num_bootstrap_samples == 0:
         return T, np.float64(0.0)
     else:

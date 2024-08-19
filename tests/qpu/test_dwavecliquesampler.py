@@ -15,7 +15,6 @@
 import itertools
 import os
 import unittest
-import warnings
 
 import dimod
 
