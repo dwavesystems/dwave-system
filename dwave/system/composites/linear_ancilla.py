@@ -84,6 +84,9 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
     ):
         """Sample from the provided binary quadratic model.
 
+        .. note::
+            This composite does not suport the auto_scale parameter. BQM Scaling
+            can be done with :class:`dimod.ScaleComposite`.
 
         Args:
             bqm (:obj:`~dimod.BinaryQuadraticModel`):
