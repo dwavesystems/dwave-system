@@ -13,6 +13,11 @@
 #    limitations under the License.
 
 """
+Deprecated. 
+Virtual graphs are deprecated due to improved calibration of newer QPUs; to 
+calibrate chains for residual biases, follow the instructions in the 
+`shimming tutorial <https://github.com/dwavesystems/shimming-tutorial>`_.
+
 A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that 
 uses the D-Wave virtual graph feature for improved 
 :std:doc:`minor-embedding <oceandocs:docs_system/intro>`.
@@ -27,11 +32,12 @@ See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.ht
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
+import warnings
+
 import dimod
 
 from dwave.system.composites.embedding import FixedEmbeddingComposite
 from dwave.system.flux_bias_offsets import get_flux_biases
-
 
 FLUX_BIAS_KWARG = 'flux_biases'
 
@@ -39,7 +45,13 @@ __all__ = ['VirtualGraphComposite']
 
 
 class VirtualGraphComposite(FixedEmbeddingComposite):
-    """Composite to use the D-Wave virtual graph feature for minor-embedding.
+    """Deprecated. Composite to use the D-Wave virtual graph feature for minor-embedding.
+
+    .. deprecated:: 1.25.0
+        This class is deprecated due to improved calibration of newer QPUs and
+        will be removed in 1.27.0; to calibrate chains for residual biases, 
+        follow the instructions in the 
+        `shimming tutorial <https://github.com/dwavesystems/shimming-tutorial>`_.
 
     Calibrates qubits in chains to compensate for the effects of biases and enables easy
     creation, optimization, use, and reuse of an embedding for a given working graph.
@@ -127,6 +139,13 @@ class VirtualGraphComposite(FixedEmbeddingComposite):
                  flux_bias_max_age=3600):
 
         super(VirtualGraphComposite, self).__init__(sampler, embedding)
+        warnings.warn(
+                "'VirtualGraphComposite' is deprecated due to improved calibration "
+                "of newer QPUs and in future will raise an exception; if needed, "
+                "follow the instructions in the shimming tutorial at "
+                "https://github.com/dwavesystems/shimming-tutorial instead. ",
+                DeprecationWarning, stacklevel=2
+            )
         self.parameters.update(apply_flux_bias_offsets=[])
 
         # Validate the chain strength, or obtain it from J-range if chain strength is not provided.
