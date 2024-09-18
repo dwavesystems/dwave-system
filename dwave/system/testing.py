@@ -355,16 +355,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if flux_biases is not None:
             self.flux_biases_flag = True
 
-        """
-        if flux_biases is not None:
-             #adjust linear biases of BQM when flux_biases is provided
-             # assumes that flux_biases is a dictionary mapping variables to their flux bias adjustments
-             h = {i: bqm.linear[i] + flux_biases[i] for i in bqm.variables}
-             bqm_effective = dimod.BinaryQuadraticModel(h, bqm.quadratic, bqm.offset, bqm.vartype)
-        else:
-            bqm_effective = bqm
-        """
-
         substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
