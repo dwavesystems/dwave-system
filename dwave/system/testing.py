@@ -123,13 +123,19 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  broken_nodes=None, broken_edges=None,
                  topology_type=None, topology_shape=None,
                  parameter_warnings=True,
-                 mocking_sampler = dwave.samplers.SteepestDescentSampler(), # Add default sampler
+                 mocking_sampler = None, # Add default sampler
                  mocking_sampler_params = None, 
                  exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
                  **config):
         self.parameter_warnings = parameter_warnings
         self.exact_solver_cutoff = exact_solver_cutoff
-        self.mock_sampler = mocking_sampler
+        
+        # Initialize the mock_sampler to SteepestDescentSampler if None
+        if mocking_sampler is None:
+            self.mock_sampler = dwave.samplers.SteepestDescentSampler()
+        else:
+            self.mock_sampler = mocking_sampler
+        
         self.mocking_sampler_params = mocking_sampler_params
 
         #Parse or default topology dependent arguments:
