@@ -123,10 +123,14 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  broken_nodes=None, broken_edges=None,
                  topology_type=None, topology_shape=None,
                  parameter_warnings=True,
+                 mocking_sampler = dwave.samplers.SteepestDescentSampler(), # Add default sampler
+                 mocking_sampler_params = None, 
                  exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
                  **config):
         self.parameter_warnings = parameter_warnings
         self.exact_solver_cutoff = exact_solver_cutoff
+        self.mock_sampler = mocking_sampler
+        self.mocking_sampler_params = mocking_sampler_params
 
         #Parse or default topology dependent arguments:
         if properties is not None and 'topology' in properties:
@@ -351,6 +355,16 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if flux_biases is not None:
             self.flux_biases_flag = True
 
+        """
+        if flux_biases is not None:
+             #adjust linear biases of BQM when flux_biases is provided
+             # assumes that flux_biases is a dictionary mapping variables to their flux bias adjustments
+             h = {i: bqm.linear[i] + flux_biases[i] for i in bqm.variables}
+             bqm_effective = dimod.BinaryQuadraticModel(h, bqm.quadratic, bqm.offset, bqm.vartype)
+        else:
+            bqm_effective = bqm
+        """
+
         substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
         if substitute_kwargs['num_reads'] is None:
             substitute_kwargs['num_reads'] = 1
@@ -365,6 +379,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 np.array([pair[1] for pair in initial_state
                           if pair[1]!=3],dtype=float),
                 [pair[0] for pair in initial_state if pair[1]!=3])
+
+        if substitute_kwargs is not None:
+            substitute_kwargs.update(self.mock_sampler_params)
 
         ss = SteepestDescentSampler().sample(bqm, **substitute_kwargs)
         ss.info.update(info)
