@@ -114,8 +114,16 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     edgelist = None
     properties = None
     parameters = None
-
-    # by default, use ExactSolver for problems up to size (inclusive):
+    # In principle this class can be wrapped and additional parameters emulated
+    # (see shimming-tutorial)
+    dimod_sampler = None
+    mocked_parameters={'answer_mode',
+                       'max_answers',
+                       'num_reads',
+                       'label',
+                       'initial_state',
+    }
+    # by default, use ExactSolver to determine the first sample up to size (inclusive):
     EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
     def __init__(self,
@@ -158,7 +166,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'chip_id': 'MockDWaveSampler',
             'topology': {'type': topology_type, 'shape': topology_shape}
         }
-
         #Create graph object, introduce defects per input arguments
         if nodelist is not None:
             self.nodelist = nodelist.copy()
@@ -171,6 +178,11 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                  self.properties['topology']['shape'],
                                  self.nodelist, self.edgelist)
 
+        if topology_type == 'pegasus':
+            m = self.properties['topology']['shape'][0]
+            num_qubits = (m-1)**2*24  # fabric_only=True technicality
+        else:
+            num_qubits = len(solver_graph)
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
             self.edgelist = sorted(tuple(sorted(edge))
@@ -189,7 +201,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                    and (v, u) not in broken_edges)
         #Finalize yield-dependent properties:
         self.properties.update({
-            'num_qubits': len(solver_graph),
+            'num_qubits': num_qubits,
             'qubits': self.nodelist.copy(),
             'couplers': self.edgelist.copy(),
             'anneal_offset_ranges': [[-0.5, 0.5] if i in self.nodelist
@@ -302,6 +314,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # particular care should be taken with respect to
             # topology-dependent arguments:
             self.properties.update(properties)
+            
+        if self.dimod_sampler is None:
+            dimod_sampler = dimod.SteepestDescentSolver()
 
     @classmethod
     def from_qpu_sampler(cls, sampler):
@@ -313,15 +328,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     def sample(self, bqm, **kwargs):
 
         # Check kwargs compatibility with parameters and substitute sampler:
-        mocked_parameters={'answer_mode',
-                           'max_answers',
-                           'num_reads',
-                           'label',
-                           'initial_state',
-                           }
+        
         for kw in kwargs:
             if kw in self.parameters:
-                if self.parameter_warnings and kw not in mocked_parameters:
+                if self.parameter_warnings and kw not in self.mocked_parameters:
                     warnings.warn(f'{kw!r} parameter is valid for DWaveSampler(), '
                                   'but not mocked in MockDWaveSampler().')
             else:
@@ -366,7 +376,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                           if pair[1]!=3],dtype=float),
                 [pair[0] for pair in initial_state if pair[1]!=3])
 
-        ss = SteepestDescentSampler().sample(bqm, **substitute_kwargs)
+        ss = dimod_sampler.sample(bqm, **substitute_kwargs)
         ss.info.update(info)
 
         # determine ground state exactly for small problems
