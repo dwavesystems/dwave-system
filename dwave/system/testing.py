@@ -117,7 +117,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     # In principle this class can be wrapped and additional parameters emulated
     # (see shimming-tutorial)
     substitute_sampler = None  # Exact where possible, SteepestDescent otherwise
-    substitute_kwargs = None 
+    substitute_kwargs = None  # Matched to mocked_parameters
     mocked_parameters={'answer_mode',
                        'max_answers',
                        'num_reads',
@@ -317,8 +317,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # topology-dependent arguments:
             self.properties.update(properties)
             
-        if self.sampler is None:
-            self.sampler = dimod.SteepestDescentSolver()
+        if self.substitute_sampler is None:
+            self.substitute_sampler = SteepestDescentSampler()
 
     @classmethod
     def from_qpu_sampler(cls, sampler):
@@ -356,18 +356,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         label = kwargs.get('label')
         if label is not None:
             info.update(problem_label=label)
-
-        #Special handling of flux_biases, for compatibility with virtual graphs
-
-        flux_biases = kwargs.get('flux_biases')
-        if flux_biases is not None:
-            self.flux_biases_flag = True
-
-        self.substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
+        if self.substitute_kwargs is None:
+            self.substitute_kwargs = {}
+        self.substitute_kwargs['num_reads'] = kwargs.get('num_reads', None)
         if self.substitute_kwargs['num_reads'] is None:
-            self.substitute_kwargs['num_reads'] = 1
+            self.substitute_kwargs['num_reads'] = 1  # default for QPU
 
-        initial_state = kwargs.get('initial_state')
+        initial_state = kwargs.get('initial_state', None)
         if initial_state is not None:
             # Initial state format is a list of (qubit,values)
             # value=3 denotes an unused variable (should be absent
@@ -378,7 +373,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                           if pair[1]!=3],dtype=float),
                 [pair[0] for pair in initial_state if pair[1]!=3])
 
-        ss = sampler.sample(bqm, **self.substitute_kwargs)
+        ss = self.substitute_sampler.sample(bqm, **self.substitute_kwargs)
         ss.info.update(info)
 
         # determine ground state exactly for small problems
