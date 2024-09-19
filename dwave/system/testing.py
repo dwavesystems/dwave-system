@@ -114,8 +114,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     edgelist = None
     properties = None
     parameters = None
-
-    # by default, use ExactSolver for problems up to size (inclusive):
+    # In principle this class can be wrapped and additional parameters emulated
+    # (see shimming-tutorial)
+    
+    # by default, use ExactSolver to determine the first sample up to size (inclusive):
     EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
     def __init__(self,
@@ -127,6 +129,17 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  mocking_sampler_params = None, 
                  exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
                  **config):
+        
+        # Initializ mocked_parameters as an instance attribute
+        self.mocked_parameters={'answer_mode',
+                       'max_answers',
+                       'num_reads',
+                       'label',
+                       'initial_state',
+        }
+
+        self.substitute_sampler = SteepestDescentSampler()  # Exact where possible, SteepestDescent otherwise
+        self.substitute_kwargs = {}  # Matched to mocked_parameters
         self.parameter_warnings = parameter_warnings
         self.exact_solver_cutoff = exact_solver_cutoff
         
@@ -168,7 +181,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'chip_id': 'MockDWaveSampler',
             'topology': {'type': topology_type, 'shape': topology_shape}
         }
-
         #Create graph object, introduce defects per input arguments
         if nodelist is not None:
             self.nodelist = nodelist.copy()
@@ -181,6 +193,11 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                  self.properties['topology']['shape'],
                                  self.nodelist, self.edgelist)
 
+        if topology_type == 'pegasus':
+            m = self.properties['topology']['shape'][0]
+            num_qubits = m*(m-1)*24  # fabric_only=True technicality
+        else:
+            num_qubits = len(solver_graph)
         if broken_nodes is None and broken_edges is None:
             self.nodelist = sorted(solver_graph.nodes)
             self.edgelist = sorted(tuple(sorted(edge))
@@ -199,7 +216,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                                    and (v, u) not in broken_edges)
         #Finalize yield-dependent properties:
         self.properties.update({
-            'num_qubits': len(solver_graph),
+            'num_qubits': num_qubits,
             'qubits': self.nodelist.copy(),
             'couplers': self.edgelist.copy(),
             'anneal_offset_ranges': [[-0.5, 0.5] if i in self.nodelist
@@ -305,6 +322,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'tags': [],
             'category': 'qpu',
             'quota_conversion_rate': 1,
+            'fast_anneal_time_range': [0.005, 83000.0],
         })
 
         if properties is not None:
@@ -312,6 +330,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # particular care should be taken with respect to
             # topology-dependent arguments:
             self.properties.update(properties)
+            
+        if self.substitute_sampler is None:
+            self.substitute_sampler = SteepestDescentSampler()
 
     @classmethod
     def from_qpu_sampler(cls, sampler):
@@ -323,15 +344,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     def sample(self, bqm, **kwargs):
 
         # Check kwargs compatibility with parameters and substitute sampler:
-        mocked_parameters={'answer_mode',
-                           'max_answers',
-                           'num_reads',
-                           'label',
-                           'initial_state',
-                           }
+        
         for kw in kwargs:
             if kw in self.parameters:
-                if self.parameter_warnings and kw not in mocked_parameters:
+                if self.parameter_warnings and kw not in self.mocked_parameters:
                     warnings.warn(f'{kw!r} parameter is valid for DWaveSampler(), '
                                   'but not mocked in MockDWaveSampler().')
             else:
@@ -354,6 +370,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         label = kwargs.get('label')
         if label is not None:
             info.update(problem_label=label)
+        
 
         #Special handling of flux_biases, for compatibility with virtual graphs
 
@@ -361,10 +378,16 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if flux_biases is not None:
             self.flux_biases_flag = True
 
-        substitute_kwargs = {'num_reads' : kwargs.get('num_reads', 1)}
+        # Create a local dictionary combining self.substitute_kwargs and relevant kwargs
+        substitute_kwargs = self.substitute_kwargs.copy()
 
-        initial_state = kwargs.get('initial_state')
-        if initial_state is not None:
+        # Handle 'num_reads', defaulting to 1 if not provided
+        num_reads = kwargs.get('num_reads', substitute_kwargs.get('num_reads', 1))
+        substitute_kwargs['num_reads'] = num_reads
+
+      
+        if 'initial_state' in kwargs:
+            initial_state = kwargs['initial_state']
             # Initial state format is a list of (qubit,values)
             # value=3 denotes an unused variable (should be absent
             # from bqm). 
@@ -374,10 +397,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                           if pair[1]!=3],dtype=float),
                 [pair[0] for pair in initial_state if pair[1]!=3])
 
-        if substitute_kwargs is not None:
-            substitute_kwargs.update(self.mock_sampler_params)
-
-        ss = SteepestDescentSampler().sample(bqm, **substitute_kwargs)
+        ss = self.substitute_sampler.sample(bqm, **substitute_kwargs)
         ss.info.update(info)
 
         # determine ground state exactly for small problems
