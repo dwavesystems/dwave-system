@@ -116,14 +116,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     parameters = None
     # In principle this class can be wrapped and additional parameters emulated
     # (see shimming-tutorial)
-    substitute_sampler = None  # Exact where possible, SteepestDescent otherwise
-    substitute_kwargs = None  # Matched to mocked_parameters
-    mocked_parameters={'answer_mode',
-                       'max_answers',
-                       'num_reads',
-                       'label',
-                       'initial_state',
-    }
+    
     # by default, use ExactSolver to determine the first sample up to size (inclusive):
     EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
@@ -134,6 +127,17 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  parameter_warnings=True,
                  exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
                  **config):
+        
+        # Initializ mocked_parameters as an instance attribute
+        self.mocked_parameters={'answer_mode',
+                       'max_answers',
+                       'num_reads',
+                       'label',
+                       'initial_state',
+        }
+
+        self.substitute_sampler = SteepestDescentSampler()  # Exact where possible, SteepestDescent otherwise
+        self.substitute_kwargs = {}  # Matched to mocked_parameters
         self.parameter_warnings = parameter_warnings
         self.exact_solver_cutoff = exact_solver_cutoff
 
@@ -329,6 +333,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
 
+        # Reset substitute_kwargs at the start of each sample call
+        self.substitute_kwargs = {}
+        
         # Check kwargs compatibility with parameters and substitute sampler:
         
         for kw in kwargs:
@@ -356,8 +363,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         label = kwargs.get('label')
         if label is not None:
             info.update(problem_label=label)
-        if self.substitute_kwargs is None:
-            self.substitute_kwargs = {}
+        
 
         #Special handling of flux_biases, for compatibility with virtual graphs
 
