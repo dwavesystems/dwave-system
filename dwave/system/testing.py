@@ -358,6 +358,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             info.update(problem_label=label)
         if self.substitute_kwargs is None:
             self.substitute_kwargs = {}
+
+        #Special handling of flux_biases, for compatibility with virtual graphs
+
+        flux_biases = kwargs.get('flux_biases')
+        if flux_biases is not None:
+            self.flux_biases_flag = True
+ 
         self.substitute_kwargs['num_reads'] = kwargs.get('num_reads', None)
         if self.substitute_kwargs['num_reads'] is None:
             self.substitute_kwargs['num_reads'] = 1  # default for QPU
