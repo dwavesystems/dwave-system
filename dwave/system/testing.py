@@ -181,7 +181,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         if topology_type == 'pegasus':
             m = self.properties['topology']['shape'][0]
-            num_qubits = (m-1)**2*24  # fabric_only=True technicality
+            num_qubits = m*(m-1)*24  # fabric_only=True technicality
         else:
             num_qubits = len(solver_graph)
         if broken_nodes is None and broken_edges is None:
