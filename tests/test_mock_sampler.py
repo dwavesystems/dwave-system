@@ -216,7 +216,79 @@ class TestMockDWaveSampler(unittest.TestCase):
                                    broken_edges=delete_edges)
         self.assertTrue(len(sampler.nodelist)==4)
         self.assertTrue(len(sampler.edgelist)==1)
-        
+
+    def test_custom_mock_sampler(self):
+        """Test that MockDWaveSampler uses the provided custom mocking_sampler."""
+
+        # Define a custom sampler that always returns the same sample
+        class CustomSampler(dimod.Sampler):
+            properties = {}
+            parameters = {}
+
+            def sample(self, bqm, **kwargs):
+                # Return a sample where all variables are set to 1
+                sample = {v: 1 for v in bqm.variables}
+                energy = bqm.energy(sample)
+                return dimod.SampleSet.from_samples_bqm(sample, bqm)
+
+        custom_sampler = CustomSampler()
+
+        # Create a simple BQM
+        bqm = dimod.BQM({'a': -1, 'b': -1}, {('a', 'b'): -1}, 0.0, vartype='SPIN')
+
+        # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
+        sampler = MockDWaveSampler(
+            mocking_sampler=custom_sampler,
+            nodelist=['a', 'b'],
+            edgelist=[('a', 'b')]
+        )
+
+        # Sample using the MockDWaveSampler with the custom sampler
+        ss = sampler.sample(bqm)
+
+        # Check that the sample returned is as expected from the custom sampler
+        expected_sample = {'a': 1, 'b': 1}
+        self.assertEqual(ss.first.sample, expected_sample)
+        self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
+
+    def test_mocking_sampler_params(self):
+        """Test that mocking_sampler_params are correctly passed to the mocking_sampler."""
+
+        # Define a custom sampler that checks for a custom parameter
+        class CustomSampler(dimod.Sampler):
+            properties = {}
+            parameters = {'custom_param': []}
+
+            def sample(self, bqm, custom_param=None, **kwargs):
+                # Assert that custom_param is passed correctly
+                assert custom_param == 'test_value', "custom_param not passed correctly"
+                # Return a default sample
+                sample = {v: -1 for v in bqm.variables}
+                energy = bqm.energy(sample)
+                return dimod.SampleSet.from_samples_bqm(sample, bqm)
+
+        custom_sampler = CustomSampler()
+
+        # Create a simple BQM
+        bqm = dimod.BQM({'a': 1, 'b': 1}, {('a', 'b'): 1}, 0.0, vartype='SPIN')
+
+        # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
+        sampler = MockDWaveSampler(
+            mocking_sampler=custom_sampler,
+            mocking_sampler_params={'custom_param': 'test_value'},
+            nodelist=['a', 'b'],
+            edgelist=[('a', 'b')]
+        )
+
+        # Sample using the MockDWaveSampler
+        ss = sampler.sample(bqm)
+
+        # Check that the sample returned is as expected from the custom sampler
+        expected_sample = {'a': -1, 'b': -1}
+        self.assertEqual(ss.first.sample, expected_sample)
+        self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
+    
+
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
         sampler = MockLeapHybridDQMSampler()
