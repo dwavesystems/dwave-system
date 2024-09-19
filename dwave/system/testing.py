@@ -116,7 +116,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     parameters = None
     # In principle this class can be wrapped and additional parameters emulated
     # (see shimming-tutorial)
-    dimod_sampler = None
+    substitute_sampler = None  # Exact where possible, SteepestDescent otherwise
+    substitute_kwargs = None 
     mocked_parameters={'answer_mode',
                        'max_answers',
                        'num_reads',
@@ -307,6 +308,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'tags': [],
             'category': 'qpu',
             'quota_conversion_rate': 1,
+            'fast_anneal_time_range': [0.005, 83000.0],
         })
 
         if properties is not None:
@@ -315,8 +317,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # topology-dependent arguments:
             self.properties.update(properties)
             
-        if self.dimod_sampler is None:
-            dimod_sampler = dimod.SteepestDescentSolver()
+        if self.sampler is None:
+            self.sampler = dimod.SteepestDescentSolver()
 
     @classmethod
     def from_qpu_sampler(cls, sampler):
@@ -361,9 +363,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if flux_biases is not None:
             self.flux_biases_flag = True
 
-        substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
-        if substitute_kwargs['num_reads'] is None:
-            substitute_kwargs['num_reads'] = 1
+        self.substitute_kwargs = {'num_reads' : kwargs.get('num_reads')}
+        if self.substitute_kwargs['num_reads'] is None:
+            self.substitute_kwargs['num_reads'] = 1
 
         initial_state = kwargs.get('initial_state')
         if initial_state is not None:
@@ -371,12 +373,12 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # value=3 denotes an unused variable (should be absent
             # from bqm). 
             # Convert to format for substitute (NB: plural key)
-            substitute_kwargs['initial_states'] = (
+            self.substitute_kwargs['initial_states'] = (
                 np.array([pair[1] for pair in initial_state
                           if pair[1]!=3],dtype=float),
                 [pair[0] for pair in initial_state if pair[1]!=3])
 
-        ss = dimod_sampler.sample(bqm, **substitute_kwargs)
+        ss = sampler.sample(bqm, **self.substitute_kwargs)
         ss.info.update(info)
 
         # determine ground state exactly for small problems
