@@ -333,9 +333,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
 
-        # Reset substitute_kwargs at the start of each sample call
-        self.substitute_kwargs = {}
-        
         # Check kwargs compatibility with parameters and substitute sampler:
         
         for kw in kwargs:
@@ -370,23 +367,27 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         flux_biases = kwargs.get('flux_biases')
         if flux_biases is not None:
             self.flux_biases_flag = True
- 
-        self.substitute_kwargs['num_reads'] = kwargs.get('num_reads', None)
-        if self.substitute_kwargs['num_reads'] is None:
-            self.substitute_kwargs['num_reads'] = 1  # default for QPU
 
-        initial_state = kwargs.get('initial_state', None)
-        if initial_state is not None:
+        # Create a local dictionary combining self.substitute_kwargs and relevant kwargs
+        substitute_kwargs = self.substitute_kwargs.copy()
+
+        # Handle 'num_reads', defaulting to 1 if not provided
+        num_reads = kwargs.get('num_reads', substitute_kwargs.get('num_reads', 1))
+        substitute_kwargs['num_reads'] = num_reads
+
+      
+        if 'initial_state' in kwargs:
+            initial_state = kwargs['initial_state']
             # Initial state format is a list of (qubit,values)
             # value=3 denotes an unused variable (should be absent
             # from bqm). 
             # Convert to format for substitute (NB: plural key)
-            self.substitute_kwargs['initial_states'] = (
+            substitute_kwargs['initial_states'] = (
                 np.array([pair[1] for pair in initial_state
                           if pair[1]!=3],dtype=float),
                 [pair[0] for pair in initial_state if pair[1]!=3])
 
-        ss = self.substitute_sampler.sample(bqm, **self.substitute_kwargs)
+        ss = self.substitute_sampler.sample(bqm, **substitute_kwargs)
         ss.info.update(info)
 
         # determine ground state exactly for small problems
