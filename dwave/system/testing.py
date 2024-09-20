@@ -28,9 +28,15 @@ from dwave.system import qpu_graph
 class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
-    Properties and topology parameters are populated qualitatively matching
+    Properties and topology parameters are populated to qualitatively match
     online systems, and a placeholder sampler routine based on steepest descent
-    is instantiated.
+    is instantiated by default.
+
+    The `EXACT_SOLVER_CUTOFF_DEFAULT` defines the problem size threshold for using the exact solver.
+    For problems with fewer variables than this threshold, the exact ground state is computed 
+    using a brute-force solver. This provides a reproducible solution for small problem sizes.
+
+    For larger problems, the `SteepestDescentSampler` is used as a placeholder solver.
 
     Args:
         nodelist (iterable of ints, optional):
@@ -120,8 +126,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  broken_nodes=None, broken_edges=None,
                  topology_type=None, topology_shape=None,
                  parameter_warnings=True,
-                 mocking_sampler = None, # Add default sampler
-                 mocking_sampler_params = None, 
+                 mocking_sampler=None, # Add default sampler
+                 mocking_sampler_params=None, 
                  exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
                  **config):
         
