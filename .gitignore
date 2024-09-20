@@ -107,9 +107,3 @@ ENV/
 *.sublime-workspace
 
 generated/
-
-# Ignore virtual environments
-dwave_sys/
-
-# macOS system file
-.DS_Store
