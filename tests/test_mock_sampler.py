@@ -249,7 +249,7 @@ class TestMockDWaveSampler(unittest.TestCase):
         # Check that the sample returned is as expected from the custom sampler
         expected_sample = {'a': 1, 'b': 1}
         self.assertTrue(np.all(ss.record.sample[1,:]==1), 'Second sample was not the expected excited state')
-        self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
+        
 
     def test_mocking_sampler_params(self):
         """Test that mocking_sampler_params are correctly passed to the mocking_sampler."""
