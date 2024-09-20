@@ -108,16 +108,11 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         -1
 
     """
-    # Feature suggestion - add seed as an optional input, to allow reproducibility.
-
     nodelist = None
     edgelist = None
     properties = None
     parameters = None
-    # In principle this class can be wrapped and additional parameters emulated
-    # (see shimming-tutorial)
     
-    # by default, use ExactSolver to determine the first sample up to size (inclusive):
     EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
     def __init__(self,
@@ -130,7 +125,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
                  **config):
         
-        # Initializ mocked_parameters as an instance attribute
         self.mocked_parameters={'answer_mode',
                        'max_answers',
                        'num_reads',
@@ -143,7 +137,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         self.parameter_warnings = parameter_warnings
         self.exact_solver_cutoff = exact_solver_cutoff
         
-        # Initialize the mock_sampler to SteepestDescentSampler if None
         if mocking_sampler is None:
             self.mock_sampler = dwave.samplers.SteepestDescentSampler()
         else:
