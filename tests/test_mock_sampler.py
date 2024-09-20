@@ -244,7 +244,7 @@ class TestMockDWaveSampler(unittest.TestCase):
         )
 
         # Sample using the MockDWaveSampler with the custom sampler
-        ss = sampler.sample(bqm)
+        ss = sampler.sample(bqm, num_reads=2)  # First sample is overwritten by ExactSampler
 
         # Check that the sample returned is as expected from the custom sampler
         expected_sample = {'a': 1, 'b': 1}
