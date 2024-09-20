@@ -234,7 +234,7 @@ class TestMockDWaveSampler(unittest.TestCase):
         custom_sampler = CustomSampler()
 
         # Create a simple BQM
-        bqm = dimod.BQM({'a': -1, 'b': -1}, {('a', 'b'): -1}, 0.0, vartype='SPIN')
+        bqm = dimod.BQM({'a': 1, 'b': 1}, {}, 0.0, vartype='SPIN')
 
         # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
         sampler = MockDWaveSampler(
