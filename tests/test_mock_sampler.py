@@ -223,32 +223,40 @@ class TestMockDWaveSampler(unittest.TestCase):
         # Define a constant sampler that always returns the same sample
         class ConstantSampler(dimod.Sampler):
             properties = {}
-            parameters = {}
+            parameters = {'num_reads': []}
 
             def sample(self, bqm, **kwargs):
-                # Return a sample where all variables are set to 1
+                num_reads = kwargs.get('num_reads', 1)
                 sample = {v: 1 for v in bqm.variables}
-                return dimod.SampleSet.from_samples_bqm(sample, bqm)
+                samples = [sample] * num_reads
+                energies = [bqm.energy(sample) for sample in samples]
+                return dimod.SampleSet.from_samples(samples, vartype=bqm.vartype, energy=energies)
 
         constant_sampler = ConstantSampler()
 
         # Create a simple BQM
-        bqm = dimod.BQM({'a': 1, 'b': 1}, {}, 0.0, vartype='SPIN')
+        bqm = dimod.BQM({'a': 1, 'b': 1}, {}, 0.0, vartype="SPIN")
 
         # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
         sampler = MockDWaveSampler(
-            mocking_sampler=constant_sampler,
+            substitute_sampler=constant_sampler,
             nodelist=['a', 'b'],
             edgelist=[('a', 'b')]
         )
 
         # Sample using the MockDWaveSampler with the custom sampler
-        ss = sampler.sample(bqm, num_reads=2)  # First sample is overwritten by ExactSampler
+        ss = sampler.sample(bqm, num_reads=2, answer_mode='raw')  # First sample is overwritten by ExactSampler
+        
+        # Reconstruct the second sample as a dictionary
+        second_sample_array = ss.record.sample[1]
+        variables = ss.variables
+        second_sample = dict(zip(variables, second_sample_array))
+
+        # Expected sample from the custom sampler
+        expected_sample = {v: 1 for v in bqm.variables}
 
         # Check that the sample returned is as expected from the custom sampler
-        expected_sample = {'a': 1, 'b': 1}
-        self.assertTrue(np.all(ss.record.sample[1,:]==1), 'Second sample was not the expected excited state')
-        
+        self.assertEqual(second_sample, expected_sample, 'Second sample was not the expected excited state')
 
     def test_mocking_sampler_params(self):
         """Test that mocking_sampler_params are correctly passed to the mocking_sampler."""
@@ -258,9 +266,11 @@ class TestMockDWaveSampler(unittest.TestCase):
             properties = {}
             parameters = {'custom_param': []}
 
-            def sample(self, bqm, custom_param=None, **kwargs):
-                # Assert that custom_param is passed correctly
-                assert custom_param == 'test_value', "custom_param not passed correctly"
+            def sample(self, bqm, **kwargs):
+                custom_param = kwargs.get('custom_param')
+                # Raise exception if parameters passed incorrectly
+                if custom_param != 'test_value':
+                    raise ValueError("custom_param not passed correctly")
                 # Return a default sample
                 sample = {v: -1 for v in bqm.variables}
                 return dimod.SampleSet.from_samples_bqm(sample, bqm)
@@ -268,12 +278,12 @@ class TestMockDWaveSampler(unittest.TestCase):
         constant_sampler = ConstantSampler()
 
         # Create a simple BQM
-        bqm = dimod.BQM({'a': 1, 'b': 1}, {('a', 'b'): 1}, 0.0, vartype='SPIN')
+        bqm = dimod.BQM({'a': 1, 'b': 1}, {('a', 'b'): 1}, 0.0, vartype="SPIN")
 
         # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
         sampler = MockDWaveSampler(
-            mocking_sampler=constant_sampler,
-            mocking_sampler_params={'custom_param': 'test_value'},
+            substitute_sampler=constant_sampler,
+            substitute_kwargs={'custom_param': 'test_value'},
             nodelist=['a', 'b'],
             edgelist=[('a', 'b')]
         )
@@ -285,7 +295,6 @@ class TestMockDWaveSampler(unittest.TestCase):
         expected_sample = {'a': -1, 'b': -1}
         self.assertEqual(ss.first.sample, expected_sample)
         self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
-    
 
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
