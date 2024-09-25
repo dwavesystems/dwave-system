@@ -393,7 +393,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         sampler_kwargs.update(substitute_kwargs)
 
         ss = self.substitute_sampler.sample(bqm, **sampler_kwargs)
-
+        ss.info.update(info)
+        
         # determine ground state exactly for small problems
         if 0 < len(bqm) <= self.exact_solver_cutoff and len(ss) >= 1:
             ground = dimod.ExactSolver().sample(bqm).truncate(1)
