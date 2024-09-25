@@ -79,6 +79,20 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             parameters. By default ``initial_state`` can also be mocked, if
             dwave-greedy is installed. All other parameters are ignored and a 
             warning will be raised by default.
+        
+        substitute_sampler (dimod.Sampler, optional, default=SteepestDescentSampler()):
+            The sampler to be used as a substitute when executing the mock sampler. 
+            By default, `SteepestDescentSampler()` is employed, which performs a 
+            deterministic steepest descent optimization on the BQM. Supported options are
+            any dimod-compatible sampler to customize the sampling behavior of 
+            `MockDWaveSampler()`.
+
+        substitute_kwargs (dict, optional, default=[]):
+            A dictionary of keyword arguments to pass to the `substitute_sampler`'s 
+            `sample` method. This allows users to configure the substitute sampler 
+            with specific parameters like `num_reads`, `initial_state`, or other 
+            sampler-specific options. If not provided, an empty dictionary is used 
+            by default.
 
         exact_solver_cutoff (int, optional, default=:attr:`EXACT_SOLVER_CUTOFF_DEFAULT`):
             For problems smaller or equal in size to ``exact_solver_cutoff``, the
