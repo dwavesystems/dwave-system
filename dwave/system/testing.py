@@ -140,15 +140,13 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         
         # Exact where possible, SteepestDescent otherwise
         if substitute_sampler is None:
-            self.substitute_sampler = SteepestDescentSampler()
-        else:
-            self.substitute_sampler = substitute_sampler
+            substitute_sampler = SteepestDescentSampler()
+        self.substitute_sampler = substitute_sampler
         
         if substitute_kwargs is None:
-            self.substitute_kwargs = {}  
-        else:
-            self.substitute_kwargs = substitute_kwargs
-            
+            substitute_kwargs = {} 
+        self.substitute_kwargs = substitute_kwargs
+
         self.parameter_warnings = parameter_warnings
         self.exact_solver_cutoff = exact_solver_cutoff
 
