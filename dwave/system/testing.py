@@ -152,7 +152,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                        'initial_state',
         }
         
-        # Exact where possible, SteepestDescent otherwise
         if substitute_sampler is None:
             substitute_sampler = SteepestDescentSampler()
         self.substitute_sampler = substitute_sampler
@@ -380,7 +379,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if label is not None:
             info.update(problem_label=label)
         
-        #Special handling of flux_biases, for compatibility with virtual graphs
+        # Special handling of flux_biases, for compatibility with virtual graphs
         flux_biases = kwargs.get('flux_biases')
         if flux_biases is not None:
             self.flux_biases_flag = True
