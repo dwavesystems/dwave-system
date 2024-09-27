@@ -98,11 +98,17 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             For problems smaller or equal in size to ``exact_solver_cutoff``, the
             first sample in any sampleset returned by the sampling routines
             is replaced by a reproducible ground state (determined exactly with
-            a brute-force :class:`~dimod.ExactSolver`). Only small cut offs
+            a brute-force :class:`~dimod.ExactSolver`). Only small cutoffs
             should be used since solution time increases exponentially with
             problem size.
+            
+            - When ``substitute_sampler`` is not provided, the default value is 
+            ``EXACT_SOLVER_CUTOFF_DEFAULT`` (e.g., 16).
+            - When ``substitute_sampler`` is provided, the default value is 
+            ``0``, disabling exact ground state calculation.
+            
             Set ``exact_solver_cutoff`` to zero to disable exact ground state
-            calculation.
+            calculation explicitly.
 
     Examples
         The first example creates a MockSampler without reference to a
@@ -132,8 +138,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     edgelist = None
     properties = None
     parameters = None
-    
-    EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
     def __init__(self,
                  nodelist=None, edgelist=None, properties=None,
@@ -142,7 +146,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  parameter_warnings=True,
                  substitute_sampler=None, 
                  substitute_kwargs=None, 
-                 exact_solver_cutoff=EXACT_SOLVER_CUTOFF_DEFAULT,
+                 exact_solver_cutoff=None,
                  **config):
         
         self.mocked_parameters={'answer_mode',
@@ -151,11 +155,20 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                        'label',
                        'initial_state',
         }
-        
+
+        EXACT_SOLVER_CUTOFF_DEFAULT = 16
+
         if substitute_sampler is None:
             substitute_sampler = SteepestDescentSampler()
+            if exact_solver_cutoff is None:
+                exact_solver_cutoff = EXACT_SOLVER_CUTOFF_DEFAULT
+        else:
+            if exact_solver_cutoff is None:
+                exact_solver_cutoff = 0
+
         self.substitute_sampler = substitute_sampler
-        
+        self.exact_solver_cutoff = exact_solver_cutoff
+
         if substitute_kwargs is None:
             substitute_kwargs = {} 
         self.substitute_kwargs = substitute_kwargs
