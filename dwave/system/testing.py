@@ -167,7 +167,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 exact_solver_cutoff = 0
 
         self.substitute_sampler = substitute_sampler
-        self.exact_solver_cutoff = exact_solver_cutoff
 
         if substitute_kwargs is None:
             substitute_kwargs = {} 
@@ -420,13 +419,12 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         ss = self.substitute_sampler.sample(bqm, **sampler_kwargs)
         ss.info.update(info)
-        
         # determine ground state exactly for small problems
         if 0 < len(bqm) <= self.exact_solver_cutoff and len(ss) >= 1:
             ground = dimod.ExactSolver().sample(bqm).truncate(1)
             ss.record[0].sample = ground.record[0].sample
             ss.record[0].energy = ground.record[0].energy
-
+        
         answer_mode = kwargs.get('answer_mode')
         if answer_mode is None or answer_mode == 'histogram':
             # Default for DWaveSampler() is 'histogram'
