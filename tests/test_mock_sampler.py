@@ -25,6 +25,7 @@ from dwave.system import DWaveSampler
 from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
+from dwave.samplers import SteepestDescentSolver
 
 
 class TestMockDWaveSampler(unittest.TestCase):
@@ -217,46 +218,49 @@ class TestMockDWaveSampler(unittest.TestCase):
         self.assertTrue(len(sampler.nodelist)==4)
         self.assertTrue(len(sampler.edgelist)==1)
 
-    def test_custom_mock_sampler(self):
-        """Test that MockDWaveSampler uses the provided custom mocking_sampler."""
+    def test_custom_substitute_sampler(self):
+        """Test that MockDWaveSampler uses the provided custom substitute_sampler."""
 
-        # Define a constant sampler that always returns the same sample
-        class ConstantSampler(dimod.Sampler):
-            properties = {}
-            parameters = {'num_reads': []}
+        # Define a sampler that always returns the a constant (excited) state
+        class SteepestAscentSolver(SteepestDescentSolver):
+            def __init__(self):
+                super().__init__()
 
             def sample(self, bqm, **kwargs):
-                num_reads = kwargs.get('num_reads', 1)
-                sample = {v: 1 for v in bqm.variables}
-                samples = [sample] * num_reads
-                energies = [bqm.energy(sample) for sample in samples]
-                return dimod.SampleSet.from_samples(samples, vartype=bqm.vartype, energy=energies)
+                # Return local (or global)  maxima instead of local minima
+                return super().sample(-bqm, **kwargs)
 
-        constant_sampler = ConstantSampler()
+        inverted_sampler = SteepestAscentSolver()
 
         # Create a simple BQM
         bqm = dimod.BQM({'a': 1, 'b': 1}, {}, 0.0, vartype="SPIN")
 
         # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
         sampler = MockDWaveSampler(
-            substitute_sampler=constant_sampler,
+            substitute_sampler=inverted_sampler,
             nodelist=['a', 'b'],
             edgelist=[('a', 'b')]
         )
 
-        # Sample using the MockDWaveSampler with the custom sampler
-        ss = sampler.sample(bqm, num_reads=2, answer_mode='raw')  # First sample is overwritten by ExactSampler
-        
-        # Reconstruct the second sample as a dictionary
-        second_sample_array = ss.record.sample[1]
-        variables = ss.variables
-        second_sample = dict(zip(variables, second_sample_array))
-
-        # Expected sample from the custom sampler
-        expected_sample = {v: 1 for v in bqm.variables}
-
-        # Check that the sample returned is as expected from the custom sampler
-        self.assertEqual(second_sample, expected_sample, 'Second sample was not the expected excited state')
+        # First sample does not use ExactSampler(); Second sample does not
+        # use SteepestDescentSampler()
+        ss = sampler.sample(bqm, num_reads=2)
+        self.assertEqual(sampler.exact_solver_cutoff, 0)
+        self.assertEqual(ss.record.sample.shape, (1,2), 'Unique sample expected')
+        self.assertTrue(np.all(ss.record.sample==1), 'Excited states expected')
+        sampler = MockDWaveSampler(
+            substitute_sampler=inverted_sampler,
+            nodelist=['a', 'b'],
+            edgelist=[('a', 'b')],
+            exact_solver_cutoff=2
+        )
+        # First sample uses ExactSampler(); Second sampler uses inverted
+        # sampler. Explicit exact_solver_cutoff overrides substitute_sampler.
+        ss = sampler.sample(bqm, num_reads=2, answer_mode='raw')
+        self.assertEqual(sampler.exact_solver_cutoff, 2)
+        self.assertEqual(ss.record.sample.shape, (2,2), 'Non-unique samples expected')
+        self.assertTrue(np.all(ss.record.sample[0,:] == -1), 'Excited states expected')
+        self.assertTrue(np.all(ss.record.sample[1,:] == 1), 'Excited states expected')
 
     def test_mocking_sampler_params(self):
         """Test that mocking_sampler_params are correctly passed to the mocking_sampler."""
@@ -293,8 +297,9 @@ class TestMockDWaveSampler(unittest.TestCase):
 
         # Check that the sample returned is as expected from the custom sampler
         expected_sample = {'a': -1, 'b': -1}
-        self.assertEqual(ss.first.sample, expected_sample)
+        self.assertDictEqual(ss.first.sample, expected_sample)
         self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
+
 
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
