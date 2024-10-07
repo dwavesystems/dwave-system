@@ -228,6 +228,7 @@ class TestMockDWaveSampler(unittest.TestCase):
 
             def sample(self, bqm, **kwargs):
                 # Return local (or global)  maxima instead of local minima
+                # NOTE: energy returned is not faithful to the original bqm (energy calculated as `-bqm`)
                 return super().sample(-bqm, **kwargs)
 
         inverted_sampler = SteepestAscentSolver()
