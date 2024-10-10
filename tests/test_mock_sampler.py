@@ -223,9 +223,6 @@ class TestMockDWaveSampler(unittest.TestCase):
 
         # Define a sampler that always returns the a constant (excited) state
         class SteepestAscentSolver(SteepestDescentSolver):
-            def __init__(self):
-                super().__init__()
-
             def sample(self, bqm, **kwargs):
                 # Return local (or global)  maxima instead of local minima
                 # NOTE: energy returned is not faithful to the original bqm (energy calculated as `-bqm`)
@@ -243,25 +240,28 @@ class TestMockDWaveSampler(unittest.TestCase):
             edgelist=[('a', 'b')]
         )
 
-        # First sample does not use ExactSampler(); Second sample does not
-        # use SteepestDescentSampler()
-        ss = sampler.sample(bqm, num_reads=2)
-        self.assertEqual(sampler.exact_solver_cutoff, 0)
-        self.assertEqual(ss.record.sample.shape, (1,2), 'Unique sample expected')
-        self.assertTrue(np.all(ss.record.sample==1), 'Excited states expected')
+        # First Subtest: First sample does not use ExactSampler();
+        # Second sample does not use SteepestDescentSampler()
+        with self.subTest("Sampler without ExactSampler"):
+            ss = sampler.sample(bqm, num_reads=2)
+            self.assertEqual(sampler.exact_solver_cutoff, 0)
+            self.assertEqual(ss.record.sample.shape, (1,2), 'Unique sample expected')
+            self.assertTrue(np.all(ss.record.sample==1), 'Excited states expected')
+
         sampler = MockDWaveSampler(
             substitute_sampler=inverted_sampler,
             nodelist=['a', 'b'],
             edgelist=[('a', 'b')],
             exact_solver_cutoff=2
         )
-        # First sample uses ExactSampler(); Second sampler uses inverted
-        # sampler. Explicit exact_solver_cutoff overrides substitute_sampler.
-        ss = sampler.sample(bqm, num_reads=2, answer_mode='raw')
-        self.assertEqual(sampler.exact_solver_cutoff, 2)
-        self.assertEqual(ss.record.sample.shape, (2,2), 'Non-unique samples expected')
-        self.assertTrue(np.all(ss.record.sample[0,:] == -1), 'Excited states expected')
-        self.assertTrue(np.all(ss.record.sample[1,:] == 1), 'Excited states expected')
+        # Second Subtest: First sample uses ExactSampler();
+        # Second sampler uses inverted sampler. Explicit exact_solver_cutoff overrides substitute_sampler.
+        with self.subTest("Sampler with ExactSampler and substitute_sampler"):
+            ss = sampler.sample(bqm, num_reads=2, answer_mode='raw')
+            self.assertEqual(sampler.exact_solver_cutoff, 2)
+            self.assertEqual(ss.record.sample.shape, (2,2), 'Non-unique samples expected')
+            self.assertTrue(np.all(ss.record.sample[0,:] == -1), 'Excited states expected')
+            self.assertTrue(np.all(ss.record.sample[1,:] == 1), 'Excited states expected')
 
     def test_mocking_sampler_params(self):
         """Test that mocking_sampler_params are correctly passed to the mocking_sampler."""
