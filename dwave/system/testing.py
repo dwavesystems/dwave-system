@@ -87,7 +87,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             any dimod-compatible sampler to customize the sampling behavior of 
             `MockDWaveSampler()`.
 
-        substitute_kwargs (dict, optional, default=[]):
+        substitute_kwargs (dict, optional, default={}):
             A dictionary of keyword arguments to pass to the `substitute_sampler`'s 
             `sample` method. This allows users to configure the substitute sampler 
             with specific parameters like `num_reads`, `initial_state`, or other 
