@@ -269,13 +269,16 @@ class TestMockDWaveSampler(unittest.TestCase):
         # Define a constant sampler that checks for a custom parameter
         class ConstantSampler(dimod.Sampler):
             properties = {}
-            parameters = {'custom_param': []}
+            parameters = {'custom_param': [], 'num_reads': []}
 
             def sample(self, bqm, **kwargs):
                 custom_param = kwargs.get('custom_param')
+                num_reads = kwargs.get('num_reads')
                 # Raise exception if parameters passed incorrectly
                 if custom_param != 'test_value':
                     raise ValueError("custom_param not passed correctly")
+                if num_reads != 10:
+                    raise ValueError(f"num_reads not passed correctly, expected 10, got {num_reads}")
                 # Return a default sample
                 sample = {v: -1 for v in bqm.variables}
                 return dimod.SampleSet.from_samples_bqm(sample, bqm)
@@ -294,7 +297,7 @@ class TestMockDWaveSampler(unittest.TestCase):
         )
 
         # Sample using the MockDWaveSampler
-        ss = sampler.sample(bqm)
+        ss = sampler.sample(bqm, num_reads=10)
 
         # Check that the sample returned is as expected from the custom sampler
         expected_sample = {'a': -1, 'b': -1}
