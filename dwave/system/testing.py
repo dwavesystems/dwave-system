@@ -150,11 +150,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  **config):
         
         self.mocked_parameters={'answer_mode',
-                       'max_answers',
-                       'num_reads',
-                       'label',
-                       'initial_state',
-        }
+                                'max_answers',
+                                'num_reads',
+                                'label',
+                                'initial_state'}
 
         EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
