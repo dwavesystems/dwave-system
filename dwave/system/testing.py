@@ -80,7 +80,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             dwave-greedy is installed. All other parameters are ignored and a 
             warning will be raised by default.
         
-        substitute_sampler (dimod.Sampler, optional, default=SteepestDescentSampler()):
+        substitute_sampler (:class:`~dimod.Sampler`, optional, default=SteepestDescentSampler()):
             The sampler to be used as a substitute when executing the mock sampler. 
             By default, :class:`~dwave.samplers.SteepestDescentSampler` is employed, which performs a 
             deterministic steepest descent optimization on the BQM. Supported options are
