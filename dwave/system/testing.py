@@ -82,7 +82,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         
         substitute_sampler (dimod.Sampler, optional, default=SteepestDescentSampler()):
             The sampler to be used as a substitute when executing the mock sampler. 
-            By default, `SteepestDescentSampler()` is employed, which performs a 
+            By default, :class:`~dwave.samplers.SteepestDescentSampler` is employed, which performs a 
             deterministic steepest descent optimization on the BQM. Supported options are
             any dimod-compatible sampler to customize the sampling behavior of 
             `MockDWaveSampler()`.
