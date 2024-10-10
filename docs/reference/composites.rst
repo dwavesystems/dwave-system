@@ -326,3 +326,36 @@ Methods
    ReverseAdvanceComposite.sample
    ReverseAdvanceComposite.sample_ising
    ReverseAdvanceComposite.sample_qubo
+
+
+Linear Bias
+===========
+
+Composites for implementing linear biases in D-Wave systems through auxiliary methods. 
+
+
+LinearAncillaComposite
+-----------------------
+
+.. autoclass:: LinearAncillaComposite
+
+Properties
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   LinearAncillaComposite.child
+   LinearAncillaComposite.children
+   LinearAncillaComposite.parameters
+   LinearAncillaComposite.properties
+
+Methods
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   LinearAncillaComposite.sample
+   LinearAncillaComposite.sample_ising
+   LinearAncillaComposite.sample_qubo
