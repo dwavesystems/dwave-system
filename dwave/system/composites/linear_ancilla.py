@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright 2018 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +15,22 @@
 """Composite to implement linear coefficients with ancilla qubits biased with flux-bias offsets.
 """
 
-from collections import defaultdict
 import numbers
+
+from collections import defaultdict
 from typing import Sequence, Mapping, Any
 
+import dimod
 import numpy as np
 
 from dimod.decorators import nonblocking_sample_method
-import dimod
 
 
 __all__ = ["LinearAncillaComposite"]
 
 
 class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
-    """Implements linear fields as ancilla qubits polarized with strong flux biases.
+    """Implements linear biases as ancilla qubits polarized with strong flux biases.
 
     Linear field `h_i` of qubit `i` is implemented through a coupling `J_{ij}` between
     the qubit and a neighbouring qubit `j` that is fully polarized with a large flux bias.
@@ -110,9 +110,9 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
             raise ValueError("h_tolerance needs to be positive or zero")
 
         child = self.child
-        qpu_properties = innermost_child_properties(child)
-        g_target = child.to_networkx_graph()
-        g_source = dimod.to_networkx_graph(bqm)
+        qpu_properties = _innermost_child_properties(child)
+        target_graph = child.to_networkx_graph()
+        source_graph = dimod.to_networkx_graph(bqm)
         j_range = qpu_properties["extended_j_range"]
         flux_bias_range = qpu_properties.get("flux_bias_range", default_flux_bias_range)
 
@@ -133,14 +133,14 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
             if abs(bias) <= h_tolerance:
                 continue
             if abs(bias) - h_tolerance > abs(largest_j):
-                return NotImplementedError(
-                    "linear biases larger than the strongest coupling are not supported yet"
+                return ValueError(
+                    "linear biases larger than the strongest coupling are not supported"
                 )  # TODO: implement larger biases through multiple ancillas
 
-            available_ancillas = set(g_target.adj[variable]) - set(g_source.nodes())
+            available_ancillas = set(target_graph.adj[variable]) - source_graph.nodes()
             if not len(available_ancillas):
                 raise ValueError(f"variable {variable} has no ancillas available")
-            unused_ancillas = available_ancillas - set(used_ancillas)
+            unused_ancillas = available_ancillas - used_ancillas.keys()
             if len(unused_ancillas):
                 ancilla = unused_ancillas.pop()
                 # bias sign is handled by the flux bias
@@ -150,7 +150,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
                 )
             else:
                 if qpu_properties["j_range"][0] <= bias <= qpu_properties["j_range"][1]:
-                    # If j can be sign-flipped, select the least used ancilla
+                    # If j can be sign-flipped, select the least used ancilla regardless of the flux bias sign
                     ancilla = sorted(
                         list(available_ancillas), key=lambda x: len(used_ancillas[x])
                     )[0]
@@ -161,12 +161,12 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
                         * np.sign([flux_biases[ancilla]]),
                     )
                 else:
-                    # Ancilla sharing is limited to flux biases with a  sign
+                    # Ancilla sharing is limited to flux biases with appropiate sign
                     signed_ancillas = [
                         ancilla
                         for ancilla in available_ancillas
                         if largest_j_sign
-                        == np.sign(flux_biases[ancilla]) * np.sign(bias)
+                        == np.sign(flux_biases[ancilla] * bias)
                     ]
                     if not len(signed_ancillas):
                         return ValueError(
@@ -197,7 +197,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         )
 
 
-def innermost_child_properties(sampler: dimod.Sampler) -> Mapping[str, Any]:
+def _innermost_child_properties(sampler: dimod.Sampler) -> Mapping[str, Any]:
     """Returns the properties of the inner-most child sampler in a composite.
 
     Args:
@@ -209,6 +209,6 @@ def innermost_child_properties(sampler: dimod.Sampler) -> Mapping[str, Any]:
     """
 
     try:
-        return innermost_child_properties(sampler.child)
+        return _innermost_child_properties(sampler.child)
     except AttributeError:
         return sampler.properties
