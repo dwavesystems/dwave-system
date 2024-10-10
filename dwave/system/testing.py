@@ -32,7 +32,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     online systems, and a placeholder sampler routine based on steepest descent
     is instantiated by default.
 
-    The `EXACT_SOLVER_CUTOFF_DEFAULT` defines the problem size threshold for using the exact solver.
+    The :attr:`.EXACT_SOLVER_CUTOFF_DEFAULT` defines the problem size threshold for using the exact solver.
     For problems with fewer variables than this threshold, the exact ground state is computed 
     using a brute-force solver. This provides a reproducible solution for small problem sizes.
 
