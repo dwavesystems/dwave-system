@@ -264,7 +264,7 @@ class TestMockDWaveSampler(unittest.TestCase):
             self.assertTrue(np.all(ss.record.sample[1,:] == 1), 'Excited states expected')
 
     def test_mocking_sampler_params(self):
-        """Test that mocking_sampler_params are correctly passed to the mocking_sampler."""
+        """Test that substitute_kwargs are correctly passed to the substitute_sampler."""
 
         # Define a constant sampler that checks for a custom parameter
         class ConstantSampler(dimod.Sampler):
