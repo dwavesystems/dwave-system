@@ -12,15 +12,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import unittest
 import collections
-
-import numpy as np
-
-import networkx as nx
+import unittest
 
 import dimod
-from dimod import TrackingComposite, StructureComposite
+import networkx as nx
+import numpy as np
 
 from dwave.system.testing import MockDWaveSampler
 from dwave.system import LinearAncillaComposite
@@ -29,10 +26,10 @@ from dwave.system import LinearAncillaComposite
 class TestLinearAncillaComposite(unittest.TestCase):
     def setUp(self):
         self.qpu = MockDWaveSampler(properties=dict(extended_j_range=[-2, 1]))
-        self.tracked_qpu = TrackingComposite(self.qpu)
+        self.tracked_qpu = dimod.TrackingComposite(self.qpu)
 
         self.sampler = LinearAncillaComposite(
-            StructureComposite(
+            dimod.StructureComposite(
                 self.tracked_qpu,
                 nodelist=self.qpu.nodelist,
                 edgelist=self.qpu.edgelist,
