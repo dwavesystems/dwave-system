@@ -298,7 +298,7 @@ class TestMockDWaveSampler(unittest.TestCase):
 
         # Check that the sample returned is as expected from the custom sampler
         expected_sample = {'a': -1, 'b': -1}
-        self.assertDictEqual(ss.first.sample, expected_sample)
+        self.assertEqual(ss.first.sample, expected_sample)
         self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
 
 
