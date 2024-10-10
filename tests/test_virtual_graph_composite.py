@@ -33,7 +33,7 @@ class TestVirtualGraphWithMockDWaveSampler(unittest.TestCase):
 
         # depending on how recenlty flux bias data was gathered, this may be true
         child_sampler.flux_biases_flag = False
-
+        child_sampler.mocked_parameters.add('flux_biases')  # Don't raise warning
         if sampler.flux_biases:
             sampler.sample_ising({'a': -1}, {})
             self.assertTrue(child_sampler.flux_biases_flag)  # true when some have been provided to sample_ising
