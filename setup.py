@@ -36,7 +36,7 @@ install_requires = ['dimod>=0.12.7,<0.14.0',
                     'scipy>=1.7.3',
                     ]
 
-python_requires = '>=3.8'
+python_requires = '>=3.9'
 
 packages = ['dwave',
             'dwave.embedding',
@@ -50,7 +50,6 @@ classifiers = [
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',

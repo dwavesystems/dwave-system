@@ -227,7 +227,7 @@ workflows:
           name: test-linux-<< matrix.python-version >> | << matrix.dependency-specifiers >>
           matrix:
             parameters:
-              python-version: &python-versions ["3.8", "3.9", "3.10", "3.11", "3.12", &latest-python "3.13"]
+              python-version: &python-versions ["3.9", "3.10", "3.11", "3.12", &latest-python "3.13"]
               dependency-specifiers:
                 - "dwave-cloud-client~=0.12.0"
                 - "dwave-cloud-client~=0.13.0"

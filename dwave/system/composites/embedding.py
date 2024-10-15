@@ -30,7 +30,6 @@ from warnings import warn
 
 import dimod
 import minorminer
-import functools
 
 from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
                              chain_to_quadratic, EmbeddedStructure)
