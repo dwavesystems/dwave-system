@@ -23,7 +23,7 @@ jobs:
         type: string
 
     docker:
-      - image: cimg/python:<< parameters.python-version >>
+      - image: python:<< parameters.python-version >>
 
     steps:
       - checkout
@@ -74,7 +74,7 @@ jobs:
 
   test-doctest:
     docker:
-      - image: cimg/python:3.9
+      - image: python:3.12
 
     steps:
       - checkout
@@ -106,7 +106,7 @@ jobs:
         type: string
       xcode:
         type: string
-        default: "14.3.0"
+        default: "16.0.0"
 
     macos:
       xcode: << parameters.xcode >>
@@ -189,7 +189,7 @@ jobs:
 
   deploy:
     docker:
-      - image: cimg/python:3.9
+      - image: python:3.12
 
     steps:
       - checkout
@@ -200,7 +200,7 @@ jobs:
             python -m virtualenv env
             . env/bin/activate
             pip install -r requirements.txt
-            pip install twine wheel
+            pip install twine wheel setuptools
 
       - run:
           name: verify version matches tag
