@@ -25,6 +25,7 @@ from dwave.system import DWaveSampler
 from dwave.system.testing import MockDWaveSampler, MockLeapHybridDQMSampler
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dimod import DiscreteQuadraticModel, ExtendedVartype, SampleSet
+from dwave.samplers import SteepestDescentSolver
 
 
 class TestMockDWaveSampler(unittest.TestCase):
@@ -216,7 +217,94 @@ class TestMockDWaveSampler(unittest.TestCase):
                                    broken_edges=delete_edges)
         self.assertTrue(len(sampler.nodelist)==4)
         self.assertTrue(len(sampler.edgelist)==1)
-        
+
+    def test_custom_substitute_sampler(self):
+        """Test that MockDWaveSampler uses the provided custom substitute_sampler."""
+
+        # Define a sampler that always returns the a constant (excited) state
+        class SteepestAscentSolver(SteepestDescentSolver):
+            def sample(self, bqm, **kwargs):
+                # Return local (or global)  maxima instead of local minima
+                # NOTE: energy returned is not faithful to the original bqm (energy calculated as `-bqm`)
+                return super().sample(-bqm, **kwargs)
+
+        inverted_sampler = SteepestAscentSolver()
+
+        # Create a simple BQM
+        bqm = dimod.BQM({'a': 1, 'b': 1}, {}, 0.0, vartype="SPIN")
+
+        # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
+        sampler = MockDWaveSampler(
+            substitute_sampler=inverted_sampler,
+            nodelist=['a', 'b'],
+            edgelist=[('a', 'b')]
+        )
+
+        # First Subtest: First sample does not use ExactSampler();
+        # Second sample does not use SteepestDescentSampler()
+        with self.subTest("Sampler without ExactSampler"):
+            ss = sampler.sample(bqm, num_reads=2)
+            self.assertEqual(sampler.exact_solver_cutoff, 0)
+            self.assertEqual(ss.record.sample.shape, (1,2), 'Unique sample expected')
+            self.assertTrue(np.all(ss.record.sample==1), 'Excited states expected')
+
+        sampler = MockDWaveSampler(
+            substitute_sampler=inverted_sampler,
+            nodelist=['a', 'b'],
+            edgelist=[('a', 'b')],
+            exact_solver_cutoff=2
+        )
+        # Second Subtest: First sample uses ExactSampler();
+        # Second sampler uses inverted sampler. Explicit exact_solver_cutoff overrides substitute_sampler.
+        with self.subTest("Sampler with ExactSampler and substitute_sampler"):
+            ss = sampler.sample(bqm, num_reads=2, answer_mode='raw')
+            self.assertEqual(sampler.exact_solver_cutoff, 2)
+            self.assertEqual(ss.record.sample.shape, (2,2), 'Non-unique samples expected')
+            self.assertTrue(np.all(ss.record.sample[0,:] == -1), 'Excited states expected')
+            self.assertTrue(np.all(ss.record.sample[1,:] == 1), 'Excited states expected')
+
+    def test_mocking_sampler_params(self):
+        """Test that substitute_kwargs are correctly passed to the substitute_sampler."""
+
+        # Define a constant sampler that checks for a custom parameter
+        class ConstantSampler(dimod.Sampler):
+            properties = {}
+            parameters = {'custom_param': [], 'num_reads': []}
+
+            def sample(self, bqm, **kwargs):
+                custom_param = kwargs.get('custom_param')
+                num_reads = kwargs.get('num_reads')
+                # Raise exception if parameters passed incorrectly
+                if custom_param != 'test_value':
+                    raise ValueError("custom_param not passed correctly")
+                if num_reads != 10:
+                    raise ValueError(f"num_reads not passed correctly, expected 10, got {num_reads}")
+                # Return a default sample
+                sample = {v: -1 for v in bqm.variables}
+                return dimod.SampleSet.from_samples_bqm(sample, bqm)
+
+        constant_sampler = ConstantSampler()
+
+        # Create a simple BQM
+        bqm = dimod.BQM({'a': 1, 'b': 1}, {('a', 'b'): 1}, 0.0, vartype="SPIN")
+
+        # Instantiate MockDWaveSampler with nodelist and edgelist including 'a' and 'b'
+        sampler = MockDWaveSampler(
+            substitute_sampler=constant_sampler,
+            substitute_kwargs={'custom_param': 'test_value'},
+            nodelist=['a', 'b'],
+            edgelist=[('a', 'b')]
+        )
+
+        # Sample using the MockDWaveSampler
+        ss = sampler.sample(bqm, num_reads=10)
+
+        # Check that the sample returned is as expected from the custom sampler
+        expected_sample = {'a': -1, 'b': -1}
+        self.assertEqual(ss.first.sample, expected_sample)
+        self.assertEqual(ss.first.energy, bqm.energy(expected_sample))
+
+
 class TestMockLeapHybridDQMSampler(unittest.TestCase):
     def test_sampler(self):
         sampler = MockLeapHybridDQMSampler()
