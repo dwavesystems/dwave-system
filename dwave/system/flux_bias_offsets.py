@@ -13,8 +13,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import warnings
-
 import dimod
 
 from dwave.system.cache.database_manager import get_flux_biases_from_cache, cache_connect, insert_flux_bias
