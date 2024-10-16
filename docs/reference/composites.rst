@@ -268,6 +268,41 @@ Methods
    VirtualGraphComposite.sample_ising
    VirtualGraphComposite.sample_qubo
 
+
+
+Linear Bias
+===========
+
+Composite for using auxiliary qubits to bias problem qubits.
+
+
+LinearAncillaComposite
+-----------------------
+
+.. autoclass:: LinearAncillaComposite
+
+Properties
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   LinearAncillaComposite.child
+   LinearAncillaComposite.children
+   LinearAncillaComposite.parameters
+   LinearAncillaComposite.properties
+
+Methods
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   LinearAncillaComposite.sample
+   LinearAncillaComposite.sample_ising
+   LinearAncillaComposite.sample_qubo
+
+
 Reverse Anneal
 ==============
 
@@ -326,3 +361,4 @@ Methods
    ReverseAdvanceComposite.sample
    ReverseAdvanceComposite.sample_ising
    ReverseAdvanceComposite.sample_qubo
+

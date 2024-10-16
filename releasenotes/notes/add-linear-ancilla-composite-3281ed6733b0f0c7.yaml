@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Add `LinearAncillaComposite` for implementing linear coefficients through ancilla qubits polarized with strong flux biases 
