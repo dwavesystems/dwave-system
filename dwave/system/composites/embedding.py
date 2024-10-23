@@ -81,7 +81,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
        >>> h = {'a': -1., 'b': 2}
        >>> J = {('a', 'b'): 1.5}
        >>> sampleset = sampler.sample_ising(h, J, num_reads=100)
-       >>> sampleset.first.energy
+       >>> print(sampleset.first.energy)
        -4.5
 
 

@@ -67,8 +67,9 @@ class CutOffComposite(dimod.ComposedSampler):
         ...                            {'ab': 0.8, 'ac': 0.7, 'bc': -1},
         ...                            0,
         ...                            dimod.SPIN)
-        >>> CutOffComposite(AutoEmbeddingComposite(sampler), 0.75).sample(bqm,
-        ...                 num_reads=1000).first.energy
+        >>> samples = CutOffComposite(
+        ...     AutoEmbeddingComposite(sampler), 0.75).sample(bqm, num_reads=1000)
+        >>> print(samples.first.energy)
         -5.5
 
     """
@@ -238,7 +239,8 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
         >>> import dimod
         >>> sampler = dimod.HigherOrderComposite(dimod.ExactSolver())
         >>> poly = dimod.BinaryPolynomial({'a': 3, 'abc':-4, 'ac': 0.2}, dimod.SPIN)
-        >>> PolyCutOffComposite(sampler, 1).sample_poly(poly).first.sample['a']
+        >>> samples = PolyCutOffComposite(sampler, 1).sample_poly(poly)
+        >>> print(samples.first.sample['a'])
         -1
 
     """

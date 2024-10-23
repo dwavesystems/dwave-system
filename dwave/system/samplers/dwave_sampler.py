@@ -155,7 +155,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         >>> sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
         ...                                  {},
         ...                                  num_reads=100)
-        >>> sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1
+        >>> print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
         True
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -396,7 +396,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             >>> sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
             ...                                  {},
             ...                                  num_reads=100)
-            >>> sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1
+            >>> print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
             True
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
