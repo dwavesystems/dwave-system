@@ -40,23 +40,10 @@ Installation
 
     pip install dwave-system
 
-**Installation from PyPI with drivers:**
-
 .. note::
-    Prior to v0.3.0, running ``pip install dwave-system`` installed a driver dependency called ``dwave-drivers``
-    (previously also called ``dwave-system-tuning``). This dependency has a restricted license and has been made optional
-    as of v0.3.0, but is highly recommended. To view the license details:
-
-    .. code-block:: python
-
-        from dwave.drivers import __license__
-        print(__license__)
-
-To install with optional dependencies:
-
-.. code-block:: bash
-
-    pip install dwave-system[drivers] --extra-index-url https://pypi.dwavesys.com/simple
+    As of ``dwave-system`` 1.28.0, support for ``dwave-drivers`` is removed (it
+    was used for calibration of qubits in chains via ``VirtualGraphComposite``,
+    but it's no longer required due to improved calibration of newer QPUs).
 
 **Installation from source:**
 
@@ -64,12 +51,6 @@ To install with optional dependencies:
 
     pip install -r requirements.txt
     python setup.py install
-
-Note that installing from source installs ``dwave-drivers``. To uninstall the proprietary components:
-
-.. code-block:: bash
-
-    pip uninstall dwave-drivers
 
 .. installation-end-marker
 

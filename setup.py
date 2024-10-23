@@ -36,12 +36,6 @@ install_requires = ['dimod>=0.12.7,<0.14.0',
                     'scipy>=1.7.3',
                     ]
 
-# NOTE: dwave-drivers can also be installed with `dwave install drivers`,
-# and the exact requirements for `drivers` contrib package are defined in
-# `dwave.system.package_info`, the `contrib` dict.
-extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
-                  }
-
 python_requires = '>=3.8'
 
 packages = ['dwave',
@@ -73,13 +67,7 @@ setup(
     url='https://github.com/dwavesystems/dwave-system',
     license='Apache 2.0',
     packages=packages,
-    entry_points={
-        'dwave_contrib': [
-            'dwave-system = dwave.system.package_info:contrib'
-        ]
-    },
     install_requires=install_requires,
-    extras_require=extras_require,
     python_requires=python_requires,
     classifiers=classifiers,
     zip_safe=False
