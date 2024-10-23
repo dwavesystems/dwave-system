@@ -15,6 +15,7 @@
 import unittest
 import numpy as np
 import dimod
+import warnings
 from itertools import product
 
 from dwave.system.temperatures import (maximum_pseudolikelihood_temperature,
@@ -59,7 +60,7 @@ class TestTemperatures(unittest.TestCase):
         E = effective_field(bqm,
                             samples_like)
         self.assertTrue(np.array_equal(np.ones(shape=(num_samples,num_var)), E[0]))
-        self.assertTrue(num_var==len(E[1]))
+        self.assertEqual(num_var, len(E[1]))
         # energy lost in flipping from sample value (1) to -1 is H(1) - H(-1) = +2.
         E = effective_field(bqm,
                             samples_like,
@@ -83,12 +84,14 @@ class TestTemperatures(unittest.TestCase):
         # This implies an effective temperature 1/atanh(0.5)
         site_energy = np.array([2]*5 + [-2]*15)
         site_names = ['a']
-        for optimize_method in [None,'bisect']:
+        for optimize_method in ['bisect', None]:
             T = maximum_pseudolikelihood_temperature(
-                site_energy = (site_energy[:,np.newaxis],site_names),
-                optimize_method = optimize_method)
+                site_energy=(site_energy[:,np.newaxis], site_names),
+                optimize_method=optimize_method)
             self.assertTrue(type(T) is tuple and len(T)==2)
-            self.assertTrue(np.abs(T[0]-1/np.arctanh(0.5))<1e-8)
+            self.assertLess(np.abs(T[0]-1/np.arctanh(0.5)), 1e-8,
+                            f'T={1/np.arctanh(0.5)} expected, but T={T[0]}; ' 
+                            f'optimize_method={optimize_method}')
         
         # Single variable H = s_i problem with mean energy (-5 + 5)/10 = 0
         # This implies an infinite temperature (up to numerical tolerance
@@ -110,7 +113,6 @@ class TestTemperatures(unittest.TestCase):
         # This implies zero temperature 
         # Any bounds on T_bracket should be ignored. 
         site_energy = np.array([-1]*5)
-        import warnings
         with warnings.catch_warnings():
             #Ignore expected 'out of T_bracket bound' warning:
             warnings.simplefilter(action='ignore', category=UserWarning)
@@ -148,10 +150,13 @@ class TestTemperatures(unittest.TestCase):
         # Initializing in a ground state, all effective
         # fields must be non-negative.
         sampler = MockDWaveSampler()
-        T, sigma = fast_effective_temperature(sampler=sampler)
-        # Simulated Annealer will tend to return only ground
-        # states, hence temperature 0. But exceptions are
-        # possible. Hence no assertion on value.
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=UserWarning)
+            # Suppress error MockDWaveSampler "no auto_scale" warning
+            T, sigma = fast_effective_temperature(sampler=sampler)
+            # MockDWaveSampler() returns only local minima for high precision
+            # problems (ExactSolver or SteepestDescentSolver)
+            self.assertEqual(T, 0)
         
 
     def test_bootstrap_errors(self):
