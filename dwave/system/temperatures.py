@@ -49,8 +49,8 @@ __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
 
 
 def effective_field(bqm: dimod.BinaryQuadraticModel,
-                    samples: Union[dimod.SampleSet, Tuple[np.ndarray, list]]=None,
-                    current_state_energy: bool=False) -> Tuple[np.ndarray, list]:
+                    samples: Union[None, dimod.SampleSet, Tuple[np.ndarray, list]]=None,
+                    current_state_energy: Optional[bool]=False) -> Tuple[np.ndarray, list]:
     r'''Returns the effective field for all variables and all samples.
 
     The effective field with ``current_state_energy = False`` is the energy
@@ -230,7 +230,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
                                          num_bootstrap_samples=0,
                                          seed=None,
                                          T_guess=None,
-                                         optimize_method='bisect',
+                                         optimize_method=None,
                                          T_bracket=(1e-3, 1000),
                                          sample_weights=None,
                                          dbqm=None,
@@ -293,14 +293,14 @@ def maximum_pseudolikelihood_temperature(bqm=None,
             By default, T_guess is ignored if it falls outside the range
             of ``T_bracket``.
         optimize_method (str,optional, default=None):
-            SciPy method used for optimization. Options are 'bisect' and
-            None (the default SciPy optimize method).
-            If a perturbed Hamiltonian is not considered, the default becomes
-            'bisect', otherwise find_root.
+            Optimize method used by SciPy ``root_scalar`` method. The default
+            method works well under default operation, 'bisect' can be
+            numerically more stable for the scalar case (Temperature estimation
+            only.
         T_bracket (list or Tuple of 2 floats, optional, default=(0.001,1000)):
+            Relevant only if optimize_method='bisect'.
             If excitations are absent, temperature is defined as zero, otherwise
-            this defines the range of Temperatures over which to attempt a fit when
-            using the 'bisect' ``optimize_method`` (the default).
+            this defines the range of Temperatures over which to attempt a fit when.
         sample_weights (np.ndarray, optional):
             A set of weights for the samples. If sampleset is of
             type :obj:`~dimod.SampleSet` set this is default to
@@ -534,7 +534,7 @@ def maximum_pseudolikelihood_temperature(bqm=None,
             prng = np.random.RandomState(seed)
             num_samples = site_energy[0].shape[0]
             for bs in range(num_bootstrap_samples):
-                indices = np.random.choice(
+                indices = prng.choice(
                     num_samples,
                     num_bootstrap_samples,
                     replace=True)
@@ -846,16 +846,16 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B='GHz', uni
     elif units_B == 'J':
         pass
     else:
-        raise ValueException("Units must be 'J' (Joules) "
-                             "or 'mK' (milli-Kelvin)")
+        raise ValueError("Units must be 'J' (Joules) "
+                         "or 'mK' (milli-Kelvin)")
 
     if units_T == 'mK':
         temperature = temperature * 1e-3
     elif units_T == 'K':
         pass
     else:
-        raise ValueException("Units must be 'K' (Kelvin) "
-                             "or 'mK' (milli-Kelvin)")
+        raise ValueError("Units must be 'K' (Kelvin) "
+                         "or 'mK' (milli-Kelvin)")
     kB = 1.3806503e-23  # Joules/Kelvin
 
     return 2*temperature*kB/freezeout_B
@@ -863,7 +863,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B='GHz', uni
 
 def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
                                h_range=(-1/6.1, 1/6.1), sampler_params=None,
-                               optimize_method=None,
+                               optimize_method='bisect',
                                num_bootstrap_samples=0) -> Tuple[np.float64, np.float64]:
     r'''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
 
