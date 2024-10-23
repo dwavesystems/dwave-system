@@ -13,10 +13,6 @@
 #    limitations under the License.
 
 
-class MissingFluxBias(Exception):
-    """"""
-
-
 class FailoverCondition(Exception):
     """QPU or Solver API call failed with an error that might be mitigated by
     retrying on a different solver.
