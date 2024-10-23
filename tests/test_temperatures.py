@@ -104,7 +104,8 @@ class TestTemperatures(unittest.TestCase):
             # Temperature is infinite (excitations and relaxations)
             # are equally likely.
             T = maximum_pseudolikelihood_temperature(
-                site_energy = (site_energy[:,np.newaxis],[1]),
+                site_energy=(site_energy[:,np.newaxis],[1]),
+                optimize_method='bisect',
                 T_bracket=T_bracket)
             self.assertTrue(type(T) is tuple and len(T)==2)
             self.assertTrue(T[0]==T_bracket[1])
