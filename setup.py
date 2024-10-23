@@ -47,7 +47,6 @@ python_requires = '>=3.8'
 packages = ['dwave',
             'dwave.embedding',
             'dwave.system',
-            'dwave.system.cache',
             'dwave.system.composites',
             'dwave.system.samplers',
             ]
