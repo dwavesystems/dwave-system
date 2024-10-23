@@ -25,14 +25,10 @@ fully-yielded Advantage system.
 
 See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
 for explanations of technical terms in descriptions of Ocean tools.
-
 """
-
-from math import sqrt, ceil
 
 import dimod
 import dwave_networkx as dnx
-import numpy as np
 
 import dwave.embedding
 

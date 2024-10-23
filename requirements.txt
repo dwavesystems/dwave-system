@@ -1,15 +1,15 @@
-dimod==0.12.13
+dimod==0.12.17
 dwave-optimization==0.4.0
-dwave-preprocessing==0.6.4
+dwave-preprocessing==0.6.7
 dwave-cloud-client==0.12.0
-dwave-networkx==0.8.10
-dwave-samplers==1.2.0
+dwave-networkx==0.8.14
+dwave-samplers==1.4.0
 homebase==1.0.1
-minorminer==0.2.14
-networkx==2.8.8
+minorminer==0.2.16
+networkx~=3.0
 
 numpy==1.23.5;python_version<"3.11"  # for compatibility with scipy 1.9.3
-oldest-supported-numpy;python_version>="3.11"
+numpy==2.1.0;python_version>="3.13"
 
 scipy==1.9.3;python_version<"3.11"
-scipy==1.11.2;python_version>="3.11"
+scipy==1.14.1;python_version>="3.11"
