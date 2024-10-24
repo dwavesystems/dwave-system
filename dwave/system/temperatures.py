@@ -185,8 +185,7 @@ def background_susceptibility_Ising(h: Union[np.ndarray, dict], J: Union[np.ndar
     else:
         # Assume tuple-keyed Iterables
         if len(h):
-            nodes = set(h.keys()) | {n for ij in J for n in ij}
-            dh = {n: 0 for n in nodes}
+            dh = {n: 0 for n in h.keys()}
             for ij, Jval in J.items():
                 i, j = ij
                 dh[j] += h[i]*Jval
@@ -381,16 +380,15 @@ def maximum_pseudolikelihood(
         optimize_method=None,
         bisect_bracket=(1e-3, 1000),
         sample_weights=None) -> List[Tuple[float, np.ndarray]]:
-    """ Vector generalization of the scalar method maximum_pseuodlikelihood_temperature.
+    """ Maximimum pseudolikelihood for x assuming log probability sum_i x_i bqm_i.
 
+    Returns x = argmin_x 
     """
     if en1 is None:
         if bqms is None or sampleset is None:
             raise ValueError('en1 can only be derived if both '
                              'bqms and sampleset are provided as arguments')
-        if any(bqms[0].variables != bqm.variables for bqm in bqms):
-            raise ValueError('bqms must be defined over a common set of'
-                             'variables in an identical order')
+        
         en1 = np.array([effective_field(
             bqm, sampleset, current_state_energy=True)[0] for bqm in bqms])
     if sample_weights is None:
@@ -523,14 +521,14 @@ def maximum_pseudolikelihood(
                         expFactor = np.exp(np.sum(
                             en1*x[:, np.newaxis, np.newaxis], axis=0))
                         norm = (expFactor + 2 + 1/expFactor)
-                    return -np.sum([[sample_weights[np.newaxis, :, np.newaxis] *
+                    return -np.sum([[sample_weights *
                                      np.sum(en1[i, :, :] * en1[j, :, :] /
-                                            norm[np.newaxis, :, :], axis=1)
+                                            norm, axis=1)
                                      for i in range(en1.shape[0])]
                                     for j in range(en1.shape[0])], axis=-1)
-                root_results = optimize.root(f=d_mean_log_pseudo_likelihood, x0=x0,
+                root_results = optimize.root(fun=d_mean_log_pseudo_likelihood, x0=x0,
                                              jac=dd_mean_log_pseudo_likelihood)
-                x = root_results.root
+                x = root_results.x
         x0 = x
         if num_bootstrap_samples > 0:
             if len(np.unique(sample_weights)) != 1:
@@ -1019,20 +1017,16 @@ if __name__ == '__main__':
     dh = 1/4
     h = np.array([dh, -2*dh, dh])
     J = np.array([[0, -1, 0], [-1, 0, -1], [0, -1, 0]])
-    print(h, J)
     dh, dJ, k = background_susceptibility_Ising(h, J)
-    print(dh, dJ, k)
     # ([2+3], [1+3], [1+2])
     Jd = {(n1, n2): J[n1, n2] for n2 in range(n) for n1 in range(n2) if J[n1, n2] != 0}
     hd = {n: h[n] for n in range(n)}
     bqm = dimod.BinaryQuadraticModel('SPIN').from_ising(hd, Jd)
     dh, dJ, _ = background_susceptibility_Ising(hd, Jd)
     dbqm = dimod.BinaryQuadraticModel('SPIN').from_ising(dh, dJ)
-    print(dh, dJ)
     chi = -1/2**6
     bqmPdbqm = background_susceptibility_bqm(bqm, chi=chi)
     diff = bqmPdbqm - (bqm+chi*dbqm)
-    print(max(diff.quadratic.values()), max(diff.linear.values()))
     from dimod import ExactSolver
     ss = ExactSolver().sample(bqm)
     ss_chi = ExactSolver().sample(bqmPdbqm)
@@ -1040,6 +1034,13 @@ if __name__ == '__main__':
     weights_chi = np.exp(-ss_chi.record.energy+np.min(ss_chi.record.energy))
     for bqm_assumed in [bqm, bqmPdbqm]:
         for sample_weights in [weights, weights_chi]:
-            Ttup = maximum_pseudolikelihood_temperature(bqm=bqm_assumed, sampleset=ss,
-                                                        sample_weights=sample_weights)
-            print(Ttup)    
+            Ttup, _ = maximum_pseudolikelihood_temperature(bqm=bqm_assumed, sampleset=ss,
+                                                           sample_weights=sample_weights)
+            print(Ttup)
+            xtup, _ = maximum_pseudolikelihood(bqms=[bqm_assumed,], sampleset=ss,
+                                            sample_weights=sample_weights)
+            print(-1/xtup)
+            print(bqm.variables, dbqm.variables)
+            xtup, _ = maximum_pseudolikelihood(bqms=[bqm, dbqm], sampleset=ss,
+                                            sample_weights=sample_weights)
+            print(xtup)
