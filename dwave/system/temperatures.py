@@ -45,7 +45,8 @@ from typing import Tuple, Union, Optional, Literal, List
 from collections import defaultdict
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature',
-           'Ip_in_units_of_B', 'h_to_fluxbias', 'fluxbias_to_h']
+           'Ip_in_units_of_B', 'h_to_fluxbias', 'fluxbias_to_h',
+           'background_susceptibility_Ising', ]
 
 
 def effective_field(bqm: dimod.BinaryQuadraticModel,
@@ -146,7 +147,7 @@ def effective_field(bqm: dimod.BinaryQuadraticModel,
     return (effective_fields, labels)
 
 
-def background_suceptibility_Hamiltonian(h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]) -> Tuple:
+def background_susceptibility_Ising(h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]) -> Tuple:
     """ Create the Hamiltonian for the background susceptibility correction
 
     https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
@@ -182,12 +183,16 @@ def background_suceptibility_Hamiltonian(h: Union[np.ndarray, dict], J: Union[np
         dJ = np.einsum('...ij,...jk->...ik', J, J)
         k = np.einsum('...ii', dJ)/2
     else:
-        # Assume tuple-keyed dictionaries
-        dh = {n: 0 for n in h} | {n: 0 for ij in J for n in ij}
-        for ij, Jval in J.items():
-            i, j = ij
-            dh[j] += h[i]*Jval
-            dh[i] += h[j]*Jval
+        # Assume tuple-keyed Iterables
+        if len(h):
+            nodes = set(h.keys()) | {n for ij in J for n in ij}
+            dh = {n: 0 for n in nodes}
+            for ij, Jval in J.items():
+                i, j = ij
+                dh[j] += h[i]*Jval
+                dh[i] += h[j]*Jval
+        else:
+            dh = {}
 
         G = nx.from_edgelist(J.keys())
         J = {frozenset(e): Jval for e, Jval in J.items()}  # Convert for unambiguous indexing
@@ -217,7 +222,7 @@ def background_susceptibility_bqm(bqm, chi=None):
     """
     source_type = bqm.vartype
     bqm = bqm.change_vartype('SPIN')
-    dh, dJ, _ = background_suceptibility_Hamiltonian(bqm.linear, bqm.quadratic)
+    dh, dJ, _ = background_susceptibility_Ising(bqm.linear, bqm.quadratic)
     dbqm = dimod.BinaryQuadraticModel(source_type).from_ising(dh, dJ)
     if chi is not None:
         dbqm = bqm.change_vartype(source_type) + chi*dbqm
@@ -225,7 +230,7 @@ def background_susceptibility_bqm(bqm, chi=None):
 
 
 def maximum_pseudolikelihood_temperature(
-        bqms: Union[None, dimod.BinaryQuadraticModel, List[dimod.BinaryQuadraticModel]]=None,
+        bqm: Union[None, dimod.BinaryQuadraticModel, List[dimod.BinaryQuadraticModel]]=None,
         sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]]=None,
         en1: Optional[np.ndarray]=None,
         num_bootstrap_samples: Optional[int]=0,
@@ -346,21 +351,24 @@ def maximum_pseudolikelihood_temperature(
         https://www.jstor.org/stable/25464568
 
     '''
+    x0 = None
+    bisect_bracket = None
     if T_guess is not None:
         x0 = -1/T_guess
-    if optimize_method == 'bisect' and en1.ndim == 2:
+
+    if optimize_method == 'bisect':
         if not 0 <= T_bracket[0] < T_bracket[1]:
             raise ValueError('Bad T_bracket, must be positive ordered scalars.')
         bisect_bracket = [-1/T_bracket[i] for i in range(2)]
         if x0 is not None and (x0 < bisect_bracket[0] or x0 > bisect_bracket[1]):
             raise ValueError(f'x0 {x0} and T_bracket {T_bracket} are inconsistent')
-    estimators = maximum_pseudolikelihood(
+    x, x_bs = maximum_pseudolikelihood(
         bqms=[bqm], sampleset=sampleset, en1=en1,
         num_bootstrap_samples=num_bootstrap_samples, seed=seed,
         x0=x0, optimize_method=optimize_method,
         bisect_bracket=bisect_bracket, sample_weights=sample_weights)
     # exp(-1/Teff Hp) = exp(estimator[0] Hp)
-    return -1/estimators[0][0], -1/estimators[0][1]
+    return -1/x, -1/x_bs
 
 
 def maximum_pseudolikelihood(
@@ -377,9 +385,9 @@ def maximum_pseudolikelihood(
 
     """
     if en1 is None:
-        if bqm is None or sampleset is None:
+        if bqms is None or sampleset is None:
             raise ValueError('en1 can only be derived if both '
-                             'bqm and sampleset are provided as arguments')
+                             'bqms and sampleset are provided as arguments')
         if any(bqms[0].variables != bqm.variables for bqm in bqms):
             raise ValueError('bqms must be defined over a common set of'
                              'variables in an identical order')
@@ -390,13 +398,13 @@ def maximum_pseudolikelihood(
             sample_weights = sampleset.record.num_occurrences/np.sum(sampleset.record.num_occurrences)
         else:
             sample_weights = np.ones(en1.shape[0])
-    if len(sample_weights) != en1.shape[0]:
+    if len(sample_weights) != en1.shape[-2]:
         raise ValueError('The sample weights, if not defaulted, must match the sampleset shape')
     if any(sample_weights < 0) or np.max(sample_weights) == 0:
         raise ValueError('sample weights must be non-negative with atleast one positive value')
 
     if any(sample_weights == 0):
-        en1 = en1[sample_weights > 0, :, :]
+        en1 = en1[:, sample_weights > 0, :]
         sample_weights = sample_weights[sample_weights > 0]
     # We could also remove any cols that are all zero (all samples, all bqms)
     # this is going to be a rare (pathological) scenario, e.g. people including unnnecessary
@@ -411,19 +419,25 @@ def maximum_pseudolikelihood(
     # sort and compare.
     # Most likely causes for collinearity are that someone duplicates a Hamiltonian,
     # or two closely related Hamiltonians processed with few unique samples.
+    if en1.ndim == 2 or en1.shape[0] == 1:
+        # Scalar method 'inverse temperature only' for one Hamiltonian
+        en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
 
-    max_excitation = np.max(en1, axis=(0, 1))
-    min_excitation = np.min(en1, axis=(0, 1))
+    max_excitation = np.max(en1, axis=(-1, -2))
+    min_excitation = np.min(en1, axis=(-1, -2))
     prod_minmax = max_excitation*min_excitation
-    if all(prod_minmax >= 0):
+    if (en1.ndim == 2 and prod_minmax >= 0) or (en1.ndim == 3 and all(prod_minmax >= 0)):
         # No excitations observed (up to sign definition of Hamiltonian).
-        if len(prod_minmax) > 0:
-            warnings.warn('An exponential model with infinite or ill-defined'
+        x = np.sign(max_excitation)*float('Inf')  # nan is reasonable if sign=0.
+        if en1.ndim > 2:
+            warnings.warn('An exponential model with ill-defined'
                           'parameters fits the data; consider taking more '
                           'samples, modifying bqms or exploiting a '
                           'perturbative approach.')
-        x = np.sign(max_excitation)*float('Inf')  # nan is reasonable if sign=0.
-        x_bootstraps = x[np.newaxis, :]*np.ones((num_bootstrap_samples, 1))
+            x_bootstraps = x[np.newaxis, :]*np.ones((num_bootstrap_samples, 1))
+        else:
+            # Infinite results from all local minima, well defined
+            x_bootstraps = x*np.ones(num_bootstrap_samples)
     else:
         # Consider H(s) = - h s_1 - h s_3 + 2h s_2 - s_1 s_2 - s_2 s_3
         # e.g. suppose the sampleset contains only + + and - - .
@@ -432,9 +446,9 @@ def maximum_pseudolikelihood(
         # perturbative.
         # There are no local excitations present in the sample set, therefore
         # the temperature is estimated as 0.'
-        if en1.ndim == 2 or en1.shape[2] == 1:
+        if en1.ndim == 2 or en1.shape[0] == 1:
             # Scalar method 'inverse temperature only' for one Hamiltonian
-            en1 = en1[:, :, 0]  # f_{i}(s) - column i, row s.
+            en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
             if x0 is None:
                 x0 = -1/max_excitation
             # Derivative of mean (w.r.t samples) log pseudo liklihood amounts
@@ -456,15 +470,16 @@ def maximum_pseudolikelihood(
             if x0 is None:
                 # Assume all bqms except the first are perturbative in absence
                 # of additional context.
-                x0 = np.zeros(en1.shape[2])
+                x0 = np.zeros(en1.shape[0])
                 x0[0] = -1/max_excitation[0]  # Smallest gap
 
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
                     warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                    expFactor = np.exp(np.sum(en1*x[np.newaxis, np.newaxis, :], axis=2))
-                return np.sum(sample_weights[:, np.newaxis]*np.sum(
-                    en1/(1 + expFactor[:, :, np.newaxis]), axis=1), axis=0)
+                    expFactor = np.exp(np.sum(
+                        en1 * x[:, np.newaxis, np.newaxis], axis=0))
+                return np.sum(sample_weights[np.newaxis, :] * np.sum(
+                    en1/(1 + expFactor[np.newaxis, :, :]), axis=-1), axis=-1)
 
         if optimize_method == 'bisect' and en1.ndim == 2:
             # bisect can be relatively robust, since we can have a problem of vanishing
@@ -474,19 +489,19 @@ def maximum_pseudolikelihood(
                               'value returned matches the lower bound'
                               'This might be resolved by a more sensible '
                               'scaling of the bqm, or a change of the optimize_method.')
-                return bisect_bracket[0]
+                x = bisect_bracket[0]
             elif d_mean_log_pseudo_likelihood(bisect_bracket[1]) > 0:
                 warnings.warn('value should be positive at bisect_bracket[0]. '
                               'value returned matches the upper bound. '
                               'This might be resolved by a more sensible '
                               'scaling of the bqm, or a change of the optimize_method.')
-                return bisect_bracket[1]
+                x = bisect_bracket[1]
             else:
                 if x0 < bisect_bracket[0] or x0 > bisect_bracket[1]:
                     x0 = (bisect_bracket[0] + bisect_bracket[1])/2
                 root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0=x0,
                                                     method=optimize_method, bracket=bisect_bracket)
-                return root_results.root
+                x = root_results.root
         else:
             # With few samples and atypically large/small site energies numerical instability
             # relative to bisect.
@@ -505,10 +520,12 @@ def maximum_pseudolikelihood(
                     # [Only] If few Hamiltonians efficient, this is the expected use case
                     with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
                         warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                        expFactor = np.exp(np.sum(en1*x[np.newaxis, np.newaxis, :], axis=2))
+                        expFactor = np.exp(np.sum(
+                            en1*x[:, np.newaxis, np.newaxis], axis=0))
                         norm = (expFactor + 2 + 1/expFactor)
-                    return -np.sum([[sample_weights[:, :, np.newaxis] *
-                                     np.sum(en1[:, :, i]*en1[:, :, j]/norm, axis=1)
+                    return -np.sum([[sample_weights[np.newaxis, :, np.newaxis] *
+                                     np.sum(en1[i, :, :] * en1[j, :, :] /
+                                            norm[np.newaxis, :, :], axis=1)
                                      for i in range(en1.shape[0])]
                                     for j in range(en1.shape[0])], axis=-1)
                 root_results = optimize.root(f=d_mean_log_pseudo_likelihood, x0=x0,
@@ -540,6 +557,11 @@ def maximum_pseudolikelihood(
                         x0=x)
                 x_bootstraps.append(x_bs)
             x_bootstraps = np.array(x_bootstraps)
+        else:
+            if en1.ndim == 2:
+                x_bootstraps = np.empty(0)
+            else:
+                x_bootstraps = np.empty((0, len(x)))
     return x, x_bootstraps
 
 
@@ -998,13 +1020,13 @@ if __name__ == '__main__':
     h = np.array([dh, -2*dh, dh])
     J = np.array([[0, -1, 0], [-1, 0, -1], [0, -1, 0]])
     print(h, J)
-    dh, dJ, k = background_suceptibility_Hamiltonian(h, J)
+    dh, dJ, k = background_susceptibility_Ising(h, J)
     print(dh, dJ, k)
     # ([2+3], [1+3], [1+2])
     Jd = {(n1, n2): J[n1, n2] for n2 in range(n) for n1 in range(n2) if J[n1, n2] != 0}
     hd = {n: h[n] for n in range(n)}
     bqm = dimod.BinaryQuadraticModel('SPIN').from_ising(hd, Jd)
-    dh, dJ, _ = background_suceptibility_Hamiltonian(hd, Jd)
+    dh, dJ, _ = background_susceptibility_Ising(hd, Jd)
     dbqm = dimod.BinaryQuadraticModel('SPIN').from_ising(dh, dJ)
     print(dh, dJ)
     chi = -1/2**6
@@ -1020,4 +1042,4 @@ if __name__ == '__main__':
         for sample_weights in [weights, weights_chi]:
             Ttup = maximum_pseudolikelihood_temperature(bqm=bqm_assumed, sampleset=ss,
                                                         sample_weights=sample_weights)
-            print(Ttup)
+            print(Ttup)    
