@@ -24,7 +24,8 @@ from dwave.system.temperatures import (maximum_pseudolikelihood_temperature,
                                        fast_effective_temperature,
                                        Ip_in_units_of_B,
                                        h_to_fluxbias,
-                                       fluxbias_to_h)
+                                       fluxbias_to_h,
+                                       background_susceptibility_Ising)
 
 from dwave.system.testing import MockDWaveSampler
 
@@ -82,11 +83,11 @@ class TestTemperatures(unittest.TestCase):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.
         # This implies an effective temperature 1/atanh(0.5)
-        site_energy = np.array([2]*5 + [-2]*15)
+        en1 = np.array([2]*5 + [-2]*15)
         site_names = ['a']
         for optimize_method in ['bisect', None]:
             T = maximum_pseudolikelihood_temperature(
-                site_energy=(site_energy[:,np.newaxis], site_names),
+                en1=en1[:,np.newaxis],
                 optimize_method=optimize_method)
             self.assertTrue(type(T) is tuple and len(T)==2)
             self.assertLess(np.abs(T[0]-1/np.arctanh(0.5)), 1e-8,
@@ -96,7 +97,7 @@ class TestTemperatures(unittest.TestCase):
         # Single variable H = s_i problem with mean energy (-5 + 5)/10 = 0
         # This implies an infinite temperature (up to numerical tolerance
         # threshold of scipy optimize.)
-        site_energy = np.array([1]*5 + [-1]*5)
+        en1 = np.array([1]*5 + [-1]*5)
         T_bracket = [0.1,1]
         with self.assertWarns(UserWarning) as w:
             # Returned value should match upper bracket value and
@@ -104,7 +105,7 @@ class TestTemperatures(unittest.TestCase):
             # Temperature is infinite (excitations and relaxations)
             # are equally likely.
             T = maximum_pseudolikelihood_temperature(
-                site_energy=(site_energy[:,np.newaxis],[1]),
+                en1=en1[:,np.newaxis],
                 optimize_method='bisect',
                 T_bracket=T_bracket)
             self.assertTrue(type(T) is tuple and len(T)==2)
@@ -113,12 +114,12 @@ class TestTemperatures(unittest.TestCase):
         # Single variable H = s_i problem with no sample excitations 
         # This implies zero temperature 
         # Any bounds on T_bracket should be ignored. 
-        site_energy = np.array([-1]*5)
+        en1 = np.array([-1]*5)
         with warnings.catch_warnings():
             #Ignore expected 'out of T_bracket bound' warning:
             warnings.simplefilter(action='ignore', category=UserWarning)
             T = maximum_pseudolikelihood_temperature(
-                site_energy = (site_energy[:,np.newaxis],[1]),
+                en1 = en1[:,np.newaxis],
                 T_bracket=T_bracket)
         self.assertTrue(type(T) is tuple and len(T)==2)
         self.assertTrue(T[0]==0)
@@ -151,9 +152,8 @@ class TestTemperatures(unittest.TestCase):
         # Initializing in a ground state, all effective
         # fields must be non-negative.
         sampler = MockDWaveSampler()
-        with warnings.catch_warnings():
+        with warnings.catch_warnings():  # Suppress MockDWaveSampler "no auto_scale" warning
             warnings.simplefilter(action='ignore', category=UserWarning)
-            # Suppress error MockDWaveSampler "no auto_scale" warning
             T, sigma = fast_effective_temperature(sampler=sampler)
             # MockDWaveSampler() returns only local minima for high precision
             # problems (ExactSolver or SteepestDescentSolver)
@@ -161,12 +161,40 @@ class TestTemperatures(unittest.TestCase):
         
 
     def test_bootstrap_errors(self):
-        site_energy = np.array([2]*25 +  [-2]*75)
+        en1 = np.array([2]*25 +  [-2]*75)
         num_bootstrap_samples = 100
         
-        T,Tb = maximum_pseudolikelihood_temperature(site_energy = (site_energy[:,np.newaxis],[1]),num_bootstrap_samples = num_bootstrap_samples)
+        T,Tb = maximum_pseudolikelihood_temperature(
+            en1=en1[:, np.newaxis], num_bootstrap_samples = num_bootstrap_samples)
         
         # Add test to check bootstrap estimator implementation.
         # T = 1/np.arctanh(0.5). With high probability bootstrapped values
         # are finite and will throw no warnings.
         self.assertTrue(len(Tb) == num_bootstrap_samples)
+
+    def test_sample_weights(self):
+        n = 3
+        bqm = dimod.BinaryQuadraticModel('BINARY').from_qubo(
+            {(i,j): np.random.normal() for i in range(n) for j in range(i,n)})
+        ss = dimod.ExactSolver().sample(bqm)
+        for Texact in [1, np.random.random()]:
+            sample_weights = np.exp(-1/Texact*(ss.record.energy+np.min(ss.record.energy)))
+            Ttup, _ = maximum_pseudolikelihood_temperature(bqm=bqm, sampleset=ss,
+                                                           sample_weights=sample_weights)
+            self.assertLess(abs(Ttup-Texact), 1e-8)
+        
+    def test_background_susceptibility_Ising(self):
+        #
+        n = 3
+        h = np.random.normal(size=n)
+        J = np.random.normal(size=(n, n))
+        J = J + J.transpose() - 2*np.diag(np.diag(J))  
+        dh, dJ, k = background_susceptibility_Ising(h, J)
+        self.assertEqual(type(dh), np.ndarray)
+        self.assertEqual(type(dJ), np.ndarray)
+        self.assertEqual(type(k), np.float64)
+        self.assertEqual(dh.shape, h.shape)
+        self.assertEqual(J.shape, dJ.shape)
+        h_dict = {i: h[i] for i in range(n)}
+        J_dict = {(i, j): J[i,j] for i in range(n) for j in range(i+1,n)}
+        dh_dict, dJ_dict, k = background_susceptibility_Ising(h_dict, J_dict)

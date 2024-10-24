@@ -41,7 +41,7 @@ import networkx as nx
 
 import dimod
 from scipy import optimize
-from typing import Tuple, Union, Optional, Literal
+from typing import Tuple, Union, Optional, Literal, List
 from collections import defaultdict
 __all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature',
@@ -86,7 +86,7 @@ def effective_field(bqm: dimod.BinaryQuadraticModel,
             A dimod binary quadratic model.
         samples:
             Either a dimod SampleSet or a `samples_like` object, the later is
-            an extension of NumPy's array like structure. 
+            an extension of NumPy's array like structure.
             See :func:`dimod.sampleset.as_samples`.
             By default, a single sample with all +1 assignments is used.
         current_state_energy:
@@ -224,17 +224,16 @@ def background_susceptibility_bqm(bqm, chi=None):
     return dbqm
 
 
-def maximum_pseudolikelihood_temperature(bqm=None,
-                                         sampleset=None,
-                                         site_energy=None,
-                                         num_bootstrap_samples=0,
-                                         seed=None,
-                                         T_guess=None,
-                                         optimize_method=None,
-                                         T_bracket=(1e-3, 1000),
-                                         sample_weights=None,
-                                         dbqm=None,
-                                         dsite_energy=None) -> Tuple[float, np.ndarray]:
+def maximum_pseudolikelihood_temperature(
+        bqms: Union[None, dimod.BinaryQuadraticModel, List[dimod.BinaryQuadraticModel]]=None,
+        sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]]=None,
+        en1: Optional[np.ndarray]=None,
+        num_bootstrap_samples: Optional[int]=0,
+        seed: Optional[int]=None,
+        T_guess=None,
+        optimize_method=None,
+        T_bracket=(1e-3, 1000),
+        sample_weights=None) -> Tuple[float, np.ndarray]:
     r'''Returns a sampling-based temperature estimate.
 
     The temperature T parameterizes the Boltzmann distribution as
@@ -276,9 +275,11 @@ def maximum_pseudolikelihood_temperature(bqm=None,
         sampleset (samples_like or :obj:`~dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
             a Boltzmann distribution characterized by ``bqm``.
-        site_energy (samples_like, optional):
-            A Tuple of effective fields and site labels.
+        en1 (nd.array, optional):
+            Effective fields as an np.ndarray (site labels not required).
             Derived from the ``bqm`` and ``sampleset`` if not provided.
+            First dimension indexes samples, second dimension indexes sites.
+            Ordering doesn't matter, but should be consistent with sample_weights.
         num_bootstrap_samples (int, optional, default=0):
             Number of bootstrap estimators to calculate. For now, the sampleset
             must have uniform sample_weights to deploy this option. An aggregated
@@ -306,20 +307,6 @@ def maximum_pseudolikelihood_temperature(bqm=None,
             type :obj:`~dimod.SampleSet` set this is default to
             sampleset.record.num_occurrences, otherwise uniform weighting is
             the default.
-        dbqm (:obj:`dimod.BinaryQuadraticModel` or str, optional):
-            A perturbative classical correction, such as might be created by
-            background susceptibility, a quasi classical approximation to
-            a transverse field perturbation, or similar.
-            When specified the strength of the perturbation is estimated
-            using the maximum entropy (exponential) model and returned
-            and returned alongside Temperature.
-            The argument is either a dimod.BinaryQuadraticModel using variables
-            consistent with bqm, or a str specifying the perturbation type.
-            The only str option currently supported is 'background_susceptibility'.
-            If dsite_energy is provided dbqm is ignored.
-        dsite_energy (samples_like, optional):
-            A Tuple of perturbative-effective fields and site labels.
-            Derived from the ``dbqm`` and ``sampleset`` if not provided.
 
     Returns:
         Tuple of float and NumPy array:
@@ -359,62 +346,85 @@ def maximum_pseudolikelihood_temperature(bqm=None,
         https://www.jstor.org/stable/25464568
 
     '''
+    if T_guess is not None:
+        x0 = -1/T_guess
+    if optimize_method == 'bisect' and en1.ndim == 2:
+        if not 0 <= T_bracket[0] < T_bracket[1]:
+            raise ValueError('Bad T_bracket, must be positive ordered scalars.')
+        bisect_bracket = [-1/T_bracket[i] for i in range(2)]
+        if x0 is not None and (x0 < bisect_bracket[0] or x0 > bisect_bracket[1]):
+            raise ValueError(f'x0 {x0} and T_bracket {T_bracket} are inconsistent')
+    estimators = maximum_pseudolikelihood(
+        bqms=[bqm], sampleset=sampleset, en1=en1,
+        num_bootstrap_samples=num_bootstrap_samples, seed=seed,
+        x0=x0, optimize_method=optimize_method,
+        bisect_bracket=bisect_bracket, sample_weights=sample_weights)
+    # exp(-1/Teff Hp) = exp(estimator[0] Hp)
+    return -1/estimators[0][0], -1/estimators[0][1]
 
-    T_estimate = 0
-    T_bootstrap_estimates = np.zeros(num_bootstrap_samples)
 
-    # Check for largest local excitation in every sample, and over all samples
-    if site_energy is None:
+def maximum_pseudolikelihood(
+        bqms: Union[None, List[dimod.BinaryQuadraticModel]]=None,
+        sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]]=None,
+        en1: Optional[np.ndarray]=None,
+        num_bootstrap_samples: Optional[int]=0,
+        seed: Optional[int]=None,
+        x0=None,
+        optimize_method=None,
+        bisect_bracket=(1e-3, 1000),
+        sample_weights=None) -> List[Tuple[float, np.ndarray]]:
+    """ Vector generalization of the scalar method maximum_pseuodlikelihood_temperature.
+
+    """
+    if en1 is None:
         if bqm is None or sampleset is None:
-            raise ValueError('site_energy can only be derived if both '
+            raise ValueError('en1 can only be derived if both '
                              'bqm and sampleset are provided as arguments')
-        site_energy = effective_field(bqm,
-                                      sampleset,
-                                      current_state_energy=True)
+        if any(bqms[0].variables != bqm.variables for bqm in bqms):
+            raise ValueError('bqms must be defined over a common set of'
+                             'variables in an identical order')
+        en1 = np.array([effective_field(
+            bqm, sampleset, current_state_energy=True)[0] for bqm in bqms])
     if sample_weights is None:
         if type(sampleset) is dimod.sampleset.SampleSet:
-            # Infer from num_occurrences
             sample_weights = sampleset.record.num_occurrences/np.sum(sampleset.record.num_occurrences)
         else:
-            # Assume uniform sampling
-            sample_weights = np.ones(site_energy[0].shape[0])
-    if len(sample_weights) != site_energy[0].shape[0]:
+            sample_weights = np.ones(en1.shape[0])
+    if len(sample_weights) != en1.shape[0]:
         raise ValueError('The sample weights, if not defaulted, must match the sampleset shape')
     if any(sample_weights < 0) or np.max(sample_weights) == 0:
         raise ValueError('sample weights must be non-negative with atleast one positive value')
 
-    if dsite_energy is not None:
-        if dsite_energy.shape != site_energy.shape:
-            raise ValueError('dsite_energy and site_energy must'
-                             'have consistent shapes')
-    elif dbqm is not None:
-        if type(dbqm) is str:
-            if dbqm == 'background-susceptibility':
-                dbqm = background_susceptibility_bqm(bqm)
-            else:
-                raise ValueError('If dbqm is a string the only valid '
-                                 'option is "background-susceptibility"')
-        if sampleset is None:
-            raise ValueError('dsite_energy can only be derived if both '
-                             'dbqm and sampleset are provided as arguments')
-        dsite_energy = effective_field(dbqm,
-                                       sampleset,
-                                       current_state_energy=True)
-    # if dsite_energy is not None: # Not used, assumed subdominant.
-    #     dmax_excitation = np.max(dsite_energy[0], axis=1)
-    #     dmax_excitation_all =  np.max(dmax_excitation)
-
     if any(sample_weights == 0):
-        site_energy[0] = site_energy[0][sample_weights > 0, :]
-        if dsite_energy is not None:
-            dsite_energy[0] = dsite_energy[0][sample_weights > 0, :]
+        en1 = en1[sample_weights > 0, :, :]
         sample_weights = sample_weights[sample_weights > 0]
+    # We could also remove any cols that are all zero (all samples, all bqms)
+    # this is going to be a rare (pathological) scenario, e.g. people including unnnecessary
+    # free spins.
 
-    # sample_weights = sample_weights/np.sum(sample_weights), leave to user to decide norm.
-    max_excitation = np.max(site_energy[0], axis=1)
-    max_excitation_all = np.max(max_excitation)
+    # We could compress en1 to a histogram over unique values with accumulated weights.
+    # This could allow a big speed up .. particularly for low precision problems.
+    # However, if we want to bootstrap the full matrix is convenient.
 
-    if max_excitation_all <= 0:
+    # We should check the samplesets yield energies en1[:,:,i] that are not colinear;
+    # the outcome is ambiguous in the scenario. If weights are uniform then we can
+    # sort and compare.
+    # Most likely causes for collinearity are that someone duplicates a Hamiltonian,
+    # or two closely related Hamiltonians processed with few unique samples.
+
+    max_excitation = np.max(en1, axis=(0, 1))
+    min_excitation = np.min(en1, axis=(0, 1))
+    prod_minmax = max_excitation*min_excitation
+    if all(prod_minmax >= 0):
+        # No excitations observed (up to sign definition of Hamiltonian).
+        if len(prod_minmax) > 0:
+            warnings.warn('An exponential model with infinite or ill-defined'
+                          'parameters fits the data; consider taking more '
+                          'samples, modifying bqms or exploiting a '
+                          'perturbative approach.')
+        x = np.sign(max_excitation)*float('Inf')  # nan is reasonable if sign=0.
+        x_bootstraps = x[np.newaxis, :]*np.ones((num_bootstrap_samples, 1))
+    else:
         # Consider H(s) = - h s_1 - h s_3 + 2h s_2 - s_1 s_2 - s_2 s_3
         # e.g. suppose the sampleset contains only + + and - - .
         # Now we have the perturbative correction ..
@@ -422,128 +432,115 @@ def maximum_pseudolikelihood_temperature(bqm=None,
         # perturbative.
         # There are no local excitations present in the sample set, therefore
         # the temperature is estimated as 0.'
-        if dsite_energy is not None:
-            raise ValueError('The rate of exciations with respect to the '
-                             'unperturbed Hamiltonian is zero. Handling '
-                             'of this special limit with a perbutative '
-                             'correction is not currently supported.')
-        pass
-    else:
-        if T_guess is None:
-            x0 = -1/max_excitation_all
-        else:
-            if T_guess < T_bracket[0]:
-                x0 = -1/T_bracket[0]
-            elif T_guess > T_bracket[1]:
-                x0 = -1/T_bracket[1]
-            else:
-                x0 = -1/T_guess
-
-        if dsite_energy is None:
+        if en1.ndim == 2 or en1.shape[2] == 1:
+            # Scalar method 'inverse temperature only' for one Hamiltonian
+            en1 = en1[:, :, 0]  # f_{i}(s) - column i, row s.
+            if x0 is None:
+                x0 = -1/max_excitation
             # Derivative of mean (w.r.t samples) log pseudo liklihood amounts
             # to local energy matching criteria
-            # O = sum_i \sum_s f_i(s) P(s, i) #s = sample, i = variable index
+            # O = sum_i \sum_s w(s) f_i(s) P(s, i) #s = sample, i = variable index
             # f_i(s) is energy lost in flipping spin s_i against current assignment.
             # P(s, i) = 1/(1 + exp[x f_i(s)]), probability to flip against current state.
-            # x = -1/T
+
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
                     warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                    expFactor = np.exp(site_energy[0]*x)
-                return np.sum(sample_weights*np.sum(site_energy[0]/(1 + expFactor), axis=1))
+                    expFactor = np.exp(en1*x)
+                return np.sum(sample_weights*np.sum(en1/(1 + expFactor), axis=1))
         else:
-            # A generalization of the scalar case to include a perturbation.
-            # In principle can provide many perturbations, but accurate estimation
-            # by MPL then requires many samples, results can be unstable.
-            x0 = [x0, 0]
+            if en1.ndim != 3:
+                raise ValueError('en1 must be 2d for a single bqm, '
+                                 'or 3d for multiple bqms')
+            # Vector generalization
+            if x0 is None:
+                # Assume all bqms except the first are perturbative in absence
+                # of additional context.
+                x0 = np.zeros(en1.shape[2])
+                x0[0] = -1/max_excitation[0]  # Smallest gap
 
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
                     warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                    expFactor = np.exp(site_energy[0]*x[0] + dsite_energy[0]*x[1])
-                se = (site_energy[0], dsite_energy[0])
-                return [np.sum(sample_weights*np.sum(si/(1 + expFactor), axis=1)) for si in se]
+                    expFactor = np.exp(np.sum(en1*x[np.newaxis, np.newaxis, :], axis=2))
+                return np.sum(sample_weights[:, np.newaxis]*np.sum(
+                    en1/(1 + expFactor[:, :, np.newaxis]), axis=1), axis=0)
 
-        root_results = None
-        if optimize_method == 'bisect' and dsite_energy is None:
-            if not 0 <= T_bracket[0] < T_bracket[1]:
-                raise ValueError('Bad T_bracket, must be positive ordered scalars.')
-            bisect_bracket = [-1/T_bracket[i] for i in range(2)]
-
+        if optimize_method == 'bisect' and en1.ndim == 2:
+            # bisect can be relatively robust, since we can have a problem of vanishing
+            # gradients given conservative bounds.
             if d_mean_log_pseudo_likelihood(bisect_bracket[0]) < 0:
-                warnings.warn(
-                    'Temperature is less than T_bracket[0], or perhaps negative: '
-                    'rescaling the Hamiltonian, modification of T_bracket[0], or '
-                    'a change of the optimize_method (to None) '
-                    'can resolve this issue assuming a numerical precision issue '
-                    'induced by very large or small effective fields is not the cause. '
-                    'Automated precision requirements mean that this routine works '
-                    'best when excitations (effective fields) are O(1).')
-                T_estimate = T_bracket[0]
+                warnings.warn('value should be positive at bisect_bracket[0].'
+                              'value returned matches the lower bound'
+                              'This might be resolved by a more sensible '
+                              'scaling of the bqm, or a change of the optimize_method.')
+                return bisect_bracket[0]
             elif d_mean_log_pseudo_likelihood(bisect_bracket[1]) > 0:
-                warnings.warn(
-                    'Temperature is greater than T_bracket[1], or perhaps negative:'
-                    'rescaling the Hamiltonian, modification of T_bracket[1] or '
-                    'a change of the optimize_method (to None) '
-                    'can resolve this issue assuming a numerical precision issue '
-                    'induced by very large or small effective fields is not the cause. '
-                    'Automated precision requirements mean that this routine works '
-                    'best when excitations (effective fields) are O(1).')
-                T_estimate = T_bracket[1]
+                warnings.warn('value should be positive at bisect_bracket[0]. '
+                              'value returned matches the upper bound. '
+                              'This might be resolved by a more sensible '
+                              'scaling of the bqm, or a change of the optimize_method.')
+                return bisect_bracket[1]
             else:
                 if x0 < bisect_bracket[0] or x0 > bisect_bracket[1]:
                     x0 = (bisect_bracket[0] + bisect_bracket[1])/2
                 root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0=x0,
                                                     method=optimize_method, bracket=bisect_bracket)
-                T_estimate = -1/(root_results.root)
+                return root_results.root
         else:
             # With few samples and atypically large/small site energies numerical instability
-            # is possible. In these scenarios increasing the number of samples is sufficient in
-            # principle.
-            if dsite_energy is None:
+            # relative to bisect.
+            if en1.ndim == 2:
                 def dd_mean_log_pseudo_likelihood(x):  # second (scalar) derivative
                     with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
                         warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                        expFactor = np.exp(site_energy[0]*x)
+                        expFactor = np.exp(en1*x)
                         norm = (expFactor + 2 + 1/expFactor)
-                    return np.sum(-sample_weights*np.sum(site_energy[0]*site_energy[0]/norm, axis=1))
+                    return -np.sum(sample_weights*np.sum(en1*en1/norm, axis=1))
                 root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0=x0,
                                                     fprime=dd_mean_log_pseudo_likelihood)
-                T_estimate = -1/root_results.root
+                x = root_results.root
             else:
-                x0 = [T_guess, 0]
-
                 def dd_mean_log_pseudo_likelihood(x):  # jacobian
+                    # [Only] If few Hamiltonians efficient, this is the expected use case
                     with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
                         warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                        expFactor = np.exp(site_energy[0]*x[0] + dsite_energy[1]*x[1])
+                        expFactor = np.exp(np.sum(en1*x[np.newaxis, np.newaxis, :], axis=2))
                         norm = (expFactor + 2 + 1/expFactor)
-                        se = [site_energy[0], dsite_energy[0]]
-                        return np.sum([[-sample_weights*np.sum(si*sj/norm, axis=1) for si in se] for sj in se], axis=-1)
+                    return -np.sum([[sample_weights[:, :, np.newaxis] *
+                                     np.sum(en1[:, :, i]*en1[:, :, j]/norm, axis=1)
+                                     for i in range(en1.shape[0])]
+                                    for j in range(en1.shape[0])], axis=-1)
                 root_results = optimize.root(f=d_mean_log_pseudo_likelihood, x0=x0,
                                              jac=dd_mean_log_pseudo_likelihood)
-                raise ValueError('WIP: Eyeball to check its working', root_results)
-
+                x = root_results.root
+        x0 = x
         if num_bootstrap_samples > 0:
             if len(np.unique(sample_weights)) != 1:
                 raise ValueError('Bootstraps require uniform sample_weights (num_occurrences)')
             # Bootstrapping with respect to samples (assumed independently sampled)
             # allows a confidence interval.
-            if root_results is not None:
-                x0 = root_results.root
             prng = np.random.RandomState(seed)
-            num_samples = site_energy[0].shape[0]
+            num_samples = en1.shape[0]
+            x_bootstraps = []
             for bs in range(num_bootstrap_samples):
                 indices = prng.choice(
                     num_samples,
                     num_bootstrap_samples,
                     replace=True)
-                T_bootstrap_estimates[bs], _ = maximum_pseudolikelihood_temperature(
-                    site_energy=(site_energy[0][indices, :], site_energy[1]),
-                    num_bootstrap_samples=0,
-                    T_guess=T_estimate)
-
-    return T_estimate, T_bootstrap_estimates
+                if en1.ndim == 2:
+                    x_bs, _ = maximum_pseudolikelihood(
+                        en1=en1[indices, :],
+                        num_bootstrap_samples=0,
+                        x0=x)
+                else:
+                    x_bs, _ = maximum_pseudolikelihood(
+                        en1=en1[indices, :, :],
+                        num_bootstrap_samples=0,
+                        x0=x)
+                x_bootstraps.append(x_bs)
+            x_bootstraps = np.array(x_bootstraps)
+    return x, x_bootstraps
 
 
 def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
