@@ -19,6 +19,7 @@ import unittest
 
 from parameterized import parameterized_class
 
+import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.testing import isolated_environ
 from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
@@ -83,3 +84,29 @@ class TestLegacySolverSelection(unittest.TestCase):
             self.assertIn(self.problem_type, sampler.solver.supported_problem_types)
 
         sampler.client.close()
+
+
+@parameterized_class(
+    ("sampler_cls", "sample_meth", "problem_gen"), [
+        (LeapHybridSampler, "sample", lambda self: dimod.BQM.from_qubo({})),
+        (LeapHybridDQMSampler, "sample_dqm", lambda self: dimod.DQM.from_numpy_vectors([0], [0], ([], [], []))),
+        (LeapHybridCQMSampler, "sample_cqm", lambda self: dimod.CQM.from_bqm(dimod.BQM.from_qubo({'ab': 1}))),
+    ])
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
+class TestSamplesetInterface(unittest.TestCase):
+
+    def test_wait_id_availability(self):
+        # verify https://github.com/dwavesystems/dwave-system/issues/540 is fixed
+
+        sampler = self.sampler_cls()
+        problem = self.problem_gen()
+        ss = getattr(sampler, self.sample_meth)(problem)
+
+        with self.subTest("sampleset.wait_id() exists"):
+            pid = ss.wait_id()
+            self.assertIsInstance(pid, str)
+
+        with self.subTest("sampleset.wait_id() exists post-resolve"):
+            ss.resolve()
+            pid_post = ss.wait_id()
+            self.assertEqual(pid, pid_post)
