@@ -1,4 +1,4 @@
-dimod==0.12.17
+dimod==0.12.18
 dwave-optimization==0.4.0
 dwave-preprocessing==0.6.7
 dwave-cloud-client==0.12.0
