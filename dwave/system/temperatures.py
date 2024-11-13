@@ -395,9 +395,10 @@ def maximum_pseudolikelihood(
         if type(sampleset) is dimod.sampleset.SampleSet:
             sample_weights = sampleset.record.num_occurrences/np.sum(sampleset.record.num_occurrences)
         else:
-            sample_weights = np.ones(en1.shape[0])
+            sample_weights = np.ones(en1.shape[-2])
     if len(sample_weights) != en1.shape[-2]:
-        raise ValueError('The sample weights, if not defaulted, must match the sampleset shape')
+        raise ValueError('The sample weights, if not defaulted, must match the sampleset shape, '
+                         f'sample_weights.shape={sample_weights.shape}, en1.shape[-2]=={en1.shape[-2]}')
     if any(sample_weights < 0) or np.max(sample_weights) == 0:
         raise ValueError('sample weights must be non-negative with atleast one positive value')
 
@@ -510,6 +511,7 @@ def maximum_pseudolikelihood(
                         expFactor = np.exp(en1*x)
                         norm = (expFactor + 2 + 1/expFactor)
                     return -np.sum(sample_weights*np.sum(en1*en1/norm, axis=1))
+                # Revisit? it is not clear whether to use root or fsolve
                 root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0=x0,
                                                     fprime=dd_mean_log_pseudo_likelihood)
                 x = root_results.root
@@ -526,6 +528,8 @@ def maximum_pseudolikelihood(
                                             norm, axis=1)
                                      for i in range(en1.shape[0])]
                                     for j in range(en1.shape[0])], axis=-1)
+                # Revisit? It is not clear whether to use root or fsolve.
+                # Revisit? It is not clear whether providing jacobian typically speeds-up
                 root_results = optimize.root(fun=d_mean_log_pseudo_likelihood, x0=x0,
                                              jac=dd_mean_log_pseudo_likelihood)
                 x = root_results.x
@@ -533,8 +537,6 @@ def maximum_pseudolikelihood(
         if num_bootstrap_samples > 0:
             if len(np.unique(sample_weights)) != 1:
                 raise ValueError('Bootstraps require uniform sample_weights (num_occurrences)')
-            # Bootstrapping with respect to samples (assumed independently sampled)
-            # allows a confidence interval.
             prng = np.random.RandomState(seed)
             num_samples = en1.shape[0]
             x_bootstraps = []
@@ -550,7 +552,7 @@ def maximum_pseudolikelihood(
                         x0=x)
                 else:
                     x_bs, _ = maximum_pseudolikelihood(
-                        en1=en1[indices, :, :],
+                        en1=en1[:, indices, :],
                         num_bootstrap_samples=0,
                         x0=x)
                 x_bootstraps.append(x_bs)
