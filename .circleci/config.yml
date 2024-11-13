@@ -23,7 +23,7 @@ jobs:
         type: string
 
     docker:
-      - image: cimg/python:<< parameters.python-version >>
+      - image: python:<< parameters.python-version >>
 
     steps:
       - checkout
@@ -35,7 +35,6 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -U pip setuptools
-            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
       - run: &run-python-tests
@@ -57,7 +56,7 @@ jobs:
             . env/bin/activate
             pip install -U pip setuptools
             pip install -r tests/requirements.txt
-            pip install .[drivers] -I --no-cache-dir --extra-index-url https://pypi.dwavesys.com/simple
+            pip install .
 
       - when:
           condition: << parameters.dependency-specifiers >>
@@ -75,7 +74,7 @@ jobs:
 
   test-doctest:
     docker:
-      - image: cimg/python:3.9
+      - image: python:3.12
 
     steps:
       - checkout
@@ -85,7 +84,6 @@ jobs:
           command: |
             python -m venv env
             . env/bin/activate
-            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r docs/requirements.txt
 
       - run:
@@ -108,9 +106,7 @@ jobs:
         type: string
       xcode:
         type: string
-        default: "14.3.0"
-
-    resource_class: macos.m1.medium.gen1
+        default: "16.0.0"
 
     macos:
       xcode: << parameters.xcode >>
@@ -148,7 +144,6 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -U pip
-            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests/requirements.txt
 
       - run: *run-python-tests
@@ -184,7 +179,6 @@ jobs:
           command: |
             env\Scripts\activate.ps1
             pip install -U pip
-            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt -r tests\requirements.txt
 
       - run:
@@ -195,7 +189,7 @@ jobs:
 
   deploy:
     docker:
-      - image: cimg/python:3.9
+      - image: python:3.12
 
     steps:
       - checkout
@@ -205,9 +199,8 @@ jobs:
           command: |
             python -m virtualenv env
             . env/bin/activate
-            pip install .     # install dwave-system to break cycle created by dwave-drivers in requirements
             pip install -r requirements.txt
-            pip install twine wheel
+            pip install twine wheel setuptools
 
       - run:
           name: verify version matches tag
@@ -234,11 +227,15 @@ workflows:
           name: test-linux-<< matrix.python-version >> | << matrix.dependency-specifiers >>
           matrix:
             parameters:
-              python-version: &python-versions ["3.8", "3.9", "3.10", "3.11", &latest-python "3.12"]
+              python-version: &python-versions ["3.9", "3.10", "3.11", "3.12", &latest-python "3.13"]
               dependency-specifiers:
                 - "dwave-cloud-client~=0.12.0"
                 - "dwave-cloud-client~=0.13.0"
               integration-test-python-version: &integration-python-versions [*latest-python]
+            exclude:
+              - python-version: "3.13"
+                dependency-specifiers: "dwave-cloud-client~=0.12.0"
+                integration-test-python-version: "3.13"
 
       - test-osx:
           name: test-osx-<< matrix.python-version >>

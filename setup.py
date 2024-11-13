@@ -24,7 +24,7 @@ os.chdir(setup_folder_loc)
 exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
-install_requires = ['dimod>=0.12.7,<0.14.0',
+install_requires = ['dimod>=0.12.18,<0.14.0',
                     'dwave-optimization>=0.1.0,<0.6',
                     'dwave-cloud-client>=0.12.0,<0.14.0',
                     'dwave-networkx>=0.8.10',
@@ -36,18 +36,11 @@ install_requires = ['dimod>=0.12.7,<0.14.0',
                     'scipy>=1.7.3',
                     ]
 
-# NOTE: dwave-drivers can also be installed with `dwave install drivers`,
-# and the exact requirements for `drivers` contrib package are defined in
-# `dwave.system.package_info`, the `contrib` dict.
-extras_require = {'drivers': ['dwave-drivers>=0.4.0,<0.5.0'],
-                  }
-
-python_requires = '>=3.8'
+python_requires = '>=3.9'
 
 packages = ['dwave',
             'dwave.embedding',
             'dwave.system',
-            'dwave.system.cache',
             'dwave.system.composites',
             'dwave.system.samplers',
             ]
@@ -57,11 +50,11 @@ classifiers = [
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
 ]
 
 setup(
@@ -74,13 +67,7 @@ setup(
     url='https://github.com/dwavesystems/dwave-system',
     license='Apache 2.0',
     packages=packages,
-    entry_points={
-        'dwave_contrib': [
-            'dwave-system = dwave.system.package_info:contrib'
-        ]
-    },
     install_requires=install_requires,
-    extras_require=extras_require,
     python_requires=python_requires,
     classifiers=classifiers,
     zip_safe=False
