@@ -1,4 +1,4 @@
-# Copyright 2018 D-Wave Systems Inc.
+# Copyright 2024 D-Wave Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -32,13 +32,14 @@ __all__ = ["LinearAncillaComposite"]
 class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
     """Implements linear biases as ancilla qubits polarized with strong flux biases.
 
-    Linear field `h_i` of qubit `i` is implemented through a coupling `J_{ij}` between
-    the qubit and a neighbouring qubit `j` that is fully polarized with a large flux bias.
+    Linear bias :math:`h_i` of qubit :math:`i` is implemented through a coupling 
+    :math:`J_{ij}` between the qubit and a neighboring qubit :math:`j` that has a 
+    large flux-bias offset.
 
     Args:
     child_sampler (:class:`dimod.Sampler`):
-        A dimod sampler, such as a :obj:`DWaveSampler`, that has flux bias controls.
-
+        A dimod sampler, such as a :class:`~dwave.system.samplers.DWaveSampler()`, 
+        that has flux bias controls.
     """
 
     def __init__(
@@ -79,31 +80,34 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         bqm: dimod.BinaryQuadraticModel,
         *,
         h_tolerance: numbers.Number = 0,
-        default_flux_bias_range: Sequence[float] = [-0.005, 0.005],
+        default_flux_bias_range: Sequence[float] = (-0.005, 0.005),
         **parameters,
     ):
         """Sample from the provided binary quadratic model.
 
         .. note::
             This composite does not suport the auto_scale parameter. BQM Scaling
-            can be done with :class:`dimod.ScaleComposite`.
+            can be done with :class:`~dimod.ScaleComposite`.
 
         Args:
             bqm (:obj:`~dimod.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             h_tolerance (:class:`numbers.Number`):
-                Magnitude of the linear bias can be left on the qubit. Assumed to be positive. Defaults to zero.
+                Magnitude of the linear bias to be set directly on problem qubits; above this the bias
+                is emulated by the flux-bias offset to an ancilla qubit. Assumed to be positive. 
+                Defaults to zero.
 
             default_flux_bias_range (:class:`typing.Sequence`):
-                Flux bias range safely accepted by the QPU, the larger the better.
+                Flux-bias range, as a two-tuple, supported by the QPU. The values must be large enough to
+                ensure qubits remain polarized throughout the annealing process.
 
             **parameters:
                 Parameters for the sampling method, specified by the child
                 sampler.
 
         Returns:
-            :obj:`~dimod.SampleSet`
+            :class:`~dimod.SampleSet`.
 
         """
         if h_tolerance < 0:
@@ -113,13 +117,14 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         qpu_properties = _innermost_child_properties(child)
         target_graph = child.to_networkx_graph()
         source_graph = dimod.to_networkx_graph(bqm)
-        j_range = qpu_properties["extended_j_range"]
+        extended_j_range = qpu_properties["extended_j_range"]
+        # flux_bias_range is not supported at the moment
         flux_bias_range = qpu_properties.get("flux_bias_range", default_flux_bias_range)
 
         # Positive couplings tend to have smaller control error,
         # we default to them if they have the same magnitude than negative couplings
         # https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#overview-of-ice
-        largest_j = j_range[1] if abs(j_range[1]) >= abs(j_range[0]) else j_range[0]
+        largest_j = extended_j_range[1] if abs(extended_j_range[1]) >= abs(extended_j_range[0]) else extended_j_range[0]
         largest_j_sign = np.sign(largest_j)
 
         # To implement the bias sign through flux bias sign,
