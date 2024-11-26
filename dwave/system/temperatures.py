@@ -43,10 +43,11 @@ import dimod
 from scipy import optimize
 from typing import Tuple, Union, Optional, Literal, List
 from collections import defaultdict
-__all__ = ['effective_field', 'maximum_pseudolikelihood_temperature',
+__all__ = ['effective_field', 'maximum_pseudolikelihood',
+           'maximum_pseudolikelihood_temperature',
            'freezeout_effective_temperature', 'fast_effective_temperature',
            'Ip_in_units_of_B', 'h_to_fluxbias', 'fluxbias_to_h',
-           'background_susceptibility_Ising', ]
+           'background_susceptibility_Ising', 'background_susceptibility_bqm']
 
 
 def effective_field(bqm: dimod.BinaryQuadraticModel,
@@ -234,10 +235,10 @@ def maximum_pseudolikelihood_temperature(
         en1: Optional[np.ndarray]=None,
         num_bootstrap_samples: Optional[int]=0,
         seed: Optional[int]=None,
-        T_guess=None,
-        optimize_method=None,
-        T_bracket=(1e-3, 1000),
-        sample_weights=None) -> Tuple[float, np.ndarray]:
+        T_guess: Optional[float]=None,
+        optimize_method: Optional[str]=None,
+        T_bracket: Optional[Tuple[float,float]]=(1e-3, 1000),
+        sample_weights: Optional[np.ndarray]=None) -> Tuple[float, np.ndarray]:
     r'''Returns a sampling-based temperature estimate.
 
     The temperature T parameterizes the Boltzmann distribution as
@@ -376,19 +377,26 @@ def maximum_pseudolikelihood(
         en1: Optional[np.ndarray]=None,
         num_bootstrap_samples: Optional[int]=0,
         seed: Optional[int]=None,
-        x0=None,
-        optimize_method=None,
-        bisect_bracket=(1e-3, 1000),
-        sample_weights=None) -> List[Tuple[float, np.ndarray]]:
+        x0: Optional[float]=None,
+        optimize_method: Optional[str]=None,
+        bisect_bracket: Optional[Tuple[float,float]]=(1e-3, 1000),
+        sample_weights: Optional[np.ndarray]=None,
+        return_optimize_object: bool=False) -> Tuple:
     """ Maximimum pseudolikelihood for x assuming log probability sum_i x_i bqm_i.
 
-    Returns x = argmin_x 
+    Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
+    of weight estimation for an exponential model with exponent defined by a
+    weighted sum of bqms.
+
+    Returns:
+        Maximum pseudolikelihood weights for each Hamiltonian.
     """
+    root_results = None
     if en1 is None:
         if bqms is None or sampleset is None:
             raise ValueError('en1 can only be derived if both '
                              'bqms and sampleset are provided as arguments')
-        
+
         en1 = np.array([effective_field(
             bqm, sampleset, current_state_energy=True)[0] for bqm in bqms])
     if sample_weights is None:
@@ -417,7 +425,8 @@ def maximum_pseudolikelihood(
     # the outcome is ambiguous in the scenario. If weights are uniform then we can
     # sort and compare.
     # Most likely causes for collinearity are that someone duplicates a Hamiltonian,
-    # or two closely related Hamiltonians processed with few unique samples.
+    # or two closely related Hamiltonians are used with unsufficiently many unique
+    # samples.
     if en1.ndim == 2 or en1.shape[0] == 1:
         # Scalar method 'inverse temperature only' for one Hamiltonian
         en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
@@ -556,12 +565,21 @@ def maximum_pseudolikelihood(
                         num_bootstrap_samples=0,
                         x0=x)
                 x_bootstraps.append(x_bs)
-            x_bootstraps = np.array(x_bootstraps)
+            if return_optimize_object is False:
+                x_bootstraps = np.array(x_bootstraps)
         else:
-            if en1.ndim == 2:
-                x_bootstraps = np.empty(0)
+            if return_optimize_object is False:
+                if en1.ndim == 2:
+                    x_bootstraps = np.empty(0)
+                else:
+                    x_bootstraps = np.empty((0, len(x)))
             else:
-                x_bootstraps = np.empty((0, len(x)))
+                x_bootstraps = []
+
+    if return_optimize_object and root_results is not None:
+        # Return list of optimize results
+        x = root_results
+
     return x, x_bootstraps
 
 

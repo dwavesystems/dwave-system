@@ -18,14 +18,16 @@ import dimod
 import warnings
 from itertools import product
 
-from dwave.system.temperatures import (maximum_pseudolikelihood_temperature,
+from dwave.system.temperatures import (maximum_pseudolikelihood,
+                                       maximum_pseudolikelihood_temperature,
                                        effective_field,
                                        freezeout_effective_temperature,
                                        fast_effective_temperature,
                                        Ip_in_units_of_B,
                                        h_to_fluxbias,
                                        fluxbias_to_h,
-                                       background_susceptibility_Ising)
+                                       background_susceptibility_Ising,
+                                       background_susceptibility_bqm)
 
 from dwave.system.testing import MockDWaveSampler
 
@@ -79,6 +81,59 @@ class TestTemperatures(unittest.TestCase):
         self.assertTrue(bqm.vartype==dimod.BINARY) 
         self.assertTrue(np.array_equal(E_ising[0], E_bqm[0]))
 
+    def test_background_susceptibility(self):
+        # A Hamiltonian with + + + and - - - as ground states.
+        # Symmetry is broken
+        n = 3
+        dh = 1/4
+        h = np.array([dh, -2*dh, dh])
+        J = np.array([[0, -1, 0], [-1, 0, -1], [0, -1, 0]])
+        dh, dJ, k = background_susceptibility_Ising(h, J)
+        # Assert expected dh and dJ values.
+        # ([2+3], [1+3], [1+2])
+        
+        Jd = {(n1, n2): J[n1, n2] for n2 in range(n)
+              for n1 in range(n2) if J[n1, n2] != 0}
+        hd = {n: h[n] for n in range(n)}
+        bqm = dimod.BinaryQuadraticModel('SPIN').from_ising(hd, Jd)
+        dh, dJ, _ = background_susceptibility_Ising(hd, Jd)
+        # Assert sparse and dense method match
+        dbqm = dimod.BinaryQuadraticModel('SPIN').from_ising(dh, dJ)
+
+        chi = -1/2**6
+        bqmPdbqm = bqm + chi*dbqm
+        self.assertEqual(bqmPdbqm, background_susceptibility_bqm(bqm, chi=chi))
+        raise ValueError('New tests required: test_background_susceptibility')
+        
+    def test_maximum_pseudolikelihood(self):
+        chi = -1/2**6
+        dh = 1/4
+        bqm = dimod.BinaryQuadraticModel('SPIN').from_ising(
+            {0: dh, 1: -2*dh, 2:dh},
+            {(i,j): -1 for i in range(3) for j in range(i)})
+
+        dbqm = background_susceptibility_bqm(bqm)
+        bqmPdbqm = bqm + chi*dbqm
+        from dimod import ExactSolver
+        ss = ExactSolver().sample(bqm)
+        ss_chi = ExactSolver().sample(bqmPdbqm)
+        weights = np.exp(-ss.record.energy+np.min(ss.record.energy))
+        weights_chi = np.exp(-ss_chi.record.energy+np.min(ss_chi.record.energy))
+        for bqm_assumed in [bqm, bqmPdbqm]:
+            for sample_weights in [weights, weights_chi]:
+                Ttup, _ = maximum_pseudolikelihood_temperature(bqm=bqm_assumed, sampleset=ss,
+                                                               sample_weights=sample_weights)
+                print(Ttup)
+                xtup, _ = maximum_pseudolikelihood(bqms=[bqm_assumed,], sampleset=ss,
+                                                   sample_weights=sample_weights)
+                print(-1/xtup)
+                print(bqm.variables, dbqm.variables)
+                xtup, _ = maximum_pseudolikelihood(bqms=[bqm, dbqm], sampleset=ss,
+                                                   sample_weights=sample_weights)
+                print(xtup)
+
+        raise ValueError('New tests required: test_maximum_pseudolikelihood')
+    
     def test_maximum_pseudolikelihood_temperature(self):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.
