@@ -330,7 +330,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'default_programming_thermalization': 1000.0,
             'default_readout_thermalization': 0.0,
             'extended_j_range': [-2.0, 1.0],
-            'fast_anneal_time_range': [0.005, 83000.0],
+            'fast_anneal_time_range': [0.005, 2000.0],
             'h_gain_schedule_range': [-3.0, 3.0],
             'max_anneal_schedule_points': 12,
             'max_h_gain_schedule_points': 20,
@@ -345,7 +345,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'tags': [],
             'category': 'qpu',
             'quota_conversion_rate': 1,
-            'fast_anneal_time_range': [0.005, 83000.0],
         })
 
         if properties is not None:
