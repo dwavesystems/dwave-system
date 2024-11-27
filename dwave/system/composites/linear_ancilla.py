@@ -40,6 +40,19 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
     child_sampler (:class:`dimod.Sampler`):
         A dimod sampler, such as a :class:`~dwave.system.samplers.DWaveSampler()`, 
         that has flux bias controls.
+
+    Examples:
+        This example submits a two-qubit problem consisting of linear biases with oposed sign 
+        and anti-ferromagnetic coupling. A D-Wave system solves it in the fast anneal 
+        protocol through the use of ancilla qubits.
+
+        >>> from dwave.system import DWaveSampler, EmbeddingComposite, LinearAncillaComposite
+        ...
+        >>> sampler = EmbeddingComposite(LinearAncillaComposite(DWaveSampler()))
+        >>> sampleset = sampler.sample_ising({0:1, 1:-1}, {(0, 1): 1}, fast_anneal=True)
+        >>> sampleset.first.energy
+        -3
+
     """
 
     def __init__(
@@ -80,17 +93,17 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         bqm: dimod.BinaryQuadraticModel,
         *,
         h_tolerance: numbers.Number = 0,
-        default_flux_bias_range: Sequence[float] = (-0.005, 0.005),
+        default_flux_bias_range: tuple[float, float] = (-0.005, 0.005),
         **parameters,
     ):
         """Sample from the provided binary quadratic model.
 
         .. note::
-            This composite does not suport the auto_scale parameter. BQM Scaling
-            can be done with :class:`~dimod.ScaleComposite`.
+            This composite does not support the :ref:`param_autoscale` parameter; use the
+            :class:`~dwave.preprocessing.composites.ScaleComposite` for scaling.
 
         Args:
-            bqm (:obj:`~dimod.BinaryQuadraticModel`):
+            bqm (:class:`~dimod.binary.BinaryQuadraticModel`):
                 Binary quadratic model to be sampled from.
 
             h_tolerance (:class:`numbers.Number`):
@@ -124,7 +137,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         # Positive couplings tend to have smaller control error,
         # we default to them if they have the same magnitude than negative couplings
         # https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#overview-of-ice
-        largest_j = extended_j_range[1] if abs(extended_j_range[1]) >= abs(extended_j_range[0]) else extended_j_range[0]
+        largest_j = max(extended_j_range[::-1], key=abs)
         largest_j_sign = np.sign(largest_j)
 
         # To implement the bias sign through flux bias sign,
