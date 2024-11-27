@@ -42,15 +42,15 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         that has flux bias controls.
 
     Examples:
-        This example submits a two-qubit problem consisting of linear biases with oposed sign 
-        and anti-ferromagnetic coupling. A D-Wave system solves it in the fast anneal 
-        protocol through the use of ancilla qubits.
+        This example submits a two-qubit problem consisting of linear biases with opposed signs 
+        and anti-ferromagnetic coupling. A D-Wave quantum computer solves it with the fast-anneal 
+        protocol using ancilla qubits to represent the linear biases.
 
         >>> from dwave.system import DWaveSampler, EmbeddingComposite, LinearAncillaComposite
         ...
         >>> sampler = EmbeddingComposite(LinearAncillaComposite(DWaveSampler()))
-        >>> sampleset = sampler.sample_ising({0:1, 1:-1}, {(0, 1): 1}, fast_anneal=True)
-        >>> sampleset.first.energy
+        >>> sampleset = sampler.sample_ising({0:1, 1:-1}, {(0, 1): 1}, fast_anneal=True) # doctest: +SKIP
+        >>> sampleset.first.energy # doctest: +SKIP
         -3
 
     """
@@ -111,7 +111,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
                 is emulated by the flux-bias offset to an ancilla qubit. Assumed to be positive. 
                 Defaults to zero.
 
-            default_flux_bias_range (:class:`typing.Sequence`):
+            default_flux_bias_range (:class:`tuple`):
                 Flux-bias range, as a two-tuple, supported by the QPU. The values must be large enough to
                 ensure qubits remain polarized throughout the annealing process.
 
