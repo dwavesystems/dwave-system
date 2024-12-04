@@ -13,11 +13,11 @@ structured to represent variable ``a`` with a long chain.
 
 >>> import networkx as nx
 >>> import dimod
->>> import greedy
+>>> import dwave.samplers
 ...
 >>> G = nx.Graph()
 >>> G.add_edges_from([(n, n + 1) for n in range(10)])
->>> sampler = dimod.StructureComposite(greedy.SteepestDescentSampler(), G.nodes, G.edges)
+>>> sampler = dimod.StructureComposite(dwave.samplers.SteepestDescentSampler(), G.nodes, G.edges)
 >>> sampleset = EmbeddingComposite(sampler).sample_ising({}, {("a", "b"): -1},
 ...     return_embedding=True,
 ...     embedding_parameters={"fixed_chains": {"a": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}},

@@ -37,9 +37,9 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
     large flux-bias offset.
 
     Args:
-    child_sampler (:class:`dimod.Sampler`):
-        A dimod sampler, such as a :class:`~dwave.system.samplers.DWaveSampler()`, 
-        that has flux bias controls.
+        child_sampler (:class:`dimod.Sampler`):
+            A dimod sampler, such as a :class:`~dwave.system.samplers.DWaveSampler()`,
+            that has flux bias controls.
 
     Examples:
         This example submits a two-qubit problem consisting of linear biases with opposed signs 
@@ -52,7 +52,6 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         >>> sampleset = sampler.sample_ising({0:1, 1:-1}, {(0, 1): 1}, fast_anneal=True) # doctest: +SKIP
         >>> sampleset.first.energy # doctest: +SKIP
         -3
-
     """
 
     def __init__(
