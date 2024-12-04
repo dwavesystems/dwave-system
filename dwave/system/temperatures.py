@@ -54,17 +54,27 @@ import dimod
 from scipy import optimize
 from typing import Tuple, Union, Optional, Literal, List
 from collections import defaultdict
-__all__ = ['effective_field', 'maximum_pseudolikelihood',
-           'maximum_pseudolikelihood_temperature',
-           'freezeout_effective_temperature', 'fast_effective_temperature',
-           'Ip_in_units_of_B', 'h_to_fluxbias', 'fluxbias_to_h',
-           'background_susceptibility_Ising', 'background_susceptibility_bqm']
+
+__all__ = [
+    "effective_field",
+    "maximum_pseudolikelihood",
+    "maximum_pseudolikelihood_temperature",
+    "freezeout_effective_temperature",
+    "fast_effective_temperature",
+    "Ip_in_units_of_B",
+    "h_to_fluxbias",
+    "fluxbias_to_h",
+    "background_susceptibility_Ising",
+    "background_susceptibility_bqm",
+]
 
 
-def effective_field(bqm: dimod.BinaryQuadraticModel,
-                    samples: Union[None, dimod.SampleSet, Tuple[np.ndarray, list]]=None,
-                    current_state_energy: Optional[bool]=False) -> Tuple[np.ndarray, list]:
-    r'''Returns the effective field for all variables and all samples.
+def effective_field(
+    bqm: dimod.BinaryQuadraticModel,
+    samples: Union[None, dimod.SampleSet, Tuple[np.ndarray, list]] = None,
+    current_state_energy: Optional[bool] = False,
+) -> Tuple[np.ndarray, list]:
+    r"""Returns the effective field for all variables and all samples.
 
     The effective field with ``current_state_energy = False`` is the energy
     attributable to setting a variable to value 1, conditioned on fixed values
@@ -134,7 +144,7 @@ def effective_field(bqm: dimod.BinaryQuadraticModel,
        >>> print('Cost to flip spin against current assignment', E)
        Cost to flip spin against current assignment (array([[-1., -2., -2., -2., -1.]]), [0, 1, 2, 3, 4])
 
-    '''
+    """
     if samples is None:
         samples = np.ones(shape=(1, bqm.num_variables))
         labels = bqm.variables
@@ -142,25 +152,26 @@ def effective_field(bqm: dimod.BinaryQuadraticModel,
         samples, labels = dimod.sampleset.as_samples(samples)
 
     if bqm.vartype is dimod.BINARY:
-        bqm = bqm.change_vartype('SPIN', inplace=False)
-        samples = 2*samples - 1
+        bqm = bqm.change_vartype("SPIN", inplace=False)
+        samples = 2 * samples - 1
 
-    h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(
-        variable_order=labels)
+    h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(variable_order=labels)
     # eff_field = h + J*s OR diag(Q) + (Q-diag(Q))*b
     effective_fields = np.tile(h[np.newaxis, :], (samples.shape[0], 1))
     for sI in range(samples.shape[0]):
-        np.add.at(effective_fields[sI, :], irow, qdata*samples[sI, icol])
-        np.add.at(effective_fields[sI, :], icol, qdata*samples[sI, irow])
+        np.add.at(effective_fields[sI, :], irow, qdata * samples[sI, icol])
+        np.add.at(effective_fields[sI, :], icol, qdata * samples[sI, irow])
 
     if current_state_energy is True:
-        effective_fields = 2*samples*effective_fields
+        effective_fields = 2 * samples * effective_fields
 
     return (effective_fields, labels)
 
 
-def background_susceptibility_Ising(h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]) -> Tuple:
-    """ Create the Hamiltonian for the background susceptibility correction
+def background_susceptibility_Ising(
+    h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]
+) -> Tuple:
+    """Create the Hamiltonian for the background susceptibility correction
 
     https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
     Background susceptibility is a significant source of systematic error
@@ -185,34 +196,44 @@ def background_susceptibility_Ising(h: Union[np.ndarray, dict], J: Union[np.ndar
     documentation for the sparse Hamiltonian.
     """
     if type(h) is np.ndarray and type(J) is np.ndarray:
-        if (J.ndim < 2 or h.ndim < 1 or
-           J.shape[-1] != J.shape[-2] or h.shape[0] != J.shape[-1]):
-            raise ValueError('First two dimensions of J, and first dimension '
-                             'of h, must be equal to the (same) number of '
-                             'variables')
+        if (
+            J.ndim < 2
+            or h.ndim < 1
+            or J.shape[-1] != J.shape[-2]
+            or h.shape[0] != J.shape[-1]
+        ):
+            raise ValueError(
+                "First two dimensions of J, and first dimension "
+                "of h, must be equal to the (same) number of "
+                "variables"
+            )
         # Outer product with respect to additional dimensions.
         dh = np.matmul(J, h)  # ...ij,...j->...i
-        dJ = np.einsum('...ij,...jk->...ik', J, J)
-        k = np.einsum('...ii', dJ)/2
+        dJ = np.einsum("...ij,...jk->...ik", J, J)
+        k = np.einsum("...ii", dJ) / 2
     else:
         # Assume tuple-keyed Iterables
         if len(h):
             dh = {n: 0 for n in h.keys()}
             for ij, Jval in J.items():
                 i, j = ij
-                dh[j] += h[i]*Jval
-                dh[i] += h[j]*Jval
+                dh[j] += h[i] * Jval
+                dh[i] += h[j] * Jval
         else:
             dh = {}
 
         G = nx.from_edgelist(J.keys())
-        J = {frozenset(e): Jval for e, Jval in J.items()}  # Convert for unambiguous indexing
+        J = {
+            frozenset(e): Jval for e, Jval in J.items()
+        }  # Convert for unambiguous indexing
         dJ = defaultdict(float)
         for n in G.nodes():
             neighs = list(G.neighbors(n))
             for idx, n1 in enumerate(neighs):
-                for n2 in neighs[idx+1:]:
-                    dJ[tuple(frozenset((n1, n2)))] += J[frozenset((n, n1))] * J[frozenset((n, n2))]
+                for n2 in neighs[idx + 1 :]:
+                    dJ[tuple(frozenset((n1, n2)))] += (
+                        J[frozenset((n, n1))] * J[frozenset((n, n2))]
+                    )
         dJ = dict(dJ)
         k = 0
     return dh, dJ, k
@@ -232,25 +253,28 @@ def background_susceptibility_bqm(bqm, chi=None):
     https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
     """
     source_type = bqm.vartype
-    bqm = bqm.change_vartype('SPIN')
+    bqm = bqm.change_vartype("SPIN")
     dh, dJ, _ = background_susceptibility_Ising(bqm.linear, bqm.quadratic)
     dbqm = dimod.BinaryQuadraticModel(source_type).from_ising(dh, dJ)
     if chi is not None:
-        dbqm = bqm.change_vartype(source_type) + chi*dbqm
+        dbqm = bqm.change_vartype(source_type) + chi * dbqm
     return dbqm
 
 
 def maximum_pseudolikelihood_temperature(
-        bqm: Union[None, dimod.BinaryQuadraticModel, List[dimod.BinaryQuadraticModel]]=None,
-        sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]]=None,
-        en1: Optional[np.ndarray]=None,
-        num_bootstrap_samples: Optional[int]=0,
-        seed: Optional[int]=None,
-        T_guess: Optional[float]=None,
-        optimize_method: Optional[str]=None,
-        T_bracket: Optional[Tuple[float,float]]=(1e-3, 1000),
-        sample_weights: Optional[np.ndarray]=None) -> Tuple[float, np.ndarray]:
-    r'''Returns a sampling-based temperature estimate.
+    bqm: Union[
+        None, dimod.BinaryQuadraticModel, List[dimod.BinaryQuadraticModel]
+    ] = None,
+    sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
+    en1: Optional[np.ndarray] = None,
+    num_bootstrap_samples: Optional[int] = 0,
+    seed: Optional[int] = None,
+    T_guess: Optional[float] = None,
+    optimize_method: Optional[str] = None,
+    T_bracket: Optional[Tuple[float, float]] = (1e-3, 1000),
+    sample_weights: Optional[np.ndarray] = None,
+) -> Tuple[float, np.ndarray]:
+    r"""Returns a sampling-based temperature estimate.
 
     The temperature T parameterizes the Boltzmann distribution as
     :math:`P(x) = \exp(-H(x)/T)/Z(T)`, where :math:`P(x)` is a probability over a state space,
@@ -361,39 +385,46 @@ def maximum_pseudolikelihood_temperature(
 
         https://www.jstor.org/stable/25464568
 
-    '''
+    """
     x0 = None
     bisect_bracket = None
     if T_guess is not None:
-        x0 = -1/T_guess
+        x0 = -1 / T_guess
 
-    if optimize_method == 'bisect':
+    if optimize_method == "bisect":
         if not 0 <= T_bracket[0] < T_bracket[1]:
-            raise ValueError('Bad T_bracket, must be positive ordered scalars.')
-        bisect_bracket = [-1/T_bracket[i] for i in range(2)]
+            raise ValueError("Bad T_bracket, must be positive ordered scalars.")
+        bisect_bracket = [-1 / T_bracket[i] for i in range(2)]
         if x0 is not None and (x0 < bisect_bracket[0] or x0 > bisect_bracket[1]):
-            raise ValueError(f'x0 {x0} and T_bracket {T_bracket} are inconsistent')
+            raise ValueError(f"x0 {x0} and T_bracket {T_bracket} are inconsistent")
     x, x_bs = maximum_pseudolikelihood(
-        bqms=[bqm], sampleset=sampleset, en1=en1,
-        num_bootstrap_samples=num_bootstrap_samples, seed=seed,
-        x0=x0, optimize_method=optimize_method,
-        bisect_bracket=bisect_bracket, sample_weights=sample_weights)
+        bqms=[bqm],
+        sampleset=sampleset,
+        en1=en1,
+        num_bootstrap_samples=num_bootstrap_samples,
+        seed=seed,
+        x0=x0,
+        optimize_method=optimize_method,
+        bisect_bracket=bisect_bracket,
+        sample_weights=sample_weights,
+    )
     # exp(-1/Teff Hp) = exp(estimator[0] Hp)
-    return -1/x, -1/x_bs
+    return -1 / x, -1 / x_bs
 
 
 def maximum_pseudolikelihood(
-        bqms: Union[None, List[dimod.BinaryQuadraticModel]]=None,
-        sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]]=None,
-        en1: Optional[np.ndarray]=None,
-        num_bootstrap_samples: Optional[int]=0,
-        seed: Optional[int]=None,
-        x0: Optional[float]=None,
-        optimize_method: Optional[str]=None,
-        bisect_bracket: Optional[Tuple[float,float]]=(1e-3, 1000),
-        sample_weights: Optional[np.ndarray]=None,
-        return_optimize_object: bool=False) -> Tuple:
-    """ Maximimum pseudolikelihood for x assuming log probability sum_i x_i bqm_i.
+    bqms: Union[None, List[dimod.BinaryQuadraticModel]] = None,
+    sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
+    en1: Optional[np.ndarray] = None,
+    num_bootstrap_samples: Optional[int] = 0,
+    seed: Optional[int] = None,
+    x0: Optional[float] = None,
+    optimize_method: Optional[str] = None,
+    bisect_bracket: Optional[Tuple[float, float]] = (1e-3, 1000),
+    sample_weights: Optional[np.ndarray] = None,
+    return_optimize_object: bool = False,
+) -> Tuple:
+    """Maximimum pseudolikelihood for x assuming log probability sum_i x_i bqm_i.
 
     Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
     of weight estimation for an exponential model with exponent defined by a
@@ -405,21 +436,33 @@ def maximum_pseudolikelihood(
     root_results = None
     if en1 is None:
         if bqms is None or sampleset is None:
-            raise ValueError('en1 can only be derived if both '
-                             'bqms and sampleset are provided as arguments')
+            raise ValueError(
+                "en1 can only be derived if both "
+                "bqms and sampleset are provided as arguments"
+            )
 
-        en1 = np.array([effective_field(
-            bqm, sampleset, current_state_energy=True)[0] for bqm in bqms])
+        en1 = np.array(
+            [
+                effective_field(bqm, sampleset, current_state_energy=True)[0]
+                for bqm in bqms
+            ]
+        )
     if sample_weights is None:
         if type(sampleset) is dimod.sampleset.SampleSet:
-            sample_weights = sampleset.record.num_occurrences/np.sum(sampleset.record.num_occurrences)
+            sample_weights = sampleset.record.num_occurrences / np.sum(
+                sampleset.record.num_occurrences
+            )
         else:
             sample_weights = np.ones(en1.shape[-2])
     if len(sample_weights) != en1.shape[-2]:
-        raise ValueError('The sample weights, if not defaulted, must match the sampleset shape, '
-                         f'sample_weights.shape={sample_weights.shape}, en1.shape[-2]=={en1.shape[-2]}')
+        raise ValueError(
+            "The sample weights, if not defaulted, must match the sampleset shape, "
+            f"sample_weights.shape={sample_weights.shape}, en1.shape[-2]=={en1.shape[-2]}"
+        )
     if any(sample_weights < 0) or np.max(sample_weights) == 0:
-        raise ValueError('sample weights must be non-negative with atleast one positive value')
+        raise ValueError(
+            "sample weights must be non-negative with atleast one positive value"
+        )
 
     if any(sample_weights == 0):
         en1 = en1[:, sample_weights > 0, :]
@@ -444,19 +487,23 @@ def maximum_pseudolikelihood(
 
     max_excitation = np.max(en1, axis=(-1, -2))
     min_excitation = np.min(en1, axis=(-1, -2))
-    prod_minmax = max_excitation*min_excitation
-    if (en1.ndim == 2 and prod_minmax >= 0) or (en1.ndim == 3 and all(prod_minmax >= 0)):
+    prod_minmax = max_excitation * min_excitation
+    if (en1.ndim == 2 and prod_minmax >= 0) or (
+        en1.ndim == 3 and all(prod_minmax >= 0)
+    ):
         # No excitations observed (up to sign definition of Hamiltonian).
-        x = np.sign(max_excitation)*float('Inf')  # nan is reasonable if sign=0.
+        x = np.sign(max_excitation) * float("Inf")  # nan is reasonable if sign=0.
         if en1.ndim > 2:
-            warnings.warn('An exponential model with ill-defined'
-                          'parameters fits the data; consider taking more '
-                          'samples, modifying bqms or exploiting a '
-                          'perturbative approach.')
-            x_bootstraps = x[np.newaxis, :]*np.ones((num_bootstrap_samples, 1))
+            warnings.warn(
+                "An exponential model with ill-defined"
+                "parameters fits the data; consider taking more "
+                "samples, modifying bqms or exploiting a "
+                "perturbative approach."
+            )
+            x_bootstraps = x[np.newaxis, :] * np.ones((num_bootstrap_samples, 1))
         else:
             # Infinite results from all local minima, well defined
-            x_bootstraps = x*np.ones(num_bootstrap_samples)
+            x_bootstraps = x * np.ones(num_bootstrap_samples)
     else:
         # Consider H(s) = - h s_1 - h s_3 + 2h s_2 - s_1 s_2 - s_2 s_3
         # e.g. suppose the sampleset contains only + + and - - .
@@ -469,7 +516,7 @@ def maximum_pseudolikelihood(
             # Scalar method 'inverse temperature only' for one Hamiltonian
             en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
             if x0 is None:
-                x0 = -1/max_excitation
+                x0 = -1 / max_excitation
             # Derivative of mean (w.r.t samples) log pseudo liklihood amounts
             # to local energy matching criteria
             # O = sum_i \sum_s w(s) f_i(s) P(s, i) #s = sample, i = variable index
@@ -478,103 +525,131 @@ def maximum_pseudolikelihood(
 
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
-                    warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                    expFactor = np.exp(en1*x)
-                return np.sum(sample_weights*np.sum(en1/(1 + expFactor), axis=1))
+                    warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                    expFactor = np.exp(en1 * x)
+                return np.sum(sample_weights * np.sum(en1 / (1 + expFactor), axis=1))
+
         else:
             if en1.ndim != 3:
-                raise ValueError('en1 must be 2d for a single bqm, '
-                                 'or 3d for multiple bqms')
+                raise ValueError(
+                    "en1 must be 2d for a single bqm, " "or 3d for multiple bqms"
+                )
             # Vector generalization
             if x0 is None:
                 # Assume all bqms except the first are perturbative in absence
                 # of additional context.
                 x0 = np.zeros(en1.shape[0])
-                x0[0] = -1/max_excitation[0]  # Smallest gap
+                x0[0] = -1 / max_excitation[0]  # Smallest gap
 
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
-                    warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                    expFactor = np.exp(np.sum(
-                        en1 * x[:, np.newaxis, np.newaxis], axis=0))
-                return np.sum(sample_weights[np.newaxis, :] * np.sum(
-                    en1/(1 + expFactor[np.newaxis, :, :]), axis=-1), axis=-1)
+                    warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                    expFactor = np.exp(
+                        np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
+                    )
+                return np.sum(
+                    sample_weights[np.newaxis, :]
+                    * np.sum(en1 / (1 + expFactor[np.newaxis, :, :]), axis=-1),
+                    axis=-1,
+                )
 
-        if optimize_method == 'bisect' and en1.ndim == 2:
+        if optimize_method == "bisect" and en1.ndim == 2:
             # bisect can be relatively robust, since we can have a problem of vanishing
             # gradients given conservative bounds.
             if d_mean_log_pseudo_likelihood(bisect_bracket[0]) < 0:
-                warnings.warn('value should be positive at bisect_bracket[0].'
-                              'value returned matches the lower bound'
-                              'This might be resolved by a more sensible '
-                              'scaling of the bqm, or a change of the optimize_method.')
+                warnings.warn(
+                    "value should be positive at bisect_bracket[0]."
+                    "value returned matches the lower bound"
+                    "This might be resolved by a more sensible "
+                    "scaling of the bqm, or a change of the optimize_method."
+                )
                 x = bisect_bracket[0]
             elif d_mean_log_pseudo_likelihood(bisect_bracket[1]) > 0:
-                warnings.warn('value should be positive at bisect_bracket[0]. '
-                              'value returned matches the upper bound. '
-                              'This might be resolved by a more sensible '
-                              'scaling of the bqm, or a change of the optimize_method.')
+                warnings.warn(
+                    "value should be positive at bisect_bracket[0]. "
+                    "value returned matches the upper bound. "
+                    "This might be resolved by a more sensible "
+                    "scaling of the bqm, or a change of the optimize_method."
+                )
                 x = bisect_bracket[1]
             else:
                 if x0 < bisect_bracket[0] or x0 > bisect_bracket[1]:
-                    x0 = (bisect_bracket[0] + bisect_bracket[1])/2
-                root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0=x0,
-                                                    method=optimize_method, bracket=bisect_bracket)
+                    x0 = (bisect_bracket[0] + bisect_bracket[1]) / 2
+                root_results = optimize.root_scalar(
+                    f=d_mean_log_pseudo_likelihood,
+                    x0=x0,
+                    method=optimize_method,
+                    bracket=bisect_bracket,
+                )
                 x = root_results.root
         else:
             # With few samples and atypically large/small site energies numerical instability
             # relative to bisect.
             if en1.ndim == 2:
+
                 def dd_mean_log_pseudo_likelihood(x):  # second (scalar) derivative
                     with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                        warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                        expFactor = np.exp(en1*x)
-                        norm = (expFactor + 2 + 1/expFactor)
-                    return -np.sum(sample_weights*np.sum(en1*en1/norm, axis=1))
+                        warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                        expFactor = np.exp(en1 * x)
+                        norm = expFactor + 2 + 1 / expFactor
+                    return -np.sum(sample_weights * np.sum(en1 * en1 / norm, axis=1))
+
                 # Revisit? it is not clear whether to use root or fsolve
-                root_results = optimize.root_scalar(f=d_mean_log_pseudo_likelihood, x0=x0,
-                                                    fprime=dd_mean_log_pseudo_likelihood)
+                root_results = optimize.root_scalar(
+                    f=d_mean_log_pseudo_likelihood,
+                    x0=x0,
+                    fprime=dd_mean_log_pseudo_likelihood,
+                )
                 x = root_results.root
             else:
+
                 def dd_mean_log_pseudo_likelihood(x):  # jacobian
                     # [Only] If few Hamiltonians efficient, this is the expected use case
                     with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                        warnings.simplefilter(action='ignore', category=RuntimeWarning)
-                        expFactor = np.exp(np.sum(
-                            en1*x[:, np.newaxis, np.newaxis], axis=0))
-                        norm = (expFactor + 2 + 1/expFactor)
-                    return -np.sum([[sample_weights *
-                                     np.sum(en1[i, :, :] * en1[j, :, :] /
-                                            norm, axis=1)
-                                     for i in range(en1.shape[0])]
-                                    for j in range(en1.shape[0])], axis=-1)
+                        warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                        expFactor = np.exp(
+                            np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
+                        )
+                        norm = expFactor + 2 + 1 / expFactor
+                    return -np.sum(
+                        [
+                            [
+                                sample_weights
+                                * np.sum(en1[i, :, :] * en1[j, :, :] / norm, axis=1)
+                                for i in range(en1.shape[0])
+                            ]
+                            for j in range(en1.shape[0])
+                        ],
+                        axis=-1,
+                    )
+
                 # Revisit? It is not clear whether to use root or fsolve.
                 # Revisit? It is not clear whether providing jacobian typically speeds-up
-                root_results = optimize.root(fun=d_mean_log_pseudo_likelihood, x0=x0,
-                                             jac=dd_mean_log_pseudo_likelihood)
+                root_results = optimize.root(
+                    fun=d_mean_log_pseudo_likelihood,
+                    x0=x0,
+                    jac=dd_mean_log_pseudo_likelihood,
+                )
                 x = root_results.x
         x0 = x
         if num_bootstrap_samples > 0:
             if len(np.unique(sample_weights)) != 1:
-                raise ValueError('Bootstraps require uniform sample_weights (num_occurrences)')
+                raise ValueError(
+                    "Bootstraps require uniform sample_weights (num_occurrences)"
+                )
             prng = np.random.RandomState(seed)
             num_samples = en1.shape[0]
             x_bootstraps = []
             for bs in range(num_bootstrap_samples):
-                indices = prng.choice(
-                    num_samples,
-                    num_bootstrap_samples,
-                    replace=True)
+                indices = prng.choice(num_samples, num_bootstrap_samples, replace=True)
                 if en1.ndim == 2:
                     x_bs, _ = maximum_pseudolikelihood(
-                        en1=en1[indices, :],
-                        num_bootstrap_samples=0,
-                        x0=x)
+                        en1=en1[indices, :], num_bootstrap_samples=0, x0=x
+                    )
                 else:
                     x_bs, _ = maximum_pseudolikelihood(
-                        en1=en1[:, indices, :],
-                        num_bootstrap_samples=0,
-                        x0=x)
+                        en1=en1[:, indices, :], num_bootstrap_samples=0, x0=x
+                    )
                 x_bootstraps.append(x_bs)
             if return_optimize_object is False:
                 x_bootstraps = np.array(x_bootstraps)
@@ -594,12 +669,14 @@ def maximum_pseudolikelihood(
     return x, x_bootstraps
 
 
-def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
-                     B: Union[None, float, np.ndarray]=1.391,
-                     MAFM: Optional[float]=1.647,
-                     units_Ip: Optional[str]='uA',
-                     units_B: Literal['GHz', 'J']='GHz',
-                     units_MAFM: Optional[str]='pH') -> Union[float, np.ndarray]:
+def Ip_in_units_of_B(
+    Ip: Union[None, float, np.ndarray] = None,
+    B: Union[None, float, np.ndarray] = 1.391,
+    MAFM: Optional[float] = 1.647,
+    units_Ip: Optional[str] = "uA",
+    units_B: Literal["GHz", "J"] = "GHz",
+    units_MAFM: Optional[str] = "pH",
+) -> Union[float, np.ndarray]:
     r"""Estimate qubit persistent current :math:`I_p(s)` in schedule units.
 
     Under a simple, noiseless freeze-out model, you can substitute flux biases
@@ -656,37 +733,41 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
     h = 6.62607e-34  # Plank's constant for converting energy in Hertz to Joules
     Phi0 = 2.0678e-15  # superconducting magnetic flux quantum (h/2e); units: Weber=J/A
 
-    if units_B == 'GHz':
-        B_multiplier = 1e9*h  # D-Wave schedules use GHz by convention
-    elif units_B == 'J':
+    if units_B == "GHz":
+        B_multiplier = 1e9 * h  # D-Wave schedules use GHz by convention
+    elif units_B == "J":
         B_multiplier = 1
     else:
-        raise ValueError('Schedule B must be in units GHz or J, '
-                         f'but given {units_B}')
+        raise ValueError(
+            "Schedule B must be in units GHz or J, " f"but given {units_B}"
+        )
     if Ip is None:
-        B = B*B_multiplier  # To Joules
-        if units_MAFM == 'pH':
-            MAFM = MAFM*1e-12  # conversion from picohenry to Henry
-        elif units_MAFM != 'H':
-            raise ValueError('MAFM must be in units pH or H, '
-                             f'but given {units_MAFM}')
-        Ip = np.sqrt(B/(2*MAFM))  # Units of A = C/s, O(1e-6)
+        B = B * B_multiplier  # To Joules
+        if units_MAFM == "pH":
+            MAFM = MAFM * 1e-12  # conversion from picohenry to Henry
+        elif units_MAFM != "H":
+            raise ValueError(
+                "MAFM must be in units pH or H, " f"but given {units_MAFM}"
+            )
+        Ip = np.sqrt(B / (2 * MAFM))  # Units of A = C/s, O(1e-6)
     else:
-        if units_Ip == 'uA':
-            Ip = Ip*1e-6  # Conversion from microamps to amp
-        elif units_Ip != 'A':
-            raise ValueError('Ip must be in units uA or A, '
-                             f'but given {units_Ip}')
+        if units_Ip == "uA":
+            Ip = Ip * 1e-6  # Conversion from microamps to amp
+        elif units_Ip != "A":
+            raise ValueError("Ip must be in units uA or A, " f"but given {units_Ip}")
 
-    return Ip*Phi0/B_multiplier
+    return Ip * Phi0 / B_multiplier
 
 
-def h_to_fluxbias(h: Union[float, np.ndarray]=1,
-                  Ip: Optional[float]=None,
-                  B: float=1.391, MAFM: Optional[float]=1.647,
-                  units_Ip: Optional[str]='uA',
-                  units_B: str='GHz',
-                  units_MAFM: Optional[str]='pH') -> Union[float, np.ndarray]:
+def h_to_fluxbias(
+    h: Union[float, np.ndarray] = 1,
+    Ip: Optional[float] = None,
+    B: float = 1.391,
+    MAFM: Optional[float] = 1.647,
+    units_Ip: Optional[str] = "uA",
+    units_B: str = "GHz",
+    units_MAFM: Optional[str] = "pH",
+) -> Union[float, np.ndarray]:
     r"""Convert problem Hamiltonian bias ``h`` to equivalent flux bias.
 
     Unitless bias ``h`` is converted to the equivalent flux bias in units
@@ -737,17 +818,22 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
         Flux-bias values producing equivalent longitudinal fields to the given
         ``h`` values.
     """
-    Ip = Ip_in_units_of_B(Ip, B, MAFM,
-                          units_Ip, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
+    Ip = Ip_in_units_of_B(
+        Ip, B, MAFM, units_Ip, units_B, units_MAFM
+    )  # Convert/Create Ip in units of B, scalar
     # B(s)/2 h_i = Ip(s) phi_i
-    return -B/2/Ip*h
+    return -B / 2 / Ip * h
 
 
-def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
-                  Ip: Optional[float]=None,
-                  B: float=1.391, MAFM: Optional[float]=1.647,
-                  units_Ip: Optional[str]='uA',
-                  units_B: str='GHz', units_MAFM: Optional[str]='pH') -> Union[float, np.ndarray]:
+def fluxbias_to_h(
+    fluxbias: Union[float, np.ndarray] = 1,
+    Ip: Optional[float] = None,
+    B: float = 1.391,
+    MAFM: Optional[float] = 1.647,
+    units_Ip: Optional[str] = "uA",
+    units_B: str = "GHz",
+    units_MAFM: Optional[str] = "pH",
+) -> Union[float, np.ndarray]:
     r"""Convert flux biases to equivalent problem Hamiltonian bias ``h``.
 
     Converts flux biases in units of :math:`\Phi_0`, the magnetic flux quantum,
@@ -800,14 +886,17 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
     Returns:
         ``h`` values producing equivalent longitudinal fields to the flux biases.
     """
-    Ip = Ip_in_units_of_B(Ip, B, MAFM,
-                          units_Ip, units_B, units_MAFM)  # Convert/Create Ip in units of B, scalar
+    Ip = Ip_in_units_of_B(
+        Ip, B, MAFM, units_Ip, units_B, units_MAFM
+    )  # Convert/Create Ip in units of B, scalar
     # B(s)/2 h_i = Ip(s) phi_i
-    return -2*Ip/B*fluxbias
+    return -2 * Ip / B * fluxbias
 
 
-def freezeout_effective_temperature(freezeout_B, temperature, units_B='GHz', units_T='mK') -> float:
-    r'''Provides an effective temperature as a function of freezeout information.
+def freezeout_effective_temperature(
+    freezeout_B, temperature, units_B="GHz", units_T="mK"
+) -> float:
+    r"""Provides an effective temperature as a function of freezeout information.
 
     See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a
     complete summary of D-Wave annealing quantum computer operation.
@@ -886,34 +975,37 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B='GHz', uni
         estimates the temperature for single-qubit Hamiltonians, in approximate
         agreement with estimates by this function at reported single-qubit
         freeze-out values :math:`s^*` and device physical parameters.
-    '''
+    """
     # Convert units_B to Joules
-    if units_B == 'GHz':
+    if units_B == "GHz":
         h = 6.62607e-34  # J/Hz
-        freezeout_B *= h*1e9
-    elif units_B == 'J':
+        freezeout_B *= h * 1e9
+    elif units_B == "J":
         pass
     else:
-        raise ValueError("Units must be 'J' (Joules) "
-                         "or 'mK' (milli-Kelvin)")
+        raise ValueError("Units must be 'J' (Joules) " "or 'mK' (milli-Kelvin)")
 
-    if units_T == 'mK':
+    if units_T == "mK":
         temperature = temperature * 1e-3
-    elif units_T == 'K':
+    elif units_T == "K":
         pass
     else:
-        raise ValueError("Units must be 'K' (Kelvin) "
-                         "or 'mK' (milli-Kelvin)")
+        raise ValueError("Units must be 'K' (Kelvin) " "or 'mK' (milli-Kelvin)")
     kB = 1.3806503e-23  # Joules/Kelvin
 
-    return 2*temperature*kB/freezeout_B
+    return 2 * temperature * kB / freezeout_B
 
 
-def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
-                               h_range=(-1/6.1, 1/6.1), sampler_params=None,
-                               optimize_method='bisect',
-                               num_bootstrap_samples=0) -> Tuple[np.float64, np.float64]:
-    r'''Provides an estimate to the effective temperature, :math:`T`, of a sampler.
+def fast_effective_temperature(
+    sampler=None,
+    num_reads=None,
+    seed=None,
+    h_range=(-1 / 6.1, 1 / 6.1),
+    sampler_params=None,
+    optimize_method="bisect",
+    num_bootstrap_samples=0,
+) -> Tuple[np.float64, np.float64]:
+    r"""Provides an estimate to the effective temperature, :math:`T`, of a sampler.
 
     This function submits a set of single-qubit problems to a sampler and
     uses the rate of excitations to infer a maximum-likelihood estimate of temperature.
@@ -984,23 +1076,25 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         https://doi.org/10.3389/fict.2016.00023
 
         https://www.jstor.org/stable/25464568
-    '''
+    """
 
     if sampler is None:
         from dwave.system import DWaveSampler
+
         sampler = DWaveSampler()
 
-    if 'h_range' in sampler.properties:
-        if h_range[0] < sampler.properties['h_range'][0]:
-            raise ValueError('h_range[0] exceeds programmable range')
+    if "h_range" in sampler.properties:
+        if h_range[0] < sampler.properties["h_range"][0]:
+            raise ValueError("h_range[0] exceeds programmable range")
 
-        if h_range[1] > sampler.properties['h_range'][1]:
-            raise ValueError('h_range[1] exceeds programmable range')
+        if h_range[1] > sampler.properties["h_range"][1]:
+            raise ValueError("h_range[1] exceeds programmable range")
 
     prng = np.random.RandomState(seed)
-    h_values = h_range[0] + (h_range[1]-h_range[0])*prng.rand(len(sampler.nodelist))
-    bqm = dimod.BinaryQuadraticModel.from_ising({var: h_values[idx]
-                                                 for idx, var in enumerate(sampler.nodelist)}, {})
+    h_values = h_range[0] + (h_range[1] - h_range[0]) * prng.rand(len(sampler.nodelist))
+    bqm = dimod.BinaryQuadraticModel.from_ising(
+        {var: h_values[idx] for idx, var in enumerate(sampler.nodelist)}, {}
+    )
 
     # Create local sampling_params copy - default necessary additional fields:
     if sampler_params is None:
@@ -1009,23 +1103,23 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         sampler_params0 = sampler_params.copy()
     if num_reads is None:
         # Default is 1000, makes efficient use of QPU access time:
-        if 'num_reads' not in sampler_params0:
-            sampler_params0['num_reads'] = 1000
-    elif ('num_reads' in sampler_params0
-          and sampler_params0['num_reads'] != num_reads):
-        raise ValueError("sampler_params['num_reads'] != num_reads, "
-                         "incompatible input arguments.")
+        if "num_reads" not in sampler_params0:
+            sampler_params0["num_reads"] = 1000
+    elif "num_reads" in sampler_params0 and sampler_params0["num_reads"] != num_reads:
+        raise ValueError(
+            "sampler_params['num_reads'] != num_reads, " "incompatible input arguments."
+        )
     else:
-        sampler_params0['num_reads'] = num_reads
-    if ('auto_scale' in sampler_params0
-        and sampler_params0['auto_scale'] is not False):
-        raise ValueError("sampler_params['auto_scale'] == False, "
-                         "is required by this method.")
+        sampler_params0["num_reads"] = num_reads
+    if "auto_scale" in sampler_params0 and sampler_params0["auto_scale"] is not False:
+        raise ValueError(
+            "sampler_params['auto_scale'] == False, " "is required by this method."
+        )
     else:
-        sampler_params0['auto_scale'] = False
+        sampler_params0["auto_scale"] = False
 
     if num_bootstrap_samples is None:
-        num_bootstrap_samples = sampler_params0['num_reads']
+        num_bootstrap_samples = sampler_params0["num_reads"]
 
     sampleset = sampler.sample(bqm, **sampler_params0)
 
@@ -1033,7 +1127,8 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         bqm,
         sampleset,
         optimize_method=optimize_method,
-        num_bootstrap_samples=num_bootstrap_samples)
+        num_bootstrap_samples=num_bootstrap_samples,
+    )
 
     if num_bootstrap_samples == 0:
         return T, np.float64(0.0)
@@ -1041,37 +1136,45 @@ def fast_effective_temperature(sampler=None, num_reads=None, seed=None,
         return T, np.sqrt(np.var(Tboot))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # A Hamiltonian with + + + and - - - as ground states.
     # Symmetry is broken
     n = 3
-    dh = 1/4
-    h = np.array([dh, -2*dh, dh])
+    dh = 1 / 4
+    h = np.array([dh, -2 * dh, dh])
     J = np.array([[0, -1, 0], [-1, 0, -1], [0, -1, 0]])
     dh, dJ, k = background_susceptibility_Ising(h, J)
     # ([2+3], [1+3], [1+2])
     Jd = {(n1, n2): J[n1, n2] for n2 in range(n) for n1 in range(n2) if J[n1, n2] != 0}
     hd = {n: h[n] for n in range(n)}
-    bqm = dimod.BinaryQuadraticModel('SPIN').from_ising(hd, Jd)
+    bqm = dimod.BinaryQuadraticModel("SPIN").from_ising(hd, Jd)
     dh, dJ, _ = background_susceptibility_Ising(hd, Jd)
-    dbqm = dimod.BinaryQuadraticModel('SPIN').from_ising(dh, dJ)
-    chi = -1/2**6
+    dbqm = dimod.BinaryQuadraticModel("SPIN").from_ising(dh, dJ)
+    chi = -1 / 2**6
     bqmPdbqm = background_susceptibility_bqm(bqm, chi=chi)
-    diff = bqmPdbqm - (bqm+chi*dbqm)
+    diff = bqmPdbqm - (bqm + chi * dbqm)
     from dimod import ExactSolver
+
     ss = ExactSolver().sample(bqm)
     ss_chi = ExactSolver().sample(bqmPdbqm)
-    weights = np.exp(-ss.record.energy+np.min(ss.record.energy))
-    weights_chi = np.exp(-ss_chi.record.energy+np.min(ss_chi.record.energy))
+    weights = np.exp(-ss.record.energy + np.min(ss.record.energy))
+    weights_chi = np.exp(-ss_chi.record.energy + np.min(ss_chi.record.energy))
     for bqm_assumed in [bqm, bqmPdbqm]:
         for sample_weights in [weights, weights_chi]:
-            Ttup, _ = maximum_pseudolikelihood_temperature(bqm=bqm_assumed, sampleset=ss,
-                                                           sample_weights=sample_weights)
+            Ttup, _ = maximum_pseudolikelihood_temperature(
+                bqm=bqm_assumed, sampleset=ss, sample_weights=sample_weights
+            )
             print(Ttup)
-            xtup, _ = maximum_pseudolikelihood(bqms=[bqm_assumed,], sampleset=ss,
-                                            sample_weights=sample_weights)
-            print(-1/xtup)
+            xtup, _ = maximum_pseudolikelihood(
+                bqms=[
+                    bqm_assumed,
+                ],
+                sampleset=ss,
+                sample_weights=sample_weights,
+            )
+            print(-1 / xtup)
             print(bqm.variables, dbqm.variables)
-            xtup, _ = maximum_pseudolikelihood(bqms=[bqm, dbqm], sampleset=ss,
-                                            sample_weights=sample_weights)
+            xtup, _ = maximum_pseudolikelihood(
+                bqms=[bqm, dbqm], sampleset=ss, sample_weights=sample_weights
+            )
             print(xtup)
