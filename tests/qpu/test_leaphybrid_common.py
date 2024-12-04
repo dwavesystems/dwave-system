@@ -97,8 +97,11 @@ class TestSamplesetInterface(unittest.TestCase):
 
     def test_wait_id_availability(self):
         # verify https://github.com/dwavesystems/dwave-system/issues/540 is fixed
+        try:
+            sampler = self.sampler_cls()
+        except (ValueError, ConfigFileError):
+            raise unittest.SkipTest(f"{self.sampler_cls} not available")
 
-        sampler = self.sampler_cls()
         problem = self.problem_gen()
         ss = getattr(sampler, self.sample_meth)(problem)
 

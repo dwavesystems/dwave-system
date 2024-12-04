@@ -1,4 +1,4 @@
-# Copyright 2018 D-Wave Systems Inc.
+# Copyright 2024 D-Wave Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 from dwave.system.composites.cutoffcomposite import *
 from dwave.system.composites.embedding import *
+from dwave.system.composites.linear_ancilla import *
 from dwave.system.composites.tiling import *
 from dwave.system.composites.virtual_graph import *
 from dwave.system.composites.reversecomposite import *
