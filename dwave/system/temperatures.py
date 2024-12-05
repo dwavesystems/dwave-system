@@ -262,9 +262,7 @@ def background_susceptibility_bqm(bqm, chi=None):
 
 
 def maximum_pseudolikelihood_temperature(
-    bqm: Union[
-        None, dimod.BinaryQuadraticModel, List[dimod.BinaryQuadraticModel]
-    ] = None,
+    bqm: Union[None, dimod.BinaryQuadraticModel] = None,
     sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
     en1: Optional[np.ndarray] = None,
     num_bootstrap_samples: Optional[int] = 0,
@@ -350,7 +348,7 @@ def maximum_pseudolikelihood_temperature(
 
     Returns:
         Tuple of float and NumPy array:
-            (T_estimate,T_bootstrap_estimates)
+            (T_estimate, T_bootstrap_estimates)
 
             *T_estimate*: a temperature estimate
             *T_bootstrap_estimates*: a numpy array of bootstrap estimators
@@ -397,6 +395,8 @@ def maximum_pseudolikelihood_temperature(
         bisect_bracket = [-1 / T_bracket[i] for i in range(2)]
         if x0 is not None and (x0 < bisect_bracket[0] or x0 > bisect_bracket[1]):
             raise ValueError(f"x0 {x0} and T_bracket {T_bracket} are inconsistent")
+    if x0 is not None:
+        x0 = [x0]
     x, x_bs = maximum_pseudolikelihood(
         bqms=[bqm],
         sampleset=sampleset,
@@ -418,20 +418,92 @@ def maximum_pseudolikelihood(
     en1: Optional[np.ndarray] = None,
     num_bootstrap_samples: Optional[int] = 0,
     seed: Optional[int] = None,
-    x0: Optional[float] = None,
+    x0: Union[None, List, np.ndarray] = None,
     optimize_method: Optional[str] = None,
     bisect_bracket: Optional[Tuple[float, float]] = (1e-3, 1000),
     sample_weights: Optional[np.ndarray] = None,
     return_optimize_object: bool = False,
 ) -> Tuple:
-    """Maximimum pseudolikelihood for x assuming log probability sum_i x_i bqm_i.
+    """Maximimum pseudolikelihood estimator for exponential models
 
     Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
     of weight estimation for an exponential model with exponent defined by a
     weighted sum of bqms.
+    Assuming the Probability of states s is given by an exponential model
+    :math:`P(s)=1/Z exp(- theta_i H_i(s))` for a given list of functions (bqms)
+    estimate theta. The exponential model is also called a Boltzmann distribution.
+    Code is designed assuming the bqms are dense (a function of all or most of
+    the variables), although technically operation although sparse bqms
+    like H(s)=h_i s_i or H(s)=J_{ij}s_i s_j are technically allowed.
+
+    Args:
+        bqms: A list of Binary quadratic models [H_i] describing the sample
+            distribution as :math:`P(s) ~ exp(sum_i theta_i H_i)` for unknown
+            model parameters theta.
+        sampleset: A set of samples, as a dimod Sampleset or samples-like object.
+        en1: Effective fields as an np.ndarray (site labels not required).
+            Derived from the ``bqms`` and ``sampleset`` if not provided.
+            First dimension indexes samples, second dimension indexes sites.
+            Ordering doesn't matter, but should be consistent with sample_weights.
+        num_bootstrap_samples: Number of bootstrap estimators to calculate.
+            Bootstrapped estimates can be used to reliably estimate variance and
+            bias if samples are uncorrelated. For
+            now, the sampleset must have uniform sample_weights to deploy this
+            option -- an aggregated or weighted sampleset must be disaggregated
+            (raw format) with repetitions.
+        seed: Seeds the bootstrap method (if provided) allowing reproducibility
+            of the estimators.
+        x0: Initial guess for the fitting parameters. Should have the same
+            length as bqms when provided.
+        optimize_method (str,optional, default=None):
+            Optimize method used by SciPy ``root_scalar`` method. The default
+            method works well under default operation, 'bisect' can be
+            numerically more stable for the scalar case (Temperature estimation
+            only).
+        bisect_bracket: Relevant only if optimize_method='bisect' and for a
+            single bqm. Bounds the fitting parameter.
+        sample_weights: A set of weights for the samples. If sampleset is of
+            type :obj:`~dimod.SampleSet` set this is default to
+            sampleset.record.num_occurrences, otherwise uniform weighting is
+            the default.
 
     Returns:
-        Maximum pseudolikelihood weights for each Hamiltonian.
+        Tuple of float and NumPy array:
+            (T_estimate, T_bootstrap_estimates)
+
+            *T_estimate*: a temperature estimate
+            *T_bootstrap_estimates*: a numpy array of bootstrap estimators
+
+    Examples:
+       Draw samples from a D-Wave Quantum Computer for a large spin-glass
+       problem (random couplers J, zero external field h).
+       Establish a temperature estimate by maximum pseudo-likelihood.
+
+       Note that due to the complicated freeze-out properties of hard models,
+       such as large scale spin-glasses, deviation from a classical Boltzmann
+       distribution is anticipated.
+       Nevertheless, the T estimate can always be interpreted as an estimator
+       of local excitations rates. For example T will be 0 if only
+       local minima are returned (even if some of the local minima are not
+       ground states).
+
+       >>> import dimod
+       >>> from dwave.system.temperatures import maximum_pseudolikelihood_temperature
+       >>> from dwave.system import DWaveSampler
+       >>> from random import random
+       >>> sampler = DWaveSampler()
+       >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})
+       >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)
+       >>> T,T_bootstrap =  maximum_pseudolikelihood_temperature(bqm, sampleset)
+       >>> print('Effective temperature ',T)    # doctest: +SKIP
+       Effective temperature  0.24066488780293813
+
+    See also:
+
+        https://doi.org/10.3389/fict.2016.00023
+
+        https://www.jstor.org/stable/25464568
+
     """
     root_results = None
     if en1 is None:
@@ -484,6 +556,15 @@ def maximum_pseudolikelihood(
     if en1.ndim == 2 or en1.shape[0] == 1:
         # Scalar method 'inverse temperature only' for one Hamiltonian
         en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
+    # MUST DO - HISTOGRAM en1 for more efficient operation
+    # if compress:
+    #    sw_replicated = np.tile(sample_weights[:,np.newaxis], reps=(1, en1.shape[-1]))
+    #    if en1.ndim == 2:
+    #        en1_u = {0: np.unique(en1)}
+    #        sample_weights_u = {0: np.histogram(en1, bins=np.append(en1u, float('Inf')), weights=sw_replicated)}
+    #    else:
+    #        en1_u = {i: np.unique(en1[i,:,:]) for i in range(en1.shape[0])}
+    #        sample_weights_u = {i: np.histogram(en1[i,:,:], bins=np.append(en1, float('Inf')), weights=sw_replicated) for i, en1 in enumerate(en1_u)}
 
     max_excitation = np.max(en1, axis=(-1, -2))
     min_excitation = np.min(en1, axis=(-1, -2))
@@ -517,6 +598,8 @@ def maximum_pseudolikelihood(
             en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
             if x0 is None:
                 x0 = -1 / max_excitation
+            elif hasattr(x0, "__iter__"):
+                x0 = x0[0]  # Scalar
             # Derivative of mean (w.r.t samples) log pseudo liklihood amounts
             # to local energy matching criteria
             # O = sum_i \sum_s w(s) f_i(s) P(s, i) #s = sample, i = variable index
@@ -540,6 +623,7 @@ def maximum_pseudolikelihood(
                 # of additional context.
                 x0 = np.zeros(en1.shape[0])
                 x0[0] = -1 / max_excitation[0]  # Smallest gap
+            print(x0, "askdfsl x0")
 
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
@@ -573,8 +657,6 @@ def maximum_pseudolikelihood(
                 )
                 x = bisect_bracket[1]
             else:
-                if x0 < bisect_bracket[0] or x0 > bisect_bracket[1]:
-                    x0 = (bisect_bracket[0] + bisect_bracket[1]) / 2
                 root_results = optimize.root_scalar(
                     f=d_mean_log_pseudo_likelihood,
                     x0=x0,
@@ -624,7 +706,8 @@ def maximum_pseudolikelihood(
                     )
 
                 # Revisit? It is not clear whether to use root or fsolve.
-                # Revisit? It is not clear whether providing jacobian typically speeds-up
+                # Revisit? It is not clear whether providing jacobian typically
+                # speeds-up this method. Will slow down with many Hamiltonians.
                 root_results = optimize.root(
                     fun=d_mean_log_pseudo_likelihood,
                     x0=x0,
@@ -644,11 +727,21 @@ def maximum_pseudolikelihood(
                 indices = prng.choice(num_samples, num_bootstrap_samples, replace=True)
                 if en1.ndim == 2:
                     x_bs, _ = maximum_pseudolikelihood(
-                        en1=en1[indices, :], num_bootstrap_samples=0, x0=x
+                        en1=en1[indices, :],
+                        num_bootstrap_samples=0,
+                        x0=x,
+                        optimize_method=optimize_method,
+                        bisect_bracket=bisect_bracket,
+                        return_optimize_object=return_optimize_object,
                     )
                 else:
                     x_bs, _ = maximum_pseudolikelihood(
-                        en1=en1[:, indices, :], num_bootstrap_samples=0, x0=x
+                        en1=en1[:, indices, :],
+                        num_bootstrap_samples=0,
+                        x0=x,
+                        optimize_method=optimize_method,
+                        bisect_bracket=bisect_bracket,
+                        return_optimize_object=return_optimize_object,
                     )
                 x_bootstraps.append(x_bs)
             if return_optimize_object is False:
@@ -1059,7 +1152,8 @@ def fast_effective_temperature(
         https://www.jstor.org/stable/25464568
 
     Examples:
-       Draw samples from a :class:`~dwave.system.samplers.DWaveSampler`, and establish the temperature
+       Draw samples from a :class:`~dwave.system.samplers.DWaveSampler`
+       and establish the temperature
 
        >>> from dwave.system.temperatures import fast_effective_temperature
        >>> from dwave.system import DWaveSampler
