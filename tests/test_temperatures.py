@@ -37,9 +37,9 @@ class TestTemperatures(unittest.TestCase):
         uIps = ['A', 'uA']
         uMAFMs = ['H', 'pH']
         for uIp, uB, uMAFM in product(uIps, uBs, uMAFMs):
-            _ = Ip_in_units_of_B(units_Ip=uIp,
-                                 units_B=uB,
-                                 units_MAFM=uMAFM)
+            Ip_in_units_of_B(units_Ip=uIp,
+                             units_B=uB,
+                             units_MAFM=uMAFM)
 
     def test_fluxbias_h(self):
         phi = np.random.random()
@@ -103,9 +103,68 @@ class TestTemperatures(unittest.TestCase):
         chi = -1/2**6
         bqmPdbqm = bqm + chi*dbqm
         self.assertEqual(bqmPdbqm, background_susceptibility_bqm(bqm, chi=chi))
-        raise ValueError('New tests required: test_background_susceptibility')
         
-    def test_maximum_pseudolikelihood(self):
+    def test_maximum_pseudolikelihood_bqms(self):
+        """ Tests for parameters beyond those applicable to maximum_pseudolikelihood_temparature. """
+        # h1 s1 + h2 s2 + J12 s1 s2; coefficients to be inferred:
+        x = [0.5, -0.4, 0.3]
+        # bqms on space {-1,1}^2, defined without coefficients
+        bqms = [dimod.BinaryQuadraticModel('SPIN').from_ising(
+            {j: (j==i) for j in range(2)},{}) for i in range(2)] \
+                + [dimod.BinaryQuadraticModel('SPIN').from_ising(
+                    {},{(0,1): 1})]
+        bqm = sum([-x*bqm for bqm, x in zip(bqms,x)])  # total bqm weighted by coefficients
+        ss = dimod.ExactSolver().sample(bqm)
+        # In practice, by sampling - for testing exact ratios
+        exact_unnormalized_weights = np.exp(-ss.record.energy+np.min(ss.record.energy))
+        # A discretized version of weights, to check reproducibility at high precision
+        ss.record.num_occurrences = np.ceil(1000*exact_unnormalized_weights)
+        # Correct outcome indendent of formatting / detailed root finding spec.
+        for roo, df, uj in product([True, False], [True, False], [True, False]):
+            
+            res = maximum_pseudolikelihood(
+                bqms=[bqm],  # Recover minus Inverse temperature -1
+                sampleset=ss,
+                sample_weights=exact_unnormalized_weights,
+                return_optimize_object=roo,
+                degenerate_fields=df,
+                use_jacobian=uj)
+            if roo:
+                self.assertTrue(res[0]['converged'])
+                x_ret = res[0].root
+            else:
+                x_ret = res[0]
+            self.assertAlmostEqual(x_ret, -1)
+
+            if df:
+                # Multidimensional histogramming not (currently) supported
+                with self.assertRaises(ValueError):
+                    maximum_pseudolikelihood(
+                        bqms = bqms,  # Recover h1, h2, J12
+                        sampleset = ss,
+                        sample_weights=exact_unnormalized_weights,
+                        return_optimize_object=roo,
+                        degenerate_fields=df,
+                        use_jacobian=uj)
+                continue
+            
+            res = maximum_pseudolikelihood(
+                bqms = bqms,  # Recover h1, h2, J12
+                sampleset = ss,
+                sample_weights=exact_unnormalized_weights,
+                return_optimize_object=roo,
+                degenerate_fields=df,
+                use_jacobian=uj)
+            if roo:
+                self.assertTrue(res[0]['success'])
+                x_ret = res[0].x
+            else:
+                x_ret = res[0]
+            self.assertTrue(all(abs(v1-v2) < 1e-4 for v1,v2 in zip(x_ret, x)))
+        
+    def test_maximum_pseudolikelihood_instructive_examples(self):
+        """ Matches the docstring example. """
+        
         chi = -1/2**6
         dh = 1/4
         bqm = dimod.BinaryQuadraticModel('SPIN').from_ising(
@@ -114,32 +173,18 @@ class TestTemperatures(unittest.TestCase):
 
         dbqm = background_susceptibility_bqm(bqm)
         bqmPdbqm = bqm + chi*dbqm
-        from dimod import ExactSolver
-        ss = ExactSolver().sample(bqm)
-        ss_chi = ExactSolver().sample(bqmPdbqm)
-        weights = np.exp(-ss.record.energy+np.min(ss.record.energy))
-        weights_chi = np.exp(-ss_chi.record.energy+np.min(ss_chi.record.energy))
-        for bqm_assumed in [bqm, bqmPdbqm]:
-            for sample_weights in [weights, weights_chi]:
-                Ttup, _ = maximum_pseudolikelihood_temperature(bqm=bqm_assumed, sampleset=ss,
-                                                               sample_weights=sample_weights)
-                print(Ttup)
-                xtup, _ = maximum_pseudolikelihood(bqms=[bqm_assumed,], sampleset=ss,
-                                                   sample_weights=sample_weights)
-                print(-1/xtup)
-                print(bqm.variables, dbqm.variables)
-                xtup, _ = maximum_pseudolikelihood(bqms=[bqm, dbqm], sampleset=ss,
-                                                   sample_weights=sample_weights)
-                print(xtup)
-
-        raise ValueError('New tests required: test_maximum_pseudolikelihood')
-    
+        ss = dimod.ExactSolver().sample(bqmPdbqm)
+        sample_weights = np.exp(-ss.record.energy+np.min(ss.record.energy))
+        xtup, _ = maximum_pseudolikelihood(bqms=[bqm, dbqm], sampleset=ss,
+                                           sample_weights=sample_weights)
+        self.assertAlmostEqual(xtup[0], -1)  # unperturbed Hamiltonian
+        self.assertAlmostEqual(xtup[1], -chi)  # susceptibility
+        
     def test_maximum_pseudolikelihood_temperature(self):
         # Single variable H = s_i problem with mean energy (-15 + 5)/20 = -0.5
         # 5 measured excitations out of 20.
         # This implies an effective temperature 1/atanh(0.5)
         en1 = np.array([2]*5 + [-2]*15)
-        site_names = ['a']
         for optimize_method in ['bisect', None]:
             T = maximum_pseudolikelihood_temperature(
                 en1=en1[:,np.newaxis],
@@ -154,7 +199,7 @@ class TestTemperatures(unittest.TestCase):
         # threshold of scipy optimize.)
         en1 = np.array([1]*5 + [-1]*5)
         T_bracket = [0.1,1]
-        with self.assertWarns(UserWarning) as w:
+        with self.assertWarns(UserWarning):
             # Returned value should match upper bracket value and
             # throw a warning.
             # Temperature is infinite (excitations and relaxations)
