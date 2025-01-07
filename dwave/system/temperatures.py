@@ -414,18 +414,18 @@ def maximum_pseudolikelihood_temperature(
 
 
 def maximum_pseudolikelihood(
-        bqms: Union[None, List[dimod.BinaryQuadraticModel]]=None,
-        sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]]=None,
-        en1: Optional[np.ndarray]=None,
-        num_bootstrap_samples: Optional[int]=0,
-        seed: Optional[int]=None,
-        x0: Union[None, List, np.ndarray]=None,
-        optimize_method: Optional[str]=None,
-        bisect_bracket: Optional[Tuple[float, float]]=(1e-3, 1000),
-        sample_weights: Optional[np.ndarray]=None,
-        return_optimize_object: bool=False,
-        degenerate_fields: Optional[bool]=None,
-        use_jacobian: bool=True
+    bqms: Union[None, List[dimod.BinaryQuadraticModel]] = None,
+    sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
+    en1: Optional[np.ndarray] = None,
+    num_bootstrap_samples: Optional[int] = 0,
+    seed: Optional[int] = None,
+    x0: Union[None, List, np.ndarray] = None,
+    optimize_method: Optional[str] = None,
+    bisect_bracket: Optional[Tuple[float, float]] = (1e-3, 1000),
+    sample_weights: Optional[np.ndarray] = None,
+    return_optimize_object: bool = False,
+    degenerate_fields: Optional[bool] = None,
+    use_jacobian: bool = True,
 ) -> Tuple:
     """Maximimum pseudolikelihood estimator for exponential models
 
@@ -512,8 +512,8 @@ def maximum_pseudolikelihood(
                 "bqms and sampleset are provided as arguments"
             )
         if degenerate_fields is None:
-            degenerate_fields = (len(bqms)==1)
-        
+            degenerate_fields = len(bqms) == 1
+
         en1 = np.array(
             [
                 effective_field(bqm, sampleset, current_state_energy=True)[0]
@@ -522,7 +522,7 @@ def maximum_pseudolikelihood(
         )
     else:
         if degenerate_fields is None:
-            degenerate_fields = (en1.ndim==2)
+            degenerate_fields = en1.ndim == 2
 
     if sample_weights is None:
         if type(sampleset) is dimod.sampleset.SampleSet:
@@ -544,7 +544,7 @@ def maximum_pseudolikelihood(
     if any(sample_weights == 0):
         en1 = en1[:, sample_weights > 0, :]
         sample_weights = sample_weights[sample_weights > 0]
-    
+
     if en1.ndim == 2 or en1.shape[0] == 1:
         # Scalar method 'inverse temperature only' for one Hamiltonian
         en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
@@ -558,9 +558,11 @@ def maximum_pseudolikelihood(
         # Only local minima (or maxima) observed
         x = np.sign(max_excitation) * float("Inf")
         if max_excitation == 0:
-            warnings.warn('All local fields are zero, there is no gradient '
-                          'associated to the parameters of interest. '
-                          'nan is assigned.')
+            warnings.warn(
+                "All local fields are zero, there is no gradient "
+                "associated to the parameters of interest. "
+                "nan is assigned."
+            )
         if en1.ndim > 2:
             warnings.warn(
                 "An exponential model with ill-defined"
@@ -596,22 +598,29 @@ def maximum_pseudolikelihood(
             if degenerate_fields:
                 # Histogram effective fields for faster processing
                 sw_replicated = np.tile(
-                    sample_weights[:,np.newaxis], reps=(1, en1.shape[-1]))
+                    sample_weights[:, np.newaxis], reps=(1, en1.shape[-1])
+                )
                 en1_u = np.unique(en1)
-                sw_u = np.histogram(en1, bins=np.append(
-                    en1_u, float('Inf')), weights=sw_replicated)[0]
+                sw_u = np.histogram(
+                    en1, bins=np.append(en1_u, float("Inf")), weights=sw_replicated
+                )[0]
+
                 def d_mean_log_pseudo_likelihood(x):
                     with warnings.catch_warnings():  # Overflow errors are safe
                         warnings.simplefilter(action="ignore", category=RuntimeWarning)
                         expFactor = np.exp(en1_u * x)
-                    return np.sum(sw_u*en1_u / (1 + expFactor))
+                    return np.sum(sw_u * en1_u / (1 + expFactor))
+
             else:
                 # Faster if degeneracy of local fields is small
                 def d_mean_log_pseudo_likelihood(x):
                     with warnings.catch_warnings():  # Overflow errors are safe
                         warnings.simplefilter(action="ignore", category=RuntimeWarning)
                         expFactor = np.exp(en1 * x)
-                    return np.sum(sample_weights * np.sum(en1 / (1 + expFactor), axis=1))
+                    return np.sum(
+                        sample_weights * np.sum(en1 / (1 + expFactor), axis=1)
+                    )
+
         else:
             if en1.ndim != 3:
                 raise ValueError(
@@ -624,19 +633,19 @@ def maximum_pseudolikelihood(
                 x0 = np.zeros(en1.shape[0])
                 x0[0] = -1 / max_excitation[0]  # Smallest gap
             if degenerate_fields is not False:
-                raise ValueError('Exploiting degenerate multi-dimensional fields is'
-                                 'not supported.')
+                raise ValueError(
+                    "Exploiting degenerate multi-dimensional fields is" "not supported."
+                )
+
             def d_mean_log_pseudo_likelihood(x):
                 with warnings.catch_warnings():  # Overflow errors are safe
-                    warnings.simplefilter(action="ignore",
-                                          category=RuntimeWarning)
+                    warnings.simplefilter(action="ignore", category=RuntimeWarning)
                     expFactor = np.exp(
                         np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
                     )
                 return np.sum(
                     sample_weights[np.newaxis, :]
-                    * np.sum(en1 / (1 + expFactor[np.newaxis, :, :]),
-                             axis=-1),
+                    * np.sum(en1 / (1 + expFactor[np.newaxis, :, :]), axis=-1),
                     axis=-1,
                 )
 
@@ -675,21 +684,31 @@ def maximum_pseudolikelihood(
                 dd_mean_log_pseudo_likelihood = None
             elif en1.ndim == 2:
                 if degenerate_fields:
+
                     def dd_mean_log_pseudo_likelihood(x):  # second (scalar) derivative
                         with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                            warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                            warnings.simplefilter(
+                                action="ignore", category=RuntimeWarning
+                            )
                             expFactor = np.exp(en1_u * x)
                             norm = expFactor + 2 + 1 / expFactor
                         return -np.sum(sw_u * en1_u * en1_u / norm)
+
                 else:
+
                     def dd_mean_log_pseudo_likelihood(x):
                         with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                            warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                            warnings.simplefilter(
+                                action="ignore", category=RuntimeWarning
+                            )
                             expFactor = np.exp(en1 * x)
                             norm = expFactor + 2 + 1 / expFactor
-                        return -np.sum(sample_weights * np.sum(en1 * en1 / norm, axis=1))
-                
+                        return -np.sum(
+                            sample_weights * np.sum(en1 * en1 / norm, axis=1)
+                        )
+
             else:
+
                 def dd_mean_log_pseudo_likelihood(x):  # jacobian
                     # [Only] If few Hamiltonians efficient, this is the expected use case
                     with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
@@ -709,6 +728,7 @@ def maximum_pseudolikelihood(
                         ],
                         axis=-1,
                     )
+
             # Use of root finding routines are preferred to fsolve; best option
             # is not obvious
             if en1.ndim == 2:
