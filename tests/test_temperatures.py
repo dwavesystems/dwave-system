@@ -152,7 +152,7 @@ class TestTemperatures(unittest.TestCase):
                 use_jacobian=uj,
             )
             if roo:
-                self.assertTrue(res[0]["converged"])
+                self.assertTrue(res[0].converged)
                 x_ret = res[0].root
             else:
                 x_ret = res[0]
@@ -188,7 +188,7 @@ class TestTemperatures(unittest.TestCase):
                 use_jacobian=uj,
             )
             if roo:
-                self.assertTrue(res[0]["success"])
+                self.assertTrue(res[0].success)
                 x_ret = res[0].x
             else:
                 x_ret = res[0]
