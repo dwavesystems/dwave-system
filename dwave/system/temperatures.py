@@ -735,6 +735,7 @@ def maximum_pseudolikelihood(
                 root_results = optimize.root_scalar(
                     f=d_mean_log_pseudo_likelihood,
                     x0=x0,
+                    x1=x0/2,
                     fprime=dd_mean_log_pseudo_likelihood,
                 )
                 x = root_results.root
