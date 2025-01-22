@@ -180,6 +180,19 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.client = Client.from_config(**config)
         self.solver = self._get_solver(penalty=self._solver_penalty)
 
+    def close(self):
+        """Close the underlying cloud-client in order to release system
+        resources like threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        """
+        self.client.close()
+
     def _get_solver(self, *, refresh: bool = False, penalty: Optional[Dict[str, int]] = None):
         """Get the least penalized solver from the list of solvers filtered and
         ordered according to user config.
