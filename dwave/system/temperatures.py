@@ -735,7 +735,7 @@ def maximum_pseudolikelihood(
                 root_results = optimize.root_scalar(
                     f=d_mean_log_pseudo_likelihood,
                     x0=x0,
-                    x1=x0/2,
+                    x1=x0 / 2,  # Naive choice should be fine if secant defaulted.
                     fprime=dd_mean_log_pseudo_likelihood,
                 )
                 x = root_results.root
@@ -1122,18 +1122,22 @@ def freezeout_effective_temperature(
 
 
 def fast_effective_temperature(
-    sampler=None,
-    num_reads=None,
-    seed=None,
-    h_range=(-1 / 6.1, 1 / 6.1),
-    sampler_params=None,
-    optimize_method="bisect",
-    num_bootstrap_samples=0,
+    sampler: dimod.Sampler = None,
+    num_reads: Optional[int] = None,
+    seed: Union[None, int, np.random.RandomState] = None,
+    h_range: Tuple = (-1 / 6.1, 1 / 6.1),
+    nodelist: Optional[List] = None,
+    sampler_params: dict = None,
+    optimize_method: Optional[str] = "bisect",
+    num_bootstrap_samples: Optional[int] = 0,
 ) -> Tuple[np.float64, np.float64]:
     r"""Provides an estimate to the effective temperature, :math:`T`, of a sampler.
 
-    This function submits a set of single-qubit problems to a sampler and
+    Assuming single-qubit (quasi-static) freezeout this
+    function submits a set of single-qubit problems to a sampler and
     uses the rate of excitations to infer a maximum-likelihood estimate of temperature.
+    For greater control of the problem Hamiltonian or more general samplers,
+    `maximum_pseudolikelihood_temperature` should be preferred.
 
     Args:
         sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`):
@@ -1156,6 +1160,10 @@ def fast_effective_temperature(
             temperature for statistical efficiency, and to accomodate precision
             and other nonidealities such as precision limitations.
 
+        nodelist (list, optional):
+            Variables included in the estimator. If not provided defaulted to
+            the nodelist of the structured sampler (QPU) specified.
+
         sampler_params (dict, optional):
             Any additional non-defaulted sampler parameterization. If
             ``num_reads`` is a key, must be compatible with ``num_reads``
@@ -1176,6 +1184,10 @@ def fast_effective_temperature(
             The effective temperature describing single qubit problems in an
             external field, and a standard error (+/- 1 sigma).
             By default the confidence interval is set as 0.
+
+    Raises:
+        If the sampler is not structured and no nodelist is provided, raises
+        a ValueError.
 
     See also:
 
@@ -1215,11 +1227,19 @@ def fast_effective_temperature(
 
         if h_range[1] > sampler.properties["h_range"][1]:
             raise ValueError("h_range[1] exceeds programmable range")
+    if nodelist is None:
+        if hasattr(sampler, "nodelist"):
+            nodelist = sampler.nodelist
+        else:
+            raise ValueError(
+                "nodelist is not provided and cannot be inferred " "from the sampler."
+            )
+    num_vars = len(nodelist)
 
     prng = np.random.RandomState(seed)
-    h_values = h_range[0] + (h_range[1] - h_range[0]) * prng.rand(len(sampler.nodelist))
+    h_values = h_range[0] + (h_range[1] - h_range[0]) * prng.rand(num_vars)
     bqm = dimod.BinaryQuadraticModel.from_ising(
-        {var: h_values[idx] for idx, var in enumerate(sampler.nodelist)}, {}
+        {var: h_values[idx] for idx, var in enumerate(nodelist)}, {}
     )
 
     # Create local sampling_params copy - default necessary additional fields:
