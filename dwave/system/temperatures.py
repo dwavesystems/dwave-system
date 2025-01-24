@@ -17,7 +17,7 @@ r"""The following parameter estimation methods are provided:
 
 
 - Maximum pseudo-likelihood is an efficient estimator for the temperature
-  describing a classical Boltzmann distribution P(x) = \exp(-H(x)/T)/Z(T)
+  describing a classical Boltzmann distribution :math:`P(s) = \exp(-H(s)/T)/Z(T)`
   given samples from that distribution, where H(x) is the classical energy
   function. The following links describe features of the estimator in
   application to equilibrium distribution drawn from binary quadratic models
@@ -33,17 +33,24 @@ r"""The following parameter estimation methods are provided:
 - Maximum pseudo-likelihood can be used to infer multiple parameters of
   an exponential (Boltzmann) distribution given fair samples. Code supports
   inference for the probability distributions structured as
-  P(s) = exp(-sum_i x_i H_i(s)) /Z(x), a generalization of a Boltzmann
-  distribution parameterized onyl by the temperature (T=1/x for one H).
-  H_i are bqms defined on a common set of variables. An example is
-  the case that H_1 is the programmed Hamiltonian (x_1 is inverse
-  temperature, beta) and H_2 is a correction (such as the Hamiltonian defining
-  background susceptibility, x_2 = beta chi).
+  :math:`P(s) = exp(-sum_i x_i H_i(s)) /Z(x)`, a generalization of a Boltzmann
+  distribution parameterized only by the temperature (T=1/x for one H).
+  :math:`H_i` are binary quadratic models defined on a common set of variables. 
+  E.g.: To infer h1, h2 and J12 for a 2 qubit spin system at temperature 1 consider:
+  ``H_1 = dimod.BinaryQuadraticModel.from_ising({0:1, 0: 0}, {})``
+  ``H_2 = dimod.BinaryQuadraticModel.from_ising({0:0, 0: 1}, {})`` 
+  ``H_3 = dimod.BinaryQuadraticModel.from_ising({}, {(0,1): 1})``
+  This code is not optimized for inferring many local terms, but rather
+  parameters controlling the energy of many degrees of freedom (spins). 
+  A practically important example is the case that :math:`H_1` is the 
+  programmed Hamiltonian (:math:`x_1` is inverse temperature, beta) and 
+  :math:`H_2` is a correction accounting for imbalance in h/J asymmetry or 
+  background susceptibility.
 
 - The biases (h) equivalent to application of flux bias, or vice-versa,
-  can be inferred as a function of the anneal progress s=t/t_a by
+  can be inferred as a function of the anneal progress :math:`s=t/t_a` by
   device-specific unit conversion. The necessary parameters for estimation
-  [Mafm, B(s)] are published for online solvers:
+  [:math:`M_{afm}`, :math:`B(s)`] are published for online solvers:
   https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
 """
 
@@ -73,7 +80,7 @@ __all__ = [
 def effective_field(
     bqm: dimod.BinaryQuadraticModel,
     samples: Union[None, dimod.SampleSet, Tuple[np.ndarray, list]] = None,
-    current_state_energy: Optional[bool] = False,
+    current_state_energy: bool = False,
 ) -> Tuple[np.ndarray, list]:
     r"""Returns the effective field for all variables and all samples.
 
@@ -153,7 +160,7 @@ def effective_field(
         samples, labels = dimod.sampleset.as_samples(samples)
 
     if bqm.vartype is dimod.BINARY:
-        bqm = bqm.change_vartype("SPIN", inplace=False)
+        bqm = bqm.change_vartype(dimod.SPIN, inplace=False)
         samples = 2 * samples - 1
 
     h, (irow, icol, qdata), offset = bqm.to_numpy_vectors(variable_order=labels)
@@ -172,9 +179,8 @@ def effective_field(
 def background_susceptibility_Ising(
     h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]
 ) -> Tuple:
-    """Create the Hamiltonian for the background susceptibility correction
+    """Create the field and Hamiltonian for the `background susceptibility correction`_
 
-    https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
     Background susceptibility is a significant source of systematic error
     in annealing processors, it can be treated as a perturbation of the
     programmed Hamiltonian.
@@ -185,35 +191,29 @@ def background_susceptibility_Ising(
     vectors, and chi is a small real value, then the Ising model is
     is defined: H = k + (h + chi J h)' s +  1/2 s' (J + chi J*J) s
     ' denotes transpose and matrix multiplication applies.
-    The constant (k) is (irrelevant to applications) is defined
+    The constant (k, irrelevant to sampled distributions) is defined
     k = - chi/2 sum_i [J^2]_ii
     This function returns the perturbative part
     H(s) = k + h' J s +  1/2 s' (J + chi J^2) s
 
-    The input format for the Hamiltonian terms is matched by the output format.
-    If h and J are numpy matrices of consistent dimensions the matrix form is
-    used. Otherwise for dictionaries a sparse representation is created,
-    removing redundant terms (such as diagonal elements of J). See cited
-    documentation for the sparse Hamiltonian.
+    Args:
+       h: linear terms (fields) in the Hamiltonian.
+       J: quadratic terms (couplings) in the Hamiltonians
+
+    Returns:
+       A Tuple of fields, couplings and scalar constant. If h and J are of type
+       np.ndarray so are returned fields and couplings. Otherwise a tuple
+       of dictionaries is returned.
+
+    .. _Background susceptibility correction:
+    https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
     """
-    if type(h) is np.ndarray and type(J) is np.ndarray:
-        if (
-            J.ndim < 2
-            or h.ndim < 1
-            or J.shape[-1] != J.shape[-2]
-            or h.shape[0] != J.shape[-1]
-        ):
-            raise ValueError(
-                "First two dimensions of J, and first dimension "
-                "of h, must be equal to the (same) number of "
-                "variables"
-            )
-        # Outer product with respect to additional dimensions.
-        dh = np.matmul(J, h)  # ...ij,...j->...i
-        dJ = np.einsum("...ij,...jk->...ik", J, J)
-        k = np.einsum("...ii", dJ) / 2
+    if isinstance(h, np.ndarray) and isinstance(J, np.ndarray):
+        dh = J @ h  # matched dimensions assumed
+        dJ = J @ J  # J = J.T, a square matrix is assumed.
+        k = np.sum(np.diagonal(dJ)) / 2
     else:
-        # Assume tuple-keyed Iterables
+        # Assume h and J have dictionary attributes
         if len(h):
             dh = {n: 0 for n in h.keys()}
             for ij, Jval in J.items():
@@ -237,24 +237,32 @@ def background_susceptibility_Ising(
                     )
         dJ = dict(dJ)
         k = 0
+
     return dh, dJ, k
 
 
-def background_susceptibility_bqm(bqm, chi=None):
-    """Gives the background_susceptibility perturbed binary quadratic model.
+def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: float = None):
+    """Create the binary quadratic mdoel for the `background susceptibility correction`_
 
-    https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
-    Background susceptibility is an significan source of error
-    in annealing processors, it can be treated as a perturbation of the
-    programmed Hamiltonian.
-
+    Background susceptibility is a perturbative correction to the programmed Hamiltonian:
     bqm = bqm (no background susceptibility) + chi* dbqm (corrections)
     If chi is None, dbqm is returned, otherwise the perturbed Hamiltonian is
     returned.
+
+    Args:
+       bqm: A dimod binary quadratic model, describing the programmed Hamiltonian
+       chi: Scale of background susceptibility correction
+
+    Returns:
+       dimod.BinaryQuadraticModel: A dimod binary quadratic model decribing the
+       background susceptibility correction.
+
+    .. _Background susceptibility correction:
     https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#qpu-ice-background-susceptibility (accessed October 21, 2024)
+
     """
     source_type = bqm.vartype
-    bqm = bqm.change_vartype("SPIN")
+    bqm = bqm.change_vartype(dimod.SPIN)
     dh, dJ, _ = background_susceptibility_Ising(bqm.linear, bqm.quadratic)
     dbqm = dimod.BinaryQuadraticModel(source_type).from_ising(dh, dJ)
     if chi is not None:
@@ -266,18 +274,19 @@ def maximum_pseudolikelihood_temperature(
     bqm: Union[None, dimod.BinaryQuadraticModel] = None,
     sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
     en1: Optional[np.ndarray] = None,
-    num_bootstrap_samples: Optional[int] = 0,
+    num_bootstrap_samples: int = 0,
     seed: Optional[int] = None,
     T_guess: Optional[float] = None,
     optimize_method: Optional[str] = None,
-    T_bracket: Optional[Tuple[float, float]] = (1e-3, 1000),
+    T_bracket: Tuple[float, float] = (1e-3, 1000),
     sample_weights: Optional[np.ndarray] = None,
 ) -> Tuple[float, np.ndarray]:
     r"""Returns a sampling-based temperature estimate.
 
     The temperature T parameterizes the Boltzmann distribution as
     :math:`P(x) = \exp(-H(x)/T)/Z(T)`, where :math:`P(x)` is a probability over a state space,
-    :math:`H(x)` is the energy function (BQM) and :math:`Z(T)` is a normalization.
+    :math:`H(x)` is the energy function (BQM) and :math:`Z(T)` the partition
+    function (a normalization constant).
     Given a sample set (:math:`S`), a temperature estimate establishes the
     temperature that is most likely to have produced the sample set.
     An effective temperature can be derived from a sample set by considering the
@@ -328,14 +337,14 @@ def maximum_pseudolikelihood_temperature(
             of the estimators.
         T_guess (float, optional):
             User approximation to the effective temperature, must be
-            a positive scalar value.
+            a positive (non-zero) scalar value.
             Seeding the root-search method can enable faster convergence.
             By default, T_guess is ignored if it falls outside the range
             of ``T_bracket``.
-        optimize_method (str,optional, default=None):
+        optimize_method (str, optional, default=None):
             Optimize method used by SciPy ``root_scalar`` method. The default
             method works well under default operation, 'bisect' can be
-            numerically more stable for the scalar case (Temperature estimation
+            numerically more stable for the scalar case (temperature estimation
             only.
         T_bracket (list or Tuple of 2 floats, optional, default=(0.001,1000)):
             Relevant only if optimize_method='bisect'.
@@ -346,13 +355,11 @@ def maximum_pseudolikelihood_temperature(
             type :obj:`~dimod.SampleSet` set this is default to
             sampleset.record.num_occurrences, otherwise uniform weighting is
             the default.
-
     Returns:
-        Tuple of float and NumPy array:
-            (T_estimate, T_bootstrap_estimates)
+        Tuple: The optimal parameters and a list of bootstrapped estimators (T_estimate, T_bootstrap_estimates):
 
-            *T_estimate*: a temperature estimate
-            *T_bootstrap_estimates*: a numpy array of bootstrap estimators
+        * *T_estimate*: a temperature estimate
+        * *T_bootstrap_estimates*: a list of bootstrap estimates
 
     Examples:
        Draw samples from a D-Wave Quantum Computer for a large spin-glass
@@ -387,7 +394,7 @@ def maximum_pseudolikelihood_temperature(
     """
     x0 = None
     bisect_bracket = None
-    if T_guess is not None:
+    if T_guess:
         x0 = -1 / T_guess
 
     if optimize_method == "bisect":
@@ -417,7 +424,7 @@ def maximum_pseudolikelihood(
     bqms: Union[None, List[dimod.BinaryQuadraticModel]] = None,
     sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
     en1: Optional[np.ndarray] = None,
-    num_bootstrap_samples: Optional[int] = 0,
+    num_bootstrap_samples: int = 0,
     seed: Optional[int] = None,
     x0: Union[None, List, np.ndarray] = None,
     optimize_method: Optional[str] = None,
@@ -427,7 +434,7 @@ def maximum_pseudolikelihood(
     degenerate_fields: Optional[bool] = None,
     use_jacobian: bool = True,
 ) -> Tuple:
-    """Maximimum pseudolikelihood estimator for exponential models
+    """Maximimum pseudolikelihood estimator for exponential models.
 
     Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
     of weight estimation for an exponential model with exponent defined by a
@@ -437,7 +444,7 @@ def maximum_pseudolikelihood(
     estimate x. The exponential model is also called a Boltzmann distribution.
     Code is designed assuming the bqms are dense (a function of all or most of
     the variables), although technically operation although sparse bqms
-    like H(s)=h_i s_i or H(s)=J_{ij}s_i s_j are technically allowed.
+    like :math:`H(s)=h_i s_i` or :math:`H(s)=J_{ij}s_i s_j` are technically allowed.
 
     Note common reasons for parameter inference failure include:
     - Too few samples, insufficient to resolve parameters
@@ -465,11 +472,11 @@ def maximum_pseudolikelihood(
             of the estimators.
         x0: Initial guess for the fitting parameters. Should have the same
             length as bqms when provided.
-        optimize_method (str,optional, default=None):
+        optimize_method (str, optional, default=None):
             Optimize method used by SciPy ``root_scalar`` method. The default
             method works well under default operation, 'bisect' can be
-            numerically more stable for the scalar case (Temperature estimation
-            only).
+            numerically more stable for the scalar case (inverse temperature
+            estimation only).
         bisect_bracket: Relevant only if optimize_method='bisect' and for a
             single bqm. Bounds the fitting parameter.
         sample_weights: A set of weights for the samples. If sampleset is of
@@ -491,11 +498,10 @@ def maximum_pseudolikelihood(
             calculation is quadratic in len(bqms); use of the second derivative
             is disabled by setting the value to False.
     Returns:
-        Tuple of the optimal parameters and a List of bootstrapped estimators:
-            (x_estimate, x_bootstrap_estimates)
+        Tuple: The optimal parameters and a list of bootstrapped estimates (x_estimate, x_bootstrap_estimates):
 
-            *x_estimate*: a temperature estimate
-            *x_bootstrap_estimates*: a numpy array of bootstrap estimators
+        * *x_estimate*: parameter estimates
+        * *x_bootstrap_estimates*: a numpy array of bootstrap estimators
 
     See also:
         The function :class:`~dwave.system.temperatures.maximum_pseudolikelihood_temperature`
@@ -525,7 +531,7 @@ def maximum_pseudolikelihood(
             degenerate_fields = en1.ndim == 2
 
     if sample_weights is None:
-        if type(sampleset) is dimod.sampleset.SampleSet:
+        if isinstance(sampleset, dimod.sampleset.SampleSet):
             sample_weights = sampleset.record.num_occurrences / np.sum(
                 sampleset.record.num_occurrences
             )
@@ -556,13 +562,16 @@ def maximum_pseudolikelihood(
         en1.ndim == 3 and all(prod_minmax >= 0)
     ):
         # Only local minima (or maxima) observed
-        x = np.sign(max_excitation) * float("Inf")
         if max_excitation == 0:
             warnings.warn(
                 "All local fields are zero, there is no gradient "
-                "associated to the parameters of interest. "
-                "nan is assigned."
+                "and the parameter value is unconstrained. "
+                "zero is assigned."
             )
+            x = 0
+        else:
+            x = np.sign(max_excitation) * float("Inf")
+
         if en1.ndim > 2:
             warnings.warn(
                 "An exponential model with ill-defined"
@@ -584,7 +593,7 @@ def maximum_pseudolikelihood(
         # There are no local excitations present in the sample set, therefore
         # the temperature is estimated as 0.'
         if en1.ndim == 2 or en1.shape[0] == 1:
-            # Scalar method 'inverse temperature only' for one Hamiltonian
+            # Scalar method 'inverse temperature' for one Hamiltonian
             en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
             if x0 is None:
                 x0 = -1 / max_excitation
@@ -1019,7 +1028,7 @@ def fluxbias_to_h(
 
 
 def freezeout_effective_temperature(
-    freezeout_B, temperature, units_B="GHz", units_T="mK"
+    freezeout_B: float, temperature: float, units_B: str = "GHz", units_T: str = "mK"
 ) -> float:
     r"""Provides an effective temperature as a function of freezeout information.
 
@@ -1071,11 +1080,11 @@ def freezeout_effective_temperature(
         temperature (float):
             :math:`T`, the physical temperature of the quantum computer.
 
-        units_B (string, optional, 'GHz'):
+        units_B (string, 'GHz'):
             Units in which ``freezeout_B`` is specified. Allowed values:
             'GHz' (Giga-Hertz) and 'J' (Joules).
 
-        units_T (string, optional, 'mK'):
+        units_T (string, 'mK'):
             Units in which the ``temperature`` is specified. Allowed values:
             'mK' (milli-Kelvin) and 'K' (Kelvin).
 
@@ -1122,7 +1131,7 @@ def freezeout_effective_temperature(
 
 
 def fast_effective_temperature(
-    sampler: dimod.Sampler = None,
+    sampler: dimod.Sampler,
     num_reads: Optional[int] = None,
     seed: Union[None, int, np.random.RandomState] = None,
     h_range: Tuple = (-1 / 6.1, 1 / 6.1),
@@ -1133,8 +1142,7 @@ def fast_effective_temperature(
 ) -> Tuple[np.float64, np.float64]:
     r"""Provides an estimate to the effective temperature, :math:`T`, of a sampler.
 
-    Assuming single-qubit (quasi-static) freezeout this
-    function submits a set of single-qubit problems to a sampler and
+    This function submits a set of single-qubit problems to a sampler and
     uses the rate of excitations to infer a maximum-likelihood estimate of temperature.
     For greater control of the problem Hamiltonian or more general samplers,
     `maximum_pseudolikelihood_temperature` should be preferred.
@@ -1151,7 +1159,7 @@ def fast_effective_temperature(
             Seeds the problem generation process. Allowing reproducibility
             from pseudo-random samplers.
 
-        h_range (float, optional, default = [-1/6.1,1/6.1]):
+        h_range (float, default = [-1/6.1,1/6.1]):
             Determines the range of external fields probed for temperature
             inference. Default is based on a D-Wave Advantage processor, where
             single-qubit freeze-out implies an effective temperature of 6.1
@@ -1186,8 +1194,7 @@ def fast_effective_temperature(
             By default the confidence interval is set as 0.
 
     Raises:
-        If the sampler is not structured and no nodelist is provided, raises
-        a ValueError.
+        ValueError: If the sampler is not structured, and no nodelist is provided.
 
     See also:
 
@@ -1251,7 +1258,9 @@ def fast_effective_temperature(
         # Default is 1000, makes efficient use of QPU access time:
         if "num_reads" not in sampler_params0:
             sampler_params0["num_reads"] = 1000
-    elif "num_reads" in sampler_params0 and sampler_params0["num_reads"] != num_reads:
+    elif ("num_reads" in sampler_params0) and (
+        sampler_params0["num_reads"] != num_reads
+    ):
         raise ValueError(
             "sampler_params['num_reads'] != num_reads, " "incompatible input arguments."
         )
@@ -1280,47 +1289,3 @@ def fast_effective_temperature(
         return T, np.float64(0.0)
     else:
         return T, np.sqrt(np.var(Tboot))
-
-
-if __name__ == "__main__":
-    # A Hamiltonian with + + + and - - - as ground states.
-    # Symmetry is broken
-    n = 3
-    dh = 1 / 4
-    h = np.array([dh, -2 * dh, dh])
-    J = np.array([[0, -1, 0], [-1, 0, -1], [0, -1, 0]])
-    dh, dJ, k = background_susceptibility_Ising(h, J)
-    # ([2+3], [1+3], [1+2])
-    Jd = {(n1, n2): J[n1, n2] for n2 in range(n) for n1 in range(n2) if J[n1, n2] != 0}
-    hd = {n: h[n] for n in range(n)}
-    bqm = dimod.BinaryQuadraticModel("SPIN").from_ising(hd, Jd)
-    dh, dJ, _ = background_susceptibility_Ising(hd, Jd)
-    dbqm = dimod.BinaryQuadraticModel("SPIN").from_ising(dh, dJ)
-    chi = -1 / 2**6
-    bqmPdbqm = background_susceptibility_bqm(bqm, chi=chi)
-    diff = bqmPdbqm - (bqm + chi * dbqm)
-    from dimod import ExactSolver
-
-    ss = ExactSolver().sample(bqm)
-    ss_chi = ExactSolver().sample(bqmPdbqm)
-    weights = np.exp(-ss.record.energy + np.min(ss.record.energy))
-    weights_chi = np.exp(-ss_chi.record.energy + np.min(ss_chi.record.energy))
-    for bqm_assumed in [bqm, bqmPdbqm]:
-        for sample_weights in [weights, weights_chi]:
-            Ttup, _ = maximum_pseudolikelihood_temperature(
-                bqm=bqm_assumed, sampleset=ss, sample_weights=sample_weights
-            )
-            print(Ttup)
-            xtup, _ = maximum_pseudolikelihood(
-                bqms=[
-                    bqm_assumed,
-                ],
-                sampleset=ss,
-                sample_weights=sample_weights,
-            )
-            print(-1 / xtup)
-            print(bqm.variables, dbqm.variables)
-            xtup, _ = maximum_pseudolikelihood(
-                bqms=[bqm, dbqm], sampleset=ss, sample_weights=sample_weights
-            )
-            print(xtup)
