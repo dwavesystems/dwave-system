@@ -189,19 +189,19 @@ def background_susceptibility_Ising(
     model in matrix vector notation.
     Assuming J is a real symmetric (0 on diagonal) matrix, h and s are column
     vectors, and chi is a small real value, then the Ising model is
-    is defined: H = k + (h + chi J h)' s +  1/2 s' (J + chi J*J) s
+    is defined: :math:`H = k + (h + \chi J h)' s +  1/2 s' (J + \chi J^2) s`
     ' denotes transpose and matrix multiplication applies.
     The constant (k, irrelevant to sampled distributions) is defined
-    k = - chi/2 sum_i [J^2]_ii
+    :math:`k = - \chi/2 Trace[J^2]`
     This function returns the perturbative part
-    H(s) = k + h' J s +  1/2 s' (J + chi J^2) s
+    :math:`H(s) = k + h' J s +  1/2 s' (J + \chi J^2) s`
 
     Args:
        h: linear terms (fields) in the Hamiltonian.
        J: quadratic terms (couplings) in the Hamiltonians
 
     Returns:
-       A Tuple of fields, couplings and scalar constant. If h and J are of type
+       A Tuple of fields, couplings and scalar constant. If `h` and `J` are of type
        np.ndarray so are returned fields and couplings. Otherwise a tuple
        of dictionaries is returned.
 
@@ -633,7 +633,7 @@ def maximum_pseudolikelihood(
         else:
             if en1.ndim != 3:
                 raise ValueError(
-                    "en1 must be 2d for a single bqm, " "or 3d for multiple bqms"
+                    "en1 must be 2d for a single bqm, or 3d for multiple bqms"
                 )
             # Multi-parameter generalization
             if x0 is None:
@@ -643,7 +643,7 @@ def maximum_pseudolikelihood(
                 x0[0] = -1 / max_excitation[0]  # Smallest gap
             if degenerate_fields is not False:
                 raise ValueError(
-                    "Exploiting degenerate multi-dimensional fields is" "not supported."
+                    "Exploiting degenerate multi-dimensional fields is not supported."
                 )
 
             def d_mean_log_pseudo_likelihood(x):
@@ -1117,14 +1117,14 @@ def freezeout_effective_temperature(
     elif units_B == "J":
         pass
     else:
-        raise ValueError("Units must be 'J' (Joules) " "or 'mK' (milli-Kelvin)")
+        raise ValueError("Units must be 'J' (Joules) or 'mK' (milli-Kelvin)")
 
     if units_T == "mK":
         temperature = temperature * 1e-3
     elif units_T == "K":
         pass
     else:
-        raise ValueError("Units must be 'K' (Kelvin) " "or 'mK' (milli-Kelvin)")
+        raise ValueError("Units must be 'K' (Kelvin) or 'mK' (milli-Kelvin)")
     kB = 1.3806503e-23  # Joules/Kelvin
 
     return 2 * temperature * kB / freezeout_B
@@ -1195,6 +1195,7 @@ def fast_effective_temperature(
 
     Raises:
         ValueError: If the sampler is not structured, and no nodelist is provided.
+        ValueError: If num_reads is inconsistent with sampler_params
 
     See also:
 
@@ -1239,7 +1240,7 @@ def fast_effective_temperature(
             nodelist = sampler.nodelist
         else:
             raise ValueError(
-                "nodelist is not provided and cannot be inferred " "from the sampler."
+                "nodelist is not provided and cannot be inferred from the sampler."
             )
     num_vars = len(nodelist)
 
@@ -1258,17 +1259,15 @@ def fast_effective_temperature(
         # Default is 1000, makes efficient use of QPU access time:
         if "num_reads" not in sampler_params0:
             sampler_params0["num_reads"] = 1000
-    elif ("num_reads" in sampler_params0) and (
-        sampler_params0["num_reads"] != num_reads
-    ):
+    elif sampler_params0.get("num_reads") != num_reads:
         raise ValueError(
-            "sampler_params['num_reads'] != num_reads, " "incompatible input arguments."
+            "sampler_params['num_reads'] != num_reads, incompatible input arguments."
         )
     else:
         sampler_params0["num_reads"] = num_reads
     if "auto_scale" in sampler_params0 and sampler_params0["auto_scale"] is not False:
         raise ValueError(
-            "sampler_params['auto_scale'] == False, " "is required by this method."
+            "sampler_params['auto_scale'] == False, is required by this method."
         )
     else:
         sampler_params0["auto_scale"] = False
