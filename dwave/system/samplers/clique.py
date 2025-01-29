@@ -176,6 +176,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         >>> sampler.largest_clique_size > 5  # doctest: +SKIP
         True
         >>> sampleset = sampler.sample(bqm, num_reads=100)   # doctest: +SKIP
+        >>> sampler.close()     # doctest: +SKIP
 
     """
     def __init__(self, *,
@@ -183,6 +184,18 @@ class DWaveCliqueSampler(dimod.Sampler):
                  **config):
         self.child = DWaveSampler(
             failover=failover, retry_interval=retry_interval, **config)
+
+    def close(self):
+        """Close the child sampler in order to release system resources like threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.system.samplers.dwave_sampler.DWaveSampler.close`.
+        """
+        self.child.close()
 
     @property
     def parameters(self) -> dict:

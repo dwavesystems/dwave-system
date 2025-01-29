@@ -18,7 +18,8 @@ import unittest
 
 import dimod
 
-from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
+from dwave.cloud.exceptions import (
+    ConfigFileError, SolverNotFoundError, UseAfterCloseError)
 from dwave.system import DWaveCliqueSampler
 
 from parameterized import parameterized
@@ -34,6 +35,12 @@ def get_sampler(topology):
         return _SAMPLERS[topology]
     except (ValueError, ConfigFileError, SolverNotFoundError):
         raise unittest.SkipTest(f"no {topology}-structured QPU available")
+
+
+def tearDownModule():
+    # make sure all cached samplers are closed and resources released at exit
+    for sampler in _SAMPLERS.values():
+        sampler.close()
 
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
@@ -60,3 +67,10 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 
         # if the range was not adjusted, this would raise an error.
         sampler.sample(bqm, chain_strength=chain_strength).resolve()
+
+    def test_close(self):
+        sampler = DWaveCliqueSampler()
+        sampler.close()
+
+        with self.assertRaises(UseAfterCloseError):
+            sampler.sample_qubo({(0, 1): 1})
