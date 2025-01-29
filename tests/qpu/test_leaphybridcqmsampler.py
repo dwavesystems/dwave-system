@@ -16,19 +16,24 @@ import os
 import unittest
 
 import dimod
-
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
-from dwave.system import LeapHybridCQMSampler
 
-try:
-    sampler = LeapHybridCQMSampler()
-except (ValueError, ConfigFileError, SolverNotFoundError):
-    sampler = None
+from dwave.system import LeapHybridCQMSampler
 
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
-@unittest.skipIf(sampler is None, "no hybrid sampler available")
 class TestLeapHybridSampler(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.sampler = LeapHybridCQMSampler()
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("hybrid sampler not available")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sampler.close()
 
     def assertConsistent(self, cqm, sampleset):
         self.assertEqual(cqm.variables, sampleset.variables)
@@ -55,15 +60,15 @@ class TestLeapHybridSampler(unittest.TestCase):
                 cqm = dimod.ConstrainedQuadraticModel()
                 cqm.set_objective(model)
                 cqm.add_constraint(model, rhs=0, sense='==')
-                sampleset = sampler.sample_cqm(cqm)
+                sampleset = self.sampler.sample_cqm(cqm)
                 self.assertConsistent(cqm, sampleset)
 
             with self.subTest(f"no constraints, vartype={vartype}"):
                 cqm = dimod.ConstrainedQuadraticModel()
                 cqm.set_objective(model)
-                sampleset = sampler.sample_cqm(cqm)
+                sampleset = self.sampler.sample_cqm(cqm)
                 self.assertConsistent(cqm, sampleset)
 
     def test_other_quadratic_model(self):
         with self.assertRaises(TypeError):
-            sampler.sample_cqm(dimod.BQM('SPIN'))
+            self.sampler.sample_cqm(dimod.BQM('SPIN'))

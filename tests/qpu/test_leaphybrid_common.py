@@ -23,6 +23,7 @@ import dimod
 from dwave.cloud.exceptions import (
     ConfigFileError, SolverNotFoundError, UseAfterCloseError)
 from dwave.cloud.testing import isolated_environ
+
 from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
 
 

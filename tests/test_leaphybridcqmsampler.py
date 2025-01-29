@@ -71,6 +71,7 @@ class TestTimeLimit(unittest.TestCase):
             new = dimod.ConstrainedQuadraticModel().from_file(f)
 
         self.assertEqual(sampler.sample_cqm(new), sampler.sample_cqm(cqm))
+        sampler.close()
 
     @unittest.mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
     def test_close(self, mock_client):
