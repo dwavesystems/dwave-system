@@ -19,7 +19,8 @@ from unittest import mock
 import numpy
 
 import dimod
-from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
+from dwave.cloud.exceptions import (
+    ConfigFileError, SolverNotFoundError, UseAfterCloseError)
 from dwave.cloud.client import Client
 
 from dwave.system.samplers import DWaveSampler
@@ -38,6 +39,15 @@ class TestDWaveSampler(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.qpu.client.close()
+
+    def test_close(self):
+        sampler = DWaveSampler()
+        sampler.close()
+
+        h, J = self.nonzero_ising_problem(sampler)
+
+        with self.assertRaises(UseAfterCloseError):
+            sampler.sample_ising(h, J)
 
     @staticmethod
     def nonzero_ising_problem(sampler):
