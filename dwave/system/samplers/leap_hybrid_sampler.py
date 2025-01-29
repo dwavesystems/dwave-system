@@ -138,6 +138,19 @@ class LeapHybridSampler(dimod.Sampler):
         if 'bqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'bqm' problem type.")
 
+    def close(self):
+        """Close the underlying cloud-client in order to release system
+        resources like threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        """
+        self.client.close()
+
     @property
     def properties(self) -> Dict[str, Any]:
         """Solver properties as returned by a SAPI query.
@@ -379,6 +392,19 @@ class LeapHybridDQMSampler:
             raise ValueError("selected solver is not a hybrid solver.")
         if 'dqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
+
+    def close(self):
+        """Close the underlying cloud-client in order to release system
+        resources like threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        """
+        self.client.close()
 
     @property
     def properties(self) -> Dict[str, Any]:
@@ -625,6 +651,19 @@ class LeapHybridCQMSampler:
         if 'cqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'cqm' problem type.")
 
+    def close(self):
+        """Close the underlying cloud-client in order to release system
+        resources like threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        """
+        self.client.close()
+
     @classproperty
     def default_solver(cls) -> Dict[str, str]:
         """Features used to select the latest accessible hybrid CQM solver."""
@@ -859,6 +898,20 @@ class LeapHybridNLSampler:
             raise ValueError("selected solver does not support the 'nl' problem type.")
 
         self._executor = concurrent.futures.ThreadPoolExecutor()
+
+    def close(self):
+        """Close the underlying cloud-client in order to release system
+        resources like threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        """
+        self.client.close()
+        self._executor.shutdown()
 
     @classproperty
     def default_solver(cls) -> Dict[str, str]:
