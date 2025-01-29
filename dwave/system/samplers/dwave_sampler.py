@@ -157,6 +157,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         ...                                  num_reads=100)
         >>> print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
         True
+        ...
+        >>> sampler.close()
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
     for explanations of technical terms in descriptions of Ocean tools.
