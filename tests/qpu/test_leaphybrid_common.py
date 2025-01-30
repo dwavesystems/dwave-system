@@ -15,13 +15,13 @@
 
 import os
 import json
+import threading
 import unittest
 
 from parameterized import parameterized_class
 
 import dimod
-from dwave.cloud.exceptions import (
-    ConfigFileError, SolverNotFoundError, UseAfterCloseError)
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.testing import isolated_environ
 
 from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
@@ -123,9 +123,23 @@ class TestSamplerInterface(unittest.TestCase):
             self.assertEqual(pid, pid_post)
 
     def test_close(self):
+        n_initial = threading.active_count()
         sampler = self.sampler_cls()
+        n_active = threading.active_count()
         sampler.close()
+        n_closed = threading.active_count()
 
-        with self.assertRaises(UseAfterCloseError):
-            problem = self.problem_gen()
-            getattr(sampler, self.sample_meth)(problem)
+        with self.subTest('verify all client threads shutdown'):
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)
+
+        try:
+            # requires `dwave-cloud-client>=0.13.3`
+            from dwave.cloud.exceptions import UseAfterCloseError
+        except:
+            pass
+        else:
+            with self.subTest('verify use after close disallowed'):
+                with self.assertRaises(UseAfterCloseError):
+                    problem = self.problem_gen()
+                    getattr(sampler, self.sample_meth)(problem)

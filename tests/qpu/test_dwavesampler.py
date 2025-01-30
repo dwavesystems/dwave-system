@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import threading
 import unittest
 import os
 from unittest import mock
@@ -19,8 +20,7 @@ from unittest import mock
 import numpy
 
 import dimod
-from dwave.cloud.exceptions import (
-    ConfigFileError, SolverNotFoundError, UseAfterCloseError)
+from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.client import Client
 
 from dwave.system.samplers import DWaveSampler
@@ -41,13 +41,26 @@ class TestDWaveSampler(unittest.TestCase):
         cls.qpu.client.close()
 
     def test_close(self):
+        n_initial = threading.active_count()
         sampler = DWaveSampler()
+        n_active = threading.active_count()
         sampler.close()
+        n_closed = threading.active_count()
 
-        h, J = self.nonzero_ising_problem(sampler)
+        with self.subTest('verify all client threads shutdown'):
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)
 
-        with self.assertRaises(UseAfterCloseError):
-            sampler.sample_ising(h, J)
+        try:
+            # requires `dwave-cloud-client>=0.13.3`
+            from dwave.cloud.exceptions import UseAfterCloseError
+        except:
+            pass
+        else:
+            with self.subTest('verify use after close disallowed'):
+                with self.assertRaises(UseAfterCloseError):
+                    h, J = self.nonzero_ising_problem(sampler)
+                    sampler.sample_ising(h, J)
 
     @staticmethod
     def nonzero_ising_problem(sampler):
