@@ -353,6 +353,9 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             # topology-dependent arguments:
             self.properties.update(properties)
 
+    def close(self):
+        pass
+
     @classmethod
     def from_qpu_sampler(cls, sampler):
         return cls(properties=sampler.properties,
