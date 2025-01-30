@@ -140,15 +140,15 @@ class LeapHybridSampler(dimod.Sampler):
             raise ValueError("selected solver does not support the 'bqm' problem type.")
 
     def close(self):
-        """Close the underlying cloud-client in order to release system
-        resources like threads.
+        """Close the underlying cloud client to release system resources such as
+        threads.
 
         .. note::
 
             The method blocks for all the currently scheduled work (sampling
             requests) to finish.
 
-        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        See: :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
 
@@ -399,15 +399,15 @@ class LeapHybridDQMSampler:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
 
     def close(self):
-        """Close the underlying cloud-client in order to release system
-        resources like threads.
+        """Close the underlying cloud client to release system resources such as
+        threads.
 
         .. note::
 
             The method blocks for all the currently scheduled work (sampling
             requests) to finish.
 
-        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        See: :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
 
@@ -659,15 +659,15 @@ class LeapHybridCQMSampler:
             raise ValueError("selected solver does not support the 'cqm' problem type.")
 
     def close(self):
-        """Close the underlying cloud-client in order to release system
-        resources like threads.
+        """Close the underlying cloud client to release system resources such as
+        threads.
 
         .. note::
 
             The method blocks for all the currently scheduled work (sampling
             requests) to finish.
 
-        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        See: :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
 
@@ -909,15 +909,15 @@ class LeapHybridNLSampler:
         self._executor = concurrent.futures.ThreadPoolExecutor()
 
     def close(self):
-        """Close the underlying cloud-client in order to release system
-        resources like threads.
+        """Close the underlying cloud client to release system resources such as
+        threads.
 
         .. note::
 
             The method blocks for all the currently scheduled work (sampling
             requests) to finish.
 
-        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        See: :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
         self._executor.shutdown()

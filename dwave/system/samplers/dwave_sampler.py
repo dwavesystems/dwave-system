@@ -182,15 +182,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         self.solver = self._get_solver(penalty=self._solver_penalty)
 
     def close(self):
-        """Close the underlying cloud-client in order to release system
-        resources like threads.
+        """Close the underlying cloud client to release system resources such as
+        threads.
 
         .. note::
 
             The method blocks for all the currently scheduled work (sampling
             requests) to finish.
 
-        See: :meth:`~dwave.cloud.client.base.Client.close`.
+        See: :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
 

@@ -186,7 +186,7 @@ class DWaveCliqueSampler(dimod.Sampler):
             failover=failover, retry_interval=retry_interval, **config)
 
     def close(self):
-        """Close the child sampler in order to release system resources like threads.
+        """Close the child sampler to release system resources such as threads.
 
         .. note::
 
