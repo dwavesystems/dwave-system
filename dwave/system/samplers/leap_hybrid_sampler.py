@@ -97,7 +97,8 @@ class LeapHybridSampler(dimod.Sampler):
         >>> sampler = LeapHybridSampler(solver=solver)      # doctest: +SKIP
         >>> sampler.solver        # doctest: +SKIP
         BQMSolver(id='hybrid_binary_quadratic_model_version2')
-
+        ...
+        >>> sampler.close()       # doctest: +SKIP
     """
 
     _INTEGER_BQM_SIZE_THRESHOLD = 10000
@@ -137,6 +138,19 @@ class LeapHybridSampler(dimod.Sampler):
             raise ValueError("selected solver is not a hybrid solver.")
         if 'bqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'bqm' problem type.")
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
 
     @property
     def properties(self) -> Dict[str, Any]:
@@ -208,10 +222,12 @@ class LeapHybridSampler(dimod.Sampler):
             >>> bqm = dimod.BQM.from_qubo(qubo)
             ...
             >>> # Find a good solution
-            >>> sampler = LeapHybridSampler()    # doctest: +SKIP
-            >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
-
+            >>> sampler = LeapHybridSampler()       # doctest: +SKIP
+            >>> sampleset = sampler.sample(bqm)     # doctest: +SKIP
+            ...
+            >>> sampler.close()                     # doctest: +SKIP
         """
+
         if not isinstance(bqm, dimod.BQM):
             bqm = dimod.BQM(bqm)
 
@@ -343,6 +359,8 @@ class LeapHybridDQMSampler:
         >>> print("{} beats {}".format(cases[sampleset.first.sample['my_hand']],
         ...                            cases[sampleset.first.sample['their_hand']]))   # doctest: +SKIP
         rock beats scissors
+        ...
+        >>> dqm_sampler.close()                       # doctest: +SKIP
     """
 
     @classproperty
@@ -379,6 +397,19 @@ class LeapHybridDQMSampler:
             raise ValueError("selected solver is not a hybrid solver.")
         if 'dqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
 
     @property
     def properties(self) -> Dict[str, Any]:
@@ -594,8 +625,10 @@ class LeapHybridCQMSampler:
         The best (lowest-energy) solution found has :math:`i=j=2` as expected,
         a solution that is feasible because all the constraints (one in this
         example) are satisfied.
-
+        ...
+        >>> sampler.close()                                 # doctest: +SKIP
     """
+
     def __init__(self, **config):
         # strongly prefer hybrid solvers; requires kwarg-level override
         config.setdefault('client', 'hybrid')
@@ -624,6 +657,19 @@ class LeapHybridCQMSampler:
             raise ValueError("selected solver is not a hybrid solver.")
         if 'cqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'cqm' problem type.")
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
 
     @classproperty
     def default_solver(cls) -> Dict[str, str]:
@@ -827,6 +873,8 @@ class LeapHybridNLSampler:
         ... f"objective value {model.objective.state(0)} for order " \    # doctest: +SKIP
         ... f"{job_order.state(0)}.")     # doctest: +SKIP
         State 0 of 8 has an objective value 50.0 for order [1. 2. 0.].
+        ...
+        >>> sampler.close()       # doctest: +SKIP
     """
 
     def __init__(self, **config):
@@ -859,6 +907,20 @@ class LeapHybridNLSampler:
             raise ValueError("selected solver does not support the 'nl' problem type.")
 
         self._executor = concurrent.futures.ThreadPoolExecutor()
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
+        self._executor.shutdown()
 
     @classproperty
     def default_solver(cls) -> Dict[str, str]:

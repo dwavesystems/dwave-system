@@ -135,6 +135,15 @@ class TestDWaveSampler(unittest.TestCase):
             solver=solver,
             defaults={'solver': {'order_by': '-num_active_qubits'}})
 
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_close(self, MockClient):
+        """DWaveSampler.close() will close the underlying client."""
+
+        sampler = DWaveSampler()
+        sampler.close()
+
+        MockClient.from_config.return_value.close.assert_called_once()
+
     def test_sample_ising_variables(self):
 
         sampler = self.sampler

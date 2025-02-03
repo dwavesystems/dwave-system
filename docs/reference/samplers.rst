@@ -58,6 +58,7 @@ Methods
    DWaveSampler.sample_qubo
    DWaveSampler.validate_anneal_schedule
    DWaveSampler.to_networkx_graph
+   DWaveSampler.close
 
 DWaveCliqueSampler
 ==================
@@ -88,6 +89,7 @@ Methods
    DWaveCliqueSampler.sample
    DWaveCliqueSampler.sample_ising
    DWaveCliqueSampler.sample_qubo
+   DWaveCliqueSampler.close
 
 
 LeapHybridSampler
@@ -116,6 +118,7 @@ Methods
    LeapHybridSampler.sample_ising
    LeapHybridSampler.sample_qubo
    LeapHybridSampler.min_time_limit
+   LeapHybridSampler.close
 
 LeapHybridCQMSampler
 ====================
@@ -140,6 +143,7 @@ Methods
 
    LeapHybridCQMSampler.sample_cqm
    LeapHybridCQMSampler.min_time_limit
+   LeapHybridCQMSampler.close
 
 LeapHybridNLSampler
 ====================
@@ -164,6 +168,7 @@ Methods
 
    LeapHybridNLSampler.sample
    LeapHybridNLSampler.estimated_min_time_limit
+   LeapHybridNLSampler.close
 
 LeapHybridDQMSampler
 ====================
@@ -189,3 +194,4 @@ Methods
 
    LeapHybridDQMSampler.sample_dqm
    LeapHybridDQMSampler.min_time_limit
+   LeapHybridDQMSampler.close
