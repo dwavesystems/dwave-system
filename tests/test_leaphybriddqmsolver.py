@@ -67,7 +67,14 @@ class TestLeapHybridDQMSampler(unittest.TestCase):
         mock_solver.properties = {'category': 'hybrid'}
         mock_solver.supported_problem_types = ['dqm']
 
-        sampler = LeapHybridDQMSampler()
-        sampler.close()
+        with self.subTest('manual close'):
+            sampler = LeapHybridDQMSampler()
+            sampler.close()
+            mock_client.from_config.return_value.close.assert_called_once()
 
-        mock_client.from_config.return_value.close.assert_called_once()
+        mock_client.reset_mock()
+
+        with self.subTest('context manager'):
+            with LeapHybridDQMSampler():
+                ...
+            mock_client.from_config.return_value.close.assert_called_once()

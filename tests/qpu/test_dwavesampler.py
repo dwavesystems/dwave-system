@@ -62,6 +62,15 @@ class TestDWaveSampler(unittest.TestCase):
                     h, J = self.nonzero_ising_problem(sampler)
                     sampler.sample_ising(h, J)
 
+        with self.subTest('verify context manager calls close'):
+            n_initial = threading.active_count()
+            with DWaveSampler():
+                n_active = threading.active_count()
+            n_closed = threading.active_count()
+
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)
+
     @staticmethod
     def nonzero_ising_problem(sampler):
         max_h = max(sampler.properties.get('h_range', [-1, 1]))

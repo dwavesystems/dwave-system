@@ -19,6 +19,7 @@ A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's 
 import concurrent.futures
 import warnings
 from collections import abc
+from contextlib import AbstractContextManager
 from numbers import Number
 from typing import Any, Dict, List, NamedTuple, Optional
 
@@ -38,7 +39,34 @@ __all__ = ['LeapHybridSampler',
            ]
 
 
-class LeapHybridSampler(dimod.Sampler):
+class ClosableClientBaseMixin(AbstractContextManager):
+    """A mixin that implements ``close`` method to close the underlying cloud
+    client. It also implements a default context manager that closes resources
+    on exit.
+    """
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Release system resources allocated and raise any exception triggered
+        within the runtime context.
+        """
+        self.close()
+        return None
+
+
+class LeapHybridSampler(dimod.Sampler, ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
     Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are
@@ -138,19 +166,6 @@ class LeapHybridSampler(dimod.Sampler):
             raise ValueError("selected solver is not a hybrid solver.")
         if 'bqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'bqm' problem type.")
-
-    def close(self):
-        """Close the underlying cloud client to release system resources such as
-        threads.
-
-        .. note::
-
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
-
-        See: :meth:`~dwave.cloud.client.Client.close`.
-        """
-        self.client.close()
 
     @property
     def properties(self) -> Dict[str, Any]:
@@ -297,7 +312,7 @@ class LeapHybridSampler(dimod.Sampler):
 LeapHybridBQMSampler = LeapHybridSampler
 
 
-class LeapHybridDQMSampler:
+class LeapHybridDQMSampler(ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid DQM solvers.
 
     Leap's quantum-classical hybrid DQM solvers are intended to solve arbitrary
@@ -397,19 +412,6 @@ class LeapHybridDQMSampler:
             raise ValueError("selected solver is not a hybrid solver.")
         if 'dqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'dqm' problem type.")
-
-    def close(self):
-        """Close the underlying cloud client to release system resources such as
-        threads.
-
-        .. note::
-
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
-
-        See: :meth:`~dwave.cloud.client.Client.close`.
-        """
-        self.client.close()
 
     @property
     def properties(self) -> Dict[str, Any]:
@@ -561,7 +563,7 @@ class LeapHybridDQMSampler:
         return max([5, t])
 
 
-class LeapHybridCQMSampler:
+class LeapHybridCQMSampler(ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
     Leap's quantum-classical hybrid CQM solvers are intended to solve
@@ -657,19 +659,6 @@ class LeapHybridCQMSampler:
             raise ValueError("selected solver is not a hybrid solver.")
         if 'cqm' not in self.solver.supported_problem_types:
             raise ValueError("selected solver does not support the 'cqm' problem type.")
-
-    def close(self):
-        """Close the underlying cloud client to release system resources such as
-        threads.
-
-        .. note::
-
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
-
-        See: :meth:`~dwave.cloud.client.Client.close`.
-        """
-        self.client.close()
 
     @classproperty
     def default_solver(cls) -> Dict[str, str]:
@@ -832,7 +821,7 @@ class LeapHybridCQMSampler:
             )
 
 
-class LeapHybridNLSampler:
+class LeapHybridNLSampler(ClosableClientBaseMixin):
     r"""A class for using Leap's cloud-based hybrid nonlinear-model solvers.
 
     Leap's quantum-classical hybrid nonlinear-model solvers are intended to
@@ -919,7 +908,7 @@ class LeapHybridNLSampler:
 
         See: :meth:`~dwave.cloud.client.Client.close`.
         """
-        self.client.close()
+        super().close()
         self._executor.shutdown()
 
     @classproperty

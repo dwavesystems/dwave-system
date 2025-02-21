@@ -15,6 +15,7 @@
 import concurrent.futures
 import warnings
 import weakref
+from contextlib import AbstractContextManager
 from uuid import uuid4
 
 import numpy as np
@@ -25,7 +26,7 @@ from dwave.samplers import SteepestDescentSampler
 from dwave.system import qpu_graph
 
 
-class MockDWaveSampler(dimod.Sampler, dimod.Structured):
+class MockDWaveSampler(dimod.Sampler, dimod.Structured, AbstractContextManager):
     """Mock sampler modeled after DWaveSampler that can be used for tests.
 
     Properties and topology parameters are populated to qualitatively match
@@ -356,6 +357,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
     def close(self):
         pass
 
+    def __exit__(self, *_, **__):
+        self.close()
+        return None
+
     @classmethod
     def from_qpu_sampler(cls, sampler):
         return cls(properties=sampler.properties,
@@ -444,7 +449,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                          self.nodelist, self.edgelist)
     
     
-class MockLeapHybridDQMSampler:
+class MockLeapHybridDQMSampler(AbstractContextManager):
     """Mock sampler modeled after LeapHybridDQMSampler that can be used for tests."""
     def __init__(self, **config):
         self.parameters = {'time_limit': ['parameters'],
@@ -466,6 +471,13 @@ class MockLeapHybridDQMSampler:
                            'maximum_number_of_variables': 3000,
                            'maximum_number_of_biases': 3000000000}
 
+    def close(self):
+        pass
+
+    def __exit__(self, *_, **__):
+        self.close()
+        return None
+
     def sample_dqm(self, dqm, **kwargs):
         num_samples = 12    # min num of samples from dqm solver
         samples = np.empty((num_samples, dqm.num_variables()), dtype=int)
@@ -482,7 +494,7 @@ class MockLeapHybridDQMSampler:
         return self.properties['minimum_time_limit'][0][1]
 
 
-class MockLeapHybridSolver:
+class MockLeapHybridSolver(AbstractContextManager):
 
     properties = {'supported_problem_types': ['bqm'],
                   'minimum_time_limit': [[1, 1.0], [1024, 1.0],
@@ -492,6 +504,13 @@ class MockLeapHybridSolver:
                   'quota_conversion_rate': 1}
 
     supported_problem_types = ['bqm']
+
+    def close(self):
+        pass
+
+    def __exit__(self, *_, **__):
+        self.close()
+        return None
 
     def upload_bqm(self, bqm, **parameters):
         bqm_adjarray = dimod.serialization.fileview.load(bqm)
