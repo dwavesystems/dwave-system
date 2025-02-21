@@ -164,14 +164,14 @@ class DWaveCliqueSampler(dimod.Sampler, AbstractContextManager):
         Support for context manager protocol.
 
     Note:
-        The preferred and recommended way to use :class:`DWaveCliqueSampler` is
-        from a runtime context:
+        The recommended way to use :class:`DWaveCliqueSampler` is from a
+        `runtime context <https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers>`_:
 
         >>> with DWaveCliqueSampler() as sampler:   # doctest: +SKIP
         ...     sampler.sample(...)
 
-        If this is not feasible in your code, don't forget to shutdown sampler
-        resources by calling :meth:`~DWaveCliqueSampler.close`:
+        Alternatively, call the :meth:`~DWaveCliqueSampler.close` method to
+        terminate the sampler resources:
 
         >>> sampler = DWaveCliqueSampler()      # doctest: +SKIP
         ...

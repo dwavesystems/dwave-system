@@ -39,7 +39,7 @@ __all__ = ['LeapHybridSampler',
            ]
 
 
-class ClosableClientBaseMixin(AbstractContextManager):
+class _ClosableClientBaseMixin(AbstractContextManager):
     """A mixin that implements ``close`` method to close the underlying cloud
     client. It also implements a default context manager that closes resources
     on exit.
@@ -66,7 +66,7 @@ class ClosableClientBaseMixin(AbstractContextManager):
         return None
 
 
-class LeapHybridSampler(dimod.Sampler, ClosableClientBaseMixin):
+class LeapHybridSampler(dimod.Sampler, _ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
     Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are
@@ -295,7 +295,7 @@ class LeapHybridSampler(dimod.Sampler, ClosableClientBaseMixin):
 LeapHybridBQMSampler = LeapHybridSampler
 
 
-class LeapHybridDQMSampler(ClosableClientBaseMixin):
+class LeapHybridDQMSampler(_ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid DQM solvers.
 
     Leap's quantum-classical hybrid DQM solvers are intended to solve arbitrary
@@ -543,7 +543,7 @@ class LeapHybridDQMSampler(ClosableClientBaseMixin):
         return max([5, t])
 
 
-class LeapHybridCQMSampler(ClosableClientBaseMixin):
+class LeapHybridCQMSampler(_ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
     Leap's quantum-classical hybrid CQM solvers are intended to solve
@@ -799,7 +799,7 @@ class LeapHybridCQMSampler(ClosableClientBaseMixin):
             )
 
 
-class LeapHybridNLSampler(ClosableClientBaseMixin):
+class LeapHybridNLSampler(_ClosableClientBaseMixin):
     r"""A class for using Leap's cloud-based hybrid nonlinear-model solvers.
 
     Leap's quantum-classical hybrid nonlinear-model solvers are intended to

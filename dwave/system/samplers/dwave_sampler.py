@@ -138,14 +138,14 @@ class DWaveSampler(dimod.Sampler, dimod.Structured, AbstractContextManager):
         ``client='base'``.
 
     Note:
-        The preferred and recommended way to use :class:`DWaveSampler` is from a
-        runtime context created by ``DWaveSampler()``:
+        The recommended way to use :class:`DWaveSampler` is from a
+        `runtime context <https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers>`_:
 
         >>> with DWaveSampler() as sampler:
         ...     sampler.sample_ising(...)       # doctest: +SKIP
 
-        If this is not feasible in your code, don't forget to shutdown sampler
-        resources by calling :meth:`~DWaveSampler.close` when done:
+        Alternatively, call the :meth:`~DWaveSampler.close` method to
+        terminate the sampler resources:
 
         >>> sampler = DWaveSampler()
         ...
