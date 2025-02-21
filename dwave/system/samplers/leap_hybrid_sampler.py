@@ -110,23 +110,8 @@ class LeapHybridSampler(dimod.Sampler, ClosableClientBaseMixin):
         >>> bqm = dimod.BQM.from_qubo(qubo)
         ...
         >>> # Find a good solution
-        >>> sampler = LeapHybridSampler()       # doctest: +SKIP
-        >>> sampleset = sampler.sample(bqm)     # doctest: +SKIP
-
-        This example specializes the default solver selection by filtering out
-        bulk BQM solvers. (Bulk solvers are throughput-optimal for heavy/batch
-        workloads, have a higher start-up latency, and are not well suited for
-        live workloads. Not all Leap accounts have access to bulk solvers.)
-
-        >>> from dwave.system import LeapHybridSampler
-        ...
-        >>> solver = LeapHybridSampler.default_solver
-        >>> solver.update(name__regex=".*(?<!bulk)$")       # name shouldn't end with "bulk"
-        >>> sampler = LeapHybridSampler(solver=solver)      # doctest: +SKIP
-        >>> sampler.solver        # doctest: +SKIP
-        BQMSolver(id='hybrid_binary_quadratic_model_version2')
-        ...
-        >>> sampler.close()       # doctest: +SKIP
+        >>> with LeapHybridSampler() as sampler:    # doctest: +SKIP
+        ...     sampleset = sampler.sample(bqm)
     """
 
     _INTEGER_BQM_SIZE_THRESHOLD = 10000
@@ -237,10 +222,8 @@ class LeapHybridSampler(dimod.Sampler, ClosableClientBaseMixin):
             >>> bqm = dimod.BQM.from_qubo(qubo)
             ...
             >>> # Find a good solution
-            >>> sampler = LeapHybridSampler()       # doctest: +SKIP
-            >>> sampleset = sampler.sample(bqm)     # doctest: +SKIP
-            ...
-            >>> sampler.close()                     # doctest: +SKIP
+            >>> with LeapHybridSampler() as sampler:    # doctest: +SKIP
+            ...     sampleset = sampler.sample(bqm)
         """
 
         if not isinstance(bqm, dimod.BQM):
@@ -368,14 +351,11 @@ class LeapHybridDQMSampler(ClosableClientBaseMixin):
         ...          dqm.set_quadratic('my_hand', 'their_hand',
         ...                            {(my_idx, their_idx): 1})
         ...
-        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
-        ...
-        >>> sampleset = dqm_sampler.sample_dqm(dqm)   # doctest: +SKIP
-        >>> print("{} beats {}".format(cases[sampleset.first.sample['my_hand']],
-        ...                            cases[sampleset.first.sample['their_hand']]))   # doctest: +SKIP
+        >>> with LeapHybridDQMSampler() as dqm_sampler:     # doctest: +SKIP
+        ...     sampleset = dqm_sampler.sample_dqm(dqm)
+        ...     print(f"{} beats {}".format(cases[sampleset.first.sample['my_hand']],
+        ...                                 cases[sampleset.first.sample['their_hand']]))
         rock beats scissors
-        ...
-        >>> dqm_sampler.close()                       # doctest: +SKIP
     """
 
     @classproperty
@@ -618,17 +598,15 @@ class LeapHybridCQMSampler(ClosableClientBaseMixin):
         a remote solver provided by the Leap quantum cloud service:
 
         >>> from dwave.system import LeapHybridCQMSampler   # doctest: +SKIP
-        >>> sampler = LeapHybridCQMSampler()                # doctest: +SKIP
-        >>> sampleset = sampler.sample_cqm(cqm)             # doctest: +SKIP
-        >>> print(sampleset.first)                          # doctest: +SKIP
+        >>> with LeapHybridCQMSampler() as sampler:         # doctest: +SKIP
+        ...     sampleset = sampler.sample_cqm(cqm)
+        ...     print(sampleset.first)
         Sample(sample={'i': 2.0, 'j': 2.0}, energy=-4.0, num_occurrences=1,
         ...            is_feasible=True, is_satisfied=array([ True]))
 
         The best (lowest-energy) solution found has :math:`i=j=2` as expected,
         a solution that is feasible because all the constraints (one in this
         example) are satisfied.
-        ...
-        >>> sampler.close()                                 # doctest: +SKIP
     """
 
     def __init__(self, **config):
@@ -852,18 +830,15 @@ class LeapHybridNLSampler(ClosableClientBaseMixin):
         >>> from dwave.optimization.generators import flow_shop_scheduling
         >>> from dwave.system import LeapHybridNLSampler
         ...
-        >>> sampler = LeapHybridNLSampler()     # doctest: +SKIP
-        ...
-        >>> processing_times = [[10, 5, 7], [20, 10, 15]]
-        >>> model = flow_shop_scheduling(processing_times=processing_times)
-        >>> results = sampler.sample(model, label="Small FSS problem")    # doctest: +SKIP
-        >>> job_order = next(model.iter_decisions())  # doctest: +SKIP
-        >>> print(f"State 0 of {model.objective.state_size()} has an "\   # doctest: +SKIP
-        ... f"objective value {model.objective.state(0)} for order " \    # doctest: +SKIP
-        ... f"{job_order.state(0)}.")     # doctest: +SKIP
+        >>> with LeapHybridNLSampler() as sampler:      # doctest: +SKIP
+        ...     processing_times = [[10, 5, 7], [20, 10, 15]]
+        ...     model = flow_shop_scheduling(processing_times=processing_times)
+        ...     results = sampler.sample(model, label="Small FSS problem")
+        ...     job_order = next(model.iter_decisions())
+        ...     print(f"State 0 of {model.objective.state_size()} has an "
+        ...           f"objective value {model.objective.state(0)} for order "
+        ...           f"{job_order.state(0)}.")
         State 0 of 8 has an objective value 50.0 for order [1. 2. 0.].
-        ...
-        >>> sampler.close()       # doctest: +SKIP
     """
 
     def __init__(self, **config):

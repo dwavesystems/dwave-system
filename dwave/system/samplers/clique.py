@@ -167,15 +167,15 @@ class DWaveCliqueSampler(dimod.Sampler, AbstractContextManager):
         The preferred and recommended way to use :class:`DWaveCliqueSampler` is
         from a runtime context:
 
-        >>> with DWaveCliqueSampler() as sampler:     # doctest: +SKIP
-        >>>     sampler.sample(...)
+        >>> with DWaveCliqueSampler() as sampler:   # doctest: +SKIP
+        ...     sampler.sample(...)
 
         If this is not feasible in your code, don't forget to shutdown sampler
         resources by calling :meth:`~DWaveCliqueSampler.close`:
 
-        >>> sampler = DWaveCliqueSampler()
+        >>> sampler = DWaveCliqueSampler()      # doctest: +SKIP
         ...
-        >>> sampler.close()
+        >>> sampler.close()     # doctest: +SKIP
 
     Examples:
         This example creates a BQM based on a 6-node clique (complete graph),
@@ -190,11 +190,10 @@ class DWaveCliqueSampler(dimod.Sampler, AbstractContextManager):
         ...
         >>> bqm = dimod.generators.ran_r(1, 6)
         ...
-        >>> sampler = DWaveCliqueSampler()   # doctest: +SKIP
-        >>> sampler.largest_clique_size > 5  # doctest: +SKIP
+        >>> with DWaveCliqueSampler() as sampler:   # doctest: +SKIP
+        ...     print(sampler.largest_clique_size > 5)
+        ...     sampleset = sampler.sample(bqm, num_reads=100)
         True
-        >>> sampleset = sampler.sample(bqm, num_reads=100)   # doctest: +SKIP
-        >>> sampler.close()     # doctest: +SKIP
 
     """
     def __init__(self, *,
