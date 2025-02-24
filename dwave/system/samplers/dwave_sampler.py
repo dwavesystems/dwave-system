@@ -90,9 +90,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
-    explicitly as input arguments. For more information, see
-    `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_
-    :meth:`~dwave.cloud.client.Client.get_solvers`. By default, online
+    explicitly as input arguments. For more information, see the
+    :ref:`D-Wave Cloud Client <index_cloud>` package's
+    :meth:`~dwave.cloud.client.Client.get_solvers` method. By default, online
     D-Wave systems are returned ordered by highest number of qubits.
 
     Args:
@@ -155,8 +155,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         the QPU's indexed list of qubits and ``qubit_b`` is one of the qubits
         coupled to it. Other required parameters for communication with the system, such
         as its URL and an authentication token, are implicitly set in a configuration file
-        or as environment variables, as described in
-        `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
+        or as environment variables, as described in the
+        :ref:`ocean_sapi_access_basic` section.
         Given sufficient reads (here 100), the quantum
         computer should return the best solution, :math:`{1, -1}` on ``qubit_a`` and
         ``qubit_b``, respectively, as its first sample (samples are ordered from
@@ -173,7 +173,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
         True
 
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+    See the :ref:`index_concepts` section
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
@@ -241,9 +241,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """dict: D-Wave solver properties as returned by a SAPI query.
 
         Solver properties are dependent on the selected D-Wave solver and subject to change;
-        for example, new released features may add properties.
-        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
-        describes the parameters and properties supported on the D-Wave system.
+        for example, new released features may add properties. The
+        :ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters`
+        sections describe the parameters and properties supported on the D-Wave system.
 
         Examples:
 
@@ -255,7 +255,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
               [-0.20860153999435985, 0.05511969218508182],
             # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+        See the :ref:`Ocean Glossary <index_concepts>` section
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -272,9 +272,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         :attr:`~DWaveSampler.properties` for each key.
 
         Solver parameters are dependent on the selected D-Wave solver and subject to change;
-        for example, new released features may add parameters.
-        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
-        describes the parameters and properties supported on the D-Wave system.
+        for example, new released features may add parameters. The
+        :ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters`
+        sections describe the parameters and properties supported on the D-Wave system.
 
         Examples:
 
@@ -288,7 +288,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
              'auto_scale': ['parameters'],
              # Snipped above response for brevity
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+        See the :ref:`Ocean Glossary <index_concepts>` section
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -314,7 +314,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...     sampler.edgelist[:5]
             [(30, 31), (30, 45), (30, 2940), (30, 2955), (30, 2970)]
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+        See the :ref:`index_concepts` section
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -338,7 +338,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...     sampler.nodelist[:5]
             [30, 31, 32, 33, 34]
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+        See the :ref:`index_concepts` section
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -395,9 +395,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.parameters`. D-Wave System Documentation's
-                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
-                describes the parameters and properties supported on the D-Wave system.
+                :attr:`.parameters`. The :ref:`qpu_index_solver_properties` and
+                :ref:`qpu_solver_parameters` sections describe the parameters
+                and properties supported on the D-Wave system.
 
         Returns:
             :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
@@ -425,7 +425,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
             True
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+        See the :ref:`index_concepts` section
         for explanations of technical terms in descriptions of Ocean tools.
 
         """
@@ -516,8 +516,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 if it does not have `annealing_time_range` or `max_anneal_schedule_points`
                 properties.
 
-        As described in
-        `D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_,
+        As described in the :ref:`qpu_index_solver_properties` section,
         an anneal schedule must satisfy the following conditions:
 
             * Time t must increase for all points in the schedule.

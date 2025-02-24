@@ -30,7 +30,7 @@ graph. When you submit an embedding and specify a chain strength using these
 tools, they automatically calibrate the qubits in a chain to compensate for the
 effects of biases that may be introduced as a result of strong couplings.
 
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 

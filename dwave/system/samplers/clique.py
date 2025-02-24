@@ -182,7 +182,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         a D-Wave system. Parameters for communication with the system, such
         as its URL and an authentication token, are implicitly set in a
         configuration file or as environment variables, as described in
-        `Configuring Access to D-Wave Solvers <https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html>`_.
+        the :ref:`ocean_sapi_access_basic` section.
 
         >>> from dwave.system import DWaveCliqueSampler
         >>> import dimod
@@ -364,10 +364,10 @@ class DWaveCliqueSampler(dimod.Sampler):
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified
-                per solver in :attr:`.parameters`.
-                D-Wave System Documentation's
-                `solver guide <https://docs.dwavesys.com/docs/latest/doc_solver_ref.html>`_
-                describes the parameters and properties supported on the D-Wave
+                per solver in :attr:`.parameters`. The
+                :ref:`qpu_index_solver_properties` and
+                :ref:`qpu_solver_parameters` sections describe the parameters
+                and properties supported on the D-Wave
                 system. Note that ``auto_scale`` is not supported by this
                 sampler, because it scales the problem as part of the embedding
                 process.
