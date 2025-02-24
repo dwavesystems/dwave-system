@@ -13,10 +13,9 @@
 #    limitations under the License.
 
 """
-A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` 
-for D-Wave quantum computers.
+A :ref:`dimod <index_dimod>` :term:`sampler` for D-Wave quantum computers.
 
-See :std:doc:`Ocean Glossary <oceandocs:glossary>`
+See :ref:`Ocean Glossary <index_concepts>`
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
@@ -391,7 +390,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
                 Defines what warning action to take, if any (see the
-                :ref:`warnings_system` section). The default behavior is to
+                :ref:`system_warnings` section). The default behavior is to
                 ignore warnings.
 
             **kwargs:
@@ -404,8 +403,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
             :class:`~concurrent.futures.Future`-like object.
             In it this sampler also provides timing information in the `info`
-            field as described in the D-Wave System Documentation's
-            :ref:`sysdocs_gettingstarted:qpu_sapi_qpu_timing`.
+            field as described in the :ref:`qpu_sapi_qpu_timing` section.
 
         Examples:
             This example submits a two-variable Ising problem mapped directly to two

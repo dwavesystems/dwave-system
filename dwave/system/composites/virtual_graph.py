@@ -20,9 +20,9 @@ Virtual graphs are deprecated due to improved calibration of newer QPUs; to
 calibrate chains for residual biases, follow the instructions in the
 `shimming tutorial <https://github.com/dwavesystems/shimming-tutorial>`_.
 
-A :std:doc:`dimod composite <oceandocs:docs_dimod/reference/samplers>` that
+A :ref:`dimod composite <concept_samplers_composites>` that
 uses the D-Wave virtual graph feature for improved
-:std:doc:`minor-embedding <oceandocs:docs_system/intro>`.
+:term:`minor-embedding`.
 
 D-Wave *virtual graphs* simplify the process of minor-embedding by enabling you
 to more easily create, optimize, use, and reuse an embedding for a given working

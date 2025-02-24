@@ -1,4 +1,4 @@
-.. _included_samplers:
+.. _system_samplers:
 
 ========
 Samplers
@@ -22,7 +22,7 @@ query its status with the :meth:`~dimod.SampleSet.done` method or ensure resolut
 with the :meth:`~dimod.SampleSet.resolve` method.
 
 Other Ocean packages provide additional samplers; for example,
-:std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` provides samplers for testing
+:ref:`dimod <index_dimod>` provides samplers for testing
 your code.
 
 DWaveSampler
@@ -34,8 +34,8 @@ DWaveSampler
 Properties
 ----------
 
-For parameters and properties of D-Wave systems, see
-:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>`.
+For parameters and properties of D-Wave systems, see the
+:ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters` sections.
 
 .. autosummary::
    :toctree: generated/

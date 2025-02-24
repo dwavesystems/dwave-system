@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 """
-A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's hybrid solvers.
+A :ref:`dimod <index_dimod>` :term:`sampler` for Leap's hybrid solvers.
 """
 
 import concurrent.futures
@@ -69,7 +69,7 @@ class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
     explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
-    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :ref:`dwave-cloud-client <index_cloud>`'s
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
     access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
     ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
@@ -298,7 +298,7 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
     explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
-    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :ref:`dwave-cloud-client <index_cloud>`'s
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
     access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
     ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
@@ -540,14 +540,14 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
 
     Leap's quantum-classical hybrid CQM solvers are intended to solve
     application problems formulated as
-    :ref:`constrained quadratic models (CQM) <cqm_sdk>`.
+    :ref:`constrained quadratic models (CQM) <concept_models_cqm>`.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
     hierarchically, in a configuration file, as environment variables, or
     explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
-    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :ref:`dwave-cloud-client <index_cloud>`'s
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
     access to by `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_
     ``category=hybrid`` and ``supported_problem_type=cqm``. By default, online
@@ -796,14 +796,14 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
     Leap's quantum-classical hybrid nonlinear-model solvers are intended to
     solve application problems formulated as
-    :ref:`nonlinear models <nl_model_sdk>`.
+    :ref:`nonlinear models <concept_models_nonlinear>`.
 
     You can configure your :term:`solver` selection and usage by setting
     parameters, hierarchically, in a configuration file, as environment
     variables, or explicitly as input arguments, as described in
     `D-Wave Cloud Client <https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html>`_.
 
-    :ref:`dwave-cloud-client <sdk_index_cloud>`'s
+    :ref:`dwave-cloud-client <index_cloud>`'s
     :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you
     have access to by
     `solver properties <https://docs.dwavesys.com/docs/latest/c_solver_properties.html>`_

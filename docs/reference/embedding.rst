@@ -1,4 +1,4 @@
-.. _embedding_system:
+.. _system_embedding:
 
 =========
 Embedding
@@ -7,8 +7,8 @@ Embedding
 Provides functions that map :term:`binary quadratic model`\ s and samples between
 a :term:`source` :term:`graph` and a :term:`target` graph.
 
-For an introduction to :term:`minor-embedding`, see
-:std:doc:`Minor-Embedding <oceandocs:concepts/embedding>`.
+For an introduction to :term:`minor-embedding`, see the
+:ref:`qpu_embedding_intro` section.
 
 Generators
 ==========
@@ -18,7 +18,7 @@ Tools for finding embeddings.
 Generic
 -------
 
-:std:doc:`minorminer <oceandocs:docs_minorminer/source/sdk_index>` is a heuristic tool for minor embedding: given a
+:ref:`minorminer <index_minorminer>` is a heuristic tool for minor embedding: given a
 minor and target graph, it tries to find a mapping that embeds the minor into the target.
 
 .. autosummary::

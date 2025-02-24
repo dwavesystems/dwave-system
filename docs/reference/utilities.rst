@@ -1,4 +1,4 @@
-.. _utilities_system:
+.. _system_utilities:
 
 =========
 Utilities

@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 """
-A :ref:`dimod composite <oceandocs:samplers_index>` that tiles small problems
+A :ref:`dimod composite <index_dimod>` that tiles small problems
 multiple times to a structured sampler.
 
 The :class:`.TilingComposite` class takes a problem that can fit on a small

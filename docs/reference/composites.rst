@@ -1,10 +1,10 @@
-.. _included_composites:
+.. _system_composites:
 
 ==========
 Composites
 ==========
 
-:std:doc:`dimod composites <oceandocs:docs_dimod/intro/intro_samplers>` that provide layers of pre- and
+:ref:`dimod composites <concept_samplers_composites>` that provide layers of pre- and
 post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system:
 
 .. currentmodule:: dwave.system.composites
@@ -14,7 +14,7 @@ post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system:
     :depth: 2
 
 Other Ocean packages provide additional composites; for example,
-:std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` provides composites that operate
+:ref:`dimod <index_dimod>` provides composites that operate
 on the problem (e.g., scaling values), track inputs and outputs for debugging,
 and other useful functionality relevant to generic samplers.
 
