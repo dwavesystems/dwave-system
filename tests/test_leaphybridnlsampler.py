@@ -130,7 +130,14 @@ class TestNLSampler(unittest.TestCase):
         mock_solver.properties = {'category': 'hybrid'}
         mock_solver.supported_problem_types = ['nl']
 
-        sampler = LeapHybridNLSampler()
-        sampler.close()
+        with self.subTest('manual close'):
+            sampler = LeapHybridNLSampler()
+            sampler.close()
+            mock_client.from_config.return_value.close.assert_called_once()
 
-        mock_client.from_config.return_value.close.assert_called_once()
+        mock_client.reset_mock()
+
+        with self.subTest('context manager'):
+            with LeapHybridNLSampler():
+                ...
+            mock_client.from_config.return_value.close.assert_called_once()

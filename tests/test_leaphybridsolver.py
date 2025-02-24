@@ -115,10 +115,17 @@ class TestLeapHybridSampler(unittest.TestCase):
         mock_solver.properties = {'category': 'hybrid'}
         mock_solver.supported_problem_types = ['bqm']
 
-        sampler = LeapHybridSampler()
-        sampler.close()
+        with self.subTest('manual close'):
+            sampler = LeapHybridSampler()
+            sampler.close()
+            mock_client.from_config.return_value.close.assert_called_once()
 
-        mock_client.from_config.return_value.close.assert_called_once()
+        mock_client.reset_mock()
+
+        with self.subTest('context manager'):
+            with LeapHybridSampler():
+                ...
+            mock_client.from_config.return_value.close.assert_called_once()
 
     @mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
     def test_sample_bqm(self, mock_client):

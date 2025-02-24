@@ -143,3 +143,12 @@ class TestSamplerInterface(unittest.TestCase):
                 with self.assertRaises(UseAfterCloseError):
                     problem = self.problem_gen()
                     getattr(sampler, self.sample_meth)(problem)
+
+        with self.subTest('verify context manager calls close'):
+            n_initial = threading.active_count()
+            with self.sampler_cls():
+                n_active = threading.active_count()
+            n_closed = threading.active_count()
+
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)

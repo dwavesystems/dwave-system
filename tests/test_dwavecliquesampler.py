@@ -147,7 +147,6 @@ class TestDWaveCliqueSampler(unittest.TestCase):
         pegasus_sampler.sample(bqm, chain_strength=-0.5).resolve()
 
 
-
 class TestFailover(unittest.TestCase):
 
     @staticmethod
@@ -219,5 +218,12 @@ class TestFailover(unittest.TestCase):
     def test_close(self, mock_child_sampler):
         sampler = DWaveCliqueSampler()
         sampler.close()
+
+        mock_child_sampler.return_value.close.assert_called_once()
+
+    @unittest.mock.patch('dwave.system.samplers.clique.DWaveSampler')
+    def test_context_manager(self, mock_child_sampler):
+        with DWaveCliqueSampler() as sampler:
+            ...
 
         mock_child_sampler.return_value.close.assert_called_once()
