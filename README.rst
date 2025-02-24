@@ -11,28 +11,29 @@
 .. image:: https://circleci.com/gh/dwavesystems/dwave-system.svg?style=shield
    :target: https://circleci.com/gh/dwavesystems/dwave-system
 
-.. index-start-marker
 
 dwave-system
 ============
 
+.. start_system_about
+
+.. todo:: update these links
+
 `dwave-system` is a basic API for easily incorporating the D-Wave system as a
 sampler in the
 `D-Wave Ocean software stack <https://docs.ocean.dwavesys.com/en/stable/overview/stack.html>`_,
-directly or through `Leap <https://cloud.dwavesys.com/leap/>`_\ 's cloud-based
-hybrid solvers. It includes ``DWaveSampler``, a dimod sampler that accepts and
-passes system parameters such as system identification and authentication down
-the stack, ``LeapHybridSampler``, for Leap's hybrid solvers, and other. It also
-includes several useful composites---layers of pre- and post-processing---that
-can be used with ``DWaveSampler`` to handle minor-embedding,
-optimize chain strength, etc.
+directly or through `Leap <https://cloud.dwavesys.com/leap/>`_ service's
+cloud-based hybrid solvers. It includes ``DWaveSampler``, a dimod sampler that
+accepts and passes system parameters such as system identification and
+authentication down the stack, ``LeapHybridSampler``, for Leap's hybrid solvers,
+and other. It also includes several useful composites---layers of pre- and
+post-processing---that can be used with ``DWaveSampler`` to handle
+minor-embedding, optimize chain strength, etc.
 
-.. index-end-marker
+.. end_system_about
 
 Installation
-------------
-
-.. installation-start-marker
+============
 
 **Installation from PyPI:**
 
@@ -52,11 +53,8 @@ Installation
     pip install -r requirements.txt
     python setup.py install
 
-.. installation-end-marker
-
-
 License
--------
+=======
 
 Released under the Apache License 2.0. See LICENSE file.
 
