@@ -12,6 +12,7 @@
    :target: https://circleci.com/gh/dwavesystems/dwave-system
 
 
+============
 dwave-system
 ============
 
