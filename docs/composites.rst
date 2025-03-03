@@ -9,10 +9,6 @@ post-processing (e.g., :term:`minor-embedding`) when using the D-Wave system:
 
 .. currentmodule:: dwave.system.composites
 
-.. contents::
-    :local:
-    :depth: 2
-
 Other Ocean packages provide additional composites; for example,
 :ref:`dimod <index_dimod>` provides composites that operate
 on the problem (e.g., scaling values), track inputs and outputs for debugging,

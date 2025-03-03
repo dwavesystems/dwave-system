@@ -8,7 +8,7 @@ dwave-system
     :caption: Reference documentation for dwave-system:
     :maxdepth: 1
 
-    reference/api_ref
+    api_ref
 
 
 About dwave-system
