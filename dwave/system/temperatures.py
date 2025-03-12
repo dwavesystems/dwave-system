@@ -630,6 +630,83 @@ def maximum_pseudolikelihood(
     degenerate_fields: Optional[bool] = None,
     use_jacobian: bool = True,
 ) -> Tuple:
+    """Maximimum pseudolikelihood estimator for exponential models.
+
+    Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
+    of weight estimation for an exponential model with exponent defined by a
+    weighted sum of bqms.
+    Assuming the Probability of states s is given by an exponential model
+    :math:`P(s)=1/Z exp(- x_i H_i(s))` for a given list of functions (bqms)
+    estimate x. The exponential model is also called a Boltzmann distribution.
+    Code is designed assuming the bqms are dense (a function of all or most of
+    the variables), although technically operation although sparse bqms
+    like :math:`H(s)=h_i s_i` or :math:`H(s)=J_{ij}s_i s_j` are technically allowed.
+
+    Note common reasons for parameter inference failure include:
+    - Too few samples, insufficient to resolve parameters
+    - The samplest is singular or insensitive with respect to some parameter
+      (e.g. local minima or plateus only).
+    - bqms are too closely related, or weakly dependent on the sampleset
+      variability (e.g. nearly collinear).
+
+    Args:
+        bqms: A list of Binary quadratic models [H_i] describing the sample
+            distribution as :math:`P(s) ~ exp(sum_i x_i H_i(s))` for unknown
+            model parameters x.
+        sampleset: A set of samples, as a dimod Sampleset or samples-like object.
+        en1: Effective fields as an np.ndarray (site labels not required).
+            Derived from the ``bqms`` and ``sampleset`` if not provided.
+            First dimension indexes samples, second dimension indexes sites.
+            Ordering doesn't matter, but should be consistent with sample_weights.
+        num_bootstrap_samples: Number of bootstrap estimators to calculate.
+            Bootstrapped estimates can be used to reliably estimate variance and
+            bias if samples are uncorrelated. For
+            now, the sampleset must have uniform sample_weights to deploy this
+            option -- an aggregated or weighted sampleset must be disaggregated
+            (raw format) with repetitions.
+        seed: Seeds the bootstrap method (if provided) allowing reproducibility
+            of the estimators.
+        x0: Initial guess for the fitting parameters. Should have the same
+            length as bqms when provided.
+        optimize_method (str, optional, default=None):
+            Optimize method used by SciPy ``root_scalar`` method. The default
+            method works well under default operation, 'bisect' can be
+            numerically more stable for the scalar case (inverse temperature
+            estimation only).
+        bisect_bracket: Relevant only if optimize_method='bisect' and for a
+            single bqm. Bounds the fitting parameter.
+        sample_weights: A set of weights for the samples. If sampleset is of
+            type :obj:`~dimod.SampleSet` set this is default to
+            sampleset.record.num_occurrences, otherwise uniform weighting is
+            the default.
+        return_optimize_object: When True, and if ``sciPy`` optimization is
+            invoked, the associated OptimizeResult is returned. Otherwise only
+            the optimal parameter values are returned as floats.
+        degenerate_fields: If effective fields are degenerate owing to sparse
+            connectivity, low precision and/or large number of samples, or low
+            entropy then histogramming (aggregating) of fields is used to
+            accelerate the search stage. A value True is supported (and default)
+            for single parameter esimation ``len(bqms)=1``; for multi-parameter
+            estimation only value False is supported.
+        use_jacobian: By default (True) the second derivative of the
+            pseudolikelihood is calculated and used by ScipY root finding
+            methods. The associated complexity of this non-essential
+            calculation is quadratic in len(bqms); use of the second derivative
+            is disabled by setting the value to False.
+    Returns:
+        Tuple: The optimal parameters and a list of bootstrapped estimates (x_estimate, x_bootstrap_estimates):
+
+        * *x_estimate*: parameter estimates
+        * *x_bootstrap_estimates*: a numpy array of bootstrap estimators
+
+    See also:
+        The function :class:`~dwave.system.temperatures.maximum_pseudolikelihood_temperature`
+        https://doi.org/10.3389/fict.2016.00023
+
+        https://www.jstor.org/stable/25464568
+
+    """
+
 
     root_results = None
 
