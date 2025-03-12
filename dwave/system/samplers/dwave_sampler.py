@@ -23,6 +23,7 @@ for explanations of technical terms in descriptions of Ocean tools.
 import copy
 import collections.abc as abc
 from collections import defaultdict
+from contextlib import AbstractContextManager
 from typing import Optional, Dict
 
 import dimod
@@ -86,7 +87,7 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
     return G
 
 
-class DWaveSampler(dimod.Sampler, dimod.Structured):
+class DWaveSampler(dimod.Sampler, dimod.Structured, AbstractContextManager):
     """A class for using D-Wave quantum computers as samplers for binary quadratic models.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
@@ -127,11 +128,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         **config:
             Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
 
+    .. versionadded:: 1.29.0
+        Support for context manager protocol.
+
     Note:
         Prior to version 1.0.0, :class:`.DWaveSampler` used the ``base`` client,
         allowing non-QPU solvers to be selected.
         To reproduce the old behavior, instantiate :class:`.DWaveSampler` with
         ``client='base'``.
+
+    Note:
+        The recommended way to use :class:`DWaveSampler` is from a
+        `runtime context <https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers>`_:
+
+        >>> with DWaveSampler() as sampler:
+        ...     sampler.sample_ising(...)       # doctest: +SKIP
+
+        Alternatively, call the :meth:`~DWaveSampler.close` method to
+        terminate the sampler resources:
+
+        >>> sampler = DWaveSampler()
+        ...
+        >>> sampler.close()
 
     Examples:
         This example submits a two-variable Ising problem mapped directly to two
@@ -148,14 +166,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         >>> from dwave.system import DWaveSampler
         ...
-        >>> sampler = DWaveSampler()
-        ...
-        >>> qubit_a = sampler.nodelist[0]
-        >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
-        >>> sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
-        ...                                  {},
-        ...                                  num_reads=100)
-        >>> print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
+        >>> with DWaveSampler() as sampler:
+        ...     qubit_a = sampler.nodelist[0]
+        ...     qubit_b = next(iter(sampler.adjacency[qubit_a]))
+        ...     sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
+        ...                                      {},
+        ...                                      num_reads=100)
+        ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
         True
 
     See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -179,6 +196,26 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         self.client = Client.from_config(**config)
         self.solver = self._get_solver(penalty=self._solver_penalty)
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Release system resources allocated and raise any exception triggered
+        within the runtime context.
+        """
+        self.close()
+        return None
 
     def _get_solver(self, *, refresh: bool = False, penalty: Optional[Dict[str, int]] = None):
         """Get the least penalized solver from the list of solvers filtered and
@@ -220,8 +257,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> sampler.properties    # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
+            ...     sampler.properties
             {'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
               [-0.2242514597680286, 0.01718456460967399],
               [-0.20860153999435985, 0.05511969218508182],
@@ -251,8 +288,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         Examples:
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> sampler.parameters    # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
+            ...     sampler.parameters
             {'anneal_offsets': ['parameters'],
              'anneal_schedule': ['parameters'],
              'annealing_time': ['parameters'],
@@ -282,8 +319,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             First 5 entries of the coupler list for one Advantage system.
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> sampler.edgelist[:5]    # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
+            ...     sampler.edgelist[:5]
             [(30, 31), (30, 45), (30, 2940), (30, 2955), (30, 2970)]
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -306,8 +343,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             First 5 entries of the node list for one Advantage system.
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> sampler.nodelist[:5]    # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
+            ...     sampler.nodelist[:5]
             [30, 31, 32, 33, 34]
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -389,14 +426,13 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> sampler = DWaveSampler()
-            ...
-            >>> qubit_a = sampler.nodelist[0]
-            >>> qubit_b = next(iter(sampler.adjacency[qubit_a]))
-            >>> sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
-            ...                                  {},
-            ...                                  num_reads=100)
-            >>> print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
+            >>> with DWaveSampler() as sampler:
+            ...     qubit_a = sampler.nodelist[0]
+            ...     qubit_b = next(iter(sampler.adjacency[qubit_a]))
+            ...     sampleset = sampler.sample_ising({qubit_a: -1, qubit_b: 1},
+            ...                                      {},
+            ...                                      num_reads=100)
+            ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
             True
 
         See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
@@ -509,10 +545,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             This example sets a quench schedule on a D-Wave system.
 
             >>> from dwave.system import DWaveSampler
-            >>> sampler = DWaveSampler()
-            >>> quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
-            >>> DWaveSampler().validate_anneal_schedule(quench_schedule)    # doctest: +SKIP
-            >>>
+            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
+            ...     quench_schedule=[[0.0, 0.0], [12.0, 0.6], [12.8, 1.0]]
+            ...     DWaveSampler().validate_anneal_schedule(quench_schedule)
 
         """
         if 'anneal_schedule' not in self.parameters:
@@ -583,9 +618,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> sampler = DWaveSampler()
-            >>> g = sampler.to_networkx_graph()      # doctest: +SKIP
-            >>> len(g.nodes) > 5000                  # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:         # doctest: +SKIP
+            ...     g = sampler.to_networkx_graph()
+            ...     len(g.nodes) > 5000
             True
         """
         return qpu_graph(self.properties['topology']['type'],

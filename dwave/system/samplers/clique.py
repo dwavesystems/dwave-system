@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from contextlib import AbstractContextManager
 from numbers import Number
 from typing import Tuple
 
@@ -115,7 +116,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
 
         yield sampleset 
 
-class DWaveCliqueSampler(dimod.Sampler):
+class DWaveCliqueSampler(dimod.Sampler, AbstractContextManager):
     r"""A sampler for solving clique binary quadratic models on the D-Wave system.
 
     This sampler wraps
@@ -159,6 +160,23 @@ class DWaveCliqueSampler(dimod.Sampler):
         **config:
             Keyword arguments, as accepted by :class:`.DWaveSampler`
 
+    .. versionadded:: 1.29.0
+        Support for context manager protocol.
+
+    Note:
+        The recommended way to use :class:`DWaveCliqueSampler` is from a
+        `runtime context <https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers>`_:
+
+        >>> with DWaveCliqueSampler() as sampler:   # doctest: +SKIP
+        ...     sampler.sample(...)
+
+        Alternatively, call the :meth:`~DWaveCliqueSampler.close` method to
+        terminate the sampler resources:
+
+        >>> sampler = DWaveCliqueSampler()      # doctest: +SKIP
+        ...
+        >>> sampler.close()     # doctest: +SKIP
+
     Examples:
         This example creates a BQM based on a 6-node clique (complete graph),
         with random :math:`\pm 1` values assigned to nodes, and submits it to
@@ -172,10 +190,10 @@ class DWaveCliqueSampler(dimod.Sampler):
         ...
         >>> bqm = dimod.generators.ran_r(1, 6)
         ...
-        >>> sampler = DWaveCliqueSampler()   # doctest: +SKIP
-        >>> sampler.largest_clique_size > 5  # doctest: +SKIP
+        >>> with DWaveCliqueSampler() as sampler:   # doctest: +SKIP
+        ...     print(sampler.largest_clique_size > 5)
+        ...     sampleset = sampler.sample(bqm, num_reads=100)
         True
-        >>> sampleset = sampler.sample(bqm, num_reads=100)   # doctest: +SKIP
 
     """
     def __init__(self, *,
@@ -183,6 +201,25 @@ class DWaveCliqueSampler(dimod.Sampler):
                  **config):
         self.child = DWaveSampler(
             failover=failover, retry_interval=retry_interval, **config)
+
+    def close(self):
+        """Close the child sampler to release system resources such as threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.system.samplers.dwave_sampler.DWaveSampler.close`.
+        """
+        self.child.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Release system resources allocated and raise any exception triggered
+        within the runtime context.
+        """
+        self.close()
+        return None
 
     @property
     def parameters(self) -> dict:

@@ -15,6 +15,7 @@
 
 import os
 import json
+import threading
 import unittest
 
 from parameterized import parameterized_class
@@ -22,6 +23,7 @@ from parameterized import parameterized_class
 import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.testing import isolated_environ
+
 from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
 
 
@@ -43,7 +45,7 @@ class TestLegacySolverSelection(unittest.TestCase):
 
         self.assertIn(self.problem_type, sampler.solver.supported_problem_types)
 
-        sampler.client.close()
+        sampler.close()
 
     def test_new_positive(self):
         # given valid solver spec in env, init succeeds
@@ -57,7 +59,7 @@ class TestLegacySolverSelection(unittest.TestCase):
 
             self.assertIn(self.problem_type, sampler.solver.supported_problem_types)
 
-        sampler.client.close()
+        sampler.close()
 
     def test_new_negative(self):
         # given invalid solver spec in env, init fails
@@ -83,7 +85,7 @@ class TestLegacySolverSelection(unittest.TestCase):
 
             self.assertIn(self.problem_type, sampler.solver.supported_problem_types)
 
-        sampler.client.close()
+        sampler.close()
 
 
 @parameterized_class(
@@ -93,17 +95,23 @@ class TestLegacySolverSelection(unittest.TestCase):
         (LeapHybridCQMSampler, "sample_cqm", lambda self: dimod.CQM.from_bqm(dimod.BQM.from_qubo({'ab': 1}))),
     ])
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
-class TestSamplesetInterface(unittest.TestCase):
+class TestSamplerInterface(unittest.TestCase):
 
-    def test_wait_id_availability(self):
-        # verify https://github.com/dwavesystems/dwave-system/issues/540 is fixed
+    @classmethod
+    def setUpClass(cls):
         try:
-            sampler = self.sampler_cls()
-        except (ValueError, ConfigFileError):
-            raise unittest.SkipTest(f"{self.sampler_cls} not available")
+            cls.sampler = cls.sampler_cls()
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest(f"{cls.sampler_cls} not available")
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.sampler.close()
+
+    def test_sampleset_wait_id_availability(self):
+        # verify https://github.com/dwavesystems/dwave-system/issues/540 is fixed
         problem = self.problem_gen()
-        ss = getattr(sampler, self.sample_meth)(problem)
+        ss = getattr(self.sampler, self.sample_meth)(problem)
 
         with self.subTest("sampleset.wait_id() exists"):
             pid = ss.wait_id()
@@ -113,3 +121,34 @@ class TestSamplesetInterface(unittest.TestCase):
             ss.resolve()
             pid_post = ss.wait_id()
             self.assertEqual(pid, pid_post)
+
+    def test_close(self):
+        n_initial = threading.active_count()
+        sampler = self.sampler_cls()
+        n_active = threading.active_count()
+        sampler.close()
+        n_closed = threading.active_count()
+
+        with self.subTest('verify all client threads shutdown'):
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)
+
+        try:
+            # requires `dwave-cloud-client>=0.13.3`
+            from dwave.cloud.exceptions import UseAfterCloseError
+        except:
+            pass
+        else:
+            with self.subTest('verify use after close disallowed'):
+                with self.assertRaises(UseAfterCloseError):
+                    problem = self.problem_gen()
+                    getattr(sampler, self.sample_meth)(problem)
+
+        with self.subTest('verify context manager calls close'):
+            n_initial = threading.active_count()
+            with self.sampler_cls():
+                n_active = threading.active_count()
+            n_closed = threading.active_count()
+
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)

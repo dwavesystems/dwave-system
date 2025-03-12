@@ -18,19 +18,25 @@ import unittest
 
 import dimod
 import numpy as np
-
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
-from dwave.system import LeapHybridDQMSampler
 
-try:
-    sampler = LeapHybridDQMSampler()
-except (ValueError, ConfigFileError, SolverNotFoundError):
-    sampler = None
+from dwave.system import LeapHybridDQMSampler
 
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
-@unittest.skipIf(sampler is None, "no hybrid sampler available")
 class TestLeapHybridSampler(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.sampler = LeapHybridDQMSampler()
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("hybrid sampler not available")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sampler.close()
+
     def test_smoke(self):
         dqm = dimod.DQM()
         u = dqm.add_variable(2, 'a')
@@ -44,7 +50,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         except AttributeError:
             pass
 
-        sampleset = sampler.sample_dqm(dqm)
+        sampleset = self.sampler.sample_dqm(dqm)
 
         np.testing.assert_array_almost_equal(dqm.energies(sampleset),
                                              sampleset.record.energy)
@@ -59,7 +65,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         u = dqm.add_variable({'red', 'green', 'blue'}, shared_labels=True)
         dqm.offset = 5
 
-        sampleset = sampler.sample_dqm(dqm)
+        sampleset = self.sampler.sample_dqm(dqm)
 
         np.testing.assert_array_almost_equal(dqm.energies(sampleset),
                                              sampleset.record.energy)
@@ -72,7 +78,7 @@ class TestLeapHybridSampler(unittest.TestCase):
         dqm.set_quadratic(u, v, {(0, 1): 1, (0, 2): 1})
         label = 'problem label'
 
-        sampleset = sampler.sample_dqm(dqm, label=label)
+        sampleset = self.sampler.sample_dqm(dqm, label=label)
         self.assertIn('problem_id', sampleset.info)
         self.assertIn('problem_label', sampleset.info)
         self.assertEqual(sampleset.info['problem_label'], label)

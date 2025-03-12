@@ -19,6 +19,7 @@ A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's 
 import concurrent.futures
 import warnings
 from collections import abc
+from contextlib import AbstractContextManager
 from numbers import Number
 from typing import Any, Dict, List, NamedTuple, Optional
 
@@ -38,7 +39,34 @@ __all__ = ['LeapHybridSampler',
            ]
 
 
-class LeapHybridSampler(dimod.Sampler):
+class _ClosableClientBaseMixin(AbstractContextManager):
+    """A mixin that implements ``close`` method to close the underlying cloud
+    client. It also implements a default context manager that closes resources
+    on exit.
+    """
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        self.client.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Release system resources allocated and raise any exception triggered
+        within the runtime context.
+        """
+        self.close()
+        return None
+
+
+class LeapHybridSampler(dimod.Sampler, _ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
     Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are
@@ -82,22 +110,8 @@ class LeapHybridSampler(dimod.Sampler):
         >>> bqm = dimod.BQM.from_qubo(qubo)
         ...
         >>> # Find a good solution
-        >>> sampler = LeapHybridSampler()       # doctest: +SKIP
-        >>> sampleset = sampler.sample(bqm)     # doctest: +SKIP
-
-        This example specializes the default solver selection by filtering out
-        bulk BQM solvers. (Bulk solvers are throughput-optimal for heavy/batch
-        workloads, have a higher start-up latency, and are not well suited for
-        live workloads. Not all Leap accounts have access to bulk solvers.)
-
-        >>> from dwave.system import LeapHybridSampler
-        ...
-        >>> solver = LeapHybridSampler.default_solver
-        >>> solver.update(name__regex=".*(?<!bulk)$")       # name shouldn't end with "bulk"
-        >>> sampler = LeapHybridSampler(solver=solver)      # doctest: +SKIP
-        >>> sampler.solver        # doctest: +SKIP
-        BQMSolver(id='hybrid_binary_quadratic_model_version2')
-
+        >>> with LeapHybridSampler() as sampler:    # doctest: +SKIP
+        ...     sampleset = sampler.sample(bqm)
     """
 
     _INTEGER_BQM_SIZE_THRESHOLD = 10000
@@ -208,10 +222,10 @@ class LeapHybridSampler(dimod.Sampler):
             >>> bqm = dimod.BQM.from_qubo(qubo)
             ...
             >>> # Find a good solution
-            >>> sampler = LeapHybridSampler()    # doctest: +SKIP
-            >>> sampleset = sampler.sample(bqm)           # doctest: +SKIP
-
+            >>> with LeapHybridSampler() as sampler:    # doctest: +SKIP
+            ...     sampleset = sampler.sample(bqm)
         """
+
         if not isinstance(bqm, dimod.BQM):
             bqm = dimod.BQM(bqm)
 
@@ -281,7 +295,7 @@ class LeapHybridSampler(dimod.Sampler):
 LeapHybridBQMSampler = LeapHybridSampler
 
 
-class LeapHybridDQMSampler:
+class LeapHybridDQMSampler(_ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid DQM solvers.
 
     Leap's quantum-classical hybrid DQM solvers are intended to solve arbitrary
@@ -337,11 +351,10 @@ class LeapHybridDQMSampler:
         ...          dqm.set_quadratic('my_hand', 'their_hand',
         ...                            {(my_idx, their_idx): 1})
         ...
-        >>> dqm_sampler = LeapHybridDQMSampler()      # doctest: +SKIP
-        ...
-        >>> sampleset = dqm_sampler.sample_dqm(dqm)   # doctest: +SKIP
-        >>> print("{} beats {}".format(cases[sampleset.first.sample['my_hand']],
-        ...                            cases[sampleset.first.sample['their_hand']]))   # doctest: +SKIP
+        >>> with LeapHybridDQMSampler() as dqm_sampler:     # doctest: +SKIP
+        ...     sampleset = dqm_sampler.sample_dqm(dqm)
+        ...     print(f"{} beats {}".format(cases[sampleset.first.sample['my_hand']],
+        ...                                 cases[sampleset.first.sample['their_hand']]))
         rock beats scissors
     """
 
@@ -530,7 +543,7 @@ class LeapHybridDQMSampler:
         return max([5, t])
 
 
-class LeapHybridCQMSampler:
+class LeapHybridCQMSampler(_ClosableClientBaseMixin):
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
     Leap's quantum-classical hybrid CQM solvers are intended to solve
@@ -585,17 +598,17 @@ class LeapHybridCQMSampler:
         a remote solver provided by the Leap quantum cloud service:
 
         >>> from dwave.system import LeapHybridCQMSampler   # doctest: +SKIP
-        >>> sampler = LeapHybridCQMSampler()                # doctest: +SKIP
-        >>> sampleset = sampler.sample_cqm(cqm)             # doctest: +SKIP
-        >>> print(sampleset.first)                          # doctest: +SKIP
+        >>> with LeapHybridCQMSampler() as sampler:         # doctest: +SKIP
+        ...     sampleset = sampler.sample_cqm(cqm)
+        ...     print(sampleset.first)
         Sample(sample={'i': 2.0, 'j': 2.0}, energy=-4.0, num_occurrences=1,
         ...            is_feasible=True, is_satisfied=array([ True]))
 
         The best (lowest-energy) solution found has :math:`i=j=2` as expected,
         a solution that is feasible because all the constraints (one in this
         example) are satisfied.
-
     """
+
     def __init__(self, **config):
         # strongly prefer hybrid solvers; requires kwarg-level override
         config.setdefault('client', 'hybrid')
@@ -786,7 +799,7 @@ class LeapHybridCQMSampler:
             )
 
 
-class LeapHybridNLSampler:
+class LeapHybridNLSampler(_ClosableClientBaseMixin):
     r"""A class for using Leap's cloud-based hybrid nonlinear-model solvers.
 
     Leap's quantum-classical hybrid nonlinear-model solvers are intended to
@@ -817,15 +830,14 @@ class LeapHybridNLSampler:
         >>> from dwave.optimization.generators import flow_shop_scheduling
         >>> from dwave.system import LeapHybridNLSampler
         ...
-        >>> sampler = LeapHybridNLSampler()     # doctest: +SKIP
-        ...
-        >>> processing_times = [[10, 5, 7], [20, 10, 15]]
-        >>> model = flow_shop_scheduling(processing_times=processing_times)
-        >>> results = sampler.sample(model, label="Small FSS problem")    # doctest: +SKIP
-        >>> job_order = next(model.iter_decisions())  # doctest: +SKIP
-        >>> print(f"State 0 of {model.objective.state_size()} has an "\   # doctest: +SKIP
-        ... f"objective value {model.objective.state(0)} for order " \    # doctest: +SKIP
-        ... f"{job_order.state(0)}.")     # doctest: +SKIP
+        >>> with LeapHybridNLSampler() as sampler:      # doctest: +SKIP
+        ...     processing_times = [[10, 5, 7], [20, 10, 15]]
+        ...     model = flow_shop_scheduling(processing_times=processing_times)
+        ...     results = sampler.sample(model, label="Small FSS problem")
+        ...     job_order = next(model.iter_decisions())
+        ...     print(f"State 0 of {model.objective.state_size()} has an "
+        ...           f"objective value {model.objective.state(0)} for order "
+        ...           f"{job_order.state(0)}.")
         State 0 of 8 has an objective value 50.0 for order [1. 2. 0.].
     """
 
@@ -859,6 +871,20 @@ class LeapHybridNLSampler:
             raise ValueError("selected solver does not support the 'nl' problem type.")
 
         self._executor = concurrent.futures.ThreadPoolExecutor()
+
+    def close(self):
+        """Close the underlying cloud client to release system resources such as
+        threads.
+
+        .. note::
+
+            The method blocks for all the currently scheduled work (sampling
+            requests) to finish.
+
+        See: :meth:`~dwave.cloud.client.Client.close`.
+        """
+        super().close()
+        self._executor.shutdown()
 
     @classproperty
     def default_solver(cls) -> Dict[str, str]:

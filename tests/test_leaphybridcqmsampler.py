@@ -71,3 +71,21 @@ class TestTimeLimit(unittest.TestCase):
             new = dimod.ConstrainedQuadraticModel().from_file(f)
 
         self.assertEqual(sampler.sample_cqm(new), sampler.sample_cqm(cqm))
+
+    @unittest.mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_close(self, mock_client):
+        mock_solver = mock_client.from_config.return_value.get_solver.return_value
+        mock_solver.properties = {'category': 'hybrid'}
+        mock_solver.supported_problem_types = ['cqm']
+
+        with self.subTest('manual close'):
+            sampler = LeapHybridCQMSampler()
+            sampler.close()
+            mock_client.from_config.return_value.close.assert_called_once()
+
+        mock_client.reset_mock()
+
+        with self.subTest('context manager'):
+            with LeapHybridCQMSampler():
+                ...
+            mock_client.from_config.return_value.close.assert_called_once()

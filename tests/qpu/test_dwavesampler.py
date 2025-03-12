@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import threading
 import unittest
 import os
 from unittest import mock
@@ -38,6 +39,37 @@ class TestDWaveSampler(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.qpu.client.close()
+
+    def test_close(self):
+        n_initial = threading.active_count()
+        sampler = DWaveSampler()
+        n_active = threading.active_count()
+        sampler.close()
+        n_closed = threading.active_count()
+
+        with self.subTest('verify all client threads shutdown'):
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)
+
+        try:
+            # requires `dwave-cloud-client>=0.13.3`
+            from dwave.cloud.exceptions import UseAfterCloseError
+        except:
+            pass
+        else:
+            with self.subTest('verify use after close disallowed'):
+                with self.assertRaises(UseAfterCloseError):
+                    h, J = self.nonzero_ising_problem(sampler)
+                    sampler.sample_ising(h, J)
+
+        with self.subTest('verify context manager calls close'):
+            n_initial = threading.active_count()
+            with DWaveSampler():
+                n_active = threading.active_count()
+            n_closed = threading.active_count()
+
+            self.assertGreater(n_active, n_initial)
+            self.assertEqual(n_closed, n_initial)
 
     @staticmethod
     def nonzero_ising_problem(sampler):

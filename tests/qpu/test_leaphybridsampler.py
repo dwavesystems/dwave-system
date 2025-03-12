@@ -17,22 +17,28 @@ import os
 import unittest
 
 import dimod
-
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
-from dwave.system import LeapHybridSampler
 
-try:
-    sampler = LeapHybridSampler()
-except (ValueError, ConfigFileError, SolverNotFoundError):
-    sampler = None
+from dwave.system import LeapHybridSampler
 
 
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
-@unittest.skipIf(sampler is None, "no hybrid sampler available")
 # @dimod.testing.load_sampler_bqm_tests(sampler)  # these take a while
 class TestLeapHybridSampler(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.sampler = LeapHybridSampler()
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("hybrid sampler not available")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sampler.close()
+
     def test_smoke(self):
-        sampleset = sampler.sample_ising({'a': -1}, {'ab': 1})
+        sampleset = self.sampler.sample_ising({'a': -1}, {'ab': 1})
         sampleset.resolve()
 
     def test_problem_labelling(self):
@@ -40,12 +46,12 @@ class TestLeapHybridSampler(unittest.TestCase):
         label = 'problem label'
 
         # label set
-        sampleset = sampler.sample(bqm, label=label)
+        sampleset = self.sampler.sample(bqm, label=label)
         self.assertIn('problem_id', sampleset.info)
         self.assertIn('problem_label', sampleset.info)
         self.assertEqual(sampleset.info['problem_label'], label)
 
         # label unset
-        sampleset = sampler.sample(bqm)
+        sampleset = self.sampler.sample(bqm)
         self.assertIn('problem_id', sampleset.info)
         self.assertNotIn('problem_label', sampleset.info)

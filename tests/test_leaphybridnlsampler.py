@@ -123,3 +123,21 @@ class TestNLSampler(unittest.TestCase):
             with self.assertWarns(UserWarning, msg=msg):
                 result = sampler.sample(model, time_limit=time_limit)
                 result.result()
+
+    @unittest.mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_close(self, mock_client):
+        mock_solver = mock_client.from_config.return_value.get_solver.return_value
+        mock_solver.properties = {'category': 'hybrid'}
+        mock_solver.supported_problem_types = ['nl']
+
+        with self.subTest('manual close'):
+            sampler = LeapHybridNLSampler()
+            sampler.close()
+            mock_client.from_config.return_value.close.assert_called_once()
+
+        mock_client.reset_mock()
+
+        with self.subTest('context manager'):
+            with LeapHybridNLSampler():
+                ...
+            mock_client.from_config.return_value.close.assert_called_once()

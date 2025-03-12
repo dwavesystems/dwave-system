@@ -60,3 +60,21 @@ class TestLeapHybridDQMSampler(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             sampler.sample_dqm(dqm, time_limit=10000000)
+
+    @unittest.mock.patch('dwave.system.samplers.leap_hybrid_sampler.Client')
+    def test_close(self, mock_client):
+        mock_solver = mock_client.from_config.return_value.get_solver.return_value
+        mock_solver.properties = {'category': 'hybrid'}
+        mock_solver.supported_problem_types = ['dqm']
+
+        with self.subTest('manual close'):
+            sampler = LeapHybridDQMSampler()
+            sampler.close()
+            mock_client.from_config.return_value.close.assert_called_once()
+
+        mock_client.reset_mock()
+
+        with self.subTest('context manager'):
+            with LeapHybridDQMSampler():
+                ...
+            mock_client.from_config.return_value.close.assert_called_once()
