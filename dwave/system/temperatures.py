@@ -34,7 +34,7 @@ r"""The following parameter estimation methods are provided:
   an exponential (Boltzmann) distribution given fair samples. Code supports
   inference for the probability distributions structured as
   :math:`P(s) = \exp(-\text{sum}_i x_i H_i(s)) /Z(x)`, a generalization of a Boltzmann
-  distribution parameterized only by the temperature (T=1/x for one H).
+  distribution parameterized only by the temperature (:math:`T=1/x` for one :math:`H`).
   :math:`H_i` are binary quadratic models defined on a common set of variables.
   E.g.: To infer h1, h2 and J12 for a 2 qubit spin system at temperature 1 consider:
   ``H_1 = dimod.BinaryQuadraticModel.from_ising({0:1, 0: 0}, {})``
