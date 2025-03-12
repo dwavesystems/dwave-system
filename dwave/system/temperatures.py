@@ -35,16 +35,16 @@ r"""The following parameter estimation methods are provided:
   inference for the probability distributions structured as
   :math:`P(s) = exp(-sum_i x_i H_i(s)) /Z(x)`, a generalization of a Boltzmann
   distribution parameterized only by the temperature (T=1/x for one H).
-  :math:`H_i` are binary quadratic models defined on a common set of variables. 
+  :math:`H_i` are binary quadratic models defined on a common set of variables.
   E.g.: To infer h1, h2 and J12 for a 2 qubit spin system at temperature 1 consider:
   ``H_1 = dimod.BinaryQuadraticModel.from_ising({0:1, 0: 0}, {})``
-  ``H_2 = dimod.BinaryQuadraticModel.from_ising({0:0, 0: 1}, {})`` 
+  ``H_2 = dimod.BinaryQuadraticModel.from_ising({0:0, 0: 1}, {})``
   ``H_3 = dimod.BinaryQuadraticModel.from_ising({}, {(0,1): 1})``
   This code is not optimized for inferring many local terms, but rather
-  parameters controlling the energy of many degrees of freedom (spins). 
-  A practically important example is the case that :math:`H_1` is the 
-  programmed Hamiltonian (:math:`x_1` is inverse temperature, beta) and 
-  :math:`H_2` is a correction accounting for imbalance in h/J asymmetry or 
+  parameters controlling the energy of many degrees of freedom (spins).
+  A practically important example is the case that :math:`H_1` is the
+  programmed Hamiltonian (:math:`x_1` is inverse temperature, beta) and
+  :math:`H_2` is a correction accounting for imbalance in h/J asymmetry or
   background susceptibility.
 
 - The biases (h) equivalent to application of flux bias, or vice-versa,
@@ -245,7 +245,7 @@ def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: float = 
     """Create the binary quadratic mdoel for the `background susceptibility correction`_
 
     Background susceptibility is a perturbative correction to the programmed Hamiltonian:
-    bqm = bqm (no background susceptibility) + chi* dbqm (corrections)
+    bqm = bqm (no background susceptibility) + chi * dbqm (corrections)
     If chi is None, dbqm is returned, otherwise the perturbed Hamiltonian is
     returned.
 
@@ -392,133 +392,47 @@ def maximum_pseudolikelihood_temperature(
         https://www.jstor.org/stable/25464568
 
     """
-    x0 = None
-    bisect_bracket = None
     if T_guess:
-        x0 = -1 / T_guess
+        x0 = [-1 / T_guess]
+    else:
+        x0 = None
 
     if optimize_method == "bisect":
+        bisect_bracket = [-1 / T_bracket[i] for i in range(2)]
+
         if not 0 <= T_bracket[0] < T_bracket[1]:
             raise ValueError("Bad T_bracket, must be positive ordered scalars.")
-        bisect_bracket = [-1 / T_bracket[i] for i in range(2)]
-        if x0 is not None and (x0 < bisect_bracket[0] or x0 > bisect_bracket[1]):
-            raise ValueError(f"x0 {x0} and T_bracket {T_bracket} are inconsistent")
-    if x0 is not None:
-        x0 = [x0]
+
+        if x0 is not None and (x0[0] < bisect_bracket[0] or x0[0] > bisect_bracket[1]):
+                raise ValueError(f"x0 {x0[0]} and T_bracket {T_bracket} are inconsistent")
+
+        kwargs_opt = {"bisect_bracket": bisect_bracket}
+    else:
+        kwargs_opt = None
+
     x, x_bs = maximum_pseudolikelihood(
+        en1=en1,
         bqms=[bqm],
         sampleset=sampleset,
-        en1=en1,
         num_bootstrap_samples=num_bootstrap_samples,
         seed=seed,
         x0=x0,
         optimize_method=optimize_method,
-        bisect_bracket=bisect_bracket,
+        kwargs_opt=kwargs_opt,
         sample_weights=sample_weights,
     )
     # exp(-1/Teff Hp) = exp(estimator[0] Hp)
     return -1 / x, -1 / x_bs
 
 
-def maximum_pseudolikelihood(
-    bqms: Union[None, List[dimod.BinaryQuadraticModel]] = None,
-    sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
-    en1: Optional[np.ndarray] = None,
-    num_bootstrap_samples: int = 0,
-    seed: Optional[int] = None,
-    x0: Union[None, List, np.ndarray] = None,
-    optimize_method: Optional[str] = None,
-    bisect_bracket: Optional[Tuple[float, float]] = (1e-3, 1000),
-    sample_weights: Optional[np.ndarray] = None,
-    return_optimize_object: bool = False,
-    degenerate_fields: Optional[bool] = None,
-    use_jacobian: bool = True,
-) -> Tuple:
-    """Maximimum pseudolikelihood estimator for exponential models.
-
-    Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
-    of weight estimation for an exponential model with exponent defined by a
-    weighted sum of bqms.
-    Assuming the Probability of states s is given by an exponential model
-    :math:`P(s)=1/Z exp(- x_i H_i(s))` for a given list of functions (bqms)
-    estimate x. The exponential model is also called a Boltzmann distribution.
-    Code is designed assuming the bqms are dense (a function of all or most of
-    the variables), although technically operation although sparse bqms
-    like :math:`H(s)=h_i s_i` or :math:`H(s)=J_{ij}s_i s_j` are technically allowed.
-
-    Note common reasons for parameter inference failure include:
-    - Too few samples, insufficient to resolve parameters
-    - The samplest is singular or insensitive with respect to some parameter
-      (e.g. local minima or plateus only).
-    - bqms are too closely related, or weakly dependent on the sampleset
-      variability (e.g. nearly collinear).
-
-    Args:
-        bqms: A list of Binary quadratic models [H_i] describing the sample
-            distribution as :math:`P(s) ~ exp(sum_i x_i H_i(s))` for unknown
-            model parameters x.
-        sampleset: A set of samples, as a dimod Sampleset or samples-like object.
-        en1: Effective fields as an np.ndarray (site labels not required).
-            Derived from the ``bqms`` and ``sampleset`` if not provided.
-            First dimension indexes samples, second dimension indexes sites.
-            Ordering doesn't matter, but should be consistent with sample_weights.
-        num_bootstrap_samples: Number of bootstrap estimators to calculate.
-            Bootstrapped estimates can be used to reliably estimate variance and
-            bias if samples are uncorrelated. For
-            now, the sampleset must have uniform sample_weights to deploy this
-            option -- an aggregated or weighted sampleset must be disaggregated
-            (raw format) with repetitions.
-        seed: Seeds the bootstrap method (if provided) allowing reproducibility
-            of the estimators.
-        x0: Initial guess for the fitting parameters. Should have the same
-            length as bqms when provided.
-        optimize_method (str, optional, default=None):
-            Optimize method used by SciPy ``root_scalar`` method. The default
-            method works well under default operation, 'bisect' can be
-            numerically more stable for the scalar case (inverse temperature
-            estimation only).
-        bisect_bracket: Relevant only if optimize_method='bisect' and for a
-            single bqm. Bounds the fitting parameter.
-        sample_weights: A set of weights for the samples. If sampleset is of
-            type :obj:`~dimod.SampleSet` set this is default to
-            sampleset.record.num_occurrences, otherwise uniform weighting is
-            the default.
-        return_optimize_object: When True, and if ``sciPy`` optimization is
-            invoked, the associated OptimizeResult is returned. Otherwise only
-            the optimal parameter values are returned as floats.
-        degenerate_fields: If effective fields are degenerate owing to sparse
-            connectivity, low precision and/or large number of samples, or low
-            entropy then histogramming (aggregating) of fields is used to
-            accelerate the search stage. A value True is supported (and default)
-            for single parameter esimation ``len(bqms)=1``; for multi-parameter
-            estimation only value False is supported.
-        use_jacobian: By default (True) the second derivative of the
-            pseudolikelihood is calculated and used by ScipY root finding
-            methods. The associated complexity of this non-essential
-            calculation is quadratic in len(bqms); use of the second derivative
-            is disabled by setting the value to False.
-    Returns:
-        Tuple: The optimal parameters and a list of bootstrapped estimates (x_estimate, x_bootstrap_estimates):
-
-        * *x_estimate*: parameter estimates
-        * *x_bootstrap_estimates*: a numpy array of bootstrap estimators
-
-    See also:
-        The function :class:`~dwave.system.temperatures.maximum_pseudolikelihood_temperature`
-        https://doi.org/10.3389/fict.2016.00023
-
-        https://www.jstor.org/stable/25464568
-
-    """
-    root_results = None
+def _get_en1_for_pseudo_likelihood(en1, bqms, sampleset, sample_weights):
+    """Get effective fields for maximum pseudolikelihood."""
     if en1 is None:
         if bqms is None or sampleset is None:
             raise ValueError(
                 "en1 can only be derived if both "
                 "bqms and sampleset are provided as arguments"
             )
-        if degenerate_fields is None:
-            degenerate_fields = len(bqms) == 1
 
         en1 = np.array(
             [
@@ -526,9 +440,10 @@ def maximum_pseudolikelihood(
                 for bqm in bqms
             ]
         )
-    else:
-        if degenerate_fields is None:
-            degenerate_fields = en1.ndim == 2
+
+    if en1.ndim == 2 or en1.shape[0] == 1:
+        # Scalar method 'inverse temperature only' for one Hamiltonian
+        en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
 
     if sample_weights is None:
         if isinstance(sampleset, dimod.sampleset.SampleSet):
@@ -537,52 +452,202 @@ def maximum_pseudolikelihood(
             )
         else:
             sample_weights = np.ones(en1.shape[-2])
+
     if len(sample_weights) != en1.shape[-2]:
         raise ValueError(
             "The sample weights, if not defaulted, must match the sampleset shape, "
             f"sample_weights.shape={sample_weights.shape}, en1.shape[-2]=={en1.shape[-2]}"
         )
+
     if any(sample_weights < 0) or np.max(sample_weights) == 0:
         raise ValueError(
             "sample weights must be non-negative with atleast one positive value"
         )
 
     if any(sample_weights == 0):
-        en1 = en1[:, sample_weights > 0, :]
         sample_weights = sample_weights[sample_weights > 0]
+        en1 = en1[:, sample_weights > 0, :]
 
+    return en1, sample_weights
+
+def _x_bootstrap_pseudo_likelihood(en1, max_excitation, num_bootstrap_samples):
+    """Get parameter estimates and bootstrap estimators for special case."""
+    # Only local minima (or maxima) observed
+    if max_excitation == 0:
+        warnings.warn(
+            "All local fields are zero, there is no gradient and the "
+            "parameter value is unconstrained. Zero is assigned."
+        )
+        x = 0
+    else:
+        x = np.sign(max_excitation) * float("Inf")
+
+    if en1.ndim == 3:
+        warnings.warn(
+            "An exponential model with ill-defined parameters fits the data; consider "
+            "taking more samples, modifying bqms or exploiting a perturbative approach."
+        )
+        x_bootstraps = x[np.newaxis, :] * np.ones((num_bootstrap_samples, 1))
+    else:
+        # Infinite results from all local minima, well defined limit
+        x_bootstraps = x * np.ones(num_bootstrap_samples)
+
+    return x, x_bootstraps
+
+
+def _create_d_mean_log_pseudo_likelihood(en1, degenerate_fields, sample_weights):
+    """Construct d_mean_log_pseudo_likelihood function for root finding routine."""
     if en1.ndim == 2 or en1.shape[0] == 1:
-        # Scalar method 'inverse temperature only' for one Hamiltonian
-        en1 = en1.reshape(en1.shape[-2:])  # f_{i}(s) - column i, row s.
+        # Derivative of mean (w.r.t samples) log pseudo liklihood amounts
+        # to local energy matching criteria
+        # O = sum_i \sum_s w(s) f_i(s) P(s, i) #s = sample, i = variable index
+        # f_i(s) is energy lost in flipping spin s_i against current assignment.
+        # P(s, i) = 1/(1 + exp[x f_i(s)]), probability to flip against current state.
+        if degenerate_fields:
+            # Histogram effective fields for faster processing
+            sw_replicated = np.tile(
+                sample_weights[:, np.newaxis], reps=(1, en1.shape[-1])
+            )
+            en1_u = np.unique(en1)
+            sw_u = np.histogram(
+                en1, bins=np.append(en1_u, float("Inf")), weights=sw_replicated
+            )[0]
+
+            def d_mean_log_pseudo_likelihood(x):
+                with warnings.catch_warnings():  # Overflow errors are safe
+                    warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                    expFactor = np.exp(en1_u * x)
+                return np.sum(sw_u * en1_u / (1 + expFactor))
+
+        else:
+            # Faster if degeneracy of local fields is small
+            def d_mean_log_pseudo_likelihood(x):
+                with warnings.catch_warnings():  # Overflow errors are safe
+                    warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                    expFactor = np.exp(en1 * x)
+                return np.sum(
+                    sample_weights * np.sum(en1 / (1 + expFactor), axis=1)
+                )
+    else:
+        if en1.ndim != 3:
+            raise ValueError(
+                "en1 must be 2d for a single bqm, or 3d for multiple bqms"
+            )
+
+        if degenerate_fields is not False:
+            raise ValueError(
+                "Exploiting degenerate multi-dimensional fields is not supported."
+            )
+
+        def d_mean_log_pseudo_likelihood(x):
+            with warnings.catch_warnings():  # Overflow errors are safe
+                warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                expFactor = np.exp(
+                    np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
+                )
+            return np.sum(
+                sample_weights[np.newaxis, :]
+                * np.sum(en1 / (1 + expFactor[np.newaxis, :, :]), axis=-1),
+                axis=-1,
+            )
+    return d_mean_log_pseudo_likelihood
+
+
+def _create_dd_mean_log_pseudo_likelihood(en1, degenerate_fields, sample_weights, use_jacobian):
+    """Construct dd_mean_log_pseudo_likelihood function for root finding routine."""
+    if use_jacobian is False:
+        dd_mean_log_pseudo_likelihood = None
+
+    elif en1.ndim == 2:
+        if degenerate_fields:
+            # Histogram effective fields for faster processing
+            sw_replicated = np.tile(
+                sample_weights[:, np.newaxis], reps=(1, en1.shape[-1])
+            )
+            en1_u = np.unique(en1)
+            sw_u = np.histogram(
+                en1, bins=np.append(en1_u, float("Inf")), weights=sw_replicated
+            )[0]
+
+            def dd_mean_log_pseudo_likelihood(x):  # second (scalar) derivative
+                with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
+                    warnings.simplefilter(
+                        action="ignore", category=RuntimeWarning
+                    )
+                    expFactor = np.exp(en1_u * x)
+                    norm = expFactor + 2 + 1 / expFactor
+                return -np.sum(sw_u * en1_u * en1_u / norm)
+
+        else:
+
+            def dd_mean_log_pseudo_likelihood(x):
+                with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
+                    warnings.simplefilter(
+                        action="ignore", category=RuntimeWarning
+                    )
+                    expFactor = np.exp(en1 * x)
+                    norm = expFactor + 2 + 1 / expFactor
+                return -np.sum(
+                    sample_weights * np.sum(en1 * en1 / norm, axis=1)
+                )
+
+    else:
+
+        def dd_mean_log_pseudo_likelihood(x):  # jacobian
+            # [Only] If few Hamiltonians efficient, this is the expected use case
+            with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
+                warnings.simplefilter(action="ignore", category=RuntimeWarning)
+                expFactor = np.exp(
+                    np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
+                )
+                norm = expFactor + 2 + 1 / expFactor
+            return -np.sum(
+                [
+                    [
+                        sample_weights
+                        * np.sum(en1[i, :, :] * en1[j, :, :] / norm, axis=1)
+                        for i in range(en1.shape[0])
+                    ]
+                    for j in range(en1.shape[0])
+                ],
+                axis=-1,
+            )
+
+    return dd_mean_log_pseudo_likelihood
+
+
+def maximum_pseudolikelihood(
+    en1: Optional[np.ndarray] = None,
+    bqms: Union[None, List[dimod.BinaryQuadraticModel]] = None,
+    sampleset: Union[None, dimod.SampleSet, Tuple[np.ndarray, List]] = None,
+    num_bootstrap_samples: int = 0,
+    seed: Optional[int] = None,
+    x0: Union[None, List, np.ndarray] = None,
+    optimize_method: Optional[str] = None,
+    kwargs_opt: Optional[dict] = None,
+    sample_weights: Optional[np.ndarray] = None,
+    return_optimize_object: bool = False,
+    degenerate_fields: Optional[bool] = None,
+    use_jacobian: bool = True,
+) -> Tuple:
+
+    root_results = None
+
+    if degenerate_fields is None:
+        if en1 is None:
+            degenerate_fields = len(bqms) == 1
+        else:
+            degenerate_fields = en1.ndim == 2
+
+    en1, sample_weights = _get_en1_for_pseudo_likelihood(en1, bqms, sampleset, sample_weights)
 
     max_excitation = np.max(en1, axis=(-1, -2))
     min_excitation = np.min(en1, axis=(-1, -2))
     prod_minmax = max_excitation * min_excitation
-    if (en1.ndim == 2 and prod_minmax >= 0) or (
-        en1.ndim == 3 and all(prod_minmax >= 0)
-    ):
-        # Only local minima (or maxima) observed
-        if max_excitation == 0:
-            warnings.warn(
-                "All local fields are zero, there is no gradient "
-                "and the parameter value is unconstrained. "
-                "zero is assigned."
-            )
-            x = 0
-        else:
-            x = np.sign(max_excitation) * float("Inf")
 
-        if en1.ndim > 2:
-            warnings.warn(
-                "An exponential model with ill-defined"
-                "parameters fits the data; consider taking more "
-                "samples, modifying bqms or exploiting a "
-                "perturbative approach."
-            )
-            x_bootstraps = x[np.newaxis, :] * np.ones((num_bootstrap_samples, 1))
-        else:
-            # Infinite results from all local minima, well defined limit
-            x_bootstraps = x * np.ones(num_bootstrap_samples)
+    if (en1.ndim == 2 and prod_minmax >= 0) or en1.ndim == 3 and all(prod_minmax >= 0):
+        return _x_bootstrap_pseudo_likelihood(en1, max_excitation, num_bootstrap_samples)
+
     else:
         # To do: Add to examples!
         # Consider H(s) = - h s_1 - h s_3 + 2h s_2 - s_1 s_2 - s_2 s_3
@@ -599,66 +664,18 @@ def maximum_pseudolikelihood(
                 x0 = -1 / max_excitation
             elif hasattr(x0, "__iter__"):
                 x0 = x0[0]  # Scalar
-            # Derivative of mean (w.r.t samples) log pseudo liklihood amounts
-            # to local energy matching criteria
-            # O = sum_i \sum_s w(s) f_i(s) P(s, i) #s = sample, i = variable index
-            # f_i(s) is energy lost in flipping spin s_i against current assignment.
-            # P(s, i) = 1/(1 + exp[x f_i(s)]), probability to flip against current state.
-            if degenerate_fields:
-                # Histogram effective fields for faster processing
-                sw_replicated = np.tile(
-                    sample_weights[:, np.newaxis], reps=(1, en1.shape[-1])
-                )
-                en1_u = np.unique(en1)
-                sw_u = np.histogram(
-                    en1, bins=np.append(en1_u, float("Inf")), weights=sw_replicated
-                )[0]
-
-                def d_mean_log_pseudo_likelihood(x):
-                    with warnings.catch_warnings():  # Overflow errors are safe
-                        warnings.simplefilter(action="ignore", category=RuntimeWarning)
-                        expFactor = np.exp(en1_u * x)
-                    return np.sum(sw_u * en1_u / (1 + expFactor))
-
-            else:
-                # Faster if degeneracy of local fields is small
-                def d_mean_log_pseudo_likelihood(x):
-                    with warnings.catch_warnings():  # Overflow errors are safe
-                        warnings.simplefilter(action="ignore", category=RuntimeWarning)
-                        expFactor = np.exp(en1 * x)
-                    return np.sum(
-                        sample_weights * np.sum(en1 / (1 + expFactor), axis=1)
-                    )
-
         else:
-            if en1.ndim != 3:
-                raise ValueError(
-                    "en1 must be 2d for a single bqm, or 3d for multiple bqms"
-                )
             # Multi-parameter generalization
             if x0 is None:
                 # Assume all bqms except the first are perturbative in absence
                 # of additional context.
                 x0 = np.zeros(en1.shape[0])
                 x0[0] = -1 / max_excitation[0]  # Smallest gap
-            if degenerate_fields is not False:
-                raise ValueError(
-                    "Exploiting degenerate multi-dimensional fields is not supported."
-                )
 
-            def d_mean_log_pseudo_likelihood(x):
-                with warnings.catch_warnings():  # Overflow errors are safe
-                    warnings.simplefilter(action="ignore", category=RuntimeWarning)
-                    expFactor = np.exp(
-                        np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
-                    )
-                return np.sum(
-                    sample_weights[np.newaxis, :]
-                    * np.sum(en1 / (1 + expFactor[np.newaxis, :, :]), axis=-1),
-                    axis=-1,
-                )
+        d_mean_log_pseudo_likelihood = _create_d_mean_log_pseudo_likelihood(en1, degenerate_fields, sample_weights)
 
         if optimize_method == "bisect" and en1.ndim == 2:
+            bisect_bracket = kwargs_opt.get("bisect_bracket", (1e-3, 1000))
             # bisect can be relatively robust, since we can have a problem of
             # vanishing gradients given conservative bounds.
             if d_mean_log_pseudo_likelihood(bisect_bracket[0]) < 0:
@@ -689,54 +706,7 @@ def maximum_pseudolikelihood(
             # Typically preferrable to bisect, but can be numerically unstable
             # given large variance in effective fields or poor initial condition
             # choices.
-            if use_jacobian == False:
-                dd_mean_log_pseudo_likelihood = None
-            elif en1.ndim == 2:
-                if degenerate_fields:
-
-                    def dd_mean_log_pseudo_likelihood(x):  # second (scalar) derivative
-                        with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                            warnings.simplefilter(
-                                action="ignore", category=RuntimeWarning
-                            )
-                            expFactor = np.exp(en1_u * x)
-                            norm = expFactor + 2 + 1 / expFactor
-                        return -np.sum(sw_u * en1_u * en1_u / norm)
-
-                else:
-
-                    def dd_mean_log_pseudo_likelihood(x):
-                        with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                            warnings.simplefilter(
-                                action="ignore", category=RuntimeWarning
-                            )
-                            expFactor = np.exp(en1 * x)
-                            norm = expFactor + 2 + 1 / expFactor
-                        return -np.sum(
-                            sample_weights * np.sum(en1 * en1 / norm, axis=1)
-                        )
-
-            else:
-
-                def dd_mean_log_pseudo_likelihood(x):  # jacobian
-                    # [Only] If few Hamiltonians efficient, this is the expected use case
-                    with warnings.catch_warnings():  # expFactor=Inf causes an irrelevant warning
-                        warnings.simplefilter(action="ignore", category=RuntimeWarning)
-                        expFactor = np.exp(
-                            np.sum(en1 * x[:, np.newaxis, np.newaxis], axis=0)
-                        )
-                        norm = expFactor + 2 + 1 / expFactor
-                    return -np.sum(
-                        [
-                            [
-                                sample_weights
-                                * np.sum(en1[i, :, :] * en1[j, :, :] / norm, axis=1)
-                                for i in range(en1.shape[0])
-                            ]
-                            for j in range(en1.shape[0])
-                        ],
-                        axis=-1,
-                    )
+            dd_mean_log_pseudo_likelihood = _create_dd_mean_log_pseudo_likelihood(en1, degenerate_fields, sample_weights, use_jacobian)
 
             # Use of root finding routines are preferred to fsolve; best option
             # is not obvious
@@ -764,7 +734,7 @@ def maximum_pseudolikelihood(
             prng = np.random.RandomState(seed)
             num_samples = en1.shape[0]
             x_bootstraps = []
-            for bs in range(num_bootstrap_samples):
+            for _ in range(num_bootstrap_samples):
                 indices = prng.choice(num_samples, num_bootstrap_samples, replace=True)
                 if en1.ndim == 2:
                     x_bs, _ = maximum_pseudolikelihood(
@@ -772,7 +742,7 @@ def maximum_pseudolikelihood(
                         num_bootstrap_samples=0,
                         x0=x,
                         optimize_method=optimize_method,
-                        bisect_bracket=bisect_bracket,
+                        kwargs_opt=kwargs_opt,
                         return_optimize_object=return_optimize_object,
                     )
                 else:
@@ -781,12 +751,14 @@ def maximum_pseudolikelihood(
                         num_bootstrap_samples=0,
                         x0=x,
                         optimize_method=optimize_method,
-                        bisect_bracket=bisect_bracket,
+                        kwargs_opt=kwargs_opt,
                         return_optimize_object=return_optimize_object,
                     )
                 x_bootstraps.append(x_bs)
+
             if return_optimize_object is False:
                 x_bootstraps = np.array(x_bootstraps)
+
         else:
             if return_optimize_object is False:
                 if en1.ndim == 2:
@@ -798,7 +770,7 @@ def maximum_pseudolikelihood(
 
     if return_optimize_object and root_results is not None:
         # Return supplementary information on the optimization when available
-        x = root_results
+        return root_results, x_bootstraps
 
     return x, x_bootstraps
 
