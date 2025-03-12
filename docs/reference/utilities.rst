@@ -31,8 +31,8 @@ Temperature and Unit-Conversion Utilities
 .. autosummary::
    :toctree: generated/
 
-   background_susceptibility_bqm,
-   background_susceptibility_Ising,
+   background_susceptibility_bqm
+   background_susceptibility_Ising
    effective_field
    fast_effective_temperature
    fluxbias_to_h
