@@ -26,6 +26,7 @@ from dwave.system import LinearAncillaComposite
 class TestLinearAncillaComposite(unittest.TestCase):
     def setUp(self):
         self.qpu = MockDWaveSampler(properties=dict(extended_j_range=[-2, 1]))
+        self.qpu.mocked_parameters.add('flux_biases')  # Don't raise warning
         self.tracked_qpu = dimod.TrackingComposite(self.qpu)
 
         self.sampler = LinearAncillaComposite(
