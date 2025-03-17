@@ -19,7 +19,6 @@ A :std:doc:`dimod sampler <oceandocs:docs_dimod/reference/samplers>` for Leap's 
 import concurrent.futures
 import warnings
 from collections import abc
-from contextlib import AbstractContextManager
 from numbers import Number
 from typing import Any, Dict, List, NamedTuple, Optional
 
@@ -39,10 +38,10 @@ __all__ = ['LeapHybridSampler',
            ]
 
 
-class _ClosableClientBaseMixin(AbstractContextManager):
+class _ScopedSamplerMixin(dimod.Scoped):
     """A mixin that implements ``close`` method to close the underlying cloud
-    client. It also implements a default context manager that closes resources
-    on exit.
+    client. A default context manager that closes resources on exit is
+    inherited from :class:`~dimod.Scoped`.
     """
 
     def close(self):
@@ -58,15 +57,8 @@ class _ClosableClientBaseMixin(AbstractContextManager):
         """
         self.client.close()
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Release system resources allocated and raise any exception triggered
-        within the runtime context.
-        """
-        self.close()
-        return None
 
-
-class LeapHybridSampler(dimod.Sampler, _ClosableClientBaseMixin):
+class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
     """A class for using Leap's cloud-based hybrid BQM solvers.
 
     Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are
@@ -295,7 +287,7 @@ class LeapHybridSampler(dimod.Sampler, _ClosableClientBaseMixin):
 LeapHybridBQMSampler = LeapHybridSampler
 
 
-class LeapHybridDQMSampler(_ClosableClientBaseMixin):
+class LeapHybridDQMSampler(_ScopedSamplerMixin):
     """A class for using Leap's cloud-based hybrid DQM solvers.
 
     Leap's quantum-classical hybrid DQM solvers are intended to solve arbitrary
@@ -543,7 +535,7 @@ class LeapHybridDQMSampler(_ClosableClientBaseMixin):
         return max([5, t])
 
 
-class LeapHybridCQMSampler(_ClosableClientBaseMixin):
+class LeapHybridCQMSampler(_ScopedSamplerMixin):
     """A class for using Leap's cloud-based hybrid CQM solvers.
 
     Leap's quantum-classical hybrid CQM solvers are intended to solve
@@ -799,7 +791,7 @@ class LeapHybridCQMSampler(_ClosableClientBaseMixin):
             )
 
 
-class LeapHybridNLSampler(_ClosableClientBaseMixin):
+class LeapHybridNLSampler(_ScopedSamplerMixin):
     r"""A class for using Leap's cloud-based hybrid nonlinear-model solvers.
 
     Leap's quantum-classical hybrid nonlinear-model solvers are intended to
