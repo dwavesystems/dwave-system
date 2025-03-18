@@ -673,8 +673,9 @@ def maximum_pseudolikelihood(
             method works well under default operation, 'bisect' can be
             numerically more stable for the scalar case (inverse temperature
             estimation only).
-        bisect_bracket: Relevant only if optimize_method='bisect' and for a
-            single bqm. Bounds the fitting parameter.
+        kwargs_opt: Arguments used by the SciPy optimization methods. If using the
+            'bisect' optimization method and for a single bqm, bounds for the fitting
+            parameter can be set using a ``tuple[float, float]`` for ``bracket``.
         sample_weights: A set of weights for the samples. If sampleset is of
             type :obj:`~dimod.SampleSet` set this is default to
             sampleset.record.num_occurrences, otherwise uniform weighting is
