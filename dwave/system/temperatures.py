@@ -706,7 +706,8 @@ def maximum_pseudolikelihood(
         https://www.jstor.org/stable/25464568
 
     """
-
+    if kwargs_opt is None:
+        kwargs_opt = {}
 
     root_results = None
 
