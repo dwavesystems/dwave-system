@@ -795,6 +795,7 @@ def maximum_pseudolikelihood(
                     x0=x0,
                     x1=x0 / 2,  # Naive choice should be fine if secant defaulted.
                     fprime=dd_mean_log_pseudo_likelihood,
+                    **kwargs_opt,
                 )
                 x = root_results.root
             else:
