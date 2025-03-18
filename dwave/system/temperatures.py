@@ -778,6 +778,7 @@ def maximum_pseudolikelihood(
                     x0=x0,
                     method=optimize_method,
                     bracket=bisect_bracket,
+                    **kwargs_opt,
                 )
                 x = root_results.root
         else:
