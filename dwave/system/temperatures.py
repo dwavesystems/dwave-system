@@ -633,7 +633,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     Examples:
 
        This example uses the 
-       `published parameters <qpu_solver_properties_specific>`_
+       :ref:`published parameters <qpu_solver_properties_specific>`_
        for the Advantage_system4.1 QPU solver as of November 22nd 2021: 
        :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4` mK.
 
