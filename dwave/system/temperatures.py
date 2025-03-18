@@ -408,7 +408,7 @@ def maximum_pseudolikelihood_temperature(
 
         kwargs_opt = {"bisect_bracket": bisect_bracket}
     else:
-        kwargs_opt = None
+        kwargs_opt = {}
 
     x, x_bs = maximum_pseudolikelihood(
         en1=en1,
