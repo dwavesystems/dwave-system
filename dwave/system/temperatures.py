@@ -306,6 +306,9 @@ def maximum_pseudolikelihood_temperature(
 
     The problem is a convex root solving problem, and is solved with SciPy
     optimize.
+    In the case that all samples define local minima or maxima (all energies
+    en1 are same sign) SciPy is bypassed and the maximizing value (T=0)
+    is returned. This limit might be realized in low temperature samplesets.
 
     If the distribution is not Boltzmann with respect to the BQM provided, as
     may be the case for heuristic samplers (such as annealers), the temperature
@@ -642,6 +645,14 @@ def maximum_pseudolikelihood(
     the variables), although technically operation although sparse bqms
     like :math:`H(s)=h_i s_i` or :math:`H(s)=J_{ij}s_i s_j` are technically allowed.
 
+    In the case that all samples define local minima or maxima (all energies
+    en1 are same sign) the limit of +/-Inf defines a maximum. In this special
+    case scipy is not called and the limit result is returned. Note that,
+    excitations can be rare in low-temperature samplesets such as those
+    derived from annealing, so that this pathological case can be realized in
+    applications of interest.
+
+
     Note common reasons for parameter inference failure include:
     - Too few samples, insufficient to resolve parameters
     - The samplest is singular or insensitive with respect to some parameter
@@ -728,7 +739,8 @@ def maximum_pseudolikelihood(
         return _x_bootstrap_pseudo_likelihood(en1, max_excitation, num_bootstrap_samples)
 
     else:
-        # To do: Add to examples!
+        # To do: A simple example that shows an estimate of background
+        # susceptiblity separated from (inverse temperature) may be in order:
         # Consider H(s) = - h s_1 - h s_3 + 2h s_2 - s_1 s_2 - s_2 s_3
         # e.g. suppose the sampleset contains only + + and - - .
         # Now we have the perturbative correction ..
