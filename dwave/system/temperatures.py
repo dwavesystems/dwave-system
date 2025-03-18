@@ -753,7 +753,7 @@ def maximum_pseudolikelihood(
         d_mean_log_pseudo_likelihood = _create_d_mean_log_pseudo_likelihood(en1, degenerate_fields, sample_weights)
 
         if optimize_method == "bisect" and en1.ndim == 2:
-            bisect_bracket = kwargs_opt.get("bisect_bracket", (1e-3, 1000))
+            bisect_bracket = kwargs_opt.pop("bracket", (1e-3, 1000))
             # bisect can be relatively robust, since we can have a problem of
             # vanishing gradients given conservative bounds.
             if d_mean_log_pseudo_likelihood(bisect_bracket[0]) < 0:
