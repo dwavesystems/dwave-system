@@ -802,6 +802,7 @@ def maximum_pseudolikelihood(
                     fun=d_mean_log_pseudo_likelihood,
                     x0=x0,
                     jac=dd_mean_log_pseudo_likelihood,
+                    **kwargs_opt,
                 )
                 x = root_results.x
         x0 = x
