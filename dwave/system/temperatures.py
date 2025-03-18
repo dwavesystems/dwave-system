@@ -650,14 +650,14 @@ def maximum_pseudolikelihood(
       variability (e.g. nearly collinear).
 
     Args:
-        bqms: A list of Binary quadratic models [H_i] describing the sample
-            distribution as :math:`P(s) ~ exp(sum_i x_i H_i(s))` for unknown
-            model parameters x.
-        sampleset: A set of samples, as a dimod Sampleset or samples-like object.
         en1: Effective fields as an np.ndarray (site labels not required).
             Derived from the ``bqms`` and ``sampleset`` if not provided.
             First dimension indexes samples, second dimension indexes sites.
             Ordering doesn't matter, but should be consistent with sample_weights.
+        bqms: A list of Binary quadratic models [H_i] describing the sample
+            distribution as :math:`P(s) ~ exp(sum_i x_i H_i(s))` for unknown
+            model parameters x.
+        sampleset: A set of samples, as a dimod Sampleset or samples-like object.
         num_bootstrap_samples: Number of bootstrap estimators to calculate.
             Bootstrapped estimates can be used to reliably estimate variance and
             bias if samples are uncorrelated. For
