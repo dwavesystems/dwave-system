@@ -18,16 +18,14 @@ dwave-system
 
 .. start_system_about
 
-.. todo:: update these links
-
 `dwave-system` is a basic API for easily incorporating the D-Wave system as a
 sampler in the
-`D-Wave Ocean software stack <https://docs.ocean.dwavesys.com/en/stable/overview/stack.html>`_,
+`Ocean software stack <https://docs.dwavequantum.com/en/latest/ocean/stack.html>`_,
 directly or through `Leap <https://cloud.dwavesys.com/leap/>`_ service's
 cloud-based hybrid solvers. It includes ``DWaveSampler``, a dimod sampler that
 accepts and passes system parameters such as system identification and
 authentication down the stack, ``LeapHybridSampler``, for Leap's hybrid solvers,
-and other. It also includes several useful composites---layers of pre- and
+and others. It also includes several useful composites---layers of pre- and
 post-processing---that can be used with ``DWaveSampler`` to handle
 minor-embedding, optimize chain strength, etc.
 
@@ -62,7 +60,5 @@ Released under the Apache License 2.0. See LICENSE file.
 Contributing
 ============
 
-.. todo:: update this link
-
-Ocean's `contributing guide <https://docs.ocean.dwavesys.com/en/stable/contributing.html>`_
+Ocean's `contributing guide <https://docs.dwavequantum.com/en/latest/ocean/contribute.html>`_
 has guidelines for contributing to Ocean packages.

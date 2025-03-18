@@ -25,12 +25,10 @@ About dwave-system
 Usage Information
 =================
 
-.. todo:: add the intersphinx prefix to enable these links for self builds
-
-*   :ref:`index_concepts` for terminology
-*   :ref:`qpu_intro_quantum_solvers` for an introduction to sampling with a
+*   :ref:`index_concepts` for terminology.
+*   :ref:`qpu_quantum_solvers_intro` for an introduction to sampling with a
     quantum computer.
 *   :ref:`opt_index_hybrid` for an introduction to using :term:`hybrid`
-    :term:`solvers <solver>`
+    :term:`solvers <solver>`.
 *   :ref:`qpu_index_examples_beginner` for simple usage examples of using the
-    :class:`~dwave.system.samplers.DWaveSampler` class
+    :class:`~dwave.system.samplers.DWaveSampler` class.
