@@ -712,29 +712,29 @@ def maximum_pseudolikelihood(
         * *x_bootstrap_estimates*: a numpy array of bootstrap estimators
 
     Examples:
-       This example builds upon the example for maximum_pseudolikelihood_temperature
+        This example builds upon the example for maximum_pseudolikelihood_temperature
 
-       Draw samples from a D-Wave Quantum Computer for a large spin-glass
-       problem (random couplers J, zero external field h).
-       Establish a temperature and estimate to the background susceptibility chi
-       which is expected to be a small negative value.
-       Since background susceptiblity is a perturbation, and the problem Hamiltonian
-       and correction Hamiltonian are correlated, a large number of samples can be
-       required for confidence. Other perturbative corrections such as flux noise
-       can also interfere with estimation of small parameters like chi.
+        Draw samples from a D-Wave Quantum Computer for a large spin-glass
+        problem (random couplers J, zero external field h).
+        Establish a temperature and estimate to the background susceptibility chi
+        which is expected to be a small negative value.
+        Since background susceptiblity is a perturbation, and the problem Hamiltonian
+        and correction Hamiltonian are correlated, a large number of samples can be
+        required for confidence. Other perturbative corrections such as flux noise
+        can also interfere with estimation of small parameters like chi.
 
-       >>> import dimod
-       >>> from dwave.system.temperatures import maximum_pseudolikelihood
-       >>> from dwave.system.temperatures import background_susceptibility_bqm
-       >>> from dwave.system import DWaveSampler
-       >>> from random import random
-       >>> sampler = DWaveSampler()
-       >>> bqm1 = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})
-       >>> bqm2 = background_susceptibility_bqm(bqm1)
-       >>> sampleset = sampler.sample(bqm1, num_reads=1000, auto_scale=False)
-       >>> params, _ =  maximum_pseudolikelihood(bqms=[bqm1, bqm2], sampleset=sampleset)
-       >>> print('Effective temperature ', -1/params[0], 'Background susceptibliity', params[1]/params[0])    # doctest: +SKIP
-       Effective temperature  0.22298662677716122 Background susceptibliity -0.009343961890466117
+        >>> import dimod
+        >>> from dwave.system.temperatures import maximum_pseudolikelihood
+        >>> from dwave.system.temperatures import background_susceptibility_bqm
+        >>> from dwave.system import DWaveSampler
+        >>> from random import random
+        >>> sampler = DWaveSampler()
+        >>> bqm1 = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})
+        >>> bqm2 = background_susceptibility_bqm(bqm1)
+        >>> sampleset = sampler.sample(bqm1, num_reads=1000, auto_scale=False)
+        >>> params, _ =  maximum_pseudolikelihood(bqms=[bqm1, bqm2], sampleset=sampleset)
+        >>> print('Effective temperature ', -1/params[0], 'Background susceptibliity', params[1]/params[0])    # doctest: +SKIP
+        Effective temperature  0.22298662677716122 Background susceptibliity -0.009343961890466117
 
     See also:
         The function :class:`~dwave.system.temperatures.maximum_pseudolikelihood_temperature`
