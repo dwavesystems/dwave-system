@@ -409,7 +409,7 @@ def maximum_pseudolikelihood_temperature(
         if x0 is not None and (x0[0] < bisect_bracket[0] or x0[0] > bisect_bracket[1]):
                 raise ValueError(f"x0 {x0[0]} and T_bracket {T_bracket} are inconsistent")
 
-        kwargs_opt = {"bisect_bracket": bisect_bracket}
+        kwargs_opt = {"bracket": bisect_bracket}
     else:
         kwargs_opt = {}
 
