@@ -330,7 +330,7 @@ class TestTemperatures(unittest.TestCase):
             {(i, j): np.random.normal() for i in range(n) for j in range(i, n)}
         )
         ss = dimod.ExactSolver().sample(bqm)
-        for Texact in [1, np.random.random()]:
+        for Texact in [1, 0.1+0.9*np.random.random()]:
             sample_weights = np.exp(
                 -1 / Texact * (ss.record.energy + np.min(ss.record.energy))
             )
