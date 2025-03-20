@@ -23,7 +23,6 @@ for explanations of technical terms in descriptions of Ocean tools.
 import copy
 import collections.abc as abc
 from collections import defaultdict
-from contextlib import AbstractContextManager
 from typing import Optional, Dict
 
 import dimod
@@ -87,7 +86,7 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
     return G
 
 
-class DWaveSampler(dimod.Sampler, dimod.Structured, AbstractContextManager):
+class DWaveSampler(dimod.Sampler, dimod.Structured):
     """A class for using D-Wave quantum computers as samplers for binary quadratic models.
 
     You can configure your :term:`solver` selection and usage by setting parameters,
@@ -209,13 +208,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured, AbstractContextManager):
         See: :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Release system resources allocated and raise any exception triggered
-        within the runtime context.
-        """
-        self.close()
-        return None
 
     def _get_solver(self, *, refresh: bool = False, penalty: Optional[Dict[str, int]] = None):
         """Get the least penalized solver from the list of solvers filtered and

@@ -35,7 +35,7 @@ import dwave.embedding
 __all__ = ['TilingComposite']
 
 
-class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
+class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
     """Composite to tile a small problem across a structured sampler.
 
     Enables parallel sampling on Chimera or Pegasus structured samplers of
@@ -74,6 +74,9 @@ class TilingComposite(dimod.Sampler, dimod.Composite, dimod.Structured):
            minor-embedding a single instance of the problem.
        t (int, optional, default=4): Size of the shore within each Chimera unit
            cell.
+
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
 
     Examples:
        This example submits a two-variable QUBO problem representing a logical

@@ -12,7 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from contextlib import AbstractContextManager
 from numbers import Number
 from typing import Tuple
 
@@ -116,7 +115,7 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
 
         yield sampleset 
 
-class DWaveCliqueSampler(dimod.Sampler, AbstractContextManager):
+class DWaveCliqueSampler(dimod.Sampler):
     r"""A sampler for solving clique binary quadratic models on the D-Wave system.
 
     This sampler wraps
@@ -213,13 +212,6 @@ class DWaveCliqueSampler(dimod.Sampler, AbstractContextManager):
         See: :meth:`~dwave.system.samplers.dwave_sampler.DWaveSampler.close`.
         """
         self.child.close()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Release system resources allocated and raise any exception triggered
-        within the runtime context.
-        """
-        self.close()
-        return None
 
     @property
     def parameters(self) -> dict:

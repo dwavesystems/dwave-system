@@ -73,15 +73,18 @@ class EmbeddingComposite(dimod.ComposedSampler):
             :attr:`~dimod.Structured.structure` attribute.
             Defaults to :func:`dimod.child_structure_dfs`.
 
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
+
     Examples:
 
        >>> from dwave.system import DWaveSampler, EmbeddingComposite
        ...
-       >>> sampler = EmbeddingComposite(DWaveSampler())
-       >>> h = {'a': -1., 'b': 2}
-       >>> J = {('a', 'b'): 1.5}
-       >>> sampleset = sampler.sample_ising(h, J, num_reads=100)
-       >>> print(sampleset.first.energy)
+       >>> with EmbeddingComposite(DWaveSampler()) as sampler:
+       ...     h = {'a': -1., 'b': 2}
+       ...     J = {('a', 'b'): 1.5}
+       ...     sampleset = sampler.sample_ising(h, J, num_reads=100)
+       ...     print(sampleset.first.energy)
        -4.5
 
 
@@ -331,6 +334,9 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             If provided, parameters are passed to the embedding method as keyword
             arguments.
 
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
+
     Examples:
 
         >>> from dwave.system import LazyFixedEmbeddingComposite, DWaveSampler
@@ -523,6 +529,9 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
             arguments. Note that ``find_embedding`` and ``embedding_parameters``
             keyword arguments are ignored.
 
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
+
     Examples:
         To embed a triangular problem (a problem with a three-node complete graph,
         or clique) in the Chimera topology, you need to :term:`chain` two
@@ -599,6 +608,9 @@ class AutoEmbeddingComposite(EmbeddingComposite):
         kwargs:
             See the :class:`EmbeddingComposite` class for additional keyword
             arguments.
+
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
 
     """
     def __init__(self, child_sampler, **kwargs):

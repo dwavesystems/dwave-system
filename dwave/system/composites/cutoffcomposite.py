@@ -54,6 +54,9 @@ class CutOffComposite(dimod.ComposedSampler):
             A comparison operator for comparing interaction values to the cutoff
             value. Defaults to :func:`operator.lt`.
 
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
+
     Examples:
         This example removes one interaction, ``'ac': -0.7``, before embedding
         on a D-Wave system. Note that the lowest-energy sample for the embedded problem
@@ -231,6 +234,9 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
        comparison (function, optional):
             A comparison operator for comparing the interaction value to the cutoff
             value. Defaults to :func:`operator.lt`.
+
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
 
     Examples:
         This example removes one interaction, ``'ac': 0.2``, before submitting
