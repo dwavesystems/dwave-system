@@ -75,6 +75,9 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
        t (int, optional, default=4): Size of the shore within each Chimera unit
            cell.
 
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
+
     Examples:
        This example submits a two-variable QUBO problem representing a logical
        NOT gate to a D-Wave system. The QUBO---two nodes with biases of -1 that

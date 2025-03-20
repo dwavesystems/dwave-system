@@ -41,6 +41,9 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
             A dimod sampler, such as a :class:`~dwave.system.samplers.DWaveSampler()`,
             that has flux bias controls.
 
+    .. versionadded:: 1.30.0
+        Support for context manager protocol and :meth:`.close` method.
+
     Examples:
         This example submits a two-qubit problem consisting of linear biases with opposed signs 
         and anti-ferromagnetic coupling. A D-Wave quantum computer solves it with the fast-anneal 
@@ -48,9 +51,9 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
 
         >>> from dwave.system import DWaveSampler, EmbeddingComposite, LinearAncillaComposite
         ...
-        >>> sampler = EmbeddingComposite(LinearAncillaComposite(DWaveSampler()))
-        >>> sampleset = sampler.sample_ising({0:1, 1:-1}, {(0, 1): 1}, fast_anneal=True) # doctest: +SKIP
-        >>> sampleset.first.energy # doctest: +SKIP
+        >>> with EmbeddingComposite(LinearAncillaComposite(DWaveSampler())) as sampler:   # doctest: +SKIP
+        ...     sampleset = sampler.sample_ising({0:1, 1:-1}, {(0, 1): 1}, fast_anneal=True)
+        ...     sampleset.first.energy
         -3
     """
 
