@@ -138,7 +138,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
 
         # Positive couplings tend to have smaller control error,
         # we default to them if they have the same magnitude than negative couplings
-        # See the ICE documentation
+        # See the ICE documentation at https://docs.dwavequantum.com/en/latest/quantum_research/errors.html#ice
         largest_j = max(extended_j_range[::-1], key=abs)
         largest_j_sign = np.sign(largest_j)
 
