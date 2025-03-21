@@ -1,4 +1,4 @@
-.. _included_samplers:
+.. _system_samplers:
 
 ========
 Samplers
@@ -11,10 +11,6 @@ distributions defined by the problem.
 
 .. currentmodule:: dwave.system.samplers
 
-.. contents::
-    :local:
-    :depth: 1
-
 These samplers are non-blocking: the returned :class:`~dimod.SampleSet` is constructed
 from a :class:`~concurrent.futures.Future`-like object that is resolved on the first
 read of any of its properties; for example, by printing the results. Your code can
@@ -22,20 +18,20 @@ query its status with the :meth:`~dimod.SampleSet.done` method or ensure resolut
 with the :meth:`~dimod.SampleSet.resolve` method.
 
 Other Ocean packages provide additional samplers; for example,
-:std:doc:`dimod <oceandocs:docs_dimod/sdk_index>` provides samplers for testing
+:ref:`dimod <index_dimod>` provides samplers for testing
 your code.
 
 DWaveSampler
 ============
 
 .. autoclass:: DWaveSampler
-   :show-inheritance: 
+   :show-inheritance:
 
 Properties
 ----------
 
-For parameters and properties of D-Wave systems, see
-:std:doc:`D-Wave System Documentation <sysdocs_gettingstarted:doc_solver_ref>`.
+For parameters and properties of D-Wave systems, see the
+:ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters` sections.
 
 .. autosummary::
    :toctree: generated/

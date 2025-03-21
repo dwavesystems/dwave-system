@@ -101,7 +101,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
         """Sample from the provided binary quadratic model.
 
         .. note::
-            This composite does not support the :ref:`param_autoscale` parameter; use the
+            This composite does not support the :ref:`parameter_qpu_auto_scale` parameter; use the
             :class:`~dwave.preprocessing.composites.ScaleComposite` for scaling.
 
         Args:
@@ -138,7 +138,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
 
         # Positive couplings tend to have smaller control error,
         # we default to them if they have the same magnitude than negative couplings
-        # https://docs.dwavesys.com/docs/latest/c_qpu_ice.html#overview-of-ice
+        # See the ICE documentation at https://docs.dwavequantum.com/en/latest/quantum_research/errors.html#ice
         largest_j = max(extended_j_range[::-1], key=abs)
         largest_j_sign = np.sign(largest_j)
 

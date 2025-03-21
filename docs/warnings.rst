@@ -1,11 +1,11 @@
-.. _warnings_system:
+.. _system_warnings:
 
 ========
 Warnings
 ========
 
 Settings for raising warnings may be configured by tools such as composites or
-:doc:`oceandocs:docs_inspector/sdk_index`.
+the :ref:`index_inspector` tool.
 
 This example configures warnings for an instance of the
 :class:`~dwave.system.composites.EmbeddingComposite()` class used on a sampler

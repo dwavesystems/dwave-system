@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 """
-A :ref:`dimod composite <oceandocs:samplers_index>` that tiles small problems
+A :ref:`dimod composite <index_dimod>` that tiles small problems
 multiple times to a structured sampler.
 
 The :class:`.TilingComposite` class takes a problem that can fit on a small
@@ -23,7 +23,7 @@ the QPU in one call.
 For example, a single Chimera unit cell could be tiled over 600 times on a
 fully-yielded Advantage system.
 
-See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
@@ -95,7 +95,7 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
        >>> len(sampleset)> 1
        True
 
-    See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+    See the :ref:`index_concepts` section
     for explanations of technical terms in descriptions of Ocean tools.
 
     """
@@ -287,7 +287,7 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
             >>> len(sampleset) > 1    
             True
 
-        See `Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>`_
+        See the :ref:`index_concepts` section
         for explanations of technical terms in descriptions of Ocean tools.
 
         """

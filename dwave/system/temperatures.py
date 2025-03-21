@@ -25,14 +25,14 @@ r"""The following effective temperature and bias estimators are provided:
 
 - An effective temperature can be inferred assuming freeze-out during the 
   anneal at s=t/t_a, an annealing schedule, and a device physical temperature.
-  Necessary device-specific properties are published for online solvers:
-  https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
+  Necessary device-specific properties are published for online solvers in the
+  :ref:`qpu_solver_properties_specific` section.
 
 - The biases (h) equivalent to application of flux bias, or vice-versa,
   can be inferred as a function of the anneal progress s=t/t_a by
   device-specific unit conversion. The necessary parameters for estimation
-  [Mafm, B(s)] are published for online solvers:
-  https://docs.dwavesys.com/docs/latest/doc_physical_properties.html
+  [Mafm, B(s)] are published for online solvers in the
+  :ref:`qpu_solver_properties_specific` section
 """ 
 
 import warnings
@@ -378,8 +378,9 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
     :math:`I_p(s) \propto \sqrt(B(s))`. The physical origin of each term is different, 
     and so precision and noise models also differ.
 
-    Assume a Hamiltonian in the :ref:`documented form <sysdocs_gettingstarted:doc_qpu>` 
-    with an additional flux-bias-dependent component 
+    Assume a Hamiltonian in the documented form,
+    :math:numref:`qpu_equation_quantum_hamiltonian`, of the :ref:`qpu_annealing`
+    section with an additional flux-bias-dependent component 
     :math:`H(s) \Rightarrow H(s) - H_F(s) \sum_i \Phi_i \sigma^z_i`,
     where :math:`\Phi_i` are flux biases (in units of :math:`\Phi_0`), 
     :math:`\sigma^z_i` is the Pauli-z operator, and 
@@ -396,14 +397,12 @@ def Ip_in_units_of_B(Ip: Union[None, float, np.ndarray]=None,
         B:
             Annealing schedule field, :math:`B(s)`, associated with the 
             problem Hamiltonian. Schedules are provided for each quantum 
-            computer in the 
-            :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
+            computer in the :ref:`qpu_solver_properties_specific` section. 
             This parameter is ignored when ``Ip`` is specified.
 
         MAFM:
             Mutual inductance, :math:`M_{AFM}`, specified for each quantum 
-            computer in the 
-            :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
+            computer in the :ref:`qpu_solver_properties_specific` section. 
             ``MAFM`` is ignored when ``Ip`` is specified.
 
         units_Ip:
@@ -479,14 +478,12 @@ def h_to_fluxbias(h: Union[float, np.ndarray]=1,
         B:
             Annealing schedule field, :math:`B(s)`, associated with the 
             problem Hamiltonian. Schedules are provided for each quantum 
-            computer in the 
-            :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
+            computer in the :ref:`qpu_solver_properties_specific` section.
             This parameter is ignored when ``Ip`` is specified.
 
         MAFM:
             Mutual inductance, :math:`M_{AFM}`, specified for each quantum 
-            computer in the 
-            :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
+            computer in the :ref:`qpu_solver_properties_specific` section.
             ``MAFM`` is ignored when ``Ip`` is specified.
 
         units_Ip:
@@ -542,14 +539,12 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
         B:
             Annealing schedule field, :math:`B(s)`, associated with the 
             problem Hamiltonian. Schedules are provided for each quantum 
-            computer in the 
-            :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
+            computer in the :ref:`qpu_solver_properties_specific` section.
             This parameter is ignored when ``Ip`` is specified.
 
         MAFM:
             Mutual inductance, :math:`M_{AFM}`, specified for each quantum 
-            computer in the 
-            :ref:`system documentation <sysdocs_gettingstarted:doc_qpu_characteristics>`. 
+            computer in the :ref:`qpu_solver_properties_specific` section.
             ``MAFM`` is ignored when ``Ip`` is specified.
 
         units_Ip:
@@ -576,7 +571,7 @@ def fluxbias_to_h(fluxbias: Union[float, np.ndarray]=1,
 def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', units_T = 'mK') -> float:
     r'''Provides an effective temperature as a function of freezeout information.
 
-    See https://docs.dwavesys.com/docs/latest/c_qpu_annealing.html for a 
+    See the :ref:`qpu_annealing` section for a 
     complete summary of D-Wave annealing quantum computer operation.
 
     A D-Wave annealing quantum computer is assumed to implement a Hamiltonian
@@ -606,7 +601,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
 
     Device temperature :math:`T`, annealing schedules {:math:`A(s)`, :math:`B(s)`} and 
     single-qubit freeze-out (:math:`s^*`, for simple uncoupled Hamltonians) are reported 
-    device properties: https://docs.dwavesys.com/docs/latest/doc_physical_properties.html 
+    device properties: see the :ref:`qpu_solver_properties_specific` section.
     These values (typically specified in mK and GHz) allows the calculation of an effective 
     temperature for simple Hamiltonians submitted to D-Wave quantum computers. Complicated 
     problems exploiting embeddings, or with many coupled variables, may freeze out at 
@@ -638,7 +633,7 @@ def freezeout_effective_temperature(freezeout_B, temperature, units_B = 'GHz', u
     Examples:
 
        This example uses the 
-       `published parameters <https://docs.dwavesys.com/docs/latest/doc_physical_properties.html>`_
+       :ref:`published parameters <qpu_solver_properties_specific>`_
        for the Advantage_system4.1 QPU solver as of November 22nd 2021: 
        :math:`B(s=0.612) = 3.91` GHz , :math:`T = 15.4` mK.
 

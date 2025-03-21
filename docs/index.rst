@@ -1,54 +1,34 @@
-..  -*- coding: utf-8 -*-
-
 .. _index_system:
 
+============
+dwave-system
+============
+
+.. toctree::
+    :caption: Reference documentation for dwave-system:
+    :maxdepth: 1
+
+    api_ref
+
+
+About dwave-system
+==================
+
 .. include:: README.rst
-   :start-after: index-start-marker
-   :end-before: index-end-marker
+    :start-after: start_system_about
+    :end-before: end_system_about
 
-Documentation
--------------
+.. note:: For applications that require detailed control of communication
+    with the remote compute resource (a quantum computer or hybrid solver),
+    see :ref:`dwave-cloud-client <index_cloud>`.
 
-.. only:: html
+Usage Information
+=================
 
-  :Date: |today|
-
-.. note:: This documentation is for the latest version of
-   `dwave-system <https://github.com/dwavesystems/dwave-system>`_.
-   Documentation for the version currently installed by
-   `dwave-ocean-sdk <https://github.com/dwavesystems/dwave-ocean-sdk>`_
-   is here: :std:doc:`dwave-system <oceandocs:docs_system/sdk_index>`.
-
-.. sdk-start-marker
-
-.. toctree::
-  :maxdepth: 1
-
-  intro
-  reference/index
-
-.. sdk-end-marker
-
-.. toctree::
-  :caption: Code
-  :maxdepth: 1
-
-  Source <https://github.com/dwavesystems/dwave-system>
-  installation
-  license
-
-.. toctree::
-  :caption: D-Wave's Ocean Software
-  :maxdepth: 1
-
-  Ocean Home <https://ocean.dwavesys.com/>
-  Ocean Documentation <https://docs.ocean.dwavesys.com>
-  Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>
-
-.. toctree::
-  :caption: D-Wave
-  :maxdepth: 1
-
-  D-Wave <https://www.dwavesys.com>
-  Leap <https://cloud.dwavesys.com/leap/>
-  D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/index.html>
+*   :ref:`index_concepts` for terminology.
+*   :ref:`qpu_quantum_solvers_intro` for an introduction to sampling with a
+    quantum computer.
+*   :ref:`opt_index_hybrid` for an introduction to using :term:`hybrid`
+    :term:`solvers <solver>`.
+*   :ref:`qpu_index_examples_beginner` for simple usage examples of using the
+    :class:`~dwave.system.samplers.DWaveSampler` class.

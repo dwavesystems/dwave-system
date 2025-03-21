@@ -200,7 +200,7 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
                 Defines what warning action to take, if any (see the
-                :ref:`warnings_system` section). The default behavior is defined
+                :ref:`system_warnings` section). The default behavior is defined
                 by the :attr:`warnings_default` attribute, which by default is
                 :class:`~dwave.system.warnings.IGNORE`
 

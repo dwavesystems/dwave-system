@@ -248,8 +248,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         # Advantage_system4.1 accessed February 10th 2022
         # with simplified lists for large parameters, and modified
         # topology arguments per MockSolver initialization:
-        # See also:
-        # https://docs.dwavesys.com/docs/latest/c_solver_parameters.html
+        # See the QPU solver parameters documentation
 
         self.parameters = {
             'anneal_offsets': ['parameters'],
