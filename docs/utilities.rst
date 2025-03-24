@@ -37,4 +37,7 @@ Temperature and Unit-Conversion Utilities
    freezeout_effective_temperature
    h_to_fluxbias
    Ip_in_units_of_B
+   maximum_pseudolikelihood
    maximum_pseudolikelihood_temperature
+   background_susceptibility_Ising
+   background_susceptibility_bqm
