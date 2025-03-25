@@ -72,7 +72,7 @@ __all__ = [
     "Ip_in_units_of_B",
     "h_to_fluxbias",
     "fluxbias_to_h",
-    "background_susceptibility_Ising",
+    "background_susceptibility_ising",
     "background_susceptibility_bqm",
 ]
 
@@ -176,7 +176,7 @@ def effective_field(
     return (effective_fields, labels)
 
 
-def background_susceptibility_Ising(
+def background_susceptibility_ising(
     h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]
 ) -> Tuple:
     """Create the field and couplings for the background susceptibility correction.
@@ -263,7 +263,7 @@ def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional
     """
     source_type = bqm.vartype
     bqm = bqm.change_vartype(dimod.SPIN)
-    dh, dJ, _ = background_susceptibility_Ising(bqm.linear, bqm.quadratic)
+    dh, dJ, _ = background_susceptibility_ising(bqm.linear, bqm.quadratic)
     dbqm = dimod.BinaryQuadraticModel(source_type).from_ising(dh, dJ)
     if chi is not None:
         dbqm = bqm.change_vartype(source_type) + chi * dbqm

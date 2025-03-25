@@ -27,7 +27,7 @@ from dwave.system.temperatures import (
     Ip_in_units_of_B,
     h_to_fluxbias,
     fluxbias_to_h,
-    background_susceptibility_Ising,
+    background_susceptibility_ising,
     background_susceptibility_bqm,
 )
 
@@ -93,7 +93,7 @@ class TestTemperatures(unittest.TestCase):
         dh = 1 / 4
         h = np.array([dh, -2 * dh, dh])
         J = np.array([[0, -1, 0], [-1, 0, -1], [0, -1, 0]])
-        dh, dJ, k = background_susceptibility_Ising(h, J)
+        dh, dJ, k = background_susceptibility_ising(h, J)
         # Assert expected dh and dJ values.
         # ([2+3], [1+3], [1+2])
 
@@ -102,7 +102,7 @@ class TestTemperatures(unittest.TestCase):
         }
         hd = {n: h[n] for n in range(n)}
         bqm = dimod.BinaryQuadraticModel("SPIN").from_ising(hd, Jd)
-        dh, dJ, _ = background_susceptibility_Ising(hd, Jd)
+        dh, dJ, _ = background_susceptibility_ising(hd, Jd)
         # Assert sparse and dense method match
         dbqm = dimod.BinaryQuadraticModel("SPIN").from_ising(dh, dJ)
 
@@ -341,13 +341,13 @@ class TestTemperatures(unittest.TestCase):
             # tested by circleCI
             self.assertLess(abs(Ttup - Texact), 1e-2)
 
-    def test_background_susceptibility_Ising(self):
+    def test_background_susceptibility_ising(self):
         #
         n = 3
         h = np.random.normal(size=n)
         J = np.random.normal(size=(n, n))
         J = J + J.transpose() - 2 * np.diag(np.diag(J))
-        dh, dJ, k = background_susceptibility_Ising(h, J)
+        dh, dJ, k = background_susceptibility_ising(h, J)
         self.assertEqual(type(dh), np.ndarray)
         self.assertEqual(type(dJ), np.ndarray)
         self.assertEqual(type(k), np.float64)
@@ -355,4 +355,4 @@ class TestTemperatures(unittest.TestCase):
         self.assertEqual(J.shape, dJ.shape)
         h_dict = {i: h[i] for i in range(n)}
         J_dict = {(i, j): J[i, j] for i in range(n) for j in range(i + 1, n)}
-        dh_dict, dJ_dict, k = background_susceptibility_Ising(h_dict, J_dict)
+        dh_dict, dJ_dict, k = background_susceptibility_ising(h_dict, J_dict)

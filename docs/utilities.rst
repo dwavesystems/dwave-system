@@ -39,5 +39,5 @@ Temperature and Unit-Conversion Utilities
    Ip_in_units_of_B
    maximum_pseudolikelihood
    maximum_pseudolikelihood_temperature
-   background_susceptibility_Ising
+   background_susceptibility_ising
    background_susceptibility_bqm
