@@ -241,7 +241,7 @@ def background_susceptibility_Ising(
     return dh, dJ, k
 
 
-def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: float = None):
+def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional[float] = None):
     """Create the binary quadratic model for the background susceptibility correction.
 
     Background susceptibility is a perturbative correction to the programmed Hamiltonian:
