@@ -323,7 +323,7 @@ def maximum_pseudolikelihood_temperature(
             If ``bqm`` and ``site_energy`` are both None, then by default
             100 samples are drawn using :class:`~dwave.system.samplers.DWaveSampler`,
             with ``bqm`` defaulted as described.
-        sampleset (samples_like or :obj:`~dimod.SampleSet`, optional):
+        sampleset (samples_like or :class:`~dimod.SampleSet`, optional):
             A set of samples, assumed to be fairly sampled from
             a Boltzmann distribution characterized by ``bqm``.
         en1 (nd.array, optional):
