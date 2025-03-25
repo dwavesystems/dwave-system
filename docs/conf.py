@@ -50,7 +50,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'sdk_index.rst']
 linkcheck_retries = 2
 linkcheck_anchors = False
 linkcheck_ignore = [r'https://cloud.dwavesys.com/leap',  # redirects, many checks
-                    r'https://www.jstor.org/stable']
+                    r'https://www.jstor.org/stable',
+                    r'https://doi.org/']
 
 pygments_style = 'sphinx'
 
