@@ -71,16 +71,20 @@ class TestNLSampler(unittest.TestCase):
         self.assertEqual(model.states.size(), 2)
 
         # upload is tested in dwave-cloud-client, we can just mock it here
+        mock_problem_id = '321'
         mock_problem_data_id = '123'
-        mock_timing_info = {'qpu_access_time': 1, 'run_time': 2}
+        mock_problem_label = 'mock-label'
+        mock_timing = {'qpu_access_time': 1, 'run_time': 2}
+        mock_warnings = ['solved by classical presolve techniques']
 
         # note: instead of simply mocking `sampler.solver`, we mock a set of
         # solver methods minimally required to fully test `NLSolver.sample_problem`
 
         upload_nlm.return_value.result.return_value = mock_problem_data_id
 
-        base_sample_problem.return_value = Future(solver=sampler.solver, id_="x")
+        base_sample_problem.return_value = Future(solver=sampler.solver, id_=mock_problem_id)
         base_sample_problem.return_value._set_message({"answer": {}})
+        base_sample_problem.return_value.label = mock_problem_label
 
         def mock_decode_response(msg, answer_data: io.IOBase):
             # copy model states to the "received" answer_data
@@ -88,7 +92,7 @@ class TestNLSampler(unittest.TestCase):
             answer_data.seek(0)
             return {
                 'problem_type': 'nl',
-                'timing': mock_timing_info,
+                'timing': mock_timing | dict(warnings=mock_warnings),
                 'shape': {},
                 'answer': answer_data
             }
@@ -96,31 +100,35 @@ class TestNLSampler(unittest.TestCase):
 
         time_limit = 5
 
-        result = sampler.sample(model, time_limit=time_limit)
+        result = sampler.sample(model, time_limit=time_limit, label=mock_problem_label)
 
         with self.subTest('low-level sample_nlm called'):
             base_sample_problem.assert_called_with(
-                mock_problem_data_id, label=None, upload_params=None, time_limit=time_limit)
+                mock_problem_data_id, label=mock_problem_label,
+                upload_params=None, time_limit=time_limit)
 
         with self.subTest('max_num_states is respected on upload'):
             upload_nlm.assert_called_with(
                 model, max_num_states=sampler.properties['maximum_number_of_states'])
 
-        with self.subTest('timing returned in sample future'):
+        with self.subTest('timing returned in sample result'):
             self.assertIsInstance(result, concurrent.futures.Future)
             self.assertIsInstance(result.result(), LeapHybridNLSampler.SampleResult)
-            self.assertEqual(result.result().timing, mock_timing_info)
+            self.assertEqual(result.result().info['timing'], mock_timing)
+            # warnings separate from timing
+            self.assertEqual(result.result().info['warnings'], mock_warnings)
+
+        with self.subTest('problem info returned in sample result'):
+            self.assertEqual(result.result().info['problem_id'], mock_problem_id)
+            # self.assertEqual(result.result().info['problem_label'], mock_problem_label)
+            self.assertEqual(result.result().info['problem_data_id'], mock_problem_data_id)
 
         with self.subTest('model states updated'):
             self.assertEqual(result.result().model.states.size(), num_states)
             self.assertEqual(model.states.size(), num_states)
 
         with self.subTest('warnings raised'):
-            # add a warning to timing info (inplace)
-            msg = 'solved by classical presolve techniques'
-            mock_timing_info['warnings'] = [msg]
-
-            with self.assertWarns(UserWarning, msg=msg):
+            with self.assertWarns(UserWarning, msg=mock_warnings[0]):
                 result = sampler.sample(model, time_limit=time_limit)
                 result.result()
 
