@@ -981,6 +981,10 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
             info = dict(
                 timing=timing,
                 warnings=timing.pop('warnings', []),
+                # match SampleSet.info fields (see :meth:`~dwave.cloud.computation.Future._get_problem_info`)
+                problem_id=future.id,
+                problem_label=future.label,
+                problem_data_id=problem_data_id,
             )
             for msg in info['warnings']:
                 # note: no point using stacklevel, as this is a different thread
