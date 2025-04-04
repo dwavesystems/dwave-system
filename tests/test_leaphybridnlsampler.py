@@ -109,7 +109,7 @@ class TestNLSampler(unittest.TestCase):
         with self.subTest('timing returned in sample future'):
             self.assertIsInstance(result, concurrent.futures.Future)
             self.assertIsInstance(result.result(), LeapHybridNLSampler.SampleResult)
-            self.assertEqual(result.result().timing, mock_timing_info)
+            self.assertEqual(result.result().info['timing'], mock_timing_info)
 
         with self.subTest('model states updated'):
             self.assertEqual(result.result().model.states.size(), num_states)
