@@ -945,12 +945,12 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
         Returns:
             :class:`~concurrent.futures.Future` [SampleResult]:
-                Named tuple containing nonlinear model and general result info
-                (such as timing information and problem data id), in a Future.
+                Named tuple, in a Future, containing the nonlinear model and general
+                result information such as timing and the identity of the problem data.
 
         .. versionchanged:: 1.31.0
-            The return type includes timing information as part of the ``info``
-            field dictionary, which now replaces the old ``timing`` field.
+            The return value includes timing information as part of the ``info``
+            field dictionary, which now replaces the previous ``timing`` field.
         """
 
         if not isinstance(model, dwave.optimization.Model):
