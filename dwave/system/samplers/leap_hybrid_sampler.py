@@ -27,6 +27,7 @@ import dwave.optimization
 import numpy
 from dwave.cloud.client import Client
 
+from dwave.system.samplers import ResultInfoDict
 from dwave.system.utilities import classproperty, FeatureFlags
 
 
@@ -918,7 +919,7 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
     class SampleResult(NamedTuple):
         model: dwave.optimization.Model
-        info: dict
+        info: ResultInfoDict
 
     def sample(self, model: dwave.optimization.Model,
                time_limit: Optional[float] = None, **kwargs
