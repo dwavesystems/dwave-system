@@ -37,10 +37,28 @@ import numpy as np
 __all__ = ['uniform_torque_compensation', 'scaled']
 
 def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
-    """Chain strength that attempts to compensate for torque that would break
-    the chain.
+    r"""Chain strength that attempts to compensate for chain-breaking torque.
 
-    The RMS of the problem's quadratic biases is used for calculation.
+    The root mean square (RMS) of the problem's quadratic biases is used to
+    calculate a value of chain strength that preforms reasonably well on many
+    problems.
+
+    As described in [Ray2020]_, optimal chain strength for a :term:`clique`
+    embedding is proportional to the variance of the coupling strength of the
+    chain's qubits, :math:`\propto \sigma^2 = \frac{2}{N(N-1)} \sum J_{ij}^2`,
+    where :math:`N` is the number of qubits and :math:`J_{ij}` the coupling
+    between qubits :math:`i` and :math:`j`.
+
+    Heuristically, this chain strength is also a good first guess for an
+    arbitrary problem: in a frustrated problem, such as a spin glass, qubits in
+    chains are subject to random energy signals from neighbors, and if you split
+    the chain in two with equal numbers of neighboring chains, the central limit
+    theorem dictates that the signal in each half has zero mean and variance
+    approximately :math:`N_{\sigma^2}/2`. In combination, these can create a
+    random torque on the chain, favouring misalignment (a broken chain). For the
+    central coupling to maintain alignment of the two halves, it needs an energy
+    penalty larger than the torque signal, and so scales as
+    :math:`\sqrt{N_{\sigma}}`.
 
     Args:
         bqm (:obj:`.BinaryQuadraticModel`):
