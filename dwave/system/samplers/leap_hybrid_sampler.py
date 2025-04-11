@@ -27,6 +27,7 @@ import dwave.optimization
 import numpy
 from dwave.cloud.client import Client
 
+from dwave.system.samplers import ResultInfoDict
 from dwave.system.utilities import classproperty, FeatureFlags
 
 
@@ -918,7 +919,7 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
     class SampleResult(NamedTuple):
         model: dwave.optimization.Model
-        timing: dict
+        info: ResultInfoDict
 
     def sample(self, model: dwave.optimization.Model,
                time_limit: Optional[float] = None, **kwargs
@@ -945,10 +946,16 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
         Returns:
             :class:`~concurrent.futures.Future` [SampleResult]:
-                Named tuple containing nonlinear model and timing info, in a Future.
+                Named tuple, in a Future, containing the nonlinear model and general
+                result information such as timing and the identity of the problem data.
+
+        .. versionchanged:: 1.31.0
+            The return value includes timing information as part of the ``info``
+            field dictionary, which now replaces the previous ``timing`` field.
         """
 
         if not isinstance(model, dwave.optimization.Model):
+
             raise TypeError("first argument 'model' must be a dwave.optimization.Model, "
                             f"received {type(model).__name__}")
 
@@ -971,12 +978,20 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
         model.states.from_future(future, hook)
 
         def collect():
-            timing = future.timing
-            for msg in timing.get('warnings', []):
+            timing = future.timing.copy()
+            info = dict(
+                timing=timing,
+                warnings=timing.pop('warnings', []),
+                # match SampleSet.info fields (see :meth:`~dwave.cloud.computation.Future._get_problem_info`)
+                problem_id=future.id,
+                problem_label=future.label,
+                problem_data_id=problem_data_id,
+            )
+            for msg in info['warnings']:
                 # note: no point using stacklevel, as this is a different thread
                 warnings.warn(msg, category=UserWarning)
 
-            return LeapHybridNLSampler.SampleResult(model, timing)
+            return LeapHybridNLSampler.SampleResult(model, info)
 
         result = self._executor.submit(collect)
 
