@@ -47,11 +47,11 @@ def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
     the wavefunction representing the QPU's quantum state develops long-range
     order. A chain strength that increases the correlation of the chains' qubits
     together with the development of this long-range order produces efficient
-    quantum dynamics [Ray2020]_. Consequently, for hard, frustrated problems
-    with typical chain topology (path or tree-like chains), such as spin
-    glasses, choose a chain strength that grows in proportion to the root of
-    typical variable connectivity and the root mean square (RMS) of coupling
-    strength (:math:`\sqrt{\text{connectivity}} \times \text{coupling}_{RMS}`).
+    quantum dynamics [Ray2020]_. For many hard, frustrated problems (such as
+    spin glasses) with typical chain topology (path or tree-like chains), the
+    optimal chain strength is proportional to the root of typical variable
+    connectivity and the root mean square (RMS) of coupling strength
+    (:math:`\sqrt{\text{connectivity}} \times \text{coupling}_{RMS}`).
 
     This chain strength, chosen for its dynamically-efficient scaling, also
     meets another requirement, even in challenging models: it must be large
