@@ -22,6 +22,7 @@ from parameterized import parameterized_class
 
 import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
+from dwave.cloud.package_info import __version__ as cc_version
 from dwave.cloud.testing import isolated_environ
 
 from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
@@ -121,6 +122,15 @@ class TestSamplerInterface(unittest.TestCase):
             ss.resolve()
             pid_post = ss.wait_id()
             self.assertEqual(pid, pid_post)
+
+    @unittest.skipIf(tuple(map(int, cc_version.split('.'))) < (0, 13, 5),
+                     "'dwave-cloud-client>=0.13.5' required")
+    def test_problem_data_id_available(self):
+        problem = self.problem_gen()
+        ss = getattr(self.sampler, self.sample_meth)(problem)
+
+        self.assertIn('problem_id', ss.info)
+        self.assertIn('problem_data_id', ss.info)
 
     def test_close(self):
         n_initial = threading.active_count()
