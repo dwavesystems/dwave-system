@@ -37,10 +37,43 @@ import numpy as np
 __all__ = ['uniform_torque_compensation', 'scaled']
 
 def uniform_torque_compensation(bqm, embedding=None, prefactor=1.414):
-    """Chain strength that attempts to compensate for torque that would break
-    the chain.
+    r"""Chain strength that attempts to compensate for chain-breaking torque.
 
-    The RMS of the problem's quadratic biases is used for calculation.
+    The problem's connectivity\ [#]_ and quadratic biases are used to calculate
+    a value of chain strength that preforms reasonably well on many problems.
+
+    As the quantum annealing progresses, and the amplitude of the transverse
+    field (:math:`A(s)` in the :ref:`qpu_qa_implementation` section) decreases,
+    the wavefunction representing the QPU's quantum state develops long-range
+    order. A chain strength that increases the correlation of the chains' qubits
+    together with the development of this long-range order produces efficient
+    quantum dynamics [Ray2020]_. For many hard, frustrated problems (such as
+    spin glasses) with typical chain topology (path or tree-like chains), the
+    optimal chain strength is proportional to the root of typical variable
+    connectivity and the root mean square (RMS) of coupling strength
+    (:math:`\sqrt{\text{connectivity}} \times \text{coupling}_{RMS}`).
+
+    This chain strength, chosen for its dynamically-efficient scaling, also
+    meets another requirement, even in challenging models: it must be large
+    enough so that, toward the end of the quantum annealing, intact chains of
+    the embedded problem (the programmed Hamiltonian) have lower energy than
+    broken chains for the ground state. This allows the embedded problem to
+    recover the ground state in the adiabatic limit. Consider the following
+    observation: in a frustrated problem, such as a spin glass, qubits in chains
+    are subject to random energy signals from neighbors. If you split the chain
+    in two with equal numbers of neighboring chains, the central limit theorem
+    dictates that the signal in each half has zero mean and variance
+    proportional to the connectivity and the RMS of the coupling values. In
+    combination, these can create a random torque on the chain, favouring
+    misalignment (a broken chain). For the central coupling to maintain
+    alignment of the two halves, it needs an energy penalty larger than the
+    torque signal, and so scales as
+    :math:`\sqrt{\text{connectivity}} \times \text{coupling}_{RMS}`.
+
+    .. [#]
+        A measure of the density of interactions between variables; for example
+        the average degree (number of edges per node in the graph representing
+        the problem).
 
     Args:
         bqm (:obj:`.BinaryQuadraticModel`):
