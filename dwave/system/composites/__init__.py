@@ -18,3 +18,4 @@ from dwave.system.composites.linear_ancilla import *
 from dwave.system.composites.tiling import *
 from dwave.system.composites.virtual_graph import *
 from dwave.system.composites.reversecomposite import *
+from dwave.system.composites.parallel_embeddings import *
