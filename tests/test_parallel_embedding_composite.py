@@ -15,11 +15,14 @@
 import unittest
 import random
 
+import networkx as nx
+
 import dimod
 import dwave_networkx as dnx
 
 from dwave.system.testing import MockDWaveSampler
 from dwave.system.composites import TilingComposite, ParallelEmbeddingComposite
+from minorminer.utils.parallel_embeddings import find_sublattice_embeddings
 
 
 class TestParallelEmbeddings(unittest.TestCase):
@@ -45,29 +48,45 @@ class TestTiling(unittest.TestCase):
         mock_sampler = MockDWaveSampler(
             topology_type="pegasus"
         )  # P3 structured sampler
-        m = n = mock_sampler.properties["topology"]["shape"][0] - 1
-        self.assertTrue(
-            "topology" in mock_sampler.properties
-            and "type" in mock_sampler.properties["topology"]
-        )
-        self.assertTrue(
-            mock_sampler.properties["topology"]["type"] == "pegasus"
-            and "shape" in mock_sampler.properties["topology"]
-        )
-        source = dnx.chimera_graph(1)
+        m = n = mock_sampler.properties["topology"]["shape"][0] - 1  # Nice dimensions.
+        expected_number_of_cells = m * n * 3  # Upper bound without tiling
+        num_reads = 10
+
+        t = 4
+        tile = dnx.chimera_graph(1, 1, t)
+        source = nx.complete_graph(t)  # Embeds easily on a tile, chain length 2
 
         # By find_multiple_embedding (default)
         sampler = ParallelEmbeddingComposite(mock_sampler, source=source)
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
-        expected_number_of_cells = m * n * 3  # Upper bound without tiling
-        num_reads = 10
         response = sampler.sample_ising(h, J, num_reads=num_reads)
         self.assertLess(
-            sum(response.record.num_occurrences), expected_number_of_cells * num_reads
+            sum(response.record.num_occurrences) - 1,
+            expected_number_of_cells * num_reads,
         )
 
         # By tiling (find_sublattice_embeddings)
+        tile_embedding = {i: (i, i + t) for i in range(4)}  # K4 clique embedding
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "tile_embedding": tile_embedding,
+            "one_to_iterable": True,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=source,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+            one_to_iterable=True,
+        )
+        response = sampler.sample_ising(h, J, num_reads=num_reads)
+        self.assertEqual(
+            sum(response.record.num_occurrences), expected_number_of_cells * num_reads
+        )
 
     def test_pegasus_multi_cell(self):
         # Test case of 2x3 nice cell embedding over defect free
@@ -183,25 +202,50 @@ class TestTiling(unittest.TestCase):
             broken_nodes=broken_node_linear_coordinates,
         )
         # Tile with 2x2 cells:
-        sampler = TilingComposite(mock_sampler, 2, 2, 4)
 
+        # sampler = TilingComposite(mock_sampler, 2, 2, 4)  # Before!
+        tile = dnx.chimera_graph(2, 2, 4)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
+        print(sampler.embeddings)
+        print(len(sampler.embeddings))
         # Given the above pegasus graph, check that the embeddings are as
         # follows:
         # 00XX  3344 7788
         # 0011  3344 7788
         # 2211  5566 99XX
         # 22XX  5566 99XX
+        import matplotlib.pyplot as plt
+        from dwave_networkx import draw_parallel_embeddings
 
-        # Check correct number of embeddings and size of each is sufficient,
-        # given chimera test checks detailed position:
-        self.assertTrue(len(sampler.embeddings) == 10)
+        draw_parallel_embeddings(mock_sampler.to_networkx_graph(), sampler.embeddings)
+        plt.show()
+        all_embedded_to_nodes = [
+            n for emb in sampler.embeddings for c in emb.values() for n in c
+        ]
+        set_embedded_to_nodes = set(all_embedded_to_nodes)
+        set_target_nodes = set
+        self.assertTrue(
+            set_embedded_to_nodes.issubset(set(mock_sampler.nodelist)),
+            "embedded-to nodes are valid",
+        )
+        self.assertEqual(
+            len(all_embedded_to_nodes),
+            len(set_embedded_to_nodes),
+            "embeddings should be disjoint",
+        )
         self.assertFalse(any([len(emb) != 32 for emb in sampler.embeddings]))
-
-        # Can be refined to check exact positioning, but a lot of ugly code:
-        # For visualization in coordinate scheme use:
-        # for emb in sampler.embeddings:
-        #    print({key: dnx.pegasus_coordinates(pegasus_shape[0]).linear_to_nice(next(iter(val)))
-        #           for key,val in emb.items()})
+        self.assertTrue(len(sampler.embeddings) == 10)
 
     def test_tile_around_edge_defects_pegasus(self):
         pegasus_shape = [5]
