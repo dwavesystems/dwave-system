@@ -68,14 +68,14 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
        source (nx.Graph, optional): A source graph must be provided if embeddings
            are not specified. The source graph nodes should be supported by
            every embedding.
-       find_embeddings (Callable, optional): A function that returns
+       embedder (Callable, optional): A function that returns
            embeddings when it is not provided. The first two arguments are
            assumed to be the source and target graph.
-       find_embeddings_args (dict, optional): key word arguments for the
-           find_embeddings function. The default
+       embedder_kwargs (dict, optional): key word arguments for the
+           embedder function. The default
            is an empty dictionary.
        one_to_iterable (bool, default=False): This parameter should be fixed to
-           match the value type returned by find_embeddings. If False the
+           match the value type returned by embedder. If False the
            values in every dictionary are target nodes (defining a subgraph
            embedding), these are transformed to tuples for compatibility with embed_bqm
            and unembed_sampleset. If True, the values are iterables over target
@@ -127,8 +127,8 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         sampler,
         embeddings=None,
         source=None,
-        find_embeddings=None,
-        find_embeddings_args=None,
+        embedder=None,
+        embedder_kwargs=None,
         one_to_iterable=False,
     ):
 
@@ -191,17 +191,16 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             if source is None:
                 raise ValueError("A source graph must be provided to infer embeddings")
 
-            if find_embeddings is None:
-                find_embeddings = find_multiple_embeddings
-            if find_embeddings_args is None:
-                find_embeddings_args = {}
-            _embeddings = find_embeddings(
-                source, self.child.to_networkx_graph(), **find_embeddings_args
+            if embedder is None:
+                embedder = find_multiple_embeddings
+            if embedder_kwargs is None:
+                embedder_kwargs = {}
+            _embeddings = embedder(
+                source, self.child.to_networkx_graph(), **embedder_kwargs
             )
             if one_to_iterable is False:
                 _embeddings = [{k: (v,) for k, v in emb.items()} for emb in _embeddings]
 
-            print(_embeddings)
         self.children = [sampler]
         self.embeddings = properties["embeddings"] = _embeddings
 
