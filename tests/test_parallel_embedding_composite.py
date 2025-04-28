@@ -101,13 +101,39 @@ class TestTiling(unittest.TestCase):
             mock_sampler.properties["topology"]["type"] == "pegasus"
             and "shape" in mock_sampler.properties["topology"]
         )
-        sampler = TilingComposite(mock_sampler, 1, 1)
+        # sampler = TilingComposite(mock_sampler, 1, 1)
+        tile = dnx.chimera_graph(1)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
 
         m_sub = 2
         n_sub = 3
-        sampler = TilingComposite(mock_sampler, m_sub, n_sub)
+        # sampler = TilingComposite(mock_sampler, m_sub, n_sub)
+        tile = dnx.chimera_graph(m=m_sub, n=n_sub)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
 
@@ -121,8 +147,20 @@ class TestTiling(unittest.TestCase):
 
     def test_sample_ising(self):
         mock_sampler = MockDWaveSampler()  # C4 structured sampler
-
-        sampler = TilingComposite(mock_sampler, 2, 2)
+        # sampler = TilingComposite(mock_sampler, 2, 2) Legacy
+        tile = dnx.chimera_graph(m=2, n=2)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
 
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
@@ -217,8 +255,6 @@ class TestTiling(unittest.TestCase):
             embedder=embedder,
             embedder_kwargs=embedder_kwargs,
         )
-        print(sampler.embeddings)
-        print(len(sampler.embeddings))
         # Given the above pegasus graph, check that the embeddings are as
         # follows:
         # 00XX  3344 7788
@@ -264,7 +300,21 @@ class TestTiling(unittest.TestCase):
             topology_shape=pegasus_shape,
             broken_edges=broken_edges,
         )
-        sampler = TilingComposite(mock_sampler, 2, 2, 4)
+        # sampler = TilingComposite(mock_sampler, 2, 2, 4) Deprecated
+        tile = dnx.chimera_graph(2, 2, 4)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
+
         self.assertTrue(len(sampler.embeddings) == 12)
 
         # P5 structured sampler with one missing internal edge that prevents
@@ -281,12 +331,38 @@ class TestTiling(unittest.TestCase):
             topology_shape=pegasus_shape,
             broken_edges=broken_edges,
         )
-        sampler = TilingComposite(mock_sampler, 2, 2, 4)
+        # sampler = TilingComposite(mock_sampler, 2, 2, 4)  # Deprecated
+        tile = dnx.chimera_graph(2, 2, 4)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
         self.assertTrue(len(sampler.embeddings) == 11)
 
     def test_sample_ising(self):
-        sampler = TilingComposite(MockDWaveSampler(), 2, 2)
-
+        # sampler = TilingComposite(MockDWaveSampler(), 2, 2)  # Deprecated
+        mock_sampler = MockDWaveSampler()
+        tile = dnx.chimera_graph(m=2, n=2)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
 
@@ -303,7 +379,21 @@ class TestTiling(unittest.TestCase):
             self.assertAlmostEqual(dimod.ising_energy(sample, h, J), energy)
 
     def test_sample_qubo(self):
-        sampler = TilingComposite(MockDWaveSampler(), 2, 2)
+        # sampler = TilingComposite(MockDWaveSampler(), 2, 2)
+        mock_sampler = MockDWaveSampler()
+        tile = dnx.chimera_graph(m=2, n=2)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
 
         Q = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
         Q.update(
@@ -326,7 +416,20 @@ class TestTiling(unittest.TestCase):
     def test_too_many_nodes(self):
         mock_sampler = MockDWaveSampler()  # C4 structured sampler
 
-        sampler = TilingComposite(mock_sampler, 2, 2)
+        # sampler = TilingComposite(mock_sampler, 2, 2)  # Deprecated
+        tile = dnx.chimera_graph(m=2, n=2)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
 
         h = {0: -1, 1: 1}
         J = {}
