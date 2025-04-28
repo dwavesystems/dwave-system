@@ -20,6 +20,108 @@ import dimod
 import numpy as np
 
 import dwave.embedding
+from dwave.embedding.transforms import EmbeddedStructure
+
+
+class TestBreakPoints(unittest.TestCase):
+    def test_break_points_no_samples(self):
+        # No samples
+        target_edges = [(0, 1), (1, 2)]
+        chains = {0: [0, 1, 2]}
+        embedding = EmbeddedStructure(target_edges, chains)
+
+        samples = np.array([], dtype=np.int8)
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = []
+
+        np.testing.assert_array_equal(answer, break_points)
+
+    def test_break_points_no_breaks(self):
+        # No breaks :D
+        target_edges = [(0, 1), (1, 2)]
+        chains = {0: [0, 1, 2]}
+        embedding = EmbeddedStructure(target_edges, chains)
+
+        samples = np.array([[+1, +1, +1],
+                            [+1, +1, +1]], dtype=np.int8)
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{}, {}]
+
+        np.testing.assert_array_equal(answer, break_points)
+
+    def test_break_points_chain(self):
+        # Target chain of length 3, one embedded variable
+        target_edges = [(0, 1), (1, 2)]
+        chains = {0: [0, 1, 2]}
+        embedding = EmbeddedStructure(target_edges, chains)
+
+        samples = np.array([[-1, +1, -1],
+                            [-1, -1, -1]], dtype=np.int8)
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{0: [(0, 1), (1, 2)]},
+                  {}]
+
+        np.testing.assert_array_equal(answer, break_points)
+
+    def test_break_points_chain_string_labels(self):
+        # Target chain of length 3, one embedded variable, but labels are strings
+        target_edges = [("a", "b"), ("b", "c")]
+        chains = {"x": ["a", "b", "c"]}
+        embedding = EmbeddedStructure(target_edges, chains)
+
+        # samples = np.array([[-1, +1, -1],
+        #                     [-1, -1, -1]], dtype=np.int8)
+        samples = [{"a": -1, "b": +1, "c": -1},
+                   {"a": -1, "b": -1, "c": -1},]
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{"x": [("a", "b"), ("b", "c")]},
+                  {}]
+
+        np.testing.assert_array_equal(answer, break_points)
+
+    def test_break_points_loop(self):
+        # Target triangle, one embedded variable
+        target_edges = [(0, 1), (1, 2), (0, 2)]
+        chains = {0: [0, 1, 2]}
+        embedding = EmbeddedStructure(target_edges, chains)
+
+        samples = np.array([[-1, +1, -1],
+                            [-1, +1, +1]], dtype=np.int8)
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{0: [(0, 1), (1, 2)]},
+                  {0: [(0, 1), (0, 2)]}]
+        np.testing.assert_array_equal(answer, break_points)
+
+    def test_break_points_chain_2(self):
+        # Target triangle, two embedded variables
+        target_edges = [(0, 1), (1, 2)]
+        chains = {0: [0, 1], 1: [2]}
+
+        embedding = EmbeddedStructure(target_edges, chains)
+        samples = np.array([[-1, +1, -1],
+                            [-1, -1, +1]], dtype=np.int8)
+
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{0: [(0, 1)]},
+                  {}]
+        np.testing.assert_array_equal(answer, break_points)
+
+    def test_break_points_loop_2(self):
+        # Target square, two embedded variables
+        target_edges = [(0, 1), (1, 2), (2, 3), (0, 3)]
+        chains = {0: [0, 1], 1: [2, 3]}
+        embedding = EmbeddedStructure(target_edges, chains)
+        samples = np.array([[-1, -1, +1, -1],
+                            [-1, +1, +1, -1]], dtype=np.int8)
+        break_points = dwave.embedding.break_points(samples, embedding)
+        answer = [{1: [(2, 3)]}, {0: [(0, 1)],
+                   1: [(2, 3)]}]
+        np.testing.assert_array_equal(answer, break_points)
 
 
 class TestBrokenChains(unittest.TestCase):

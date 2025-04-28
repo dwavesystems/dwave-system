@@ -21,7 +21,7 @@ import dwave.embedding.exceptions
 
 from dwave.embedding.diagnostic import diagnose_embedding, is_valid_embedding, verify_embedding
 
-from dwave.embedding.chain_breaks import broken_chains
+from dwave.embedding.chain_breaks import broken_chains, break_points
 from dwave.embedding.chain_breaks import discard, majority_vote, weighted_random, MinimizeEnergy
 
 from dwave.embedding.transforms import embed_bqm, embed_ising, embed_qubo, unembed_sampleset, EmbeddedStructure

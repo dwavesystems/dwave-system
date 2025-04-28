@@ -33,6 +33,7 @@ import minorminer
 
 from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
                              chain_to_quadratic, EmbeddedStructure)
+from dwave.embedding.chain_breaks import break_points
 from dwave.system.warnings import WarningHandler, WarningAction
 
 __all__ = ('EmbeddingComposite',
@@ -296,7 +297,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             if return_embedding:
                 sampleset.info['embedding_context'].update(
                     embedding_parameters=embedding_parameters,
-                    chain_strength=embedding.chain_strength)
+                    chain_strength=embedding.chain_strength,
+                    break_points=break_points(response, embedding))
 
             if chain_break_fraction and len(sampleset):
                 warninghandler.issue("All samples have broken chains",
