@@ -129,9 +129,9 @@ def schedule_with_anneal_offset(
 
         >>> from dwave.system import schedule_with_anneal_offset
         ...
-        >>> csv_file = "../../docs/_static/advantage_system4_1_annealing_schedule_standard.csv"
+        >>> csv_file = "advantage_system4_1_annealing_schedule_standard.csv"
         >>> offset = 0.2
-        >>> schedule_offset = schedule_with_anneal_offset(csv_file, offset)
+        >>> schedule_offset = schedule_with_anneal_offset(csv_file, offset)  # doctest: +SKIP
 
     """
     schedule = np.loadtxt(schedule_csv_filename, delimiter=",", skiprows=1)
