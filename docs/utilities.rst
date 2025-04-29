@@ -20,6 +20,12 @@ Utilities
 
    coupling_groups
 
+.. currentmodule:: dwave.system.utilities
+
+.. autosummary::
+   :toctree: generated/
+
+   schedule_with_anneal_offset
 
 Temperature and Unit-Conversion Utilities
 -----------------------------------------

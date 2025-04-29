@@ -17,9 +17,13 @@
 import os
 import json
 import networkx as nx
+import numpy as np
 import warnings
 
-__all__ = ['common_working_graph', 'classproperty']
+__all__ = [
+    'common_working_graph',
+    'classproperty',
+    'schedule_with_anneal_offset']
 
 
 # taken from https://stackoverflow.com/a/39542816, licensed under CC BY-SA 3.0
@@ -89,3 +93,55 @@ class FeatureFlags:
     @classproperty
     def hss_solver_config_override(cls):
         return cls.get('hss_solver_config_override')
+
+
+def schedule_with_anneal_offset(
+        schedule_csv_filename: str,
+        anneal_offset: float = 0.0
+    ) -> np.ndarray:
+    """Calculates the anneal schedule for a given anneal offset.
+
+    The standard annealing trajectory, published for each quantum computer on
+    :ref:`this <qpu_solver_properties_specific>` page, lowers :math:`A(s)`, the
+    tunneling energy, and raises :math:`B(s)`, the problem energy, identically
+    for all qubits. :ref:`Anneal offsets <qpu_qa_anneal_offsets>` enable you to
+    adjust the standard annealing path per qubit.
+
+    This function accepts a quantum computer's anneal schedule (in CSV format)
+    and an offset value, and returns the advanced or delayed schedule.
+
+    Args:
+        schedule_csv_filename:
+            Filename of an anneal schedule, as published on the
+            :ref:`Per-QPU Solver Properties and Schedules <qpu_solver_properties_specific>`
+            page, with the schedule tab saved to CSV-format file.
+
+        anneal_offset:
+            Anneal-offset value for a single qubit.
+
+    Returns:
+        Offset schedules A(s) and B(s), as a NumPy array with columns
+        :math:`s, A, B`.
+
+    Examples:
+
+        This example returns the schedule with an offset of 0.2.
+
+        >>> from dwave.system import schedule_with_anneal_offset
+        ...
+        >>> csv_file = "../../docs/_static/advantage_system4_1_annealing_schedule_standard.csv"
+        >>> offset = 0.2
+        >>> schedule_offset = schedule_with_anneal_offset(csv_file, offset)
+
+    """
+    schedule = np.loadtxt(schedule_csv_filename, delimiter=",", skiprows=1)
+
+    s = schedule[:, 0]
+    A = schedule[:, 1]
+    B = schedule[:, 2]
+    c = schedule[:, 3]
+
+    A_offset = np.interp(c + anneal_offset, c, A)
+    B_offset = np.interp(c + anneal_offset, c, B)
+
+    return np.column_stack((s, A_offset, B_offset))
