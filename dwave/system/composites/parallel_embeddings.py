@@ -225,7 +225,9 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
-        """Sample from the specified binary quadratic model.
+        """Sample from the specified binary quadratic model. Samplesets are
+        concatenated together in the the same order as the embeddings class variable,
+        the info field is returned from the child sampler unmodified.
 
         Args:
             bqm (:obj:`~dimod.BinaryQuadraticModel`):
