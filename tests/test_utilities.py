@@ -110,6 +110,6 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
             [1, 3, 7, 12],
             [0.02, 0.025, 0.04, 0.07]
             ]
-        schedule_offset = anneal_schedule_with_offset(anneal_schedule, 0.2)
+        schedule_offset = anneal_schedule_with_offset(anneal_schedule, anneal_offset=0.2)
 
-        np.testing.assert_array_equal(schedule_offset[:, 0], anneal_schedule[:, 0])
+        np.testing.assert_array_equal(schedule_offset[:, 0], np.asarray(anneal_schedule)[:, 0])
