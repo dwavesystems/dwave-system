@@ -15,6 +15,7 @@
 import unittest
 import random
 
+import numpy as np
 import networkx as nx
 
 import dimod
@@ -23,25 +24,97 @@ import dwave_networkx as dnx
 from dwave.system.testing import MockDWaveSampler
 from dwave.system.composites import TilingComposite, ParallelEmbeddingComposite
 from minorminer.utils.parallel_embeddings import find_sublattice_embeddings
+from minorminer import find_embedding
 
 
 class TestParallelEmbeddings(unittest.TestCase):
 
-    def test_most_basic(self):
-        # NB, mock_sampler (GreedySampler or ExactSolver) can solve to optimality.
+    def test_assertions(self):
+        with self.assertRaises(ValueError):
+            sampler = dimod.ExactSolver()  # Not structured.
+            source = nx.from_edgelist([(0, 1)])
+            sampler = ParallelEmbeddingComposite(sampler, source=source)
+
         mock_sampler = MockDWaveSampler()
+        with self.assertRaises(ValueError):
+            sampler = ParallelEmbeddingComposite(mock_sampler)  # unclear embedding
+
+        with self.assertRaises(ValueError):
+            too_big = mock_sampler.to_networkx_graph()
+            too_big.add_edge("a", "b")  # Too many nodes and edges
+            sampler = ParallelEmbeddingComposite(mock_sampler, source=too_big)
+
+        with self.assertRaises(ValueError):
+            source = nx.from_edgelist([(0, 1)])
+            embeddings = [{0: ("a",), 2: ("b",)}]  # Bad values
+            sampler = ParallelEmbeddingComposite(
+                mock_sampler, embeddings=embeddings, source=source
+            )
+
+        with self.assertRaises(ValueError):
+            embeddings = [
+                {0: (e[0],), 1: (e[1], 1)} for e in mock_sampler.edgelist
+            ]  # Not disjoint
+            sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+
+        with self.assertRaises(ValueError):
+            source = nx.from_edgelist([(0, 1)])
+            embeddings = [
+                {0: (mock_sampler.edgelist[0][0],), 2: (mock_sampler.edgelist[0][1],)}
+            ]  # Bad keys
+            sampler = ParallelEmbeddingComposite(
+                mock_sampler, source=source, embeddings=embeddings
+            )
+
+    def test_basic(self):
+        mock_sampler = MockDWaveSampler()
+
+        # Single nodes, MockSampler solves to optimality on every embedding:
+        h = {"a": -2}  # +1 state of energy -1 every case.
+        J = {}
         embeddings = [
-            {0: (n,)} for n in mock_sampler.nodelist
-        ]  # Single nodes, some embedders don't like this ..
+            {"a": (n,)} for n in mock_sampler.nodelist
+        ]  # NB: The default embedder (find_subgraph) doesn't respect disconnected nodes
         sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
-        embeddings = [
-            {idx: (n,) for idx, n in enumerate(e)} for e in mock_sampler.edgelist
-        ]  # Matching
-        sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+        num_reads = 3
+        ss = sampler.sample_ising(h, J, num_reads=num_reads)
+        self.assertEqual(num_reads * len(embeddings), sum(ss.record.num_occurrences))
+        self.assertTrue(np.all(ss.record.energy == -2))
+        self.assertTrue(np.all(ss.record.sample == 1))
+
+        # Greedy matching: (-1,-1) state of energy -1.75 every case (no local minima)
+        h = {0: 1, 1: 0.5}
+        J = {(0, 1): -0.25}
+        used_nodes = set()
+        embeddings0 = []
+        for e in mock_sampler.edgelist:
+            if e[0] not in used_nodes and e[1] not in used_nodes:
+                used_nodes.add(e[0])
+                used_nodes.add(e[1])
+                embeddings0.append({idx: (n,) for idx, n in enumerate(e)})
+
+        source = nx.from_edgelist([(0, 1)])
+        for embeddings in [embeddings0, None]:  # Provided or searched
+            sampler = ParallelEmbeddingComposite(
+                mock_sampler, embeddings=embeddings, source=source
+            )
+            num_reads = 2
+            ss = sampler.sample_ising(h, J, num_reads=num_reads)
+            if embeddings is None:
+                self.assertEqual(
+                    num_reads * len(sampler.embeddings), sum(ss.record.num_occurrences)
+                )
+            else:
+                self.assertEqual(
+                    num_reads * len(embeddings), sum(ss.record.num_occurrences)
+                )
+            self.assertTrue(np.all(ss.record.energy == -1.75))
+            self.assertTrue(np.all(ss.record.sample == -1))
 
 
 class TestTiling(unittest.TestCase):
-    """Testing for purposes of TilingComposite deprecation"""
+    """Testing for purposes of TilingComposite deprecation. See also testing of
+    find_sublattice_embeddings in minorminer."""
 
     def test_pegasus_cell(self):
         # Test trivial case of single cell (K4,4) embedding over defect free
@@ -67,26 +140,32 @@ class TestTiling(unittest.TestCase):
         )
 
         # By tiling (find_sublattice_embeddings)
-        tile_embedding = {i: (i, i + t) for i in range(4)}  # K4 clique embedding
-        embedder = find_sublattice_embeddings
-        embedder_kwargs = {
-            "tile": tile,
-            "tile_embedding": tile_embedding,
-            "one_to_iterable": True,
-            "max_num_emb": None,
-            "use_tile_embedding": True,
-        }
-        sampler = ParallelEmbeddingComposite(
-            mock_sampler,
-            source=source,
-            embedder=embedder,
-            embedder_kwargs=embedder_kwargs,
-            one_to_iterable=True,
-        )
-        response = sampler.sample_ising(h, J, num_reads=num_reads)
-        self.assertEqual(
-            sum(response.record.num_occurrences), expected_number_of_cells * num_reads
-        )
+        tile_embedding0 = {i: (i, i + t) for i in range(4)}  # K4 clique embedding
+        for tile_embedding in [
+            None,
+            tile_embedding0,
+        ]:  # Embedding searched, or provided.
+            embedder = find_sublattice_embeddings
+            embedder_kwargs = {
+                "tile": tile,
+                "tile_embedding": tile_embedding,
+                "one_to_iterable": True,
+                "max_num_emb": None,
+                "use_tile_embedding": True,
+                "embedder": find_embedding,  # Succeeds deterministically under defaults for this example.
+            }
+            sampler = ParallelEmbeddingComposite(
+                mock_sampler,
+                source=source,
+                embedder=embedder,
+                embedder_kwargs=embedder_kwargs,
+                one_to_iterable=True,
+            )
+            response = sampler.sample_ising(h, J, num_reads=num_reads)
+            self.assertEqual(
+                sum(response.record.num_occurrences),
+                expected_number_of_cells * num_reads,
+            )
 
     def test_pegasus_multi_cell(self):
         # Test case of 2x3 nice cell embedding over defect free
