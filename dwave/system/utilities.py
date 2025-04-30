@@ -23,7 +23,8 @@ import warnings
 __all__ = [
     'common_working_graph',
     'classproperty',
-    'schedule_with_anneal_offset']
+    'schedule_with_anneal_offset',
+    ]
 
 
 # taken from https://stackoverflow.com/a/39542816, licensed under CC BY-SA 3.0
