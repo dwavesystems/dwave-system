@@ -11,6 +11,7 @@ Utilities
 .. autosummary::
    :toctree: generated/
 
+   anneal_schedule_with_offset
    common_working_graph
 
 .. currentmodule:: dwave.system.coupling_groups
@@ -19,13 +20,6 @@ Utilities
    :toctree: generated/
 
    coupling_groups
-
-.. currentmodule:: dwave.system.utilities
-
-.. autosummary::
-   :toctree: generated/
-
-   schedule_with_anneal_offset
 
 Temperature and Unit-Conversion Utilities
 -----------------------------------------

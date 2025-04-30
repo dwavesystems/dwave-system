@@ -21,7 +21,7 @@ import dwave_networkx as dnx
 
 from dwave.cloud.testing import isolated_environ
 
-from dwave.system import common_working_graph, schedule_with_anneal_offset
+from dwave.system import anneal_schedule_with_offset, common_working_graph
 from dwave.system.utilities import FeatureFlags
 
 
@@ -101,16 +101,15 @@ class TestFeatureFlagSupport(unittest.TestCase):
             self.assertFalse(FeatureFlags.hss_solver_config_override)
 
 
-class TestScheduleWithAnnealOffset(unittest.TestCase):
+class TestAnnealScheduleWithOffset(unittest.TestCase):
     def test_doc_file(self):
 
-        csv_file =  os.path.join(
-            os.path.dirname( __file__ ),
-            '..',
-            'docs',
-            '_static',
-            'advantage_system4_1_annealing_schedule_standard.csv')
-        schedule = np.loadtxt(csv_file, delimiter=",", skiprows=1)
-        schedule_offset = schedule_with_anneal_offset(csv_file, 0.2)
+        anneal_schedule = [
+            [0.1, 0.2, 0.3, 0.4],
+            [10, 6, 4, 2],
+            [1, 3, 7, 12],
+            [0.02, 0.025, 0.04, 0.07]
+            ]
+        schedule_offset = anneal_schedule_with_offset(anneal_schedule, 0.2)
 
-        np.testing.assert_array_equal(schedule_offset[:, 0], schedule[:, 0])
+        np.testing.assert_array_equal(schedule_offset[:, 0], anneal_schedule[:, 0])
