@@ -28,6 +28,26 @@ __all__ = [
     'anneal_schedule_with_offset',
     ]
 
+def _require(
+    argname: str,
+    array_like: np.typing.ArrayLike,
+    num_columns: int = 1,
+    ) -> np.ndarray:
+    "Coerce array-like input into a NumPy array."
+    try:
+        array = np.asarray_chkfinite(array_like)
+    except (ValueError, TypeError) as err:
+        raise ValueError(f"`{argname}`: {err}") from err
+
+    if not np.issubdtype(array.dtype, np.number):
+        raise TypeError(f"`{argname}` must be an array-like of numbers")
+
+    if array.ndim > 1 and array.shape[1] != num_columns or \
+        array.ndim == 1 and array.ndim != num_columns:
+
+        raise ValueError(f"'{argname}' must be a {num_columns}D array-like")
+
+    return array
 
 # taken from https://stackoverflow.com/a/39542816, licensed under CC BY-SA 3.0
 # not needed in py39+
@@ -174,7 +194,6 @@ def anneal_schedule_with_offset(
         >>> schedule_offset = anneal_schedule_with_offset(offset, schedule)  # doctest: +SKIP
 
     """
-
     if anneal_schedule is not None and (
         s is not None or A is not None or B is not None or c is not None):
 
@@ -186,32 +205,6 @@ def anneal_schedule_with_offset(
 
             raise ValueError("If `anneal_schedule` is unspecified, you must"
                 f" specify all of `s, A, B, c`. Not all were specified.")
-
-    def _require(
-            argname: str,
-            array_like: np.typing.ArrayLike,
-            num_columns: int = 1,
-            ) -> np.ndarray:
-        "Coerce the input into a NumPy array."
-        try:
-            array = np.asarray(array_like)
-        except (ValueError, TypeError) as err:
-            raise ValueError(f"`{argname}` must be an array-like") from err
-
-        if not np.issubdtype(array.dtype, np.number):
-            raise ValueError(f"`{argname}` must be an array-like of numbers")
-
-        try:
-            array = np.asarray_chkfinite(array)
-        except ValueError as err:
-            raise ValueError(f"'{argname}' must not contain infs or NaNs") from err
-
-        if array.ndim > 1 and array.shape[1] != num_columns or \
-            array.ndim == 1 and array.ndim != num_columns:
-
-            raise ValueError(f"'{argname}' must be a {num_columns}D array-like")
-
-        return array
 
     if anneal_schedule is not None:
 
