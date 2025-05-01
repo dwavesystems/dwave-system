@@ -123,8 +123,8 @@ def anneal_schedule_with_offset(
 
         anneal_schedule:
             Anneal schedule, as a 4-column |array-like|_, with column values for
-            :math:`s, A, B, c` matching (typically taken from) the spreadsheet
-            columns of the published
+            :math:`s, A, B, c` as provided by (and typically taken from) the
+            spreadsheet columns of the published
             :ref:`Per-QPU Solver Properties and Schedules <qpu_solver_properties_specific>`
             page. If set, ``anneal_offset`` is the only additional parameter
             allowed.
@@ -147,8 +147,8 @@ def anneal_schedule_with_offset(
             values must be provided for ``s``, ``A``, and ``B``.
 
     Returns:
-        Offset schedules A(s) and B(s), as a :std:doc:`NumPy <numpy:index>`
-        array with columns :math:`s, A, B`.
+        Offset schedules :math:`A(s), B(s)`, and :math:`c(s)`, as a
+        :std:doc:`NumPy <numpy:index>` array with columns :math:`s, A, B, c`.
 
     Note:
         You can prepare the input schedule by downloading the schedule for your
@@ -231,5 +231,6 @@ def anneal_schedule_with_offset(
 
     A_offset = np.interp(c + anneal_offset, c, A)
     B_offset = np.interp(c + anneal_offset, c, B)
+    c_offset= c + anneal_offset
 
-    return np.column_stack((s, A_offset, B_offset))
+    return np.column_stack((s, A_offset, B_offset, c_offset))

@@ -111,16 +111,19 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
             [0.4, 2, 12, 0.399]
             ]
 
+        offset=0.05
+
+        # Schedule with  offset=0.05
         expected_schedule = [
-            [0.1, 9.13043478, 1.43478261],
-            [0.2, 4.88888889, 5.22222222],
-            [0.3, 2.30508475, 11.23728814],
-            [0.4, 2, 12]
+            [0.1, 9.13043478, 1.43478261, 0.07],
+            [0.2, 4.88888889, 5.22222222, 0.3],
+            [0.3, 2.30508475, 11.23728814, 0.39],
+            [0.4, 2, 12, 0.449]
             ]
 
         # Anneal schedule as a list
         schedule_offset = anneal_schedule_with_offset(
-            0.05,
+            offset,
             anneal_schedule,
             )
 
@@ -131,7 +134,7 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
 
         # Anneal schedule as an array
         schedule_offset = anneal_schedule_with_offset(
-            0.05,
+            offset,
             np.asarray(anneal_schedule),
             )
 
@@ -142,7 +145,7 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
 
         # Vector inputs as lists
         schedule_offset = anneal_schedule_with_offset(
-            0.05,
+            offset,
             s= [a[:1][0] for a in anneal_schedule],
             A = [a[1:2][0] for a in anneal_schedule],
             B = [a[2:3][0] for a in anneal_schedule],
@@ -156,7 +159,7 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
 
         # Vector inputs as 1D arrays
         schedule_offset = anneal_schedule_with_offset(
-            0.05,
+            offset,
             s= np.asarray(anneal_schedule)[:,0],
             A = np.asarray(anneal_schedule)[:,1],
             B = np.asarray(anneal_schedule)[:,2],
@@ -171,7 +174,7 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
         # Error case: missing vector
         with self.assertRaises(ValueError):
             schedule_offset = anneal_schedule_with_offset(
-                0.05,
+                offset,
                 s= np.asarray(anneal_schedule)[:,0],
                 B = np.asarray(anneal_schedule)[:,2],
                 c = np.asarray(anneal_schedule)[:,3],
@@ -180,7 +183,7 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
         # Error case: schedule and vectors
         with self.assertRaises(ValueError):
             schedule_offset = anneal_schedule_with_offset(
-                0.05,
+                offset,
                 anneal_schedule,
                 s= np.asarray(anneal_schedule)[:,0],
                 A = np.asarray(anneal_schedule)[:,1],
@@ -191,14 +194,14 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
         # Error case: schedule not 4D
         with self.assertRaises(ValueError):
             schedule_offset = anneal_schedule_with_offset(
-                0.05,
+                offset,
                 anneal_schedule=np.asarray(anneal_schedule)[:,0],
                 )
 
         # Error case: vector not 1D
         with self.assertRaises(ValueError):
             schedule_offset = anneal_schedule_with_offset(
-                0.05,
+                offset,
                 s= np.asarray(anneal_schedule)[:,0],
                 A = np.asarray(anneal_schedule)[:,1:3],
                 B = np.asarray(anneal_schedule)[:,2],
