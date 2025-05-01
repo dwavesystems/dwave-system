@@ -105,11 +105,102 @@ class TestAnnealScheduleWithOffset(unittest.TestCase):
     def test_doc_file(self):
 
         anneal_schedule = [
-            [0.1, 0.2, 0.3, 0.4],
-            [10, 6, 4, 2],
-            [1, 3, 7, 12],
-            [0.02, 0.025, 0.04, 0.07]
+            [0.1, 10, 1, 0.02],
+            [0.2, 6, 3, 0.25],
+            [0.3, 4, 7, 0.34],
+            [0.4, 2, 12, 0.399]
             ]
-        schedule_offset = anneal_schedule_with_offset(anneal_schedule, anneal_offset=0.2)
 
-        np.testing.assert_array_equal(schedule_offset[:, 0], np.asarray(anneal_schedule)[:, 0])
+        expected_schedule = [
+            [0.1, 9.13043478, 1.43478261],
+            [0.2, 4.88888889, 5.22222222],
+            [0.3, 2.30508475, 11.23728814],
+            [0.4, 2, 12]
+            ]
+
+        # Anneal schedule as a list
+        schedule_offset = anneal_schedule_with_offset(
+            0.05,
+            anneal_schedule,
+            )
+
+        np.testing.assert_allclose(schedule_offset,
+                                   np.asarray(expected_schedule),
+                                   atol=0.1,
+                                   )
+
+        # Anneal schedule as an array
+        schedule_offset = anneal_schedule_with_offset(
+            0.05,
+            np.asarray(anneal_schedule),
+            )
+
+        np.testing.assert_allclose(schedule_offset,
+                                   np.asarray(expected_schedule),
+                                   atol=0.1,
+                                   )
+
+        # Vector inputs as lists
+        schedule_offset = anneal_schedule_with_offset(
+            0.05,
+            s= [a[:1][0] for a in anneal_schedule],
+            A = [a[1:2][0] for a in anneal_schedule],
+            B = [a[2:3][0] for a in anneal_schedule],
+            c = [a[3:][0] for a in anneal_schedule],
+            )
+
+        np.testing.assert_allclose(schedule_offset,
+                                   np.asarray(expected_schedule),
+                                   atol=0.1,
+                                   )
+
+        # Vector inputs as 1D arrays
+        schedule_offset = anneal_schedule_with_offset(
+            0.05,
+            s= np.asarray(anneal_schedule)[:,0],
+            A = np.asarray(anneal_schedule)[:,1],
+            B = np.asarray(anneal_schedule)[:,2],
+            c = np.asarray(anneal_schedule)[:,3],
+            )
+
+        np.testing.assert_allclose(schedule_offset,
+                                   np.asarray(expected_schedule),
+                                   atol=0.1,
+                                   )
+
+        # Error case: missing vector
+        with self.assertRaises(ValueError):
+            schedule_offset = anneal_schedule_with_offset(
+                0.05,
+                s= np.asarray(anneal_schedule)[:,0],
+                B = np.asarray(anneal_schedule)[:,2],
+                c = np.asarray(anneal_schedule)[:,3],
+                )
+
+        # Error case: schedule and vectors
+        with self.assertRaises(ValueError):
+            schedule_offset = anneal_schedule_with_offset(
+                0.05,
+                anneal_schedule,
+                s= np.asarray(anneal_schedule)[:,0],
+                A = np.asarray(anneal_schedule)[:,1],
+                B = np.asarray(anneal_schedule)[:,2],
+                c = np.asarray(anneal_schedule)[:,3],
+                )
+
+        # Error case: schedule not 4D
+        with self.assertRaises(ValueError):
+            schedule_offset = anneal_schedule_with_offset(
+                0.05,
+                anneal_schedule=np.asarray(anneal_schedule)[:,0],
+                )
+
+        # Error case: vector not 1D
+        with self.assertRaises(ValueError):
+            schedule_offset = anneal_schedule_with_offset(
+                0.05,
+                s= np.asarray(anneal_schedule)[:,0],
+                A = np.asarray(anneal_schedule)[:,1:3],
+                B = np.asarray(anneal_schedule)[:,2],
+                c = np.asarray(anneal_schedule)[:,3],
+                )

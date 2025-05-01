@@ -99,12 +99,12 @@ class FeatureFlags:
 
 
 def anneal_schedule_with_offset(
+        anneal_offset: float = 0.0,
         anneal_schedule: Union[np.typing.ArrayLike, List, None] = None,
         s: Union[np.typing.ArrayLike, List, None] = None,
         A: Union[np.typing.ArrayLike, List, None] = None,
         B: Union[np.typing.ArrayLike, List, None] = None,
-        c: Union[np.typing.ArrayLike, List, None] = None,
-        anneal_offset: float = 0.0
+        c: Union[np.typing.ArrayLike, List, None] = None
     ) -> np.ndarray:
     r"""Calculates the anneal schedule for a given anneal offset.
 
@@ -118,6 +118,9 @@ def anneal_schedule_with_offset(
     value, and returns the advanced or delayed schedule.
 
     Args:
+        anneal_offset:
+            Anneal-offset value for a single qubit.
+
         anneal_schedule:
             Anneal schedule, as a 4-column |array-like|_, with column values for
             :math:`s, A, B, c` matching (typically taken from) the spreadsheet
@@ -142,9 +145,6 @@ def anneal_schedule_with_offset(
         c: Normalized annealing bias, :math:`c(s)`, as a 1-dimensional
             |array-like|_. If set ``anneal_schedule`` must be ``None`` and
             values must be provided for ``s``, ``A``, and ``B``.
-
-        anneal_offset:
-            Anneal-offset value for a single qubit.
 
     Returns:
         Offset schedules A(s) and B(s), as a :std:doc:`NumPy <numpy:index>`
@@ -171,7 +171,7 @@ def anneal_schedule_with_offset(
         >>> from dwave.system import anneal_schedule_with_offset
         ...
         >>> offset = 0.2
-        >>> schedule_offset = anneal_schedule_with_offset(schedule, offset)  # doctest: +SKIP
+        >>> schedule_offset = anneal_schedule_with_offset(offset, schedule)  # doctest: +SKIP
 
     """
 
