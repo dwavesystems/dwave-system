@@ -1,4 +1,4 @@
-# Copyright 2018 D-Wave Systems Inc.
+# Copyright 2025 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import dwave_networkx as dnx
 
 from dwave.system.testing import MockDWaveSampler
 from dwave.system.composites import TilingComposite, ParallelEmbeddingComposite
+from dwave.preprocessing import SpinReversalTransformComposite
 from minorminer.utils.parallel_embeddings import find_sublattice_embeddings
 from minorminer import find_embedding
 
@@ -110,6 +111,49 @@ class TestParallelEmbeddings(unittest.TestCase):
                 )
             self.assertTrue(np.all(ss.record.energy == -1.75))
             self.assertTrue(np.all(ss.record.sample == -1))
+
+    def test_composite_propagation(self):
+        # Propagation fails for TilingComposite but succeeds here.
+        # When using find_sublattice_embedding it is necessayr to specify
+        # the family and shape of the QPU as part of embedder_kwargs
+        mock_sampler0 = MockDWaveSampler()
+        mock_sampler = SpinReversalTransformComposite(mock_sampler0)
+        embeddings = []
+        used_nodes = set()
+        for e in mock_sampler.child.edgelist:
+            if e[0] not in used_nodes and e[1] not in used_nodes:
+                used_nodes.add(e[0])
+                used_nodes.add(e[1])
+                embeddings.append({idx: (n,) for idx, n in enumerate(e)})
+        sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+        source = tile = dnx.chimera_graph(1, 1, 4)  # A 1:1 mapping assumed
+        J = {e: -1 for e in tile.edges}  # A ferromagnet on the Chimera tile.
+        embedder_kwargs = {"max_num_emb": None}
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler, source=source, embedder_kwargs=embedder_kwargs
+        )
+        sampleset = sampler.sample_ising({}, J, num_reads=1)
+        self.assertGreater(
+            len(sampleset), 1
+        )  # Equal to the number of parallel embeddings
+
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "max_num_emb": None,
+            "tile": tile,
+            "T_family": mock_sampler0.properties["topology"]["type"],
+            "T_kwargs": {"m": mock_sampler0.properties["topology"]["shape"][0]},
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=source,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
+        sampleset = sampler.sample_ising({}, J, num_reads=1)
+        self.assertGreater(
+            len(sampleset), 1
+        )  # Equal to the number of parallel embeddings
 
 
 class TestTiling(unittest.TestCase):
@@ -349,7 +393,6 @@ class TestTiling(unittest.TestCase):
             n for emb in sampler.embeddings for c in emb.values() for n in c
         ]
         set_embedded_to_nodes = set(all_embedded_to_nodes)
-        set_target_nodes = set
         self.assertTrue(
             set_embedded_to_nodes.issubset(set(mock_sampler.nodelist)),
             "embedded-to nodes are valid",

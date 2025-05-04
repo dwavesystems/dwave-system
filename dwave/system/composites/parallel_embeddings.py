@@ -24,6 +24,7 @@ parallel.
 See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
+import networkx as nx
 
 import dimod
 import dwave_networkx as dnx
@@ -38,16 +39,8 @@ __all__ = ["ParallelEmbeddingComposite"]
 class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
     """Composite to parallelize sampling of a small problem on a structured sampler
 
-    Enables parallel sampling on a structured (target) sampler by use of multiple
-    disjoint embeddings.
-    Embeddings, particularly for large subgraphs of large target graphs
-    can be difficult to obtain. Relying on the defaults of this routine may result
-    in slow embedding, see :minorminer.util.parallel_embedding for methods. Note
-    that parallelization of job submissions can mitigate for network latency,
-    programming time and readout time in the case of QPU samplers, subject to
-    additional complexity in the embedding process.
-
-    If a list of embeddings is not provided, the function
+    Enables parallel sampling on a (target) sampler by use of multiple disjoint 
+    embeddings. If a list of embeddings is not provided, the function
     :code:minorminer.utils.parallel_embeddings.find_multiple_embeddings is called
     by default to attempt a maximum number of embeddings. If the target and source
     graph match processor architecture on a Chimera, Pegasus or Zephyr then
@@ -58,23 +51,35 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
     See tests/test_parallel_embeddings.py for use cases beyond the examples
     provided.
 
+    Embeddings, particularly for large subgraphs of large target graphs
+    can be difficult to obtain. Relying on the defaults of this routine may result
+    in slow embedding, see :minorminer.util.parallel_embedding for methods. Note
+    that parallelization of job submissions can mitigate for network latency,
+    programming time and readout time in the case of QPU samplers, subject to
+    additional complexity in the embedding process.
+
     Args:
-       sampler (:class:`~dimod.Sampler`): Structured dimod sampler such as a
+       child_sampler (:class:`~dimod.Sampler`): dimod sampler such as a
            :class:`~dwave.system.samplers.DWaveSampler`.
+
        embeddings (list, optional): A list of embeddings. Each embedding is
            assumed to be a dictionary with source-graph nodes as keys and iterables
            on target-graph nodes to as values. The embeddings can include keys not
            required by the source graph. Note that one_to_iterable is ignored
            (assumed True).
+
        source (nx.Graph, optional): A source graph must be provided if embeddings
            are not specified. The source graph nodes should be supported by
            every embedding.
+
        embedder (Callable, optional): A function that returns
            embeddings when it is not provided. The first two arguments are
            assumed to be the source and target graph.
+
        embedder_kwargs (dict, optional): key word arguments for the
            embedder function. The default
            is an empty dictionary.
+
        one_to_iterable (bool, default=False): This parameter should be fixed to
            match the value type returned by embedder. If False the
            values in every dictionary are target nodes (defining a subgraph
@@ -82,14 +87,67 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
            and unembed_sampleset. If True, the values are iterables over target
            nodes and no transformation is required.
 
+       child_structure_search (function, optional):
+           A function that accepts a sampler and returns the
+           :attr:`~dimod.Structured.structure` attribute.
+           Defaults to :func:`dimod.child_structure_dfs`.
+
     Raises:
-        ValueError: If the child sampler is not a structured sampler.
+        ValueError: If the `child_sampler` is not structured, and the structure
+           cannot be inferred from `child_structure_search`.
            If neither embeddings, nor a source graph, are provided.
            If the embeddings provided are an empty list, or no embeddings are found.
            If embeddings and source graph nodes are inconsistent.
            If embeddings and target graph nodes are inconsistent.
 
     Examples:
+
+        This example submits a simple Ising problem of just two variables on a
+        D-Wave system. We use the default subgraph embedder finding a maximum
+        number of embeddings. Note that searching for O(1000) of embeddings takes
+        several seconds.
+
+        >>> from dwave.system import DWaveSampler
+        >>> from dwave.system import ParallelEmbeddingComposite
+        >>> from networkx import from_edgelist
+        >>> embedder_kwargs = {'max_num_embs': None}  # Without this, only 1 embedding will be sought
+        >>> source = from_edgelist([('a', 'b')])
+        >>> qpu = DWaveSampler()
+        >>> sampler = ParallelEmbeddingComposite(qpu, source=source, embedder_kwargs=embedder_kwargs)
+        >>> sampleset = sampler.sample_ising({},{('a', 'b'): 1}, num_reads=1)
+        >>> len(sampleset) > 1  # Equal to the number of parallel embeddings
+        True
+
+        If we have a problem embeddedable on a Chimera tile, we can try many
+        dispacements on a target QPU graph (tiling). If all variables on the Chimera tile
+        are used, and the target graph is defect free, this allows an optimal
+        parallelization. Note that find_sublattice_embeddings should only be preferred
+        to the default find_multiple_embeddings where the source and target graph have a
+        special lattice relationship. Finding a large set of disjoint chimera cells within
+        a typical processor graph can take several seconds.
+        See tests/ for other examples.
+
+        >>> from dwave.system import DWaveSampler
+        >>> from dwave.system import ParallelEmbeddingComposite
+        >>> from dwave_networkx import chimera_graph
+        >>> from minorminer.utils.parallel_embeddings import find_sublattice_embeddings
+        >>> source = tile = chimera_graph(1, 1, 4)  # A 1:1 mapping assumed
+        >>> qpu = DWaveSampler()
+        >>> embedder = find_sublattice_embeddings
+        >>> embedder_kwargs = {'max_num_emb': None, 'tile': tile}
+        >>> sampler = ParallelEmbeddingComposite(qpu, source=source, embedder=embedder, embedder_kwargs=embedder_kwargs)
+        >>> J = {e: -1 for e in tile.edges}  # A ferromagnet on the Chimera tile.
+        >>> sampleset = sampler.sample_ising({}, J, num_reads=1)
+        >>> len(sampleset) > 1  # Equal to the number of parallel embeddings
+        True
+
+        Consider use of dwave_networkx.draw_parallel_embeddings for visualization of the
+        embeddings found (embeddings=sampler.embeddings over target=qpu.to_networkx_graph()).
+
+        See the :ref:`index_concepts` section
+        for explanations of technical terms in descriptions of Ocean tools.
+
+
        A 4-loop can be embedded on the order of N//4 times on a processor
        with N nodes.
 
@@ -132,16 +190,18 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
     def __init__(
         self,
-        sampler,
+        child_sampler,
         embeddings=None,
         *,
         source=None,
         embedder=None,
         embedder_kwargs=None,
         one_to_iterable=False,
+        child_structure_search=dimod.child_structure_dfs
     ):
-        self.parameters = sampler.parameters.copy()
-        self.properties = properties = {"child_properties": sampler.properties}
+        self.parameters = child_sampler.parameters.copy()
+        self.properties = properties = {"child_properties": child_sampler.properties}
+        self.target_structure = child_structure_search(child_sampler)
 
         # dimod.Structured abstract base class automatically populates adjacency
         # and structure as mixins based on nodelist and edgelist
@@ -151,13 +211,8 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         elif embeddings is None:
             raise ValueError("Either the source or embeddings must be provided")
 
-        self.children = [sampler]
-
-        if not isinstance(sampler, dimod.Structured):
-            # Parallelization by embedding only makes sense for a structured
-            # target.
-            raise ValueError("given child sampler should be structured")
-
+        self.children = [child_sampler]
+        target_nodelist, __, target_adjacency = self.target_structure
         if embeddings is not None:
             _embeddings = embeddings.copy()
             # Computationally cheap consistency checks, and inference of structure
@@ -170,11 +225,10 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             nodelist = [v for emb in _embeddings for c in emb.values() for v in c]
             nodeset = set(nodelist)
             if len(nodelist) != len(nodeset):
-
                 raise ValueError(
                     "embedding contains a non-disjoint embedding (target nodes reused)"
                 )
-            if not nodeset.issubset(set(sampler.nodelist)):
+            if not nodeset.issubset(set(target_nodelist)):
                 raise ValueError("embedding contains invalid target nodes")
 
             # Source graph consistency
@@ -190,7 +244,6 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
                     )
             if self.edgelist is None:
                 # Find the intersection graph (slow but thorough):
-                __, __, target_adjacency = sampler.structure
                 edgeset = set(
                     adjacency_to_edges(
                         target_to_source(target_adjacency, embeddings[0])
@@ -211,16 +264,22 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
                 embedder = find_multiple_embeddings
             if embedder_kwargs is None:
                 embedder_kwargs = {}
-            _embeddings = embedder(
-                source, self.child.to_networkx_graph(), **embedder_kwargs
-            )
+            # The child_sampler may not preserve the graphical structure required
+            # by the embedder. These might be passed as supplementary arguments.
+            if hasattr(child_sampler, 'to_networkx_graph'):
+                _embeddings = embedder(
+                    source, child_sampler.to_networkx_graph(), **embedder_kwargs
+                )
+            else:
+                _embeddings = embedder(
+                    source, nx.Graph(target_adjacency), **embedder_kwargs
+                )
             if one_to_iterable is False:
                 _embeddings = [{k: (v,) for k, v in emb.items()} for emb in _embeddings]
             if len(_embeddings) == 0:
                 raise ValueError(
                     "No embeddings found: consider changing the embedder or its parameters."
                 )
-        self.children = [sampler]
         self.embeddings = properties["embeddings"] = _embeddings
 
     @dimod.bqm_structured
@@ -240,58 +299,13 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             :class:`~dimod.SampleSet`
 
         Examples:
-
-            This example submits a simple Ising problem of just two variables on a
-            D-Wave system. We use the default subgraph embedder finding a maximum
-            number of embeddings. Note that searching for O(1000) of embeddings takes
-            several seconds.
-
-            >>> from dwave.system import DWaveSampler
-            >>> from dwave.system import ParallelEmbeddingComposite
-            >>> from networkx import from_edgelist
-            >>> embedder_kwargs = {'max_num_embs': None}  # Without this, only 1 embedding will be sought
-            >>> source = from_edgelist([('a', 'b')])
-            >>> qpu = DWaveSampler()
-            >>> sampler = ParallelEmbeddingComposite(qpu, source=source, embedder_kwargs=embedder_kwargs)
-            >>> sampleset = sampler.sample_ising({},{('a', 'b'): 1}, num_reads=1)
-            >>> len(sampleset) > 1  # Equal to the number of parallel embeddings
-            True
-
-            If we have a problem embeddedable on a Chimera tile, we can try many
-            dispacements on a target QPU graph (tiling). If all variables on the Chimera tile
-            are used, and the target graph is defect free, this allows an optimal
-            parallelization. Note that find_sublattice_embeddings should only be preferred
-            to the default find_multiple_embeddings where the source and target graph have a
-            special lattice relationship. Finding a large set of disjoint chimera cells within
-            a typical processor graph can take several seconds.
-            See tests/ for other examples.
-
-            >>> from dwave.system import DWaveSampler
-            >>> from dwave.system import ParallelEmbeddingComposite
-            >>> from dwave_networkx import chimera_graph
-            >>> from minorminer import find_sublattice_embeddings
-            >>> source = tile = chimera_graph(1, 1, 4)  # A 1:1 mapping assumed
-            >>> qpu = DWaveSampler()
-            >>> embedder = find_sublattice_embeddings
-            >>> embedder_kwargs = {'max_num_emb': None, 'tile': tile}
-            >>> sampler = ParallelEmbeddingComposite(qpu, source=source, embedder=embedder, embedder_kwargs=embedder_kwargs)
-            >>> J = {e: -1 for e in tile.edges}  # A ferromagnet on the Chimera tile.
-            >>> sampleset = sampler.sample_ising({}, J, num_reads=1)
-            >>> len(sampleset) > 1  # Equal to the number of parallel embeddings
-            True
-
-            Consider use of dwave_networkx.draw_parallel_embeddings for visualization of the
-            embeddings found (embeddings=sampler.embeddings over target=qpu.to_networkx_graph()).
-
-        See the :ref:`index_concepts` section
-        for explanations of technical terms in descriptions of Ocean tools.
-
+            See class examples.
         """
 
         # apply the embeddings to the given problem to tile it across the child sampler
         embedded_bqm = dimod.BinaryQuadraticModel.empty(bqm.vartype)
 
-        __, __, target_adjacency = self.child.structure
+        __, __, target_adjacency = self.target_structure
         for embedding in self.embeddings:
             embedded_bqm.update(
                 dwave.embedding.embed_bqm(bqm, embedding, target_adjacency)
