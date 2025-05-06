@@ -28,7 +28,7 @@ __all__ = [
     'anneal_schedule_with_offset',
     ]
 
-def _require(
+def _asarray(
     argname: str,
     array_like: np.typing.ArrayLike,
     num_columns: int = 1,
@@ -37,15 +37,15 @@ def _require(
     try:
         array = np.asarray_chkfinite(array_like)
     except (ValueError, TypeError) as err:
-        raise ValueError(f"`{argname}`: {err}") from err
+        raise ValueError(f"{argname!r}: {err}") from err
 
     if not np.issubdtype(array.dtype, np.number):
-        raise TypeError(f"`{argname}` must be an array-like of numbers")
+        raise TypeError(f"{argname!r} must be an array-like of numbers")
 
-    if array.ndim > 1 and array.shape[1] != num_columns or \
-        array.ndim == 1 and array.ndim != num_columns:
+    if (array.ndim > 1 and array.shape[1] != num_columns
+        or array.ndim == 1 and array.ndim != num_columns):
 
-        raise ValueError(f"'{argname}' must be a {num_columns}D array-like")
+        raise ValueError(f"{argname!r} must be a {num_columns}D array-like")
 
     return array
 
