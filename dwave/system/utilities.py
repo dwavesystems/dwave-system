@@ -20,13 +20,14 @@ import networkx as nx
 import numpy as np
 import warnings
 
-from typing import List, Union
+from typing import Union
 
 __all__ = [
-    'common_working_graph',
-    'classproperty',
     'anneal_schedule_with_offset',
+    'classproperty',
+    'common_working_graph',
     ]
+
 
 def _asarray(
     argname: str,
@@ -120,11 +121,11 @@ class FeatureFlags:
 
 def anneal_schedule_with_offset(
         anneal_offset: float = 0.0,
-        anneal_schedule: Union[np.typing.ArrayLike, List, None] = None,
-        s: Union[np.typing.ArrayLike, List, None] = None,
-        A: Union[np.typing.ArrayLike, List, None] = None,
-        B: Union[np.typing.ArrayLike, List, None] = None,
-        c: Union[np.typing.ArrayLike, List, None] = None
+        anneal_schedule: Union[np.typing.ArrayLike, list, list[list[float]], None] = None,
+        s: Union[np.typing.ArrayLike, list, None] = None,
+        A: Union[np.typing.ArrayLike, list, None] = None,
+        B: Union[np.typing.ArrayLike, list, None] = None,
+        c: Union[np.typing.ArrayLike, list, None] = None
     ) -> np.ndarray:
     r"""Calculates the anneal schedule for a given anneal offset.
 
@@ -197,14 +198,14 @@ def anneal_schedule_with_offset(
     if anneal_schedule is not None and (
         s is not None or A is not None or B is not None or c is not None):
 
-            raise ValueError("Either `anneal_schedule` or `s, A, B, c`"
-                f" can be specified. Got both inputs.")
+        raise ValueError("Either `anneal_schedule` or `s, A, B, c`"
+            f" can be specified. Got both inputs.")
 
     if anneal_schedule is None and (
         s is None or A is None or B is None or c is None):
 
-            raise ValueError("If `anneal_schedule` is unspecified, you must"
-                f" specify all of `s, A, B, c`. Not all were specified.")
+        raise ValueError("If `anneal_schedule` is unspecified, you must"
+            f" specify all of `s, A, B, c`. Not all were specified.")
 
     if anneal_schedule is not None:
 
