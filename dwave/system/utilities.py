@@ -209,7 +209,7 @@ def anneal_schedule_with_offset(
 
     if anneal_schedule is not None:
 
-        schedule = _require('anneal_schedule', anneal_schedule, 4)
+        schedule = _asarray('anneal_schedule', anneal_schedule, 4)
 
         s = schedule[:, 0]
         A = schedule[:, 1]
@@ -218,10 +218,10 @@ def anneal_schedule_with_offset(
 
     else:
 
-        s = _require('s', s, 1)
-        A = _require('A', A, 1)
-        B = _require('B', B, 1)
-        c = _require('c', c, 1)
+        s = _asarray('s', s, 1)
+        A = _asarray('A', A, 1)
+        B = _asarray('B', B, 1)
+        c = _asarray('c', c, 1)
 
     A_offset = np.interp(c + anneal_offset, c, A)
     B_offset = np.interp(c + anneal_offset, c, B)
