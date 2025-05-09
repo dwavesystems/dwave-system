@@ -272,8 +272,8 @@ def energy_scales_custom_schedule(
     :ref:`qpu_qa_anneal_sched` section of the :ref:`qpu_annealing` page.
 
     This function accepts a quantum computer's default anneal schedule and your
-    :ref:`parameter_qpu_anneal_schedule` parameter's schedule, and returns the
-    energy scales as a function of time.
+    custom schedule (as defined by the :ref:`parameter_qpu_anneal_schedule`
+    parameter), and returns the energy scales as a function of time.
 
     Args:
         default_schedule:
@@ -406,15 +406,15 @@ def energy_scales_custom_schedule(
 
         else:   # This is a sloped interval
 
-            if custom_s[index - 1] != 1:   # Forward-anneal interval
-
-                interval = (s < custom_s[index]) & (s >= custom_s[index - 1])
-                if index == len(custom_s) - 1:  # Last interval should include the 1
-                    interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
-
-            else:# Reverse-anneal interval
+            if custom_s[index - 1] == 1:            # Reverse-anneal interval
 
                 interval = (s >= custom_s[index]) & (s <= 1)
+
+            else:                                   # Forward-anneal interval
+                interval = (s < custom_s[index]) & (s >= custom_s[index - 1])
+                # Last interval should include the 1
+                if index == len(custom_s) - 1:
+                    interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
 
             out_interval = slope(
                 [custom_t[index - 1], custom_t[index]],
