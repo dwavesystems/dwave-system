@@ -179,7 +179,7 @@ def effective_field(
 def background_susceptibility_ising(
     h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]
 ) -> Tuple:
-    """Create the field and couplings for the background susceptibility correction.
+    r"""Create the field and couplings for the background susceptibility correction.
 
     Background susceptibility is a significant source of systematic error
     in annealing processors, it can be treated as a perturbation of the
@@ -189,8 +189,8 @@ def background_susceptibility_ising(
     model in matrix vector notation.
     Assuming J is a real symmetric (0 on diagonal) matrix, h and s are column
     vectors, and chi is a small real value, then the Ising model is
-    is defined: :math:`H = k + (h + \chi J h)' s +  1/2 s' (J + \chi J^2) s`
-    ' denotes transpose and matrix multiplication applies.
+    is defined: :math:`H = k + (h + \chi J h)' s +  1/2 s' (J + \chi J^2) s`,
+    Apostrophe (') denotes transpose, and matrix multiplication applies.
     The constant (k, irrelevant to sampled distributions) is defined
     :math:`k = - \chi/2 Trace[J^2]`
     This function returns the perturbative part
@@ -242,7 +242,7 @@ def background_susceptibility_ising(
 
 
 def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional[float] = None):
-    """Create the binary quadratic model for the background susceptibility correction.
+    r"""Create the binary quadratic model for the background susceptibility correction.
 
     Background susceptibility is a perturbative correction to the programmed Hamiltonian:
     bqm = bqm (no background susceptibility) + chi * dbqm (corrections)
