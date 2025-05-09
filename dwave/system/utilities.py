@@ -231,16 +231,15 @@ def anneal_schedule_with_offset(
     return np.column_stack((s, A_offset, B_offset, c_offset))
 
 
-def slope(custom_t, custom_s, s, A, B, c, index, interval):
+def slope(t_span, s_span, s, A, B, c, interval):
     "Return energy scales for a sloped interval."
-    s_interval = s[interval]
     t_interp = np.interp(
-        s_interval,
-        sorted([custom_s[index - 1], custom_s[index]]),
-        [custom_t[index - 1], custom_t[index]])
+        s[interval],
+        s_span,
+        t_span)
     return np.vstack((
-        sorted(t_interp),
-        s_interval,
+        t_interp,
+        s[interval],
         A[interval],
         B[interval],
         c[interval])).T
@@ -395,11 +394,11 @@ def energy_scales_custom_schedule(
 
     for index in range(1, len(custom_s)):
 
+        s_index = np.argmin(np.abs(s - custom_s[index]))
+
         if custom_s[index] == custom_s[index - 1]:  # This is a pause interval
 
-            s_index = np.argmin(np.abs(s - custom_s[index]))
-
-            if custom_s[index] <= s[s_index]:   # Previous interval is "open"
+            if custom_s[index - 1] <= s[s_index]:   # Previous interval is "open"
                 out_interval = _pause(custom_t, s, A, B, c, index - 1, s_index)
 
             else:   # Previous interval is "closed"
@@ -408,23 +407,29 @@ def energy_scales_custom_schedule(
         else:   # This is a sloped interval
 
             if custom_s[index - 1] != 1:   # Forward-anneal interval
+
                 interval = (s < custom_s[index]) & (s >= custom_s[index - 1])
-                out_interval = slope(custom_t, custom_s, s, A, B, c, index, interval)
+                if index == len(custom_s) - 1:  # Last interval should include the 1
+                    interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
 
-            else:   # Reverse-anneal interval
+            else:# Reverse-anneal interval
 
-                interval = (s > custom_s[index]) & (s <= custom_s[index - 1])
-                out_interval = slope(custom_t, custom_s, s, A, B, c, index, interval)
+                interval = (s >= custom_s[index]) & (s <= 1)
+
+            out_interval = slope(
+                [custom_t[index - 1], custom_t[index]],
+                sorted([custom_s[index- 1], custom_s[index]]),
+                s,
+                A,
+                B,
+                c,
+                interval=interval)
+
+            if custom_s[index - 1] == 1:    # Reverse-anneal adjustments
+                # Flip for time and remove last point to prevent overlap
                 out_interval[:,1:] = out_interval[:,1:][::-1,:]
+                out_interval = out_interval[:-1,:]
 
         out = np.append(out, out_interval, axis=0)
-
-    out = np.append(out, np.asarray([       # Add the last s=1 point
-        custom_t[-1],
-        1,
-        A[-1],
-        B[-1],
-        c[-1]]).reshape(1,5),
-        axis=0)
 
     return out
