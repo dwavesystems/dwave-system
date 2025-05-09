@@ -4,5 +4,6 @@ omit = venv/*, */tests/*
 source=dwave.system
 
 [report]
+include_namespace_packages = True
 exclude_lines:
     pragma: no cover
