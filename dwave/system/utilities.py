@@ -231,7 +231,7 @@ def anneal_schedule_with_offset(
     return np.column_stack((s, A_offset, B_offset, c_offset))
 
 
-def slope(t_span, s_span, s, A, B, c, interval):
+def _slope(t_span, s_span, s, A, B, c, interval):
     "Return energy scales for a sloped interval."
     t_interp = np.interp(
         s[interval],
@@ -416,7 +416,7 @@ def energy_scales_custom_schedule(
                 if index == len(custom_s) - 1:
                     interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
 
-            out_interval = slope(
+            out_interval = _slope(
                 [custom_t[index - 1], custom_t[index]],
                 sorted([custom_s[index- 1], custom_s[index]]),
                 s,
