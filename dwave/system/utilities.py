@@ -231,19 +231,6 @@ def anneal_schedule_with_offset(
     return np.column_stack((s, A_offset, B_offset, c_offset))
 
 
-def _interpolate(t_span, s_span, s, A, B, c, interval):
-    "Return energy scales for a sloped interval."
-    t_interp = np.interp(
-        s[interval],
-        s_span,
-        t_span)
-    return np.vstack((
-        t_interp,
-        s[interval],
-        A[interval],
-        B[interval],
-        c[interval])).T
-
 def energy_scales_custom_schedule(
         default_schedule: Union[np.typing.ArrayLike, list, list[list[float]], None] = None,
         s: Union[np.typing.ArrayLike, list, None] = None,
@@ -400,28 +387,32 @@ def energy_scales_custom_schedule(
 
         else:   # This is a sloped interval
 
-            if custom_s[index] < custom_s[index - 1]:  # Reverse-anneal interval
+            forward = custom_s[index] > custom_s[index - 1]
 
-                interval = (s >= custom_s[index]) & (s <= custom_s[index - 1])
-
-            else:                                   # Forward-anneal interval
+            if forward:
                 interval = (s < custom_s[index]) & (s >= custom_s[index - 1])
                 # Last interval should include the s=1 end point
                 if index == len(custom_s) - 1:
                     interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
 
-            out_interval = _interpolate(
-                [custom_t[index - 1], custom_t[index]],
-                sorted([custom_s[index- 1], custom_s[index]]),
-                s,
-                A,
-                B,
-                c,
-                interval=interval)
+            else:
 
-            if custom_s[index] < custom_s[index - 1]: # Reverse-anneal adjustments
-                # Flip for time and remove last point to prevent overlap
-                out_interval[:,1:] = out_interval[:,1:][::-1,:]
+                interval = (s >= custom_s[index]) & (s <= custom_s[index - 1])
+
+            t_interp = np.interp(
+                s[interval] if forward else np.flip(s[interval]),
+                sorted([custom_s[index- 1], custom_s[index]]),
+                [custom_t[index - 1], custom_t[index]])
+
+            out_interval = np.vstack((
+                t_interp,
+                s[interval],
+                A[interval],
+                B[interval],
+                c[interval])).T
+
+            if not forward:
+                out_interval = out_interval[::-1,:]
                 out_interval = out_interval[:-1,:]
 
         out = np.append(out, out_interval, axis=0)
