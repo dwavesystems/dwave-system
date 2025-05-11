@@ -356,9 +356,9 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
 
         # Messy reverse anneal schedule
         t_expected = np.asarray(
-            [0, 6.66, 13.33, 80, 83.33, 87.03, 90, 100, 153, 170, 200])
+            [0, 6.66, 13.33, 20, 35, 50, 80, 83.33, 86.6, 90, 100, 150, 170, 200])
         B_expected = np.asarray(
-            [16., 14., 12.,  5.,  7.,  9., 12., 12., 12., 14., 16.])
+            [16., 14., 12., 9.,  7.,  5.,  5.,  7.,  9., 12., 12., 12., 14., 16.])
         schedule = np.asarray([
             [0, 1],
             [20, 0.7],

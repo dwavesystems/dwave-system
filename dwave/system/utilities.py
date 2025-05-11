@@ -231,7 +231,7 @@ def anneal_schedule_with_offset(
     return np.column_stack((s, A_offset, B_offset, c_offset))
 
 
-def _slope(t_span, s_span, s, A, B, c, interval):
+def _interpolate(t_span, s_span, s, A, B, c, interval):
     "Return energy scales for a sloped interval."
     t_interp = np.interp(
         s[interval],
@@ -243,15 +243,6 @@ def _slope(t_span, s_span, s, A, B, c, interval):
         A[interval],
         B[interval],
         c[interval])).T
-
-def _pause(custom_t, s, A, B, c, index, s_index):
-    "Return energy scales for a pause interval."
-    return np.vstack((
-        custom_t[index],
-        s[s_index],
-        A[s_index],     # Closest at the precision of the global schedule
-        B[s_index],
-        c[s_index])).T
 
 def energy_scales_custom_schedule(
         default_schedule: Union[np.typing.ArrayLike, list, list[list[float]], None] = None,
@@ -390,33 +381,36 @@ def energy_scales_custom_schedule(
         custom_t = _asarray('custom_t', custom_t, 1)
         custom_s = _asarray('custom_s', custom_s, 1)
 
+    precision_s = - np.log10(np.median(np.diff(s)))
+    custom_s = np.round(custom_s, decimals=int(precision_s))
+
     out = np.empty((0, 5))
 
     for index in range(1, len(custom_s)):
 
-        s_index = np.argmin(np.abs(s - custom_s[index]))
-
         if custom_s[index] == custom_s[index - 1]:  # This is a pause interval
 
-            if custom_s[index - 1] <= s[s_index]:   # Previous interval is "open"
-                out_interval = _pause(custom_t, s, A, B, c, index - 1, s_index)
-
-            else:   # Previous interval is "closed"
-                out_interval = _pause(custom_t, s, A, B, c, index, s_index)
+            s_index = np.where(s == custom_s[index])
+            out_interval = np.vstack((
+                custom_t[index - 1],
+                s[s_index],
+                A[s_index],
+                B[s_index],
+                c[s_index])).T
 
         else:   # This is a sloped interval
 
-            if custom_s[index - 1] == 1:            # Reverse-anneal interval
+            if custom_s[index] < custom_s[index - 1]:  # Reverse-anneal interval
 
-                interval = (s >= custom_s[index]) & (s <= 1)
+                interval = (s >= custom_s[index]) & (s <= custom_s[index - 1])
 
             else:                                   # Forward-anneal interval
                 interval = (s < custom_s[index]) & (s >= custom_s[index - 1])
-                # Last interval should include the 1
+                # Last interval should include the s=1 end point
                 if index == len(custom_s) - 1:
                     interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
 
-            out_interval = _slope(
+            out_interval = _interpolate(
                 [custom_t[index - 1], custom_t[index]],
                 sorted([custom_s[index- 1], custom_s[index]]),
                 s,
@@ -425,7 +419,7 @@ def energy_scales_custom_schedule(
                 c,
                 interval=interval)
 
-            if custom_s[index - 1] == 1:    # Reverse-anneal adjustments
+            if custom_s[index] < custom_s[index - 1]: # Reverse-anneal adjustments
                 # Flip for time and remove last point to prevent overlap
                 out_interval[:,1:] = out_interval[:,1:][::-1,:]
                 out_interval = out_interval[:-1,:]
