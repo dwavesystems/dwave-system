@@ -236,7 +236,7 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
         out= energy_scales_custom_schedule(
             default_schedule=self.schedule_default,
             custom_schedule=simple_forward_schedule)
-        self.assertTrue(len(out) == len(self.schedule_default))
+        self.assertEqual(len(out), len(self.schedule_default))
 
         # Schedule for one, vectors for the other, as lists
         out= energy_scales_custom_schedule(
@@ -291,7 +291,7 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
         out= energy_scales_custom_schedule(
             default_schedule=self.schedule_default,
             custom_schedule=schedule)
-        self.assertTrue(np.shape(out) == (11,5))
+        self.assertEqual(np.shape(out), (11,5))
 
         # Simple forward schedule with noisy s intervals
         schedule = np.asarray([
@@ -303,7 +303,7 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
         out= energy_scales_custom_schedule(
             default_schedule=self.schedule_default,
             custom_schedule=schedule)
-        self.assertTrue(np.shape(out) == (11,5))
+        self.assertEqual(np.shape(out), (11,5))
 
         # Test that at the interval seams, the interpolated time is closest
         np.testing.assert_equal(
@@ -322,7 +322,7 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
         out= energy_scales_custom_schedule(
             default_schedule=self.schedule_default,
             custom_schedule=schedule)
-        self.assertTrue(np.shape(out) == (11 + 3,5))    #Three pauses
+        self.assertEqual(np.shape(out), (11 + 3,5))    #Three pauses
 
         # Forward schedule with pauses and noisy intervals
         schedule = np.asarray([
@@ -336,7 +336,7 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
         out= energy_scales_custom_schedule(
             default_schedule=self.schedule_default,
             custom_schedule=schedule)
-        self.assertTrue(np.shape(out) == (11 + 3,5))    #Three pauses
+        self.assertEqual(np.shape(out), (11 + 3,5))    #Three pauses
         # Where interpolated time is closest to custom time, custom s is closest to s
         min_t_inx = [np.argmin(np.abs(out[:,0] - t)) for t in np.asarray(schedule)[:,0]]
         np.testing.assert_allclose(
@@ -352,7 +352,7 @@ class TestEnergyScalesCustomSchedule(unittest.TestCase):
         out= energy_scales_custom_schedule(
             default_schedule=self.schedule_default,
             custom_schedule=schedule)
-        self.assertTrue(np.shape(out) == (2*0.7*10 + 1,5))
+        self.assertEqual(np.shape(out), (2*0.7*10 + 1,5))
 
         # Messy reverse anneal schedule
         t_expected = np.asarray(
