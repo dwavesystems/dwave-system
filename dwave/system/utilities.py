@@ -26,6 +26,7 @@ __all__ = [
     'anneal_schedule_with_offset',
     'classproperty',
     'common_working_graph',
+    'energy_scales_custom_schedule',
     ]
 
 
@@ -228,3 +229,190 @@ def anneal_schedule_with_offset(
     c_offset= c + anneal_offset
 
     return np.column_stack((s, A_offset, B_offset, c_offset))
+
+
+def energy_scales_custom_schedule(
+        default_schedule: Union[np.typing.ArrayLike, list[list[float]], None] = None,
+        s: Union[np.typing.ArrayLike, list[float], None] = None,
+        A: Union[np.typing.ArrayLike, list[float], None] = None,
+        B: Union[np.typing.ArrayLike, list[float], None] = None,
+        c: Union[np.typing.ArrayLike, list[float], None] = None,
+        custom_schedule: Union[np.typing.ArrayLike, list[list[float]], None] = None,
+        custom_t: Union[np.typing.ArrayLike, list[float], None] = None,
+        custom_s: Union[np.typing.ArrayLike, list[float], None] = None,
+    ) -> np.ndarray:
+    r"""Generates the energy scales for a custom anneal schedule.
+
+    The standard annealing trajectory, published for each quantum computer on
+    :ref:`this <qpu_solver_properties_specific>` page, lowers :math:`A(s)`, the
+    tunneling energy, and raises :math:`B(s)`, the problem energy, according to
+    a  default schedule. You can customize that schedule as described in the
+    :ref:`qpu_qa_anneal_sched` section of the :ref:`qpu_annealing` page.
+
+    This function accepts a quantum computer's default anneal schedule and your
+    custom schedule (as defined by the :ref:`parameter_qpu_anneal_schedule`
+    parameter), and returns the energy scales as a function of time.
+
+    Args:
+        default_schedule:
+            Anneal schedule, as a 4-column |array-like|_, with column values for
+            :math:`s, A, B, c` as provided by (and typically taken from) the
+            spreadsheet columns of the published
+            :ref:`Per-QPU Solver Properties and Schedules <qpu_solver_properties_specific>`
+            page. If set, do not set parameters ``s``, ``A``, ``B``, and ``c``.
+        s: Normalized anneal fraction, :math:`\frac{t}{t_a}`, which ranges from
+            0 to 1, where :math:`t_a` is the annealing duration, as a
+            1-dimensional |array-like|_. If set ``anneal_schedule`` must be
+            ``None`` and values must be provided for ``A``, ``B``, and ``c``.
+        A: Transverse or tunneling energy, :math:`A(s)`, as a 1-dimensional
+            |array-like|_. If set ``anneal_schedule`` must be ``None`` and
+            values must be provided for ``s``, ``B``, and ``c``.
+        B: Energy applied to the problem Hamiltonian, :math:`B(s)`, as a
+            1-dimensional |array-like|_. If set ``anneal_schedule`` must be
+            ``None`` and values must be provided for ``s``, ``A``, and ``c``.
+        c: Normalized annealing bias, :math:`c(s)`, as a 1-dimensional
+            |array-like|_. If set ``anneal_schedule`` must be ``None`` and
+            values must be provided for ``s``, ``A``, and ``B``.
+        custom_schedule:
+            Your custom anneal schedule, as a 2-column |array-like|_, with
+            column values for time, :math:`t`, and the normalized anneal
+            fraction, :math:`s`. Must meet the rules described for the
+            :ref:`parameter_qpu_anneal_schedule` parameter. If set, do not set
+            parameters ``custom_t`` or ``custom_s``.
+        custom_t: Time, :math:`t`, as a 1-dimensional |array-like|_, compliant
+            with the rules described for the
+            :ref:`parameter_qpu_anneal_schedule` parameter. If set
+            ``anneal_schedule`` must be ``None`` and ``custom_s`` must be
+            provided too.
+        custom_s: Normalized anneal fraction, :math:`\frac{t}{t_a}`, as a
+            1-dimensional |array-like|_, compliant with the rules described for
+            the :ref:`parameter_qpu_anneal_schedule` parameter.. If set
+            ``anneal_schedule`` must be ``None`` and ``custom_t`` must be
+            provided too.
+
+    Returns:
+        Energy scales :math:`A(s), B(s)`, and :math:`c(s)`, as a
+        :std:doc:`NumPy <numpy:index>` array with columns :math:`t, s, A, B, c`.
+
+    Note:
+        You can prepare the input schedule by downloading the schedule for your
+        selected quantum computer on the
+        :ref:`Per-QPU Solver Properties and Schedules <qpu_solver_properties_specific>`
+        page, saving the schedule tab in CSV format, and using NumPy's
+        :func:`~numpy.loadtxt` function, as here:
+        .. doctest::
+            :skipif: True
+            >>> import numpy as np
+            >>> schedule = np.loadtxt(schedule_csv_filename, delimiter=",", skiprows=1)
+
+    Examples:
+        For a default schedule provided as array :code:`schedule_qpu3`, this example
+        returns the energy scales for a reverse anneal.
+
+        >>> from dwave.system import energy_scales_custom_schedule
+        ...
+        >>> anneal_schedule = [[0.0, 1.0], [5, 0.45], [99, 0.45], [100, 1.0]]
+        >>> energy_schedule = energy_scales_custom_schedule(
+        ...     schedule_qpu3,
+        ...     custom_schedule=anneal_schedule)  # doctest: +SKIP
+    """
+    if default_schedule is not None and (
+        s is not None or A is not None or B is not None or c is not None):
+
+            raise ValueError("Either `default_schedule` or `s, A, B, c`"
+                f" can be specified. Got both inputs.")
+
+    if default_schedule is None and (
+        s is None or A is None or B is None or c is None):
+
+            raise ValueError("If `default_schedule` is unspecified, you must"
+                f" specify all of `s, A, B, c`. Not all were specified.")
+
+    if custom_schedule is not None and (
+        custom_t is not None or custom_s is not None):
+
+            raise ValueError("Either `custom_schedule` or `custom_t, custom_s`"
+                f" can be specified. Got both inputs.")
+
+    if custom_schedule is None and (
+        custom_t is None or custom_s is None):
+
+            raise ValueError("If `custom_schedule` is unspecified, you must"
+                f" specify `custom_t and custom_s`. Both were not specified.")
+
+    if default_schedule is not None:
+
+        schedule = _asarray('default_schedule', default_schedule, 4)
+
+        s = schedule[:, 0]
+        A = schedule[:, 1]
+        B = schedule[:, 2]
+        c = schedule[:, 3]
+
+    else:
+
+        s = _asarray('s', s, 1)
+        A = _asarray('A', A, 1)
+        B = _asarray('B', B, 1)
+        c = _asarray('c', c, 1)
+
+    if custom_schedule is not None:
+
+        schedule = _asarray('custom_schedule', custom_schedule, 2)
+
+        custom_t = schedule[:, 0]
+        custom_s = schedule[:, 1]
+
+    else:
+
+        custom_t = _asarray('custom_t', custom_t, 1)
+        custom_s = _asarray('custom_s', custom_s, 1)
+
+    precision_s = -np.log10(np.median(np.diff(s)))
+    custom_s = np.round(custom_s, decimals=int(precision_s))
+
+    out = np.empty((0, 5))
+
+    for index in range(1, len(custom_s)):
+
+        if custom_s[index] == custom_s[index - 1]:  # This is a pause interval
+
+            s_index = np.where(s == custom_s[index])
+            out_interval = np.vstack((
+                custom_t[index - 1],
+                s[s_index],
+                A[s_index],
+                B[s_index],
+                c[s_index])).T
+
+        else:   # This is a sloped interval
+
+            forward_anneal = custom_s[index] > custom_s[index - 1]
+
+            if forward_anneal:
+                interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
+            else:
+                interval = (s >= custom_s[index]) & (s <= custom_s[index - 1])
+
+            t_interp = np.interp(
+                s[interval],
+                sorted([custom_s[index - 1], custom_s[index]]),
+                [custom_t[index - 1], custom_t[index]])
+
+            s_scales = np.stack((
+                s[interval],
+                A[interval],
+                B[interval],
+                c[interval]))
+
+            out_interval = np.vstack((
+                t_interp,
+                s_scales if forward_anneal else np.flip(s_scales, axis=1))).T
+
+            # Cut overlapped interval seams (except last interval)
+            if index < len(custom_s) - 1:
+                out_interval = out_interval[:-1,:]
+
+        out = np.append(out, out_interval, axis=0)
+
+    return out

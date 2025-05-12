@@ -13,6 +13,7 @@ Utilities
 
    anneal_schedule_with_offset
    common_working_graph
+   energy_scales_custom_schedule
 
 .. currentmodule:: dwave.system.coupling_groups
 
