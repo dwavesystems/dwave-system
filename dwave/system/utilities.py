@@ -232,14 +232,14 @@ def anneal_schedule_with_offset(
 
 
 def energy_scales_custom_schedule(
-        default_schedule: Union[np.typing.ArrayLike, list, list[list[float]], None] = None,
-        s: Union[np.typing.ArrayLike, list, None] = None,
-        A: Union[np.typing.ArrayLike, list, None] = None,
-        B: Union[np.typing.ArrayLike, list, None] = None,
-        c: Union[np.typing.ArrayLike, list, None] = None,
-        custom_schedule: Union[np.typing.ArrayLike, list, list[list[float]], None] = None,
-        custom_t: Union[np.typing.ArrayLike, list, None] = None,
-        custom_s: Union[np.typing.ArrayLike, list, None] = None,
+        default_schedule: Union[np.typing.ArrayLike, list[list[float]], None] = None,
+        s: Union[np.typing.ArrayLike, list[float], None] = None,
+        A: Union[np.typing.ArrayLike, list[float], None] = None,
+        B: Union[np.typing.ArrayLike, list[float], None] = None,
+        c: Union[np.typing.ArrayLike, list[float], None] = None,
+        custom_schedule: Union[np.typing.ArrayLike, list[list[float]], None] = None,
+        custom_t: Union[np.typing.ArrayLike, list[float], None] = None,
+        custom_s: Union[np.typing.ArrayLike, list[float], None] = None,
     ) -> np.ndarray:
     r"""Generates the energy scales for a custom anneal schedule.
 
@@ -368,7 +368,7 @@ def energy_scales_custom_schedule(
         custom_t = _asarray('custom_t', custom_t, 1)
         custom_s = _asarray('custom_s', custom_s, 1)
 
-    precision_s = - np.log10(np.median(np.diff(s)))
+    precision_s = -np.log10(np.median(np.diff(s)))
     custom_s = np.round(custom_s, decimals=int(precision_s))
 
     out = np.empty((0, 5))
