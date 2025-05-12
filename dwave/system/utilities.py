@@ -387,32 +387,30 @@ def energy_scales_custom_schedule(
 
         else:   # This is a sloped interval
 
-            forward = custom_s[index] > custom_s[index - 1]
+            forward_anneal = custom_s[index] > custom_s[index - 1]
 
-            if forward:
-                interval = (s < custom_s[index]) & (s >= custom_s[index - 1])
-                # Last interval should include the s=1 end point
-                if index == len(custom_s) - 1:
-                    interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
-
+            if forward_anneal:
+                interval = (s <= custom_s[index]) & (s >= custom_s[index - 1])
             else:
-
                 interval = (s >= custom_s[index]) & (s <= custom_s[index - 1])
 
             t_interp = np.interp(
-                s[interval] if forward else np.flip(s[interval]),
-                sorted([custom_s[index- 1], custom_s[index]]),
+                s[interval],
+                sorted([custom_s[index - 1], custom_s[index]]),
                 [custom_t[index - 1], custom_t[index]])
 
-            out_interval = np.vstack((
-                t_interp,
+            s_scales = np.stack((
                 s[interval],
                 A[interval],
                 B[interval],
-                c[interval])).T
+                c[interval]))
 
-            if not forward:
-                out_interval = out_interval[::-1,:]
+            out_interval = np.vstack((
+                t_interp,
+                s_scales if forward_anneal else np.flip(s_scales, axis=1))).T
+
+            # Cut overlapped interval seams (except last interval)
+            if index < len(custom_s) - 1:
                 out_interval = out_interval[:-1,:]
 
         out = np.append(out, out_interval, axis=0)
