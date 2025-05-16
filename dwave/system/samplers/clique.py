@@ -36,8 +36,10 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
        sampler (:obj:`~dimod.ComposedSampler`):
             A dimod sampler.
     """
-    def __init__(self, child_sampler):
+    def __init__(self, child_sampler, linear_range, quadratic_range):
         self._children = [child_sampler]
+        self.linear_range = linear_range
+        self.quadratic_range = quadratic_range
 
     @property
     def children(self):
@@ -70,6 +72,10 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
         Returns:
             :obj:`~dimod.SampleSet`
         """
+        # This is checked by other composites but just in case
+        if bqm.vartype is not dimod.SPIN:
+            raise ValueError("bqm must have SPIN vartype")
+
         if any(('per_qubit_coupling_range' in self.child.properties.keys(),
                 'per_group_coupling_range' in self.child.properties.keys())):
 
@@ -103,17 +109,26 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
                           ignored_interactions=[],
                           ignore_offset=[])
 
-                sampleset = self.child.sample(bqm, **parameters)
-                yield sampleset 
+        # We've done a lot of scaling, so it's possible we've accumulated
+        # floating point errors. So we do one last quick pass to make sure
+        # that we're within range.
+        min_h, max_h = self.linear_range
+        min_J, max_J = self.quadratic_range
+        for v, bias in bqm.iter_linear():
+            if bias < min_h:
+                bqm.set_linear(v, min_h)
+            elif bias > max_h:
+                bqm.set_linear(v, max_h)
+        for u, v, bias in bqm.iter_quadratic():
+            if bias < min_J:
+                bqm.set_quadratic(u, v, min_J)
+            elif bias > max_J:
+                bqm.set_quadratic(u, v, max_J)
 
-            else:
-                sampleset = self.child.sample(bqm, **parameters)
-                yield sampleset 
-        else:
-            sampleset = self.child.sample(bqm, **parameters)
-            yield sampleset 
+        sampleset = self.child.sample(bqm, **parameters)
+        yield sampleset
+        yield sampleset
 
-        yield sampleset 
 
 class DWaveCliqueSampler(dimod.Sampler):
     r"""A sampler for solving clique binary quadratic models on the D-Wave system.
@@ -410,9 +425,17 @@ class DWaveCliqueSampler(dimod.Sampler):
         if bqm.vartype is not dimod.SPIN:
             bqm = bqm.change_vartype(dimod.SPIN, inplace=False)
 
-        sampler = FixedEmbeddingComposite(
-            ScaleComposite(_QubitCouplingComposite(self.child)),
-            embedding)
+        sampler = \
+            FixedEmbeddingComposite(
+                ScaleComposite(
+                    _QubitCouplingComposite(
+                        self.child,
+                        linear_range=self.qpu_linear_range,
+                        quadratic_range=self.qpu_quadratic_range,
+                    )
+                ),
+                embedding,
+            )
 
         if 'auto_scale' in self.child.parameters:
             kwargs['auto_scale'] = False
