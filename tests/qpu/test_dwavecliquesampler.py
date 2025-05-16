@@ -47,6 +47,12 @@ def tearDownModule():
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestDWaveCliqueSampler(unittest.TestCase):
     @parameterized.expand([['Pegasus'], ['Zephyr']])
+    def test_bias_range(self, topology):
+        sampler = get_sampler(topology)
+        n = sampler.largest_clique_size
+        sampler.sample_ising({v: 7*187 for v in range(n)}, {}).resolve()
+
+    @parameterized.expand([['Pegasus'], ['Zephyr']])
     def test_maximum_ferromagnet(self, topology):
         sampler = get_sampler(topology)
 
