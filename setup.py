@@ -14,7 +14,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
 
 # change directories so this works when called from other locations. Useful in build systems.
@@ -38,12 +38,7 @@ install_requires = ['dimod>=0.12.20,<0.14.0',
 
 python_requires = '>=3.9'
 
-packages = ['dwave',
-            'dwave.embedding',
-            'dwave.system',
-            'dwave.system.composites',
-            'dwave.system.samplers',
-            ]
+packages = find_namespace_packages(include=['dwave.*'])
 
 classifiers = [
     'License :: OSI Approved :: Apache Software License',
