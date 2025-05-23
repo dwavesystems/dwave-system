@@ -300,8 +300,10 @@ def energy_scales_custom_schedule(
         :ref:`Per-QPU Solver Properties and Schedules <qpu_solver_properties_specific>`
         page, saving the schedule tab in CSV format, and using NumPy's
         :func:`~numpy.loadtxt` function, as here:
+
         .. doctest::
             :skipif: True
+
             >>> import numpy as np
             >>> schedule = np.loadtxt(schedule_csv_filename, delimiter=",", skiprows=1)
 
