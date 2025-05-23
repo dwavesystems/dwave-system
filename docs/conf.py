@@ -84,3 +84,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
     'numpy': ('http://numpy.org/doc/stable/', None),
     'dwave': ('https://docs.dwavequantum.com/en/latest/', None),
     }
+
+# global substitutions
+rst_epilog = """
+.. |array-like| replace:: array-like    .. used in dwave-optimization
+.. _array-like: https://numpy.org/devdocs/glossary.html#term-array_like
+"""
