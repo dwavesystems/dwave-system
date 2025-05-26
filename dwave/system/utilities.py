@@ -1,4 +1,4 @@
-# Copyright 2019 D-Wave Systems Inc.
+# Copyright 2019 D-Wave
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -79,15 +79,15 @@ def common_working_graph(graph0, graph1):
 
     Examples:
 
-        This example creates a graph that represents a part of a particular 
+        This example creates a graph that represents a part of a particular
         Advantage quantum computer's working graph.
 
         >>> import dwave_networkx as dnx
         >>> from dwave.system import DWaveSampler, common_working_graph
         ...
         >>> sampler = DWaveSampler(solver={'topology__type': 'pegasus'})
-        >>> P3 = dnx.pegasus_graph(3)  
-        >>> p3_working_graph = common_working_graph(P3, sampler.adjacency)   
+        >>> P3 = dnx.pegasus_graph(3)
+        >>> p3_working_graph = common_working_graph(P3, sampler.adjacency)
 
     """
     warnings.warn("dwave.system.common_working_graph() is deprecated as of dwave-system 1.23.0 "

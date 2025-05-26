@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022 D-Wave
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -101,31 +101,38 @@ def effective_field(
 ) -> Tuple[np.ndarray, list]:
     r"""Returns the effective field for all variables and all samples.
 
-    The effective field with ``current_state_energy = False`` is the energy
-    attributable to setting a variable to value 1, conditioned on fixed values
-    for all neighboring variables (relative to exclusion of the variable, and
-    associated energy terms, from the problem).
+    Depending on the value you set for the ``current_state_energy`` parameter,
+    the effective field is one of the following:
 
-    The effective field with ``current_state_energy = True`` is the energy gained
-    by flipping the variable state against its current value (from say -1 to 1
-    in the Ising case, or 0 to 1 in the QUBO case). A positive value indicates
-    that the energy can be decreased by flipping the variable, hence the
-    variable is in a locally excited state.
-    If all values are negative (positive) within a sample, that sample is a
-    local minima (maxima).
+    *   ``False``: The energy attributable to setting a variable to value 1,
+        conditioned on fixed values for all neighboring variables (relative to
+        exclusion of the variable, and associated energy terms, from the
+        problem).
 
-    Any BQM can be converted to an Ising model with
+    *   ``True``: The energy gained by flipping the variable state from its
+        current value (e.g., from -1 to 1, for an :term:`Ising` model, or 0 to
+        1, for a :term:`QUBO`). A positive value indicates that the energy can
+        be decreased by flipping the variable; hence the variable is in a
+        locally excited state. If all values are negative (positive) for a
+        sample, that sample is a local minima (maxima).
+
+    As shown in the :ref:`qpu_qubo_ising_transformations` section, any binary
+    quadratic model (BQM) can be converted to an Ising model using
 
     .. math::
         H(s) = Constant + \sum_i h_i s_i + 0.5 \sum_{i, j} J_{i, j} s_i s_j
 
-    with unique values of :math:`J` (symmetric) and :math:`h`. The sample
-    dependent effect field on variable i, :math:`f_i(s)`, is then defined
+    with unique values of :math:`J` (symmetric) and :math:`h`. The
+    sample-dependent effective field on variable :math:`i`, :math:`f_i(s)`, is
+    then defined as
 
-    if current_state_energy == False:
+    *   ``current_state_energy == False``:
+
         .. math::
             f_i(s) = h_i + \sum_j J_{i, j} s_j
-    else:
+
+    *   ``current_state_energy == True``:
+
         .. math::
             f_i(s) = 2 s_i [h_i + \sum_j J_{i, j}  s_j]
 
@@ -133,30 +140,31 @@ def effective_field(
         bqm:
             A dimod binary quadratic model.
         samples:
-            Either a dimod SampleSet or a `samples_like` object, the later is
-            an extension of NumPy's array like structure.
-            See :func:`dimod.sampleset.as_samples`.
-            By default, a single sample with all +1 assignments is used.
+            Either a :class:`~dimod.SampleSet` or a ``samples_like`` object (an
+            extension of the :std:doc:`NumPy <numpy:index>`
+            :term:`array_like <numpy:array_like>` structure); see
+            :func:`~dimod.as_samples`. By default, a single sample with all +1
+            assignments is used.
         current_state_energy:
-            By default, returns the effective field (the energy
-            contribution associated to a state assignment of 1). When set to
-            True, returns the energy lost in flipping the value of each
-            variable. Note current_state_energy is typically negative for
-            positive temperature samples, meaning energy is not decreased
-            by flipping the spin against its current assignment.
+            By default, returns the effective field (the energy contribution
+            associated with a state assignment of 1). When set to ``True``,
+            returns the energy lost in flipping the value of each variable. Note
+            that ``current_state_energy`` is typically negative for positive
+            temperature samples, meaning energy is not decreased by flipping the
+            spin against its current assignment.
     Returns:
         samples_like:
-            A Tuple of the effective_fields, and the variable labels.
-            Effective fields are returned as a :obj:`numpy.ndarray`,
-            variable labels are returned as a list.
-            Rows index samples, and columns index variables in the order
-            returned by variable labels.
+            A tuple of the effective fields and the variable labels. Effective
+            fields are returned as a :obj:`numpy.ndarray` object and variable
+            labels are returned as a list. Rows index samples and columns index
+            variables in the order returned by variable labels.
 
     Examples:
        For a ferromagnetic Ising chain :math:`H = - 0.5 \sum_i s_i s_{i+1}`
-       and for a ground state sample (all +1), the energy lost when flipping
-       any spin is equal to the number of couplers frustrated: -2 in the center
-       of the chain (variables 1,2,..,N-2), and -1 at the end (variables 0 and N-1).
+       and for a ground state sample (all +1 values), the energy lost when
+       flipping any spin is equal to the number of couplers frustrated: -2 for
+       most the chain (variables 1,2,..,N-2), and -1 at the ends (variables 0
+       and N-1).
 
        >>> import dimod
        >>> import numpy as np
@@ -226,8 +234,7 @@ def background_susceptibility_ising(
 
     Returns:
         Couplings and scalar constant as a tuple. If :math:`h` and :math:`J` are
-        of type
-        :std:doc:`NumPy ndarray <numpy:reference/generated/numpy.ndarray>`,
+        of type :obj:`numpy.ndarray`,
         returned fields and couplings are too; otherwise a tuple of dictionaries
         is returned.
     """
@@ -306,12 +313,12 @@ def maximum_pseudolikelihood_temperature(
     T_bracket: Tuple[float, float] = (1e-3, 1000),
     sample_weights: Optional[np.ndarray] = None,
 ) -> Tuple[float, np.ndarray]:
-    r"""Returns a sampling-based temperature estimate.
+    r"""Return a sampling-based temperature estimate.
 
     The temperature T parameterizes the Boltzmann distribution as
     :math:`P(x) = \exp(-H(x)/T)/Z(T)`, where :math:`P(x)` is a probability over a state space,
-    :math:`H(x)` is the energy function (BQM) and :math:`Z(T)` the partition
-    function (a normalization constant).
+    :math:`H(x)` is the energy function (:term:`BQM`) and :math:`Z(T)` the
+    partition function (a normalization constant).
     Given a sample set (:math:`S`), a temperature estimate establishes the
     temperature that is most likely to have produced the sample set.
     An effective temperature can be derived from a sample set by considering the
@@ -326,79 +333,80 @@ def maximum_pseudolikelihood_temperature(
     .. math::
        0 = \sum_i \sum_{s \in S} f_i(s) \exp(f_i(s)/T),
 
-    where f is the energy lost in flipping spin i against its current
-    assignment (the effective field).
+    where :math:`f` is the energy lost in flipping spin :math:`i` against its
+    current assignment (the effective field).
 
-    The problem is a convex root solving problem, and is solved with SciPy
-    optimize.
+    The problem is a convex root-solving problem, and is solved with SciPy's
+    ``scipy.optimize``.
     In the case that all samples define local minima or maxima (all energies
-    en1 are same sign) SciPy is bypassed and the maximizing value (T=0)
-    is returned. This limit might be realized in low temperature samplesets.
+    ``en1`` are same sign) SciPy is bypassed and the maximizing value (T=0)
+    is returned. This limit might be realized in low-temperature samplesets.
 
     If the distribution is not Boltzmann with respect to the BQM provided, as
     may be the case for heuristic samplers (such as annealers), the temperature
     estimate can be interpreted as characterizing only a rate of local
     excitations. In the case of sample sets obtained from D-Wave annealing
-    quantum computers the temperature can be identified with a physical
+    quantum computers, the temperature can be identified with a physical
     temperature via a late-anneal freeze-out phenomena.
 
     Args:
-        bqm (:obj:`dimod.BinaryQuadraticModel`, optional):
+        bqm (:class:`~dimod.binary.BinaryQuadraticModel`, optional):
             Binary quadratic model describing sample distribution.
-            If ``bqm`` and ``site_energy`` are both None, then by default
-            100 samples are drawn using :class:`~dwave.system.samplers.DWaveSampler`,
-            with ``bqm`` defaulted as described.
-        sampleset (samples_like or :class:`~dimod.SampleSet`, optional):
-            A set of samples, assumed to be fairly sampled from
-            a Boltzmann distribution characterized by ``bqm``.
-        en1 (nd.array, optional):
-            Effective fields as an np.ndarray (site labels not required).
-            Derived from the ``bqm`` and ``sampleset`` if not provided.
-            First dimension indexes samples, second dimension indexes sites.
-            Ordering doesn't matter, but should be consistent with sample_weights.
+            If ``sampleset`` and ``en1`` are not provided, then by default
+            100 samples are drawn using
+            :class:`~dwave.system.samplers.DWaveSampler`.
+        sampleset (:class:`~dimod.SampleSet` or ``samples_like`` as described in the :func:`~dimod.as_samples` function, optional):
+            A set of samples, assumed to be fairly sampled from a Boltzmann
+            distribution characterized by ``bqm``.
+        en1 (:obj:`numpy.ndarray` object, optional):
+            Effective fields as an :obj:`numpy.ndarray` object (site labels not
+            required). If not provided, derived from the ``bqm`` and
+            ``sampleset`` parameters. First dimension indexes samples and second
+            dimension indexes sites. Ordering does not matter but should be
+            consistent with the ``sample_weights`` parameter.
         num_bootstrap_samples (int, optional, default=0):
-            Number of bootstrap estimators to calculate. For now, the sampleset
-            must have uniform sample_weights to deploy this option. An aggregated
+            Number of bootstrap estimators to calculate. Currently supported for
+            samplesets only with uniform ``sample_weights``. An aggregated
             or weighted sampleset must be disaggregated with repetitions.
         seed (int, optional)
-            Seeds the bootstrap method (if provided) allowing reproducibility
+            Seeds the bootstrap method (if provided), allowing reproducibility
             of the estimators.
         T_guess (float, optional):
-            User approximation to the effective temperature, must be
-            a positive (non-zero) scalar value.
-            Seeding the root-search method can enable faster convergence.
-            By default, T_guess is ignored if it falls outside the range
-            of ``T_bracket``.
+            User approximation to the effective temperature. Must be a positive
+            (non-zero) scalar value. Seeding the root-search method can enable
+            faster convergence. By default, ``T_guess`` is ignored if it falls
+            outside the range of ``T_bracket``.
         optimize_method (str, optional, default=None):
-            Optimize method used by SciPy ``root_scalar`` method. The default
-            method works well under default operation, 'bisect' can be
-            numerically more stable for the scalar case (temperature estimation
-            only.
-        T_bracket (list or Tuple of 2 floats, optional, default=(0.001,1000)):
-            Relevant only if optimize_method='bisect'.
-            If excitations are absent, temperature is defined as zero, otherwise
-            this defines the range of Temperatures over which to attempt a fit when.
+            Optimize method used by the SciPy ``root_scalar`` algorithm. The
+            default method (type of solver) works well under default operation;
+            the 'bisect' method can be numerically more stable for the scalar
+            case (temperature estimation only).
+        T_bracket (list or tuple of 2 floats, optional, default=(0.001,1000)):
+            Relevant only if ``optimize_method='bisect'``. If excitations are
+            absent, temperature is defined as zero; otherwise this defines the
+            range of temperatures over which to attempt a fit.
         sample_weights (np.ndarray, optional):
             A set of weights for the samples. If sampleset is of
-            type :obj:`~dimod.SampleSet` set this is default to
-            sampleset.record.num_occurrences, otherwise uniform weighting is
+            type :obj:`~dimod.SampleSet`, this defaults to
+            ``sampleset.record.num_occurrences``; otherwise uniform weighting is
             the default.
     Returns:
         Tuple: The optimal parameters and a list of bootstrapped estimators (T_estimate, T_bootstrap_estimates):
 
-        * *T_estimate*: a temperature estimate
-        * *T_bootstrap_estimates*: a list of bootstrap estimates
+        * *T_estimate*: Temperature estimate
+        * *T_bootstrap_estimates*: List of bootstrap estimates
 
     Examples:
-       Draw samples from a D-Wave Quantum Computer for a large spin-glass
-       problem (random couplers J, zero external field h).
-       Establish a temperature estimate by maximum pseudo-likelihood.
+       This example drawa samples from a D-Wave quantum computer for a large
+       spin-glass problem (random couplers :math:`J`, zero external field
+       :math:`h`) and establishes a temperature estimate by maximum
+       pseudo-likelihood.
 
-       Note that due to the complicated freeze-out properties of hard models,
-       such as large scale spin-glasses, deviation from a classical Boltzmann
+       Note that due to the complicated freeze-out properties of hard models
+       (such as large scale spin-glasses), deviation from a classical Boltzmann
        distribution is anticipated.
-       Nevertheless, the T estimate can always be interpreted as an estimator
-       of local excitations rates. For example T will be 0 if only
+       Nevertheless, the *T_estimate* can always be interpreted as an estimator
+       of local-excitations rates. For example T will be 0 if only
        local minima are returned (even if some of the local minima are not
        ground states).
 
@@ -406,6 +414,7 @@ def maximum_pseudolikelihood_temperature(
        >>> from dwave.system.temperatures import maximum_pseudolikelihood_temperature
        >>> from dwave.system import DWaveSampler
        >>> from random import random
+       ...
        >>> sampler = DWaveSampler()
        >>> bqm = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})
        >>> sampleset = sampler.sample(bqm, num_reads=100, auto_scale=False)
@@ -415,9 +424,7 @@ def maximum_pseudolikelihood_temperature(
 
     See also:
 
-        https://doi.org/10.3389/fict.2016.00023
-
-        https://www.jstor.org/stable/25464568
+        [Chat2007]_ and [Ray2016]_.
 
     """
     if T_guess:
