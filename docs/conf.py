@@ -89,4 +89,5 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
 rst_epilog = """
 .. |array-like| replace:: array-like    .. used in dwave-optimization
 .. _array-like: https://numpy.org/devdocs/glossary.html#term-array_like
+.. |adv2| unicode:: Advantage2
 """

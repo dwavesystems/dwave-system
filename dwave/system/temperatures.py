@@ -385,16 +385,17 @@ def maximum_pseudolikelihood_temperature(
             Relevant only if ``optimize_method='bisect'``. If excitations are
             absent, temperature is defined as zero; otherwise this defines the
             range of temperatures over which to attempt a fit.
-        sample_weights (np.ndarray, optional):
+        sample_weights (:obj:`numpy.ndarray`, optional):
             A set of weights for the samples. If sampleset is of
             type :obj:`~dimod.SampleSet`, this defaults to
             ``sampleset.record.num_occurrences``; otherwise uniform weighting is
             the default.
     Returns:
-        Tuple: The optimal parameters and a list of bootstrapped estimators (T_estimate, T_bootstrap_estimates):
+        Tuple: The optimal parameters and a list of bootstrapped estimators
+        (``T_estimate``, ``T_bootstrap_estimates``):
 
-        * *T_estimate*: Temperature estimate
-        * *T_bootstrap_estimates*: List of bootstrap estimates
+        *   ``T_estimate``: Temperature estimate
+        *   ``T_bootstrap_estimates``: List of bootstrap estimates
 
     Examples:
        This example drawa samples from a D-Wave quantum computer for a large
@@ -405,8 +406,8 @@ def maximum_pseudolikelihood_temperature(
        Note that due to the complicated freeze-out properties of hard models
        (such as large scale spin-glasses), deviation from a classical Boltzmann
        distribution is anticipated.
-       Nevertheless, the *T_estimate* can always be interpreted as an estimator
-       of local-excitations rates. For example T will be 0 if only
+       Nevertheless, the ``T_estimate`` can always be interpreted as an
+       estimator of local-excitations rates. For example T will be 0 if only
        local minima are returned (even if some of the local minima are not
        ground states).
 
@@ -656,102 +657,113 @@ def maximum_pseudolikelihood(
     degenerate_fields: Optional[bool] = None,
     use_jacobian: bool = True,
 ) -> Tuple:
-    """Maximimum pseudolikelihood estimator for exponential models.
+    r"""Maximimum pseudolikelihood estimator for exponential models.
 
-    Uses the SciPy optimize method to solve the maximum pseudolikelihood problem
-    of weight estimation for an exponential model with exponent defined by a
-    weighted sum of bqms.
-    Assuming the Probability of states s is given by an exponential model
-    :math:`P(s)=1/Z exp(- x_i H_i(s))` for a given list of functions (bqms)
-    estimate x. The exponential model is also called a Boltzmann distribution.
-    Code is designed assuming the bqms are dense (a function of all or most of
-    the variables), although technically operation although sparse bqms
-    like :math:`H(s)=h_i s_i` or :math:`H(s)=J_{ij}s_i s_j` are technically allowed.
+    Uses the SciPy ``optimize`` submodule to solve the maximum pseudolikelihood
+    problem of weight estimation for an exponential model with the exponent
+    defined by a weighted sum of binary quadratic models (:term:`BQM`).
 
-    In the case that all samples define local minima or maxima (all energies
-    en1 are same sign) the limit of +/-Inf defines a maximum. In this special
-    case scipy is not called and the limit result is returned. Note that,
-    excitations can be rare in low-temperature samplesets such as those
-    derived from annealing, so that this pathological case can be realized in
-    applications of interest.
+    Assuming the probability of states :math:`s` is given by an exponential
+    model, :math:`P(s)=\frac{1}{Z} \textrm{exp}(- x_i H_i(s))`, for a given list
+    of functions (BQMs), estimate :math:`x`. The exponential model is also
+    called a Boltzmann distribution.
 
+    This function assumes the BQMs are dense (a function of all, or most of,
+    the variables), although operations on sparse BQMs such as
+    :math:`H(s)=h_i s_i` or :math:`H(s)=J_{ij}s_i s_j` are technically allowed.
 
-    Note that common reasons for parameter inference failure include:
+    If all provided samples define local minima or maxima (all energies for the
+    ``en1`` parameter are same sign), the limit of :math:`\pm \textrm{Inf}`
+    defines a maximum. In this special case, SciPy is not called and the limit
+    result is returned. Note that excitations can be rare in low-temperature
+    samplesets such as those derived from quantum annealing, so that this
+    pathological case can be realized in applications of interest.
 
-    -   Too few samples, insufficient to resolve parameters.
-    -   The sampleset is singular or insensitive with respect to some parameter
-        (e.g. local minima or plateus only).
-    -   bqms are too closely related, or weakly dependent on the sampleset
+    Common reasons for failures to infer parameters include:
+
+    -   Too few samples (insufficient to resolve parameters).
+    -   A sampleset that is singular or insensitive with respect to some
+        parameter (e.g. local minima or plateus only).
+    -   BQMs that are too closely related, or weakly dependent on, the sampleset
         variability (e.g. nearly collinear).
 
     Args:
-        en1: Effective fields as an np.ndarray (site labels not required).
-            Derived from the ``bqms`` and ``sampleset`` if not provided.
-            First dimension indexes samples, second dimension indexes sites.
-            Ordering doesn't matter, but should be consistent with sample_weights.
-        bqms: A list of Binary quadratic models [H_i] describing the sample
-            distribution as :math:`P(s) ~ exp(sum_i x_i H_i(s))` for unknown
-            model parameters x.
-        sampleset: A set of samples, as a dimod Sampleset or samples-like object.
+        en1: Effective fields as an :obj:`numpy.ndarray` (site labels not
+            required). If not provided, derived from the ``bqms`` and
+            ``sampleset`` parameters. First dimension indexes samples and second
+            dimension indexes sites. Ordering does not matter but should be
+            consistent with the ``sample_weights`` parameter.
+        bqms: List of binary quadratic models :math:`[H_i]` describing the
+            sample distribution as
+            :math:`P(s) \approx \textrm{exp}(sum_i x_i H_i(s))` for unknown
+            model parameters :math:`x`.
+        sampleset: Set of samples, as a :obj:`~dimod.SampleSet` or a
+            ``samples_like`` object (an extension of the
+            :std:doc:`NumPy <numpy:index>` :term:`array_like <numpy:array_like>`
+            structure); see :func:`~dimod.as_samples`.
         num_bootstrap_samples: Number of bootstrap estimators to calculate.
             Bootstrapped estimates can be used to reliably estimate variance and
-            bias if samples are uncorrelated. For
-            now, the sampleset must have uniform sample_weights to deploy this
-            option -- an aggregated or weighted sampleset must be disaggregated
-            (raw format) with repetitions.
-        seed: Seeds the bootstrap method (if provided) allowing reproducibility
+            bias if samples are uncorrelated. Currently supported for samplesets
+            only with uniform ``sample_weights``; an aggregated or weighted
+            sampleset must be disaggregated (raw format) with repetitions.
+        seed: Seeds the bootstrap method (if provided), allowing reproducibility
             of the estimators.
         x0: Initial guess for the fitting parameters. Should have the same
-            length as bqms when provided.
+            length as ``bqms``, when provided.
         optimize_method (str, optional, default=None):
-            Optimize method used by SciPy ``root_scalar`` method. The default
-            method works well under default operation, 'bisect' can be
-            numerically more stable for the scalar case (inverse temperature
-            estimation only).
-        kwargs_opt: Arguments used by the SciPy optimization methods. If using the
-            'bisect' optimization method and for a single bqm, bounds for the fitting
-            parameter can be set using a ``tuple[float, float]`` for ``bracket``.
-        sample_weights: A set of weights for the samples. If sampleset is of
-            type :obj:`~dimod.SampleSet` set this is default to
-            sampleset.record.num_occurrences, otherwise uniform weighting is
+            Optimize method used by the SciPy ``root_scalar`` algorithm. The
+            default method (type of solver) works well under default operation;
+            the 'bisect' method can be numerically more stable for the scalar
+            case (temperature estimation only).
+        kwargs_opt: Arguments used by the SciPy optimization methods. If using
+            the 'bisect' optimization method and for a single BQM, bounds for
+            the fitting parameter can be set using a ``tuple[float, float]`` for
+            ``bracket``.
+        sample_weights: A set of weights for the samples. If your ``sampleset``
+            parameter is of type :obj:`~dimod.SampleSet`, defaults to
+            ``sampleset.record.num_occurrences``; otherwise uniform weighting is
             the default.
-        return_optimize_object: When True, and if ``sciPy`` optimization is
-            invoked, the associated OptimizeResult is returned. Otherwise only
-            the optimal parameter values are returned as floats.
+        return_optimize_object: When ``True``, and if the SciPy ``optimize``
+            submodule is invoked, the associated ``OptimizeResult`` is returned.
+            Otherwise only the optimal parameter values are returned as floats.
         degenerate_fields: If effective fields are degenerate owing to sparse
-            connectivity, low precision and/or large number of samples, or low
-            entropy then histogramming (aggregating) of fields is used to
-            accelerate the search stage. A value True is supported (and default)
-            for single parameter esimation ``len(bqms)=1``; for multi-parameter
-            estimation only value False is supported.
-        use_jacobian: By default (True) the second derivative of the
-            pseudolikelihood is calculated and used by ScipY root finding
-            methods. The associated complexity of this non-essential
-            calculation is quadratic in len(bqms); use of the second derivative
-            is disabled by setting the value to False.
+            connectivity, low precision, and/or large number of samples or low
+            entropy, then histogramming (aggregating) of fields is used to
+            accelerate the search stage. A value ``True`` is supported (as the
+            default) for single-parameter esimation, ``len(bqms)=1``; for
+            multi-parameter estimation only value ``False`` is supported.
+        use_jacobian: By default (``use_jacobian=True``) the second derivative
+            of the pseudolikelihood is calculated and used by ScipY root-finding
+            methods. The associated complexity of this non-essential calculation
+            is quadratic in ``len(bqms)``; use of the second derivative is
+            disabled by setting this parameter to False.
     Returns:
-        Tuple: The optimal parameters and a list of bootstrapped estimates (x_estimate, x_bootstrap_estimates):
+        Tuple: Optimal parameters and a list of bootstrapped estimates
+        (``x_estimate``, ``x_bootstrap_estimates``):
 
-        * *x_estimate*: parameter estimates
-        * *x_bootstrap_estimates*: a numpy array of bootstrap estimators
+        *   ``x_estimate``: parameter estimates
+        *   ``x_bootstrap_estimates``: NumPy array of bootstrap estimators
 
     Examples:
-        This example builds upon the example for maximum_pseudolikelihood_temperature
+        This example builds upon the
+        :func:`.maximum_pseudolikelihood_temperature` example.
 
-        Draw samples from a D-Wave Quantum Computer for a large spin-glass
-        problem (random couplers J, zero external field h).
-        Establish a temperature and estimate to the background susceptibility chi
-        which is expected to be a small negative value.
-        Since background susceptiblity is a perturbation, and the problem Hamiltonian
-        and correction Hamiltonian are correlated, a large number of samples can be
-        required for confidence. Other perturbative corrections such as flux noise
-        can also interfere with estimation of small parameters like chi.
+        Draw samples from a D-Wave quantum computer for a large spin-glass
+        problem (random couplers :math:`J`, zero external field :math:`h`).
+        Establish a temperature and estimate of the background susceptibility
+        :math:`\chi`, which is expected to be a small, negative value. Since
+        background susceptiblity is a perturbation, and the problem Hamiltonian
+        and correction Hamiltonian are correlated, a large number of samples can
+        be required for confidence. Other perturbative corrections such as flux
+        noise can also interfere with estimation of small parameters like
+        :math:`\chi`.
 
         >>> import dimod
         >>> from dwave.system.temperatures import maximum_pseudolikelihood
         >>> from dwave.system.temperatures import background_susceptibility_bqm
         >>> from dwave.system import DWaveSampler
         >>> from random import random
+        ...
         >>> sampler = DWaveSampler()
         >>> bqm1 = dimod.BinaryQuadraticModel.from_ising({}, {e : 1-2*random() for e in sampler.edgelist})
         >>> bqm2 = background_susceptibility_bqm(bqm1)
@@ -760,11 +772,10 @@ def maximum_pseudolikelihood(
         >>> print('Effective temperature ', -1/params[0], 'Background susceptibliity', params[1]/params[0])    # doctest: +SKIP
         Effective temperature  0.22298662677716122 Background susceptibliity -0.009343961890466117
 
-    See also:
-        The function :class:`~dwave.system.temperatures.maximum_pseudolikelihood_temperature`
-        https://doi.org/10.3389/fict.2016.00023
 
-        https://www.jstor.org/stable/25464568
+    See also:
+
+        :func:`.maximum_pseudolikelihood_temperature`, [Chat2007]_ and [Ray2016]_.
 
     """
     if kwargs_opt is None:
@@ -985,6 +996,14 @@ def Ip_in_units_of_B(
 
     Returns:
         :math:`I_p(s)` with units matching the Hamiltonian :math:`B(s)`.
+
+    Examples:
+        This example calculates the persistent current of an |adv2| QPU at its
+        quantum critical point, as provided in the
+        :ref:`qpu_solver_properties_specific` section.
+
+        >>> from dwave.system.temperatures import Ip_in_units_of_B
+        >>> ip = Ip_in_units_of_B(B=2.308, units_B="GHz", MAFM=2.113, units_MAFM="pH")
     """
     h = 6.62607e-34  # Plank's constant for converting energy in Hertz to Joules
     Phi0 = 2.0678e-15  # superconducting magnetic flux quantum (h/2e); units: Weber=J/A
@@ -1071,6 +1090,9 @@ def h_to_fluxbias(
     Returns:
         Flux-bias values producing equivalent longitudinal fields to the given
         ``h`` values.
+
+    Examples:
+        See the :ref:`qpu_config_emulate_with_fbo` section.
     """
     Ip = Ip_in_units_of_B(
         Ip, B, MAFM, units_Ip, units_B, units_MAFM
@@ -1137,6 +1159,9 @@ def fluxbias_to_h(
 
     Returns:
         ``h`` values producing equivalent longitudinal fields to the flux biases.
+
+    Examples:
+        See the :ref:`qpu_config_emulate_with_fbo` section.
     """
     Ip = Ip_in_units_of_B(
         Ip, B, MAFM, units_Ip, units_B, units_MAFM
@@ -1148,52 +1173,57 @@ def fluxbias_to_h(
 def freezeout_effective_temperature(
     freezeout_B: float, temperature: float, units_B: str = "GHz", units_T: str = "mK"
 ) -> float:
-    r"""Provides an effective temperature as a function of freezeout information.
-
-    See the :ref:`qpu_annealing` section for a
-    complete summary of D-Wave annealing quantum computer operation.
+    r"""Calculate an effective temperature for a freezeout point.
 
     A D-Wave annealing quantum computer is assumed to implement a Hamiltonian
     :math:`H(s) = B(s)/2 H_P - A(s)/2 H_D`, where: :math:`H_P` is the unitless
-    diagonal problem Hamiltonian,
-    :math:`H_D` is the unitless driver Hamiltonian, :math:`B(s)` is the problem energy scale; A(s)
-    is the driver energy scale, amd :math:`s` is the normalized anneal
-    time :math:`s = t/t_a` (in [0,1]).
-    Diagonal elements of :math:`H_P`, indexed by the spin state :math:`x`, are equal to
-    the energy of a classical Ising spin system
+    diagonal problem Hamiltonian, :math:`H_D` is the unitless driver
+    Hamiltonian, :math:`B(s)` is the problem energy scale, A(s) is the driver
+    energy scale, and :math:`s` is the normalized anneal time :math:`s = t/t_a`
+    (in :math:`[0,1]`).
+
+    Diagonal elements of :math:`H_P`, indexed by the spin state :math:`x`, are
+    equal to the energy of a classical Ising spin system
 
     .. math::
-        E_{Ising}(x) = \sum_i h_i x_i + \sum_{i>j} J_{i, j} x_i x_j
+        E_{Ising}(x) = \sum_i h_i x_i + \sum_{i>j} J_{i, j} x_i x_j.
 
-    If annealing achieves a thermally equilibrated distribution
-    over decohered states at large :math:`s` where :math:`A(s) \ll B(s)`,
-    and dynamics stop abruptly at :math:`s=s^*`, the distribution of returned
-    samples is well described by a Boltzmann distribution:
+    If annealing achieves a thermally equilibrated distribution over decohered
+    states at large :math:`s`, where :math:`A(s) \ll B(s)`, and dynamics stop
+    abruptly at :math:`s=s^*`, the distribution of returned samples is well
+    described by a Boltzmann distribution,
 
     .. math::
-        P(x) = \exp(- B(s^*) R E_{Ising}(x) / 2 k_B T)
+        P(x) = \exp(- B(s^*) R E_{Ising}(x) / 2 k_B T),
 
-    where T is the physical temperature, and :math:`k_B` is the Boltzmann constant.
-    R is a Hamiltonain rescaling factor, if a QPU is operated with auto_scale=False,
-    then R=1.
-    The function calculates the unitless effective temperature as :math:`T_{eff} = 2 k_B T/B(s^*)`.
+    where :math:`T` is the physical temperature and :math:`k_B` is the Boltzmann
+    constant. :math:`R` is a Hamiltonian rescaling factor:
 
-    Device temperature :math:`T`, annealing schedules {:math:`A(s)`, :math:`B(s)`} and
-    single-qubit freeze-out (:math:`s^*`, for simple uncoupled Hamltonians) are reported
-    device properties: see the :ref:`qpu_solver_properties_specific` section.
-    These values (typically specified in mK and GHz) allows the calculation of an effective
-    temperature for simple Hamiltonians submitted to D-Wave quantum computers. Complicated
-    problems exploiting embeddings, or with many coupled variables, may freeze out at
-    different values of s or piecemeal). Large problems may have slow dynamics at small
-    values of s, so :math:`A(s)` cannot be ignored as a contributing factor to the distribution.
+    *   :math:`R=1` if the :term:`QPU` is operated with the
+        :ref:`parameter_qpu_auto_scale` set to ``False``.
+    *   :math:`R \neq 1` if ``auto_scale=True`` (default) and
+        *additional scaling factors must be accounted for*.
 
-    Note that for QPU solvers this temperature estimate applies to problems
-    submitted with no additional scaling factors (sampling with ``auto_scale = False``).
-    If ``auto_scale=True`` (default) additional scaling factors must be accounted for.
+    See the :ref:`qpu_annealing` section for operation details of D-Wave
+    annealing quantum computers.
+
+    This function calculates the unitless effective temperature as
+    :math:`T_{eff} = 2 k_B T/B(s^*)`.
+
+    Device temperature, :math:`T`, annealing schedules :math:`A(s)` and
+    :math:`B(s)`, and single-qubit freeze-out (:math:`s^*`, for simple uncoupled
+    Hamltonians), are properties reported for each device in the
+    :ref:`qpu_solver_properties_specific` section. These values (typically
+    specified in mK and GHz) allow the calculation of an effective temperature
+    for simple Hamiltonians submitted to D-Wave quantum computers. Complicated
+    problems exploiting embeddings, or with many coupled variables, may freeze
+    out at different values of :math:`s` or piecemeal. Large problems may have
+    slow dynamics at small values of :math:`s`, in which cases :math:`A(s)`
+    cannot be ignored as a contributing factor to the distribution.
 
     Args:
         freezeout_B (float):
-             :math:`B(s^*)`, the problem Hamiltonian energy scale at freeze-out.
+            :math:`B(s^*)`, the problem Hamiltonian energy scale at freeze-out.
 
         temperature (float):
             :math:`T`, the physical temperature of the quantum computer.
@@ -1258,28 +1288,30 @@ def fast_effective_temperature(
     optimize_method: Optional[str] = "bisect",
     num_bootstrap_samples: Optional[int] = 0,
 ) -> Tuple[np.float64, np.float64]:
-    r"""Provides an estimate to the effective temperature, :math:`T`, of a sampler.
+    r"""Estimate the effective temperature, :math:`T`, of a sampler.
 
-    This function submits a set of single-qubit problems to a sampler and
-    uses the rate of excitations to infer a maximum-likelihood estimate of temperature.
-    For greater control of the problem Hamiltonian or more general samplers,
-    `maximum_pseudolikelihood_temperature` should be preferred.
+    This function submits a set of single-qubit problems to a sampler and uses
+    the rate of excitations to infer a maximum-likelihood estimate of
+    temperature.
+
+    Use the :func:`.maximum_pseudolikelihood_temperature` function for greater
+    control of the problem Hamiltonian or more-general samplers.
 
     Args:
         sampler (:class:`dimod.Sampler`, optional, default=\ :class:`~dwave.system.samplers.DWaveSampler`):
             A dimod sampler.
 
         num_reads (int, optional):
-            Number of reads to use. Default is 100 if not specified in
-            ``sampler_params``.
+            Number of reads to use. Defaults to 100 when not specified in the
+            ``sampler_params`` parameter.
 
         seed (int, optional):
-            Seeds the problem generation process. Allowing reproducibility
-            from pseudo-random samplers.
+            Seeds the problem-generation process, allowing reproducibility from
+            pseudo-random samplers.
 
-        h_range (float, default = [-1/6.1,1/6.1]):
+        h_range (float, default = :math:`[-1/6.1,1/6.1]`):
             Determines the range of external fields probed for temperature
-            inference. Default is based on a D-Wave Advantage processor, where
+            inference. Default is based on D-Wave's Advantage processor, where
             single-qubit freeze-out implies an effective temperature of 6.1
             (see :class:`~dwave.system.temperatures.freezeout_effective_temperature`).
             The range should be chosen inversely proportional to the anticipated
@@ -1287,59 +1319,57 @@ def fast_effective_temperature(
             and other nonidealities such as precision limitations.
 
         nodelist (list, optional):
-            Variables included in the estimator. If not provided defaulted to
-            the nodelist of the structured sampler (QPU) specified.
+            Variables included in the estimator. Defaults to the node list
+            (``DWaveSampler.nodelist``) of the structured sampler (:term:`QPU`)
+            being used.
 
         sampler_params (dict, optional):
-            Any additional non-defaulted sampler parameterization. If
-            ``num_reads`` is a key, must be compatible with ``num_reads``
-            argument.
+            Any additional non-default sampler parameters. If ``num_reads`` is
+            provided, must be compatible with ``num_reads`` parameter.
 
         optimize_method (str, optional):
-            Optimize method used by SciPy ``root_scalar`` method. The default
-            method works well under default operation, 'bisect' can be
-            numerically more stable when operated without defaults.
+            Optimization method used by the SciPy ``root_scalar`` algorithm. The
+            default method works well under default operation; the 'bisect'
+            method can be numerically more stable when operated without
+            defaults.
 
         num_bootstrap_samples (int, optional, default=0):
-            Number of bootstrap samples to use for estimation of the
-            standard error. By default no bootstrapping is performed
-            and the standard error is defaulted to 0.
+            Number of bootstrap samples to use for estimation of the standard
+            error. By default no bootstrapping is performed and the standard
+            error defaults to 0.
 
     Returns:
         Tuple[float, float]:
-            The effective temperature describing single qubit problems in an
-            external field, and a standard error (+/- 1 sigma).
+            Effective temperature describing single-qubit problems in an
+            external field, and a standard error (:math:`\pm 1` sigma).
             By default the confidence interval is set as 0.
 
     Raises:
-        ValueError: If the sampler is not structured, and no nodelist is provided.
-        ValueError: If num_reads is inconsistent with sampler_params
+        ValueError: If the sampler is not structured, and no nodelist is
+            provided.
+        ValueError: If ``num_reads`` is inconsistent with ``num_reads``
+            specified in the ``sampler_params`` parameter.
 
     See also:
 
-        https://doi.org/10.3389/fict.2016.00023
-
-        https://www.jstor.org/stable/25464568
+        *   The :func:`.freezeout_effective_temperature` function may be used,
+            in combination with published device values, to estimate
+            single-qubit freeze-out in approximate agreement with empirical
+            estimates of this function.
+        *   [Chat2007]_ and [Ray2016]_.
 
     Examples:
-       Draw samples from a :class:`~dwave.system.samplers.DWaveSampler`
-       and establish the temperature
+       This example draws samples from a quantum computer (using the
+       :class:`~dwave.system.samplers.DWaveSampler` class) and establishs its
+       temperature.
 
        >>> from dwave.system.temperatures import fast_effective_temperature
        >>> from dwave.system import DWaveSampler
        >>> sampler = DWaveSampler()
+       ...
        >>> T, _ = fast_effective_temperature(sampler)
        >>> print('Effective temperature at freeze-out is',T)    # doctest: +SKIP
        Effective temperature at freeze-out is  0.21685104745347336
-
-    See also:
-        The function :class:`~dwave.system.temperatures.freezeout_effective_temperature`
-        may be used in combination with published device values to estimate single-qubit
-        freeze-out, in approximate agreement with empirical estimates of this function.
-
-        https://doi.org/10.3389/fict.2016.00023
-
-        https://www.jstor.org/stable/25464568
     """
 
     if sampler is None:
