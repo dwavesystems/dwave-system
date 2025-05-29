@@ -24,6 +24,17 @@ def coupling_groups(hardware_graph):
 
     Yields:
         Lists of tuples, where each list is a group of couplers in ``hardware_graph``.
+
+    Examples:
+        This example prints the first coupling group of an |adv2| QPU.
+
+        >>> from dwave.system.coupling_groups import coupling_groups
+        >>> from dwave.system import DWaveSampler
+        ...
+        >>> qpu = DWaveSampler(solver=dict(topology__type='zephyr'))
+        >>> couplings = coupling_groups(qpu.to_networkx_graph())
+        >>> print(next(couplings)) # doctest:+SKIP
+        [(1, 0), (12, 0), (2496, 0), (2520, 0), (2544, 0), (2568, 0)]
     """
 
     if hardware_graph.graph.get('family') != 'zephyr':
