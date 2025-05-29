@@ -440,7 +440,7 @@ def maximum_pseudolikelihood_temperature(
             Relevant only if ``optimize_method='bisect'``. If excitations are
             absent, temperature is defined as zero; otherwise this defines the
             range of temperatures over which to attempt a fit.
-        sample_weights (:obj:`numpy.ndarray`, optional):
+        sample_weights (:class:`numpy.ndarray`, optional):
             A set of weights for the samples. If sampleset is of
             type :obj:`~dimod.SampleSet`, this defaults to
             ``sampleset.record.num_occurrences``; otherwise uniform weighting is
@@ -743,7 +743,7 @@ def maximum_pseudolikelihood(
         variability (e.g. nearly collinear).
 
     Args:
-        en1: Effective fields as an :obj:`numpy.ndarray` (site labels not
+        en1: Effective fields as an :class:`numpy.ndarray` (site labels not
             required). If not provided, derived from the ``bqms`` and
             ``sampleset`` parameters. First dimension indexes samples and second
             dimension indexes sites. Ordering does not matter but should be
@@ -752,7 +752,7 @@ def maximum_pseudolikelihood(
             sample distribution as
             :math:`P(s) \approx \textrm{exp}(sum_i x_i H_i(s))` for unknown
             model parameters :math:`x`.
-        sampleset: Set of samples, as a :obj:`~dimod.SampleSet` or a
+        sampleset: Set of samples, as a :class:`~dimod.SampleSet` or a
             ``samples_like`` object (an extension of the
             :std:doc:`NumPy <numpy:index>` :term:`array_like <numpy:array_like>`
             structure); see :func:`~dimod.as_samples`.
