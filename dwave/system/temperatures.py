@@ -243,7 +243,7 @@ def background_susceptibility_ising(
         *   :math:`\chi=-0.01`
 
         >>> import dimod
-        >>> from from dwave.system.temperatures import background_susceptibility_ising
+        >>> from dwave.system.temperatures import background_susceptibility_ising
         ...
         >>> h1 = 0.3; h2 = 0.8; h3 = -0.25
         >>> J12 = 1.2; J23 = -0.4
@@ -330,7 +330,7 @@ def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional
         *   :math:`\chi=-0.01`
 
         >>> import dimod
-        >>> from from dwave.system.temperatures import background_susceptibility_bqm
+        >>> from dwave.system.temperatures import background_susceptibility_bqm
         ...
         >>> h1 = 0.3; h2 = 0.8; h3 = -0.25
         >>> J12 = 1.2; J23 = -0.4
