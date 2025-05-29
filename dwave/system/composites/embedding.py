@@ -74,7 +74,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             Defaults to :func:`dimod.child_structure_dfs`.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol and :meth:`~dimod.Scoped.close`
+        method.
 
     Examples:
 
@@ -335,7 +336,8 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             arguments.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol and :meth:`~dimod.Scoped.close`
+        method.
 
     Examples:
 
@@ -530,7 +532,8 @@ class FixedEmbeddingComposite(LazyFixedEmbeddingComposite):
             keyword arguments are ignored.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol and :meth:`~dimod.Scoped.close`
+        method.
 
     Examples:
         To embed a triangular problem (a problem with a three-node complete graph,
@@ -610,7 +613,8 @@ class AutoEmbeddingComposite(EmbeddingComposite):
             arguments.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol and :meth:`~dimod.Scoped.close`
+        method.
 
     """
     def __init__(self, child_sampler, **kwargs):

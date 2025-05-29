@@ -39,7 +39,8 @@ class ReverseAdvanceComposite(dimod.ComposedSampler):
             A dimod sampler.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol and :meth:`~dimod.Scoped.close`
+        method.
 
     Examples:
        This example runs 100 reverse anneals each for three schedules on a problem
@@ -206,7 +207,8 @@ class ReverseBatchStatesComposite(dimod.ComposedSampler, dimod.Initialized):
             A dimod sampler.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol and :meth:`~dimod.Scoped.close`
+        method.
 
     Examples:
        This example runs three reverse anneals from two configured and one 
