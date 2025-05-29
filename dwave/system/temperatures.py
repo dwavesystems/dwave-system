@@ -204,7 +204,7 @@ def effective_field(
 def background_susceptibility_ising(
     h: Union[np.ndarray, dict], J: Union[np.ndarray, dict]
 ) -> Tuple:
-    r"""Create the field and couplings for background-susceptibility correction.
+    r"""Calculate the biases and couplings due to background susceptibility.
 
     :ref:`Background susceptibility <qpu_ice_background_susceptibility>` is a
     significant source of systematic error in annealing processors. It can be
@@ -214,13 +214,14 @@ def background_susceptibility_ising(
     :term:`Ising` model in matrix vector notation. Assuming :math:`J` is a real,
     symmetric (0 on the diagonal) matrix, :math:`h` and :math:`s` are column
     vectors, and :math:`\chi` is a small real value, then the Ising model is
-    is defined:
+    is defined as,
 
     .. math::
 
-        H = k + (h + \chi J h)' s +  1/2 s' (J + \chi J^2) s
+        H = k + (h + \chi J h)' s +  1/2 s' (J + \chi J^2) s,
 
-    where the apostrophe (') denotes transpose and matrix multiplication applies.
+    where the apostrophe (') denotes transpose and matrix multiplication
+    applies.
 
     The constant (:math:`k`, irrelevant to sampled distributions) is defined as
     :math:`k = - \frac{\chi}{2} \textrm{Trace}[J^2]`.
@@ -229,14 +230,44 @@ def background_susceptibility_ising(
     :math:`H(s) = k + h' J s +  \frac{1}{2} s' (J + \chi J^2) s`.
 
     Args:
-        h: Linear terms (fields) in the Hamiltonian.
+        h: Linear terms (fields/biases) in the Hamiltonian.
         J: Quadratic terms (couplings) in the Hamiltonian.
 
     Returns:
         Couplings and scalar constant as a tuple. If :math:`h` and :math:`J` are
-        of type :obj:`numpy.ndarray`,
-        returned fields and couplings are too; otherwise a tuple of dictionaries
-        is returned.
+        of type :obj:`numpy.ndarray`, returned fields and couplings are too;
+        otherwise returns a tuple of dictionaries.
+
+    Examples:
+        This example calculates the background-susceptibility corrections, shown
+        symbolically in the
+        :ref:`Background Susceptibility <qpu_ice_background_susceptibility>`
+        section, for a three-qubit BQM with the following values:
+
+        *   Biases :math:`h_1=0.3, h_2=0.8, h_3=-0.25`
+        *   Couplings :math:`J_{1,2}=1.2, J_{2,3}=-0.4`
+        *   :math:`\chi=-0.01`
+
+        >>> import dimod
+        >>> from from dwave.system.temperatures import background_susceptibility_ising
+        ...
+        >>> h1 = 0.3; h2 = 0.8; h3 = -0.25
+        >>> J12 = 1.2; J23 = -0.4
+        >>> h, J, _ = background_susceptibility_ising(
+        ...     {'1': h1, '2': h2, '3': h3},
+        ...     {('1', '2'): J12, ('2', '3'): J23})
+        >>> print(round(h['2'], 2))
+        0.46
+
+        The formula shown in the
+        :ref:`Background Susceptibility <qpu_ice_background_susceptibility>`
+        section for qubit 2, is
+        :math:`h_2 + h_1 \chi J_{1,2} + h3 \chi J_{2,3}`. The perturbation part
+        can be rearranged as
+        :math:`h_1 \chi J_{1,2} + h3 \chi J_{2,3} = \chi (h_1 J_{1,2} + h3 J_{2,3})`
+        and using the values of this example, setting :math:`\chi = 1` for
+        convenience, gives
+        :math:`(h_1 J_{1,2} + h3 J_{2,3}) = 0.3*1.2 - 0.25*(-0.4) = 0.459999`.
     """
     if isinstance(h, np.ndarray) and isinstance(J, np.ndarray):
         dh = J @ h  # matched dimensions assumed
@@ -272,7 +303,7 @@ def background_susceptibility_ising(
 
 
 def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional[float] = None):
-    r"""Create a binary quadratic model for background-susceptibility correction.
+    r"""Adjust a binary quadratic model for background susceptibility.
 
     :ref:`Background susceptibility <qpu_ice_background_susceptibility>` can be
     treated as a perturbative correction to the programmed Hamiltonian:
@@ -291,7 +322,37 @@ def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional
 
     Returns:
        :class:`~dimod.binary.binary_quadratic_model.BinaryQuadraticModel`:
-            A BQM describing the background-susceptibility correction.
+            The given BQM with values corrected for the given background
+            susceptibility.
+
+    Examples:
+        This example calculates the background-susceptibility corrections, shown
+        symbolically in the
+        :ref:`Background Susceptibility <qpu_ice_background_susceptibility>`
+        section, for a three-qubit BQM with the following values:
+
+        *   Biases :math:`h_1=0.3, h_2=0.8, h_3=-0.25`
+        *   Couplings :math:`J_{1,2}=1.2, J_{2,3}=-0.4`
+        *   :math:`\chi=-0.01`
+
+        >>> import dimod
+        >>> from from dwave.system.temperatures import background_susceptibility_bqm
+        ...
+        >>> h1 = 0.3; h2 = 0.8; h3 = -0.25
+        >>> J12 = 1.2; J23 = -0.4
+        >>> chi = -0.01
+        >>> bqm = dimod.BQM.from_ising(
+        ...     {'1': h1, '2': h2, '3': h3},
+        ...     {('1', '2'): J12, ('2', '3'): J23})
+        >>> bqm1 = background_susceptibility_bqm(bqm, chi)
+        >>> print(round(bqm1.linear['1'], 2))
+        0.29
+
+        The formula shown in the
+        :ref:`Background Susceptibility <qpu_ice_background_susceptibility>`
+        section for qubit 1, is :math:`h_1 + h_2 \chi J_{1,2}`; using the values
+        of this example gives
+        :math:`h_1 + h_2 \chi J_{1,2} = 0.3 + 0.8*(-0.01)*1.2 = 0.2904`.
     """
     source_type = bqm.vartype
     bqm = bqm.change_vartype(dimod.SPIN)
