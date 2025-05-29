@@ -36,3 +36,10 @@ Temperature and Unit-Conversion Utilities
    Ip_in_units_of_B
    maximum_pseudolikelihood
    maximum_pseudolikelihood_temperature
+
+
+.. [Chat2007]
+    Chatterjee, Sourav.
+    “Estimation in Spin Glasses: A First Step.”
+    The Annals of Statistics 35, no. 5 (2007): 1931-46.
+    http://www.jstor.org/stable/25464568
