@@ -117,7 +117,7 @@ Callable Objects
 ----------------
 
 .. autosummary::
-   :toctree: minimize_energy
+   :toctree: generated/
 
    chain_breaks.MinimizeEnergy
 

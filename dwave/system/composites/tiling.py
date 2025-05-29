@@ -76,7 +76,8 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
            cell.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol with :meth:`dimod.Scoped`
+        implemented.
 
     Examples:
        This example submits a two-variable QUBO problem representing a logical

@@ -55,7 +55,8 @@ class CutOffComposite(dimod.ComposedSampler):
             value. Defaults to :func:`operator.lt`.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol with :meth:`dimod.Scoped`
+        implemented.
 
     Examples:
         This example removes one interaction, ``'ac': -0.7``, before embedding
@@ -236,7 +237,8 @@ class PolyCutOffComposite(dimod.ComposedPolySampler):
             value. Defaults to :func:`operator.lt`.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`.close` method.
+        Support for context manager protocol with :meth:`dimod.Scoped`
+        implemented.
 
     Examples:
         This example removes one interaction, ``'ac': 0.2``, before submitting
