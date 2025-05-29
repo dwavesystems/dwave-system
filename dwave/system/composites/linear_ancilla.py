@@ -42,8 +42,8 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
             that has flux bias controls.
 
     .. versionadded:: 1.30.0
-        Support for context manager protocol and :meth:`~dimod.Scoped.close`
-        method.
+        Support for context manager protocol with :meth:`dimod.Scoped`
+        implemented.
 
     Examples:
         This example submits a two-qubit problem consisting of linear biases with opposed signs 
