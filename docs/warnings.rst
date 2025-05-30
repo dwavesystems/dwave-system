@@ -4,12 +4,40 @@
 Warnings
 ========
 
+The ``dwave-system`` package supports various warning classes and provides the
+ability to configure warning handling.
+
+
+Supported Warnings
+==================
+
+The following warnings are currently supported.
+
+.. currentmodule:: dwave.system.warnings
+
+.. autoclass:: ChainBreakWarning
+.. autoclass:: ChainLengthWarning
+.. autoclass:: ChainStrengthWarning
+.. autoclass:: EnergyScaleWarning
+.. autoclass:: TooFewSamplesWarning
+
+Related Information
+-------------------
+
+*   :ref:`qpu_embedding_intro` and :ref:`qpu_embedding_guidance` describe chains
+    and how to deal with broken chains.
+*   :ref:`qpu_basic_config` and :ref:`qpu_solver_configuration` provide basic
+    and advanced information on configuring QPU parameters and best practices.
+
+Configuring Warnings
+====================
+
 Settings for raising warnings may be configured by tools such as composites or
 the :ref:`index_inspector` tool.
 
 This example configures warnings for an instance of the
 :class:`~dwave.system.composites.EmbeddingComposite()` class used on a sampler
-structured to represent variable ``a`` with a long chain.  
+structured to represent variable ``a`` with a long chain.
 
 >>> import networkx as nx
 >>> import dimod
@@ -27,10 +55,15 @@ True
 
 .. currentmodule:: dwave.system.warnings
 
-.. autoclass:: ChainBreakWarning
-.. autoclass:: ChainLengthWarning
-.. autoclass:: ChainStrengthWarning
-.. autoclass:: EnergyScaleWarning
-.. autoclass:: TooFewSamplesWarning
 .. autoclass:: WarningAction
 .. autoclass:: WarningHandler
+
+.. autosummary::
+    :toctree: generated/
+
+    WarningHandler.chain_break
+    WarningHandler.chain_length
+    WarningHandler.chain_strength
+    WarningHandler.energy_scale
+    WarningHandler.too_few_samples
+    WarningHandler.issue
