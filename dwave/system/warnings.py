@@ -79,6 +79,7 @@ class EnergyScaleWarning(UserWarning):
 
 
 class WarningHandler(object):
+    """A class for parsing the conditions for, and issuing, warnings."""
     def __init__(self, action=None):
         self.saved = []
 
@@ -98,22 +99,21 @@ class WarningHandler(object):
                 The warning message
 
             category (Warning):
-                The warning category class. Defaults to UserWarning.
+                Category class of the warning. Defaults to UserWarning.
 
-            level (int):
-                The level of warning severity. Uses the logging warning levels.
+            level (int): Level of severity for the warning. Uses the logging
+                warning levels.
 
             func (function):
-                A function that is executed in the case that the warning level
-                is not IGNORE. The function should return a 2-tuple containing
-                a bool specifying whether the warning should be saved/raised
-                and any relevent data associated with the warning as a
-                dictionary/None. This overrides anything provided in the `data`
-                kwarg.
+                A function that is executed when the warning level is not
+                IGNORE. The function should return a 2-tuple containing
+                a boolean specifying whether the warning should be saved/raised
+                and any relevant data associated with the warning as a
+                dictionary or None. The provided data overrides the value given
+                in the ``data`` parameter.
 
             data (dict):
-                Any data relevent to the warning.
-
+                Any data relevant to the warning.
         """
 
         action = as_action(self.action)  # user may have overwritten
@@ -143,6 +143,13 @@ class WarningHandler(object):
     # some hard-coded warnings for convenience or for expensive operations
 
     def chain_length(self, embedding, length=7):
+        """Parse conditions for, and issue, a warning on chain length.
+
+        Args:
+            embedding (dict, :class:`.EmbeddedStructure`): Minor embedding to
+                test for maximum chain length.
+            length (int): Threshold chain length for issuing a warning.
+        """
         if as_action(self.action) is IGNORE:
             return
 
@@ -157,6 +164,14 @@ class WarningHandler(object):
                        )
 
     def chain_break(self, sampleset, embedding):
+        """Parse conditions for, and issue, a warning on chain breaks.
+
+        Args:
+            sampleset (:class:`dimod.SampleSet`): Sampleset to test for chain
+                breaks.
+            embedding (dict, :class:`.EmbeddedStructure`): Minor embedding
+                associated with the sampleset.
+        """
         if as_action(self.action) is IGNORE:
             return
 
@@ -182,8 +197,17 @@ class WarningHandler(object):
                            )
 
     def chain_strength(self, bqm, chain_strength, embedding=None):
-        """Issues a warning when any quadratic biases are greater than the given
-        chain strength."""
+        """Parse conditions for, and issue, a warning on chain strength.
+
+        Issues a warning when any quadratic biases are greater than the given
+        chain strength.
+
+        Args:
+            bqm (:class:`~dimod.binary.binary_quadratic_model.BinaryQuadraticModel`):
+                Binary quadratic model.
+            chain_strength (int): Chain strength used for the minor embedding.
+            embedding (dict, :class:`.EmbeddedStructure`): Minor embedding.
+        """
         if as_action(self.action) is IGNORE:
             return
 
@@ -208,14 +232,16 @@ class WarningHandler(object):
                        data=dict(source_interactions=interactions))
 
     def energy_scale(self, bqm):
-        """Issues a warning if some biases are 10^3 times stronger than others.
+        """Parse conditions for, and issue, a warning on energy scale.
+
+        Issues a warning if some biases are :math:`10^3` times stronger than
+        others.
 
         Args:
-            bqm (:class:`dimod.BinaryQuadraticModel`/tuple):
-                A binary quadratic model, a tuple of the form `(Q)` where `Q`
-                is a QUBO-dictionary, or a tuple of the form `(h, J)` where
-                `h` and `J` are Ising problem dictionaries.
-
+            bqm (:class:`~dimod.binary.binary_quadratic_model.BinaryQuadraticModel`, tuple):
+                A binary quadratic model or a tuple of either the form ``(Q)``,
+                where ``Q`` is a QUBO-dictionary, or the form ``(h, J)``, where
+                ``h`` and ``J`` are Ising problem dictionaries.
         """
         if as_action(self.action) is IGNORE:
             return
@@ -253,7 +279,14 @@ class WarningHandler(object):
                        data=data)
 
     def too_few_samples(self, sampleset):
-        """Issues a warning when the number ground states found is within the sampling error threshold."""
+        """Parse conditions for, and issue, a warning on too-few samples.
+
+        Issues a warning when the number of ground states found is under the
+        sampling error threshold.
+
+        Args:
+            sampleset (:class:`dimod.SampleSet`): Sampleset to test.
+        """
         if self.action is IGNORE:
             return
 
