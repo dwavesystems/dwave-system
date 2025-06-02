@@ -103,10 +103,10 @@ def effective_field(
         exclusion of the variable, and associated energy terms, from the
         problem).
 
-    *   ``True``: The energy gained by flipping the variable state from its
-        current value (e.g., from -1 to 1, for an :term:`Ising` model, or 0 to
-        1, for a :term:`QUBO`). A positive value indicates that the energy can
-        be decreased by flipping the variable; hence the variable is in a
+    *   ``True``: The energy difference from flipping the variable state from
+        its current value (e.g., from -1 to 1, for an :term:`Ising` model, or 0
+        to 1, for a :term:`QUBO`). A positive value indicates that the energy
+        can be decreased by flipping the variable; hence the variable is in a
         locally excited state. If all values are negative (positive) for a
         sample, that sample is a local minima (maxima).
 
