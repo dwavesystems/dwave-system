@@ -101,16 +101,18 @@ class WarningHandler(object):
             category (Warning):
                 Category class of the warning. Defaults to :exc:`UserWarning`.
 
-            level (int): Level of severity for the warning. Uses the logging
-                warning levels.
+            level (int):
+                Level of severity for the warning. Uses the logging warning
+                levels.
 
             func (function):
                 A function that is executed when the warning level is not
-                IGNORE. The function should return a 2-tuple containing
-                a boolean specifying whether the warning should be saved/raised
-                and any relevant data associated with the warning as a
-                dictionary or None. The provided data overrides the value given
-                in the ``data`` parameter.
+                ``IGNORE`` (see :class:`~dwave.system.warnings.WarningAction`).
+                The function should return a 2-tuple containing a boolean
+                specifying whether the warning should be saved/raised and any
+                relevant data associated with the warning as a dictionary or
+                ``None``. The provided data overrides the value given in the
+                ``data`` parameter.
 
             data (dict):
                 Any data relevant to the warning.
@@ -143,7 +145,7 @@ class WarningHandler(object):
     # some hard-coded warnings for convenience or for expensive operations
 
     def chain_length(self, embedding, length=7):
-        """Parse conditions for, and issue, a warning on chain length.
+        """Issue a warning if chains are too long.
 
         Args:
             embedding (dict, :class:`.EmbeddedStructure`): Minor embedding to
@@ -164,7 +166,7 @@ class WarningHandler(object):
                        )
 
     def chain_break(self, sampleset, embedding):
-        """Parse conditions for, and issue, a warning on chain breaks.
+        """Issue a warning if chains are broken.
 
         Args:
             sampleset (:class:`dimod.SampleSet`): Sampleset to test for chain
@@ -197,7 +199,7 @@ class WarningHandler(object):
                            )
 
     def chain_strength(self, bqm, chain_strength, embedding=None):
-        """Parse conditions for, and issue, a warning on chain strength.
+        """Issue a warning if chain strength is inadequate.
 
         Issues a warning when any quadratic biases are greater than the given
         chain strength.
@@ -232,7 +234,7 @@ class WarningHandler(object):
                        data=dict(source_interactions=interactions))
 
     def energy_scale(self, bqm):
-        """Parse conditions for, and issue, a warning on energy scale.
+        """Issue a warning if the energy scale is too wide.
 
         Issues a warning if some biases are :math:`10^3` times stronger than
         others.
@@ -279,7 +281,7 @@ class WarningHandler(object):
                        data=data)
 
     def too_few_samples(self, sampleset):
-        """Parse conditions for, and issue, a warning on too-few samples.
+        """Issue a warning if the number of samples is too low.
 
         Issues a warning when the number of ground states found is under the
         sampling error threshold.
