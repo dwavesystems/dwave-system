@@ -99,7 +99,7 @@ class WarningHandler(object):
                 The warning message
 
             category (Warning):
-                Category class of the warning. Defaults to UserWarning.
+                Category class of the warning. Defaults to :exc:`UserWarning`.
 
             level (int): Level of severity for the warning. Uses the logging
                 warning levels.
