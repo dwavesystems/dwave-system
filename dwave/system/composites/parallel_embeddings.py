@@ -143,26 +143,6 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         Consider use of :func:`~dwave_networkx.drawing.draw_parallel_embeddings` for visualization of the
         embeddings found (``embeddings=sampler.embeddings`` over ``target=qpu.to_networkx_graph()``).
 
-        See the :ref:`index_concepts` section
-        for explanations of technical terms in descriptions of Ocean tools.
-
-
-       A 4-loop can be embedded on the order of N//4 times on a processor
-       with N nodes.
-
-
-       A NOT gate QUBO can be embedded on a Chimera[m=1,t=4] graph.
-       It is possible to tile many copies of this problem on a target
-       graph which is Chimera, Pegasus or Zephyr structured.
-       >>> from dwave.system import DWaveSampler, EmbeddingComposite
-       >>> from dwave.system import TilingComposite
-       ...
-       >>> sampler = EmbeddingComposite(TilingComposite(DWaveSampler(), 1, 1, 4))
-       >>> Q = {(1, 1): -1, (1, 2): 2, (2, 1): 0, (2, 2): -1}
-       >>> sampleset = sampler.sample_qubo(Q)
-       >>> len(sampleset)> 1
-       True
-
     See the :ref:`index_concepts` section
     for explanations of technical terms in descriptions of Ocean tools.
 
