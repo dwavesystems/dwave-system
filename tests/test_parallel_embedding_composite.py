@@ -1,4 +1,4 @@
-# Copyright 2025 D-Wave Systems Inc.
+# Copyright 2025 D-Wave
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -291,7 +291,10 @@ class TestTiling(unittest.TestCase):
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
 
-        response = sampler.sample_ising(h, J)
+        response = sampler.sample_ising(h, J, num_reads=2)
+
+        self.assertEqual(len(sampler.embeddings)*num_reads, sum(response.record.num_occurrences))
+        self.assertTrue(set(np.unique(response.record.sample)).issubset({-1,1}))
 
     def test_tile_around_hole(self):
 
