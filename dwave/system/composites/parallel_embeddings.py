@@ -298,10 +298,6 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
         responses = []
         for embedding in self.embeddings:
-            embedding = {
-                v: chain for v, chain in embedding.items() if v in bqm.variables
-            }
-
             responses.append(
                 dwave.embedding.unembed_sampleset(tiled_response, embedding, bqm)
             )
