@@ -202,6 +202,13 @@ Methods
    LazyFixedEmbeddingComposite.sample_ising
    LazyFixedEmbeddingComposite.sample_qubo
 
+
+ParallelEmbeddingComposite
+--------------------------
+
+.. autoclass:: ParallelEmbeddingComposite
+
+
 TilingComposite
 ---------------
 
