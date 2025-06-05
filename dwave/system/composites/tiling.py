@@ -27,6 +27,8 @@ See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
+import warnings
+
 import dimod
 import dwave_networkx as dnx
 
@@ -42,6 +44,13 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
     small problems. The small problem should be defined on a :term:`Chimera`
     graph of dimensions ``sub_m``, ``sub_n``, ``t``, or minor-embeddable to
     such a graph.
+
+    .. deprecated:: 1.32.0
+        Tiling is generalized in
+        :class:`~dwave.system.composites.ParallelEmbeddingComposite`
+        to handle bigger and non-Chimera source graphs on any structured graph
+        supported by :class:`~dwave.system.samplers.DWaveSampler` (including
+        Zephyr). ``TilingComposite`` will be removed in dwave-system 2.0.
 
     Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid
     of cells, where each unit cell is a bipartite graph with shore of size t,
@@ -119,6 +128,13 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
     """list: Embeddings into each available tile on the structured solver."""
 
     def __init__(self, sampler, sub_m, sub_n, t=4):
+
+        warnings.warn(
+            "'TilingComposite' has been deprecated since dwave-system 1.32.0, "
+            "and will be removed in 2.0. "
+            "Use 'ParallelEmbeddingComposite' for greater flexibility instead.",
+            DeprecationWarning, stacklevel=2
+        )
 
         self.parameters = sampler.parameters.copy()
         self.properties = properties = {'child_properties': sampler.properties}

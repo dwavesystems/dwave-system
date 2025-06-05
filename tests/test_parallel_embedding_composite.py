@@ -144,20 +144,17 @@ class TestParallelEmbeddings(unittest.TestCase):
             "T_family": mock_sampler0.properties["topology"]["type"],
             "T_kwargs": {"m": mock_sampler0.properties["topology"]["shape"][0]},
         }
-        try:
-            sampler = ParallelEmbeddingComposite(
-                mock_sampler,
-                source=source,
-                embedder=embedder,
-                embedder_kwargs=embedder_kwargs,
-            )
-            sampleset = sampler.sample_ising({}, J, num_reads=1)
-            self.assertGreater(
-                len(sampleset), 1
-            )  # Equal to the number of parallel embeddings
-        except:
-            print('Test is skipped for now, relies on incomplete pull request:'
-                  'https://github.com/jackraymond/minorminer/tree/parallel_embeddings')
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=source,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
+        sampleset = sampler.sample_ising({}, J, num_reads=1)
+        self.assertGreater(
+            len(sampleset), 1
+        )  # Equal to the number of parallel embeddings
+
 
 class TestTiling(unittest.TestCase):
     """Testing for purposes of TilingComposite deprecation. See also testing of
