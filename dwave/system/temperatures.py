@@ -297,7 +297,7 @@ def background_susceptibility_ising(
 
 
 def background_susceptibility_bqm(bqm: dimod.BinaryQuadraticModel, chi: Optional[float] = None):
-    r"""Adjust a binary quadratic model for background susceptibility.
+    r"""Create the binary quadratic model for the background susceptibility correction.
 
     :ref:`Background susceptibility <qpu_ice_background_susceptibility>` can be
     treated as a perturbative correction to the programmed Hamiltonian:
