@@ -109,7 +109,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         >>> from dwave.system import DWaveSampler
         >>> from dwave.system import ParallelEmbeddingComposite
         >>> from networkx import from_edgelist
-        >>> embedder_kwargs = {'max_num_embs': None}  # Without this, only 1 embedding will be sought
+        >>> embedder_kwargs = {'max_num_emb': None}  # Without this, only 1 embedding will be sought
         >>> source = from_edgelist([('a', 'b')])
         >>> qpu = DWaveSampler()
         >>> sampler = ParallelEmbeddingComposite(qpu, source=source, embedder_kwargs=embedder_kwargs)

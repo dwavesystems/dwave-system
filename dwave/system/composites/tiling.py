@@ -46,10 +46,11 @@ class TilingComposite(dimod.Composite, dimod.Structured, dimod.Sampler):
     such a graph.
 
     .. deprecated:: 1.32.0
-        Tiling is generalized in :class:`dwave.system.ParallelEmbeddingComposite`
+        Tiling is generalized in
+        :class:`~dwave.system.composites.ParallelEmbeddingComposite`
         to handle bigger and non-Chimera source graphs on any structured graph
-        supported by :class:`dwave.system.DWaveSampler` (including Zephyr).
-        ``TilingComposite`` will be removed in dwave-system 2.0.
+        supported by :class:`~dwave.system.samplers.DWaveSampler` (including
+        Zephyr). ``TilingComposite`` will be removed in dwave-system 2.0.
 
     Notation *PN* referes to a Pegasus graph consisting of a 3x(N-1)x(N-1) grid
     of cells, where each unit cell is a bipartite graph with shore of size t,
