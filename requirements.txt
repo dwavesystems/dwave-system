@@ -5,7 +5,7 @@ dwave-cloud-client==0.12.0
 dwave-networkx==0.8.14
 dwave-samplers==1.4.0
 homebase==1.0.1
-minorminer==0.2.18
+minorminer==0.2.19
 networkx~=3.0
 
 numpy==1.23.5;python_version<"3.11"  # for compatibility with scipy 1.9.3

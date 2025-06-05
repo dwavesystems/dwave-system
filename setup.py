@@ -30,7 +30,7 @@ install_requires = ['dimod>=0.12.20,<0.14.0',
                     'dwave-networkx>=0.8.10',
                     'dwave-preprocessing>=0.5.0',
                     'homebase>=1.0.0,<2.0.0',
-                    'minorminer>=0.2.8,<0.3.0',
+                    'minorminer>=0.2.19,<0.3.0',    # lower bound for parallel embedding support
                     'numpy>=1.21.6',   # minimum inherited from minorminer
                     'dwave-samplers>=1.0.0',
                     'scipy>=1.7.3',
