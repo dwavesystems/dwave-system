@@ -13,3 +13,6 @@ numpy==2.1.0;python_version>="3.13"
 
 scipy==1.9.3;python_version<"3.11"
 scipy==1.14.1;python_version>="3.11"
+
+# dev requirements
+reno==4.1.0
