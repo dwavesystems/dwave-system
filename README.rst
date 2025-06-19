@@ -18,7 +18,7 @@ dwave-system
 
 .. start_system_about
 
-`dwave-system` is a basic API for easily incorporating the D-Wave system as a
+``dwave-system`` is a basic API for easily incorporating the D-Wave system as a
 sampler in the
 `Ocean software stack <https://docs.dwavequantum.com/en/latest/ocean/stack.html>`_,
 directly or through `Leap <https://cloud.dwavesys.com/leap/>`_ service's
@@ -62,3 +62,22 @@ Contributing
 
 Ocean's `contributing guide <https://docs.dwavequantum.com/en/latest/ocean/contribute.html>`_
 has guidelines for contributing to Ocean packages.
+
+Release Notes
+-------------
+
+``dwave-system`` makes use of `reno <https://docs.openstack.org/reno/>`_ to manage
+its release notes.
+
+When making a contribution to ``dwave-system`` that will affect users, create
+a new release note file by running
+
+.. code-block:: bash
+    reno new your-short-descriptor-here
+
+You can then edit the file created under ``releasenotes/notes/``.
+Remove any sections not relevant to your changes.
+Commit the file along with your changes.
+
+See reno's `user guide <https://docs.openstack.org/reno/latest/user/usage.html>`_
+for details.
