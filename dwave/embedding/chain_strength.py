@@ -18,17 +18,18 @@ Examples:
     This example uses :func:`uniform_torque_compensation`, given a prefactor of 2,
     to calculate a chain strength that :class:`EmbeddingComposite` then uses.
 
+    >>> import dimod
     >>> from functools import partial
     >>> from dwave.system import EmbeddingComposite, DWaveSampler
     >>> from dwave.embedding.chain_strength import uniform_torque_compensation
     ...
-    >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
+    >>> bqm = dimod.generators.uniform(5, dimod.BINARY)     # K5 with random biases
     >>> sampler = EmbeddingComposite(DWaveSampler())
     >>> # partial() can be used when the BQM or embedding is not accessible
     >>> chain_strength = partial(uniform_torque_compensation, prefactor=2)
-    >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
+    >>> sampleset = sampler.sample(bqm, chain_strength=chain_strength, return_embedding=True)
     >>> sampleset.info['embedding_context']['chain_strength']
-    1.224744871391589
+    0.4539949645832791
 
 """
 import math
