@@ -50,6 +50,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
     D-Wave quantum computer. A new minor-embedding is calculated each time one 
     of its sampling methods is called.
 
+    In case a native embedding is found (one to one mapping between source and
+    target variables), embedding and unembedding steps are simplified as they
+    are reduced to variable relabeling.
+
     Args:
         child_sampler (:class:`dimod.Sampler`):
             A dimod sampler, such as a :obj:`DWaveSampler`, that accepts
@@ -76,6 +80,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
     .. versionadded:: 1.30.0
         Support for context manager protocol with :meth:`dimod.Scoped`
         implemented.
+
+    .. versionchanged:: 1.33.0
+        For native embeddings, chain strength is not calculated anymore (it's
+        set to ``None`` in the returned ``embedding_context``).
 
     Examples:
 
