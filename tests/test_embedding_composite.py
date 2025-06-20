@@ -256,7 +256,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.414)  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])  # the default for subgraphs
 
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
@@ -285,7 +285,7 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.414)  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])  # the default for subgraphs
 
         # restore the default
         EmbeddingComposite.return_embedding_default = False
@@ -478,6 +478,24 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
         cbm = chain_breaks.MinimizeEnergy(bqm, embedding)
         composite.sample(bqm, chain_break_method=cbm).resolve()
+
+    def test_subgraph_shortcircuit(self):
+        Z12 = dnx.zephyr_graph(12, 4)
+        nodelist = sorted(Z12.nodes)
+        edgelist = sorted(sorted(edge) for edge in Z12.edges)
+
+        child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+
+        # 1-1 mapping
+        embedding = {n: (n,) for n in nodelist}
+
+        sampler = FixedEmbeddingComposite(child, embedding)
+
+        bqm = dimod.generators.ran_r(r=1, graph=Z12)
+
+        ss = sampler.sample(bqm)
+
+        self.assertEqual(ss.variables, nodelist)
 
 
 @dimod.testing.load_sampler_bqm_tests(lambda: LazyFixedEmbeddingComposite(MockDWaveSampler()))

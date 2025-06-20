@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Speed-up embedding/unembedding in all embedding composites for the special
+    case of one-to-one embeddings, i.e. subgraphs.
+
+    See `#579 <https://github.com/dwavesystems/dwave-system/issues/579>`_.
