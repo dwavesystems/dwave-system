@@ -185,7 +185,8 @@ class EmbeddedStructure(dict):
         if self.max_chain_length != 1:
             raise TypeError("Embedding without chains required for relabeling")
 
-        mapping = {n: next(iter(c)) for n, c in self.items()}
+        # TODO: drop var filtering after https://github.com/dwavesystems/dimod/issues/1408 is fixed
+        mapping = {n: next(iter(c)) for n, c in self.items() if n in source_bqm.variables}
         target_bqm = source_bqm.relabel_variables(mapping, inplace=False)
 
         return target_bqm
