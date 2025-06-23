@@ -236,7 +236,8 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         self.assertTrue(ignored == [(1, 2)] or ignored == [(2, 1)])
 
-    def test_return_embedding(self):
+    def test_return_embedding_subgraph(self):
+        # problem is on a subgraph - embedding is reduced to relabeling
         nodelist = [0, 1, 2]
         edgelist = [(0, 1), (1, 2), (0, 2)]
 
@@ -250,16 +251,43 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(set(embedding), {'a', 'c'})
 
         self.assertIn('chain_break_method', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_break_method'])
 
         self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])  # the default for subgraphs
+        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])
 
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
+        self.assertNotIn('embedding_context', sampleset.info)
+
+    def test_return_embedding(self):
+        # problem graph requires embedding
+        nodelist = [0, 1, 2, 3]
+        edgelist = [(0, 1), (1, 2), (2, 3), (3, 0)]
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist))
+
+        sampleset = sampler.sample_ising({}, {'ab': 1, 'bc': 1, 'ca': 1}, return_embedding=True)
+
+        self.assertIn('embedding', sampleset.info['embedding_context'])
+        embedding = sampleset.info['embedding_context']['embedding']
+        self.assertEqual(set(embedding), {'a', 'b', 'c'})
+
+        self.assertIn('chain_break_method', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')
+
+        self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})
+
+        self.assertIn('chain_strength', sampleset.info['embedding_context'])
+        self.assertEqual(round(sampleset.info['embedding_context']['chain_strength'], 3), 2)
+
+        # default False
+        sampleset = sampler.sample_ising({}, {'ab': 1, 'bc': 1, 'ca': 1})
         self.assertNotIn('embedding_context', sampleset.info)
 
     def test_return_embedding_as_class_variable(self):
@@ -279,13 +307,13 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(set(embedding), {'a', 'c'})
 
         self.assertIn('chain_break_method', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_break_method'])
 
         self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])  # the default for subgraphs
+        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])
 
         # restore the default
         EmbeddingComposite.return_embedding_default = False

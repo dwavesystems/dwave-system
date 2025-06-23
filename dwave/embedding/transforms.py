@@ -543,16 +543,15 @@ def _relabel_sampleset(target_sampleset: dimod.SampleSet,
     mapping = {next(iter(c)): n for n, c in embedding.items()}
     source_sampleset = target_sampleset.relabel_variables(mapping, inplace=True)
 
-    # to make the interface compatible with `unembed_sampleset`
+    # to make the unembedding interface backwards-compatible
     if chain_break_fraction:
         source_sampleset = dimod.append_data_vectors(
             source_sampleset, chain_break_fraction=np.zeros(len(source_sampleset)))
 
     if return_embedding:
-        if chain_break_method is None:
-            chain_break_method = majority_vote
+        # we explicitly mark no chain break resolution was needed during unembedding
         embedding_context = dict(
-            embedding=embedding, chain_break_method=chain_break_method.__name__)
+            embedding=embedding, chain_break_method=None)
         source_sampleset.info.update(embedding_context=embedding_context)
 
     return source_sampleset

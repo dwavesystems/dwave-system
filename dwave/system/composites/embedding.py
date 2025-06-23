@@ -82,8 +82,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
         implemented.
 
     .. versionchanged:: 1.33.0
-        For native embeddings, chain strength is not calculated anymore (it's
-        set to ``None`` in the returned ``embedding_context``).
+        For native embeddings, chain strength is not calculated anymore, and
+        chain break resolution method is ignored (both ``chain_strength`` and
+        ``chain_break_method`` are set to ``None`` in the returned
+        ``embedding_context``).
 
     Examples:
 
@@ -216,6 +218,11 @@ class EmbeddingComposite(dimod.ComposedSampler):
             **parameters:
                 Parameters for the sampling method, specified by the child
                 sampler.
+
+        .. versionchanged:: 1.33.0
+            For native embeddings, ``chain_strength``, ``chain_break_method``
+            and ``embedding_parameters`` parameters are ignored.
+            ``chain_break_fraction`` are set to zero for all samples.
 
         Returns:
             :obj:`~dimod.SampleSet`
