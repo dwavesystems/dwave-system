@@ -16,12 +16,11 @@ import collections.abc as abc
 import itertools
 import typing
 import warnings
+from collections import defaultdict
+from functools import cached_property
 
 import numpy as np
 import dimod
-
-from collections import defaultdict
-from copy import deepcopy
 
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
 from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError, DisconnectedChainError
@@ -121,16 +120,11 @@ class EmbeddedStructure(dict):
         """callable: Return the chain strength selected for embedding."""
         return self._chain_strength
 
-    @property
+    @cached_property
     def max_chain_length(self):
         """Maximum chain length in the embedding."""
         # we can cache the max chain length since we're immutable
-        try:
-            return self._max_chain_length
-        except AttributeError:
-            pass
-        self._max_chain_length = len(max(self.values(), default=[], key=len))
-        return self._max_chain_length
+        return len(max(self.values(), default=[], key=len))
 
     def chain_edges(self, u):
         """Iterate over edges contained in the chain for u.
