@@ -25,13 +25,14 @@ For example:
 """
 
 import itertools
+from time import perf_counter
 
 from warnings import warn
 
 import dimod
 import minorminer
 
-from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
+from dwave.embedding import (target_to_source, unembed_sampleset,
                              chain_to_quadratic, EmbeddedStructure)
 from dwave.system.warnings import WarningHandler, WarningAction
 
@@ -224,6 +225,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
             and ``embedding_parameters`` parameters are ignored.
             ``chain_break_fraction`` are set to zero for all samples.
 
+        .. versionadded:: 1.33.0
+            Embedding/unembedding duration included under ``timing`` key of the
+            ``embedding_context`` when embedding is returned.
+
         Returns:
             :obj:`~dimod.SampleSet`
 
@@ -264,8 +269,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if not hasattr(embedding, 'embed_bqm'):
             embedding = EmbeddedStructure(target_edgelist, embedding)
 
+        t0 = perf_counter()
         bqm_embedded = embedding.embed_bqm(bqm, chain_strength=chain_strength,
                                            smear_vartype=dimod.SPIN)
+        embedding_time = perf_counter() - t0
 
         if warnings is None:
             warnings = self.warnings_default
@@ -304,15 +311,21 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
             warninghandler.chain_break(response, embedding)
 
+            response.resolve()
+
+            t0 = perf_counter()
             sampleset = unembed_sampleset(response, embedding, source_bqm=bqm,
                                           chain_break_method=chain_break_method,
                                           chain_break_fraction=chain_break_fraction,
                                           return_embedding=return_embedding)
+            unembedding_time = perf_counter() - t0
 
             if return_embedding:
+                timing = dict(embedding=embedding_time, unembedding=unembedding_time)
                 sampleset.info['embedding_context'].update(
                     embedding_parameters=embedding_parameters,
-                    chain_strength=embedding.chain_strength)
+                    chain_strength=embedding.chain_strength,
+                    timing=timing)
 
             if chain_break_fraction and len(sampleset):
                 warninghandler.issue("All samples have broken chains",

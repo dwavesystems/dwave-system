@@ -259,6 +259,10 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
         self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])
 
+        self.assertIn('timing', sampleset.info['embedding_context'])
+        self.assertIn('embedding', sampleset.info['embedding_context']['timing'])
+        self.assertIn('unembedding', sampleset.info['embedding_context']['timing'])
+
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
         self.assertNotIn('embedding_context', sampleset.info)
@@ -285,6 +289,10 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
         self.assertEqual(round(sampleset.info['embedding_context']['chain_strength'], 3), 2)
+
+        self.assertIn('timing', sampleset.info['embedding_context'])
+        self.assertIn('embedding', sampleset.info['embedding_context']['timing'])
+        self.assertIn('unembedding', sampleset.info['embedding_context']['timing'])
 
         # default False
         sampleset = sampler.sample_ising({}, {'ab': 1, 'bc': 1, 'ca': 1})
