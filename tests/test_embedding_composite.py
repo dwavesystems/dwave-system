@@ -515,23 +515,56 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
         cbm = chain_breaks.MinimizeEnergy(bqm, embedding)
         composite.sample(bqm, chain_break_method=cbm).resolve()
 
-    def test_subgraph_shortcircuit(self):
-        Z12 = dnx.zephyr_graph(12, 4)
+    def test_subgraph_relabeling(self):
+        Z12 = dnx.zephyr_graph(12)
         nodelist = sorted(Z12.nodes)
         edgelist = sorted(sorted(edge) for edge in Z12.edges)
 
         child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
 
+        # source bqm on shifted nodes
+        bqm = dimod.BQM({n+1: 1 for n in nodelist}, {(u+1, v+1): 1 for u, v in edgelist}, 'SPIN')
+
         # 1-1 mapping
-        embedding = {n: (n,) for n in nodelist}
+        embedding = {n+1: (n, ) for n in nodelist}
 
         sampler = FixedEmbeddingComposite(child, embedding)
-
-        bqm = dimod.generators.ran_r(r=1, graph=Z12)
-
         ss = sampler.sample(bqm)
 
-        self.assertEqual(ss.variables, nodelist)
+        self.assertEqual(set(ss.variables), bqm.variables)
+
+    def test_relabeling_performance_gain(self):
+        with self.subTest('native subgraph Z6 -> Z6'):
+            graph = dnx.zephyr_graph(6)
+            nodelist = sorted(graph.nodes)
+            edgelist = sorted(sorted(edge) for edge in graph.edges)
+
+            bqm = dimod.BQM.from_qubo({tuple(e): 1 for e in edgelist})
+            child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+            embedding = {n: [n] for n in nodelist}
+
+            sampler = FixedEmbeddingComposite(child, embedding)
+            ss = sampler.sample(bqm, return_embedding=True)
+            self.assertEqual(set(ss.variables), bqm.variables)
+            t1 = ss.info['embedding_context']['timing']
+
+        with self.subTest('embedding with a single chain'):
+            extra_node = nodelist[-1] + 1
+            graph.add_edge(nodelist[-1], extra_node)
+            nodelist = sorted(graph.nodes)
+            edgelist = sorted(sorted(edge) for edge in graph.edges)
+
+            child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+            embedding[max(embedding)] = [extra_node-1, extra_node]
+
+            sampler = FixedEmbeddingComposite(child, embedding)
+            ss = sampler.sample(bqm, return_embedding=True)
+            self.assertEqual(set(ss.variables), bqm.variables)
+            t2 = ss.info['embedding_context']['timing']
+
+        with self.subTest('relabeling is faster than embedding'):
+            self.assertLess(t1['embedding'], t2['embedding'])
+            self.assertLess(t1['unembedding'], t2['unembedding'])
 
 
 @dimod.testing.load_sampler_bqm_tests(lambda: LazyFixedEmbeddingComposite(MockDWaveSampler()))
