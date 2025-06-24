@@ -236,7 +236,8 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         self.assertTrue(ignored == [(1, 2)] or ignored == [(2, 1)])
 
-    def test_return_embedding(self):
+    def test_return_embedding_subgraph(self):
+        # problem is on a subgraph - embedding is reduced to relabeling
         nodelist = [0, 1, 2]
         edgelist = [(0, 1), (1, 2), (0, 2)]
 
@@ -250,16 +251,51 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(set(embedding), {'a', 'c'})
 
         self.assertIn('chain_break_method', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_break_method'])
 
         self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.414)  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])
+
+        self.assertIn('timing', sampleset.info['embedding_context'])
+        self.assertIn('embedding', sampleset.info['embedding_context']['timing'])
+        self.assertIn('unembedding', sampleset.info['embedding_context']['timing'])
 
         # default False
         sampleset = sampler.sample_ising({'a': -1}, {'ac': 1})
+        self.assertNotIn('embedding_context', sampleset.info)
+
+    def test_return_embedding(self):
+        # problem graph requires embedding
+        nodelist = [0, 1, 2, 3]
+        edgelist = [(0, 1), (1, 2), (2, 3), (3, 0)]
+
+        sampler = EmbeddingComposite(
+            dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist))
+
+        sampleset = sampler.sample_ising({}, {'ab': 1, 'bc': 1, 'ca': 1}, return_embedding=True)
+
+        self.assertIn('embedding', sampleset.info['embedding_context'])
+        embedding = sampleset.info['embedding_context']['embedding']
+        self.assertEqual(set(embedding), {'a', 'b', 'c'})
+
+        self.assertIn('chain_break_method', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')
+
+        self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})
+
+        self.assertIn('chain_strength', sampleset.info['embedding_context'])
+        self.assertEqual(round(sampleset.info['embedding_context']['chain_strength'], 3), 2)
+
+        self.assertIn('timing', sampleset.info['embedding_context'])
+        self.assertIn('embedding', sampleset.info['embedding_context']['timing'])
+        self.assertIn('unembedding', sampleset.info['embedding_context']['timing'])
+
+        # default False
+        sampleset = sampler.sample_ising({}, {'ab': 1, 'bc': 1, 'ca': 1})
         self.assertNotIn('embedding_context', sampleset.info)
 
     def test_return_embedding_as_class_variable(self):
@@ -279,13 +315,13 @@ class TestEmbeddingComposite(unittest.TestCase):
         self.assertEqual(set(embedding), {'a', 'c'})
 
         self.assertIn('chain_break_method', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_break_method'], 'majority_vote')  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_break_method'])
 
         self.assertIn('embedding_parameters', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})  # the default
+        self.assertEqual(sampleset.info['embedding_context']['embedding_parameters'], {})
 
         self.assertIn('chain_strength', sampleset.info['embedding_context'])
-        self.assertEqual(sampleset.info['embedding_context']['chain_strength'], 1.414)  # the default
+        self.assertIsNone(sampleset.info['embedding_context']['chain_strength'])
 
         # restore the default
         EmbeddingComposite.return_embedding_default = False
@@ -478,6 +514,57 @@ class TestFixedEmbeddingComposite(unittest.TestCase):
 
         cbm = chain_breaks.MinimizeEnergy(bqm, embedding)
         composite.sample(bqm, chain_break_method=cbm).resolve()
+
+    def test_subgraph_relabeling(self):
+        Z12 = dnx.zephyr_graph(12)
+        nodelist = sorted(Z12.nodes)
+        edgelist = sorted(sorted(edge) for edge in Z12.edges)
+
+        child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+
+        # source bqm on shifted nodes
+        bqm = dimod.BQM({n+1: 1 for n in nodelist}, {(u+1, v+1): 1 for u, v in edgelist}, 'SPIN')
+
+        # 1-1 mapping
+        embedding = {n+1: (n, ) for n in nodelist}
+
+        sampler = FixedEmbeddingComposite(child, embedding)
+        ss = sampler.sample(bqm)
+
+        self.assertEqual(set(ss.variables), bqm.variables)
+
+    def test_relabeling_performance_gain(self):
+        with self.subTest('native subgraph Z6 -> Z6'):
+            graph = dnx.zephyr_graph(6)
+            nodelist = sorted(graph.nodes)
+            edgelist = sorted(sorted(edge) for edge in graph.edges)
+
+            bqm = dimod.BQM.from_qubo({tuple(e): 1 for e in edgelist})
+            child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+            embedding = {n: [n] for n in nodelist}
+
+            sampler = FixedEmbeddingComposite(child, embedding)
+            ss = sampler.sample(bqm, return_embedding=True)
+            self.assertEqual(set(ss.variables), bqm.variables)
+            t1 = ss.info['embedding_context']['timing']
+
+        with self.subTest('embedding with a single chain'):
+            extra_node = nodelist[-1] + 1
+            graph.add_edge(nodelist[-1], extra_node)
+            nodelist = sorted(graph.nodes)
+            edgelist = sorted(sorted(edge) for edge in graph.edges)
+
+            child = dimod.StructureComposite(dimod.NullSampler(), nodelist, edgelist)
+            embedding[max(embedding)] = [extra_node-1, extra_node]
+
+            sampler = FixedEmbeddingComposite(child, embedding)
+            ss = sampler.sample(bqm, return_embedding=True)
+            self.assertEqual(set(ss.variables), bqm.variables)
+            t2 = ss.info['embedding_context']['timing']
+
+        with self.subTest('relabeling is faster than embedding'):
+            self.assertLess(t1['embedding'], t2['embedding'])
+            self.assertLess(t1['unembedding'], t2['unembedding'])
 
 
 @dimod.testing.load_sampler_bqm_tests(lambda: LazyFixedEmbeddingComposite(MockDWaveSampler()))

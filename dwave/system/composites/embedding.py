@@ -25,13 +25,14 @@ For example:
 """
 
 import itertools
+from time import perf_counter
 
 from warnings import warn
 
 import dimod
 import minorminer
 
-from dwave.embedding import (target_to_source, unembed_sampleset, embed_bqm,
+from dwave.embedding import (target_to_source, unembed_sampleset,
                              chain_to_quadratic, EmbeddedStructure)
 from dwave.system.warnings import WarningHandler, WarningAction
 
@@ -49,6 +50,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
     Automatically minor-embeds a problem into a structured sampler such as a
     D-Wave quantum computer. A new minor-embedding is calculated each time one 
     of its sampling methods is called.
+
+    In case a native embedding is found (one to one mapping between source and
+    target variables), embedding and unembedding steps are simplified as they
+    are reduced to variable relabeling.
 
     Args:
         child_sampler (:class:`dimod.Sampler`):
@@ -76,6 +81,12 @@ class EmbeddingComposite(dimod.ComposedSampler):
     .. versionadded:: 1.30.0
         Support for context manager protocol with :meth:`dimod.Scoped`
         implemented.
+
+    .. versionchanged:: 1.33.0
+        For native embeddings, chain strength is not calculated anymore, and
+        chain break resolution method is ignored (both ``chain_strength`` and
+        ``chain_break_method`` are set to ``None`` in the returned
+        ``embedding_context``).
 
     Examples:
 
@@ -209,6 +220,15 @@ class EmbeddingComposite(dimod.ComposedSampler):
                 Parameters for the sampling method, specified by the child
                 sampler.
 
+        .. versionchanged:: 1.33.0
+            For native embeddings, ``chain_strength``, ``chain_break_method``
+            and ``embedding_parameters`` parameters are ignored.
+            ``chain_break_fraction`` are set to zero for all samples.
+
+        .. versionadded:: 1.33.0
+            Embedding/unembedding duration included under ``timing`` key of the
+            ``embedding_context`` when embedding is returned.
+
         Returns:
             :obj:`~dimod.SampleSet`
 
@@ -249,8 +269,10 @@ class EmbeddingComposite(dimod.ComposedSampler):
         if not hasattr(embedding, 'embed_bqm'):
             embedding = EmbeddedStructure(target_edgelist, embedding)
 
+        t0 = perf_counter()
         bqm_embedded = embedding.embed_bqm(bqm, chain_strength=chain_strength,
                                            smear_vartype=dimod.SPIN)
+        embedding_time = perf_counter() - t0
 
         if warnings is None:
             warnings = self.warnings_default
@@ -289,15 +311,21 @@ class EmbeddingComposite(dimod.ComposedSampler):
 
             warninghandler.chain_break(response, embedding)
 
+            response.resolve()
+
+            t0 = perf_counter()
             sampleset = unembed_sampleset(response, embedding, source_bqm=bqm,
                                           chain_break_method=chain_break_method,
                                           chain_break_fraction=chain_break_fraction,
                                           return_embedding=return_embedding)
+            unembedding_time = perf_counter() - t0
 
             if return_embedding:
+                timing = dict(embedding=embedding_time, unembedding=unembedding_time)
                 sampleset.info['embedding_context'].update(
                     embedding_parameters=embedding_parameters,
-                    chain_strength=embedding.chain_strength)
+                    chain_strength=embedding.chain_strength,
+                    timing=timing)
 
             if chain_break_fraction and len(sampleset):
                 warninghandler.issue("All samples have broken chains",

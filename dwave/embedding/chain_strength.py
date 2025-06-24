@@ -15,20 +15,21 @@
 """Utility functions for calculating chain strength.
 
 Examples:
-    This example uses :func:`uniform_torque_compensation`, given a prefactor of 2,
+    This example uses :func:`uniform_torque_compensation`, given a prefactor of 3,
     to calculate a chain strength that :class:`EmbeddingComposite` then uses.
 
+    >>> import numpy as np
     >>> from functools import partial
     >>> from dwave.system import EmbeddingComposite, DWaveSampler
     >>> from dwave.embedding.chain_strength import uniform_torque_compensation
     ...
-    >>> Q = {(0,0): 1, (1,1): 1, (2,3): 2, (1,2): -2, (0,3): -2}
+    >>> Q = np.triu(np.ones((5, 5)))        # K5 with all biases set to 1.0
     >>> sampler = EmbeddingComposite(DWaveSampler())
     >>> # partial() can be used when the BQM or embedding is not accessible
-    >>> chain_strength = partial(uniform_torque_compensation, prefactor=2)
+    >>> chain_strength = partial(uniform_torque_compensation, prefactor=3)
     >>> sampleset = sampler.sample_qubo(Q, chain_strength=chain_strength, return_embedding=True)
     >>> sampleset.info['embedding_context']['chain_strength']
-    1.224744871391589
+    1.5
 
 """
 import math

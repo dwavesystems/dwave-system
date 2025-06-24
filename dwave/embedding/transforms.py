@@ -14,13 +14,13 @@
 
 import collections.abc as abc
 import itertools
+import typing
 import warnings
+from collections import defaultdict
+from functools import cached_property
 
 import numpy as np
 import dimod
-
-from collections import defaultdict
-from copy import deepcopy
 
 from dwave.embedding.chain_breaks import majority_vote, broken_chains
 from dwave.embedding.exceptions import MissingEdgeError, MissingChainError, InvalidNodeError, DisconnectedChainError
@@ -120,6 +120,12 @@ class EmbeddedStructure(dict):
         """callable: Return the chain strength selected for embedding."""
         return self._chain_strength
 
+    @cached_property
+    def max_chain_length(self):
+        """Maximum chain length in the embedding."""
+        # we can cache the max chain length since we're immutable
+        return len(max(self.values(), default=[], key=len))
+
     def chain_edges(self, u):
         """Iterate over edges contained in the chain for u.
 
@@ -134,7 +140,6 @@ class EmbeddedStructure(dict):
         emb_u = self[u]
         for i, j in self._chain_edges[u]:
             yield emb_u[i], emb_u[j]
-
 
     def interaction_edges(self, u, *args):
         """Iterate over edges between in the chains for u and v.
@@ -175,6 +180,16 @@ class EmbeddedStructure(dict):
         EmbeddedStructure class, but exists because dict is the parent class."""
         raise NotImplementedError("EmbeddedStructure does not support the"
                                   " fromkeys method")
+
+    def _relabel_bqm(self, source_bqm: dimod.BQM) -> dimod.BQM:
+        if self.max_chain_length != 1:
+            raise TypeError("Embedding without chains required for relabeling")
+
+        # TODO: drop var filtering after https://github.com/dwavesystems/dimod/issues/1408 is fixed
+        mapping = {n: next(iter(c)) for n, c in self.items() if n in source_bqm.variables}
+        target_bqm = source_bqm.relabel_variables(mapping, inplace=False)
+
+        return target_bqm
 
     def embed_bqm(self, source_bqm, chain_strength=None, smear_vartype=None):
         """Embed a binary quadratic model onto a target graph.
@@ -226,6 +241,10 @@ class EmbeddedStructure(dict):
             :func:`.embed_ising`, :func:`.embed_qubo`
 
         """
+        # short-circuit the expensive embedding in case of a simple 1-1 mapping
+        if self.max_chain_length == 1:
+            return self._relabel_bqm(source_bqm)
+
         return_vartype = source_bqm.vartype
         if smear_vartype is None:
             smear_vartype = return_vartype
@@ -510,6 +529,35 @@ def embed_qubo(source_Q, embedding, target_adjacency, chain_strength=None):
     return target_Q
 
 
+def _relabel_sampleset(target_sampleset: dimod.SampleSet,
+                       embedding: EmbeddedStructure,
+                       source_bqm: dimod.BQM,
+                       chain_break_method: typing.Optional[typing.Any] = None,
+                       chain_break_fraction: bool = False,
+                       return_embedding: bool = False
+                       ) -> dimod.SampleSet:
+    """Unembed a sample set in the special case of 1-to-1 variable embedding."""
+
+    if embedding.max_chain_length != 1:
+        raise TypeError("Embedding without chains required for relabeling")
+
+    mapping = {next(iter(c)): n for n, c in embedding.items()}
+    source_sampleset = target_sampleset.relabel_variables(mapping, inplace=True)
+
+    # to make the unembedding interface backwards-compatible
+    if chain_break_fraction:
+        source_sampleset = dimod.append_data_vectors(
+            source_sampleset, chain_break_fraction=np.zeros(len(source_sampleset)))
+
+    if return_embedding:
+        # we explicitly mark no chain break resolution was needed during unembedding
+        embedding_context = dict(
+            embedding=embedding, chain_break_method=None)
+        source_sampleset.info.update(embedding_context=embedding_context)
+
+    return source_sampleset
+
+
 def unembed_sampleset(target_sampleset, embedding, source_bqm,
                       chain_break_method=None, chain_break_fraction=False,
                       return_embedding=False):
@@ -570,6 +618,15 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
                [ 1,  1,  1]], dtype=int8)
 
     """
+
+    # short-circuit the expensive unembedding in case of a simple 1-1 mapping
+    if hasattr(embedding, 'max_chain_length') and embedding.max_chain_length == 1:
+        return _relabel_sampleset(target_sampleset=target_sampleset,
+                                  embedding=embedding,
+                                  source_bqm=source_bqm,
+                                  chain_break_method=chain_break_method,
+                                  chain_break_fraction=chain_break_fraction,
+                                  return_embedding=return_embedding)
 
     if chain_break_method is None:
         chain_break_method = majority_vote
