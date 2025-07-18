@@ -136,7 +136,7 @@ class TestParallelEmbeddings(unittest.TestCase):
         self.assertGreater(
             len(sampleset), 1
         )  # Equal to the number of parallel embeddings
-        
+
         embedder = find_sublattice_embeddings
         embedder_kwargs = {
             "max_num_emb": None,
@@ -268,31 +268,6 @@ class TestTiling(unittest.TestCase):
             sum(response.record.num_occurrences) == expected_number_of_cells * num_reads
         )
 
-    def test_sample_ising(self):
-        mock_sampler = MockDWaveSampler()  # C4 structured sampler
-        # sampler = TilingComposite(mock_sampler, 2, 2) Legacy
-        tile = dnx.chimera_graph(m=2, n=2)
-        embedder = find_sublattice_embeddings
-        embedder_kwargs = {
-            "tile": tile,
-            "max_num_emb": None,
-            "use_tile_embedding": True,
-        }
-        sampler = ParallelEmbeddingComposite(
-            mock_sampler,
-            source=tile,
-            embedder=embedder,
-            embedder_kwargs=embedder_kwargs,
-        )
-
-        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
-        J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
-
-        response = sampler.sample_ising(h, J, num_reads=2)
-
-        self.assertEqual(len(sampler.embeddings)*num_reads, sum(response.record.num_occurrences))
-        self.assertTrue(set(np.unique(response.record.sample)).issubset({-1,1}))
-
     def test_tile_around_hole(self):
 
         # Create a Chimera C4 structured sampler with a node missing, so that
@@ -387,9 +362,9 @@ class TestTiling(unittest.TestCase):
         # 0011  3344 7788
         # 2211  5566 99XX
         # 22XX  5566 99XX
-        
+
         # For additional insight try:
-        # import matplotlib.pyplot as plt  
+        # import matplotlib.pyplot as plt
         # from dwave_networkx import draw_parallel_embeddings
 
         # draw_parallel_embeddings(mock_sampler.to_networkx_graph(), sampler.embeddings)
@@ -493,7 +468,14 @@ class TestTiling(unittest.TestCase):
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
 
+        num_reads = 2
         response = sampler.sample_ising(h, J)
+        response = sampler.sample_ising(h, J, num_reads=num_reads)
+
+        self.assertEqual(
+            len(sampler.embeddings) * num_reads, sum(response.record.num_occurrences)
+        )
+        self.assertTrue(set(np.unique(response.record.sample)).issubset({-1, 1}))
 
         # nothing failed and we got at least one response back per tile
         self.assertGreaterEqual(len(response), len(sampler.embeddings))
@@ -566,3 +548,67 @@ class TestTiling(unittest.TestCase):
         __, num_columns = response.record.sample.shape
 
         self.assertEqual(num_columns, 2)
+
+    def test_chain_strength(self):
+        t = 3
+        mock_sampler = MockDWaveSampler(
+            topology_type="chimera", topology_shape=[1, 1, t]
+        )  # A structured solver for K_{3,3}
+        h = {i: -0.25 for i in range(3)}
+        J = {(i, (i + 1) % 3): 1 for i in range(3)}
+        embeddings = [{i: (i, t + i) for i in range(3)}]
+        sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+        ss = sampler.sample_ising(h, J, chain_strength=1)
+        self.assertEqual(
+            ss.record.energy, -1.25, "Sufficient chain_strength finds the ground state"
+        )
+        ss = sampler.sample_ising(h, J, chain_strength=0)  # 6-loop embedded model
+        self.assertEqual(
+            ss.record.energy,
+            2.25,
+            "Ground state by ExactSolver is chain broken and voted back to excited state.",
+        )
+
+    def test_sample_as_list(self):
+        # Two identical models, with two different chain strengths (see test chain_strength):
+        t = 3
+        mock_sampler = MockDWaveSampler(
+            topology_type="chimera", topology_shape=[2, 1, t]
+        )  # A structured solver with two K_{3,3} cells
+        h = {i: -0.25 for i in range(3)}
+        J = {(i, (i + 1) % 3): 1 for i in range(3)}
+        embedding0 = {i: (i, t + i) for i in range(3)}
+        embeddings = [
+            embedding0,
+            {k: tuple(q + 2 * t for q in v) for k, v in embedding0.items()},
+        ]  # Shift second embedding one cell down.
+        sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+        bqms = [dimod.BinaryQuadraticModel("SPIN").from_ising(h, J)] * 2
+        ss, info = sampler.sample_as_list(bqms=bqms, chain_strengths=[1, 0])
+        self.assertEqual(len(ss), len(embeddings))
+        self.assertEqual(type(info), dict)
+        self.assertEqual(
+            ss[0].record.energy,
+            -1.25,
+            "Sufficient chain_strength finds the ground state",
+        )
+        self.assertEqual(
+            ss[1].record.energy,
+            2.25,
+            "Ground state by ExactSolver is chain broken and voted back to excited state.",
+        )
+        # solve a frustrated and unfrustrated model:
+        J_ferro = {k: -abs(v) for k, v in J.items()}
+        bqms[0] = dimod.BinaryQuadraticModel("SPIN").from_ising(h, J_ferro)
+        # check None works for chain strengths:
+        ss, info = sampler.sample_as_list(bqms=bqms)
+        self.assertEqual(
+            ss[0].record.energy,
+            -3.75,
+            "Sufficient chain_strength finds the ground state",
+        )
+        self.assertEqual(
+            ss[1].record.energy,
+            -1.25,
+            "Sufficient chain_strength finds the ground state",
+        )

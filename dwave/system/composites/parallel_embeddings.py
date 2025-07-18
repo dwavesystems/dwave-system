@@ -296,9 +296,9 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         """
         if chain_strength is None:
             chain_strength = None
-        chain_strengths = [chain_strength] * len(self.embeddings)
-        bqms = [bqm] * len(self.embeddings)
-        responses, info = self.sample_disaggregated(bqms, chain_strengths, **kwargs)
+        chain_strengths = [chain_strength] * self.num_embeddings
+        bqms = [bqm] * self.num_embeddings
+        responses, info = self.sample_as_list(bqms, chain_strengths, **kwargs)
 
         if self.num_embeddings == 1:
             return responses[0]
@@ -307,7 +307,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             answer.info.update(info)
             return answer
 
-    def sample_disaggregated(
+    def sample_as_list(
         self,
         bqms: list[dimod.BinaryQuadraticModel],
         chain_strengths: Optional[list] = None,
@@ -342,7 +342,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
         __, __, target_adjacency = self.target_structure
         if chain_strengths is None:
-            chain_strengths = [None] * self.num_embeddings()
+            chain_strengths = [None] * self.num_embeddings
 
         for embedding, bqm, chain_strength in zip(
             self.embeddings, bqms, chain_strengths
@@ -357,7 +357,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         tiled_response = self.child.sample(embedded_bqm, **kwargs)
 
         responses = []
-        for embedding in self.embeddings:
+        for embedding, bqm in zip(self.embeddings, bqms):
             responses.append(
                 dwave.embedding.unembed_sampleset(tiled_response, embedding, bqm)
             )
