@@ -22,7 +22,7 @@ import dimod
 import dwave_networkx as dnx
 
 from dwave.system.testing import MockDWaveSampler
-from dwave.system.composites import TilingComposite, ParallelEmbeddingComposite
+from dwave.system.composites import ParallelEmbeddingComposite
 from dwave.preprocessing import SpinReversalTransformComposite
 from minorminer.utils.parallel_embeddings import find_sublattice_embeddings
 from minorminer import find_embedding
@@ -277,11 +277,28 @@ class TestTiling(unittest.TestCase):
         # OOOO
         # OOOO
         # where O: complete cell, X: incomplete cell
-        mock_sampler = MockDWaveSampler(broken_nodes=[8 * 3])
-        hardware_graph = dnx.chimera_graph(4)  # C4
+        chimera_shape = [4, 4, 4]
+        mock_sampler = MockDWaveSampler(
+            broken_nodes=[8 * 3], topology_type="chimera", topology_shape=chimera_shape
+        )
+        hardware_graph = dnx.chimera_graph(*chimera_shape)  # C4
 
         # Tile with 2x2 cells:
-        sampler = TilingComposite(mock_sampler, 2, 2, 4)
+        # sampler = TilingComposite(mock_sampler, 2, 2, 4)
+        tile = dnx.chimera_graph(2, 2, 4)
+        embedder = find_sublattice_embeddings
+        embedder_kwargs = {
+            "tile": tile,
+            "max_num_emb": None,
+            "use_tile_embedding": True,
+        }
+        sampler = ParallelEmbeddingComposite(
+            mock_sampler,
+            source=tile,
+            embedder=embedder,
+            embedder_kwargs=embedder_kwargs,
+        )
+
         # Given the above chimera graph, check that the embeddings are as
         # follows:
         # 00XX
