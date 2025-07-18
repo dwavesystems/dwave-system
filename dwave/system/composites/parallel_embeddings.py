@@ -25,7 +25,7 @@ See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
-from typing import Optional
+from typing import Optional, List
 
 import networkx as nx
 
@@ -270,7 +270,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         bqm: dimod.BinaryQuadraticModel,
         chain_strength: Optional[float] = None,
         **kwargs
-    ):
+    ) -> dimod.SampleSet:
         """Sample from the specified binary quadratic model. Samplesets are
         concatenated together in the the same order as the embeddings class variable,
         the info field is returned from the child sampler unmodified.
@@ -294,12 +294,59 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         Examples:
             See class examples.
         """
+        if chain_strength is None:
+            chain_strength = None
+        chain_strengths = [chain_strength] * len(self.embeddings)
+        bqms = [bqm] * len(self.embeddings)
+        responses, info = self.sample_disaggregated(bqms, chain_strengths, **kwargs)
+
+        if self.num_embeddings == 1:
+            return responses[0]
+        else:
+            answer = dimod.concatenate(responses)
+            answer.info.update(info)
+            return answer
+
+    def sample_disaggregated(
+        self,
+        bqms: list[dimod.BinaryQuadraticModel],
+        chain_strengths: Optional[list] = None,
+        **kwargs
+    ) -> tuple[list[dimod.SampleSet], dict]:
+        """Sample from the specified binary quadratic models. Samplesets are
+        returned for every embedding, the binary quadratic model solved on
+        each embedding needn't be identical.
+
+        Args:
+            bqms:
+                Binary quadratic models to be sampled from. A list that
+                should be ordered to match self.embeddings.
+
+            chain_strengths:
+                The chain strength parameters for each bqm. A list that
+                should be ordered to match self.embeddings.
+
+            **kwargs:
+                Optional keyword arguments for the sampling method, specified per solver.
+
+        Returns:
+            A typle consisting of:
+            1. A list of :class:`~dimod.SampleSet`, one per embedding
+            2. The info field returned by the child sampler
+        Examples:
+            See class examples.
+        """
 
         # apply the embeddings to the given problem to tile it across the child sampler
-        embedded_bqm = dimod.BinaryQuadraticModel.empty(bqm.vartype)
+        embedded_bqm = dimod.BinaryQuadraticModel.empty(bqms[0].vartype)
 
         __, __, target_adjacency = self.target_structure
-        for embedding in self.embeddings:
+        if chain_strengths is None:
+            chain_strengths = [None] * self.num_embeddings()
+
+        for embedding, bqm, chain_strength in zip(
+            self.embeddings, bqms, chain_strengths
+        ):
             embedded_bqm.update(
                 dwave.embedding.embed_bqm(
                     bqm, embedding, target_adjacency, chain_strength=chain_strength
@@ -315,12 +362,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
                 dwave.embedding.unembed_sampleset(tiled_response, embedding, bqm)
             )
 
-        if self.num_embeddings == 1:
-            return responses[0]
-        else:
-            answer = dimod.concatenate(responses)
-            answer.info.update(tiled_response.info)
-            return answer
+        return responses, tiled_response.info
 
     @property
     def num_embeddings(self):
