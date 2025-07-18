@@ -25,6 +25,8 @@ See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
+from typing import Optional
+
 import networkx as nx
 
 import dimod
