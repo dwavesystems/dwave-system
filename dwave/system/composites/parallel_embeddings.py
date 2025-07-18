@@ -214,9 +214,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
                 self.nodelist = list(embeddings[0].keys())
             else:
                 nodeset = set(self.nodelist)
-                if not all(
-                    nodeset.issubset(emb) for emb in embeddings
-                ):
+                if not all(nodeset.issubset(emb) for emb in embeddings):
                     raise ValueError(
                         "source graph is inconsistent with the embeddings specified"
                     )
@@ -245,7 +243,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
             # The child_sampler may not preserve the graphical structure required
             # by the embedder. These might be passed as supplementary arguments.
-            if hasattr(child_sampler, 'to_networkx_graph'):
+            if hasattr(child_sampler, "to_networkx_graph"):
                 _embeddings = embedder(
                     source, child_sampler.to_networkx_graph(), **embedder_kwargs
                 )
@@ -265,14 +263,25 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         self.embeddings = properties["embeddings"] = _embeddings
 
     @dimod.bqm_structured
-    def sample(self, bqm, **kwargs):
+    def sample(
+        self,
+        bqm: dimod.BinaryQuadraticModel,
+        chain_strength: Optional[float] = None,
+        **kwargs
+    ):
         """Sample from the specified binary quadratic model. Samplesets are
         concatenated together in the the same order as the embeddings class variable,
         the info field is returned from the child sampler unmodified.
 
+        If the bqm or chain_strength varies by solver, or if a list of samplests
+        is desired as the output, use :code:`sample_as_list`.
+
         Args:
-            bqm (:class:`~dimod.BinaryQuadraticModel`):
+            bqm:
                 Binary quadratic model to be sampled from.
+
+            chain_strength:
+                The chain strength parameter of the bqm.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
@@ -290,7 +299,9 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         __, __, target_adjacency = self.target_structure
         for embedding in self.embeddings:
             embedded_bqm.update(
-                dwave.embedding.embed_bqm(bqm, embedding, target_adjacency)
+                dwave.embedding.embed_bqm(
+                    bqm, embedding, target_adjacency, chain_strength=chain_strength
+                )
             )
 
         # solve the problem on the child system
