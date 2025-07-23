@@ -11,6 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+"""Provides utility functions related to minor embedding and chains."""
 
 import dimod
 import numpy as np
