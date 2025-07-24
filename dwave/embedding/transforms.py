@@ -232,7 +232,7 @@ class EmbeddedStructure(dict):
             >>> embedding = {'a': {0}, 'b': {1}, 'c': {2, 3}}
             >>> # Embed and show the chain strength
             >>> target_bqm = dwave.embedding.embed_bqm(bqm, embedding, target)
-            >>> target_bqm.quadratic[(2, 3)]
+            >>> print(target_bqm.quadratic[(2, 3)])
             -1.9996979771955565
             >>> print(target_bqm.quadratic)  # doctest: +SKIP
             {(0, 1): 1.0, (0, 3): 1.0, (1, 2): 1.0, (2, 3): -1.9996979771955565}

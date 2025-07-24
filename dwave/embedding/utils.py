@@ -119,7 +119,7 @@ def chain_to_quadratic(chain, target_adjacency, chain_strength):
 
         >>> chain = {1, 2}
         >>> target_adjacency = {0: {1, 2}, 1: {0, 2}, 2: {0, 1}}
-        >>> dimod.embedding.chain_to_quadratic(chain, target_adjacency, 1)
+        >>> dwave.embedding.chain_to_quadratic(chain, target_adjacency, 1)
         {(1, 2): -1}
 
     """

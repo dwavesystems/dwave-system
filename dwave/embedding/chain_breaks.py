@@ -52,8 +52,8 @@ def broken_chains(samples, chains):
         >>> samples = np.array([[-1, +1, -1, +1], [-1, -1, +1, +1]], dtype=np.int8)
         >>> chains = [[0, 1], [2, 3]]
         >>> dwave.embedding.broken_chains(samples, chains)
-        array([[True, True],
-               [ False,  False]])
+        array([[ True,  True],
+               [False, False]])
 
         >>> chains = [[0, 2], [1, 3]]
         >>> dwave.embedding.broken_chains(samples, chains)
