@@ -55,6 +55,12 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
         edgelist (list of Tuples):
             List of edges in the graph, with each edge consisting of a pair of
             nodes.
+
+    See also:
+            :func:`dwave_networkx.chimera_graph`,
+            :func:`dwave_networkx.pegasus_graph`,
+            :func:`dwave_networkx.zephyr_graph` for descriptions of the lattice
+            parameters and indexing.
     """
 
     if topology_type == 'chimera':
@@ -173,7 +179,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
         True
 
-    See also:
+
+        For additional examples, see:
+
         *   :ref:`Beginner examples <qpu_index_examples_beginner>` of using
             :class:`.DWaveSampler`.
         *   :ref:`qpu_basic_config`.
@@ -200,12 +208,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Close the underlying cloud client to release system resources such as
         threads.
 
-        .. note::
+        The method blocks for all the currently scheduled work (sampling
+        requests) to finish.
 
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
-
-        See: :meth:`~dwave.cloud.client.Client.close`.
+        See also:
+            :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
 
@@ -299,6 +306,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     def edgelist(self):
         """list: List of active couplers for the solver.
 
+        Active couplers are those that are included in the
+        :ref:`working graph <topologies_working_graph>`.
+
         Examples:
             First coupler for a selected Advantage2 system.
 
@@ -319,6 +329,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
     @property
     def nodelist(self):
         """list: List of active qubits for the solver.
+
+        Active qubits are those that are included in the
+        :ref:`working graph <topologies_working_graph>`.
 
         Examples:
             First three qubits for a selected Advantage2 system.
@@ -413,9 +426,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
             True
 
-        See the :ref:`index_concepts` section
-        for explanations of technical terms in descriptions of Ocean tools.
-
         """
 
         solver = self.solver
@@ -487,39 +497,33 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return super().sample_ising(h, *args, **kwargs)
 
     def validate_anneal_schedule(self, anneal_schedule):
-        """Raise an exception if the specified schedule is invalid for the sampler.
+        """Raise an exception if the specified schedule is invalid for the
+        sampler.
 
         Args:
             anneal_schedule (list):
-                An anneal schedule variation is defined by a series of pairs of floating-point
-                numbers identifying points in the schedule at which to change slope. The first
-                element in the pair is time t in microseconds; the second, normalized persistent
-                current s in the range [0,1]. The resulting schedule is the piecewise-linear curve
-                that connects the provided points.
+                An anneal schedule is defined by a series of pairs of
+                floating-point numbers identifying points in the schedule at
+                which to change slope. The first element in the pair is time,
+                :math:`t` in microseconds; the second, normalized anneal
+                fraction (persistent current) :math:`s` in the range [0,1]. The
+                resulting schedule is the piecewise-linear curve that connects
+                the provided points.
+
+                An anneal schedule must satisfy the conditions described in the
+                :ref:`parameter_qpu_anneal_schedule` section.
 
         Raises:
-            ValueError: If the schedule violates any of the conditions listed below.
+            ValueError: If the schedule violates any of the conditions
+                described in the :ref:`parameter_qpu_anneal_schedule` section.
 
-            RuntimeError: If the sampler does not accept the `anneal_schedule` parameter or
-                if it does not have `annealing_time_range` or `max_anneal_schedule_points`
-                properties.
-
-        As described in the :ref:`qpu_index_solver_properties` section,
-        an anneal schedule must satisfy the following conditions:
-
-            * Time t must increase for all points in the schedule.
-            * For forward annealing, the first point must be (0,0) and the anneal fraction s must
-              increase monotonically.
-            * For reverse annealing, the anneal fraction s must start and end at s=1.
-            * In the final point, anneal fraction s must equal 1 and time t must not exceed the
-              maximum  value in the `annealing_time_range` property.
-            * The number of points must be >=2.
-            * The upper bound is system-dependent; check the `max_anneal_schedule_points` property.
-              For reverse annealing, the maximum number of points allowed is one more than the
-              number given by this property.
+            RuntimeError: If the sampler does not accept the ``anneal_schedule``
+                parameter or if it does not have
+                :ref:`property_qpu_annealing_time_range` or
+                :ref:`property_qpu_max_anneal_schedule_points` properties.
 
         Examples:
-            This example sets a quench schedule on a D-Wave system.
+            This example sets a quench schedule on a D-Wave quantum computer.
 
             >>> from dwave.system import DWaveSampler
             >>> with DWaveSampler() as sampler:     # doctest: +SKIP
@@ -579,25 +583,27 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         max_slope = 1.0 / min_anneal_time
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
             if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
-                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))  
-        
+                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
+
     def to_networkx_graph(self):
-        """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
+        """Output the QPU's working graph in NetworkX format.
 
         Returns:
             :class:`networkx.Graph`:
-                Either a Chimera lattice of shape [m, n, t], a Pegasus 
-                lattice of shape [m] or a Zephyr lattice of size [m,t].
+                Either a :ref:`Chimera lattice <topology_intro_chimera>`, a
+                :ref:`Pegasus lattice <topology_intro_pegasus>` or a
+                :ref:`Zephyr lattice <topology_intro_zephyr>`.
 
         Examples:
-            This example converts a selected D-Wave system solver to a graph
-            and verifies it has over 5000 nodes.
+            This example converts a selected :term:`QPU` to a graph and verifies
+            that it has a greater number of edges (couplers) than nodes
+            (qubits).
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> with DWaveSampler() as sampler:         # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:
             ...     g = sampler.to_networkx_graph()
-            ...     len(g.nodes) > 5000
+            ...     len(g.edges) > len(g.nodes)
             True
         """
         return qpu_graph(self.properties['topology']['type'],
