@@ -298,6 +298,11 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             chain_strength = None
         chain_strengths = [chain_strength] * self.num_embeddings
         bqms = [bqm] * self.num_embeddings
+        if "initial_state" in kwargs:
+            kwargs["initial_states"] = [
+                kwargs.pop("initial_state")
+            ] * self.num_embeddings
+
         responses, info = self.sample_as_list(bqms, chain_strengths, **kwargs)
 
         if self.num_embeddings == 1:
@@ -313,9 +318,14 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         chain_strengths: Optional[list] = None,
         **kwargs
     ) -> tuple[list[dimod.SampleSet], dict]:
-        """Sample from the specified binary quadratic models. Samplesets are
-        returned for every embedding, the binary quadratic model solved on
-        each embedding needn't be identical.
+        """Sample from the specified binary quadratic models.
+
+        Samplesets are returned for every embedding, the binary quadratic model
+        solved on each embedding needn't be identical.
+        kwargs are passed unmodifiedto the child sampler, with the exception of
+        `initial_states` (one state per embedding) which is composed to a
+        single `initial_state` parameter for the child sampler analogous to
+        the bqm composition.
 
         Args:
             bqms:
@@ -343,6 +353,14 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         __, __, target_adjacency = self.target_structure
         if chain_strengths is None:
             chain_strengths = [None] * self.num_embeddings
+
+        if "initial_states" in kwargs:
+            initial_states = kwargs.pop("initial_states")
+            kwargs["initial_state"] = {}
+            for embedding, state in zip(self.embeddings, initial_states):
+                kwargs["initial_state"].update(
+                    {u: state[v] for v, chain in embedding.items() for u in chain}
+                )
 
         for embedding, bqm, chain_strength in zip(
             self.embeddings, bqms, chain_strengths
