@@ -381,11 +381,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             pass
 
     def sample(self, bqm, warnings=None, **kwargs):
-        """Sample from the specified :term:`binary quadratic model`.
+        """Sample from the specified binary quadratic model.
 
         Args:
             bqm (:class:`~dimod.BinaryQuadraticModel`):
-                The binary quadratic model. Must match
+                The :term:`binary quadratic model`. Must match
                 :attr:`~DWaveSampler.nodelist` and :attr:`~DWaveSampler.edgelist`.
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
@@ -586,7 +586,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
 
     def to_networkx_graph(self):
-        """Output the QPU's working graph in NetworkX format.
+        """Output the QPU's :term:`working graph` in NetworkX format.
 
         Returns:
             :class:`networkx.Graph`:

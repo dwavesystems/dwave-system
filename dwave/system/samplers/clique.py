@@ -56,10 +56,10 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
 
     @dimod.decorators.nonblocking_sample_method
     def sample(self, bqm, **parameters):
-        """ Scale and sample from the provided binary quadratic model.
+        """Scale and sample from the provided binary quadratic model.
 
-        Problem is scaled based on the per qubit coupling range when 
-        that range is exceeded. 
+        Problem is scaled based on the per qubit coupling range when that range
+        is exceeded.
 
         Args:
             bqm (:obj:`~dimod.BinaryQuadraticModel`):
@@ -99,8 +99,8 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
             max_coupling_range = max(total_coupling_range.values())
 
             if (min_coupling_range < min_lim or max_coupling_range > max_lim):
-                # scaling 
-                inv_scalar = max(min_coupling_range / min_lim, 
+                # scaling
+                inv_scalar = max(min_coupling_range / min_lim,
                                  max_coupling_range / max_lim)
                 scalar = 1.0 / inv_scalar
 
@@ -131,30 +131,31 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
 
 
 class DWaveCliqueSampler(dimod.Sampler):
-    r"""A sampler for solving clique binary quadratic models on the D-Wave system.
+    r"""Submits clique binary quadratic models to D-Wave quantum computers.
 
-    This sampler wraps
-    :func:`~minorminer.busclique.find_clique_embedding` to generate embeddings
-    with even chain length. These embeddings work well for dense
-    binary quadratic models. For sparse models, using
-    :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is preferred.
+    This sampler wraps :func:`~minorminer.busclique.find_clique_embedding` to
+    generate an :term:`embedding` with even :term:`chain length`. These
+    embeddings work well for a dense :term:`binary quadratic model`. For sparse
+    models, using :class:`.EmbeddingComposite` with :class:`.DWaveSampler` is
+    preferred.
 
     Configuration such as :term:`solver` selection is similar to that of
     :class:`.DWaveSampler`.
 
+    :ref:`Clique embeddings <minorminer_clique_embedding>` are cached for each
+    QPU but the initial finding of embeddings can take several minutes.
+
     Args:
         failover (bool, optional, default=False):
-            Signal a failover condition if a sampling error occurs. When ``True``,
-            raises :exc:`~dwave.system.exceptions.FailoverCondition` or
-            :exc:`~dwave.system.exceptions.RetryCondition` on sampleset resolve
-            to signal failover.
-
-            Actual failover, i.e. selection of a new solver, has to be handled
-            by the user. A convenience method :meth:`.trigger_failover` is available
-            for this. Note that hardware graphs vary between QPUs, so triggering
-            failover results in regenerated :attr:`~dimod.Structured.nodelist`, 
-            :attr:`~dimod.Structured.edgelist`, :attr:`.properties` and 
-            :attr:`.parameters`.
+            Signal a failover condition if a sampling error occurs. When
+            ``True``, raises :exc:`~dwave.system.exceptions.FailoverCondition`
+            or :exc:`~dwave.system.exceptions.RetryCondition` on sampleset
+            :meth:`~dimod.SampleSet.resolve` to signal failover.
+            Actual failover (i.e., selection of a new solver) has to be handled
+            by the user. A convenience method :meth:`.trigger_failover` is
+            available for this. Note that hardware graphs vary between QPUs, so
+            triggering failover results in regenerated :attr:`.nodelist`,
+            :attr:`.edgelist`, :attr:`.properties` and :attr:`.parameters`.
 
             .. versionchanged:: 1.16.0
 
@@ -172,7 +173,7 @@ class DWaveCliqueSampler(dimod.Sampler):
                Ignored since 1.16.0. See note for ``failover`` parameter above.
 
         **config:
-            Keyword arguments, as accepted by :class:`.DWaveSampler`
+            Keyword arguments, as accepted by :class:`.DWaveSampler`.
 
     .. versionadded:: 1.29.0
         Support for context manager protocol.
@@ -209,6 +210,9 @@ class DWaveCliqueSampler(dimod.Sampler):
         ...     sampleset = sampler.sample(bqm, num_reads=100)
         True
 
+    See also:
+        :class:`~minorminer.busclique.busgraph_cache`.
+
     """
     def __init__(self, *,
                  failover: bool = False, retry_interval: Number = -1,
@@ -219,12 +223,12 @@ class DWaveCliqueSampler(dimod.Sampler):
     def close(self):
         """Close the child sampler to release system resources such as threads.
 
-        .. note::
+        The method blocks for all the currently scheduled work (sampling
+        requests) to finish.
 
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
+        See also:
+            :meth:`~dwave.system.samplers.dwave_sampler.DWaveSampler.close`.
 
-        See: :meth:`~dwave.system.samplers.dwave_sampler.DWaveSampler.close`.
         """
         self.child.close()
 
@@ -256,12 +260,19 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def largest_clique_size(self) -> int:
-        """The maximum number of variables that can be embedded."""
+        """Maximum number of variables that can be embedded.
+
+        :ref:`Clique embeddings <minorminer_clique_embedding>` are cached for
+        each QPU but the initial finding of embeddings can take several minutes.
+        """
         return len(self.largest_clique())
 
     @property
     def qpu_linear_range(self) -> Tuple[float, float]:
-        """Range of linear biases allowed by the QPU."""
+        """Range of linear biases allowed by the QPU.
+
+        See the :ref:`property_qpu_h_range` QPU property.
+        """
         try:
             return self._qpu_linear_range
         except AttributeError:
@@ -283,7 +294,10 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def qpu_quadratic_range(self) -> Tuple[float, float]:
-        """Range of quadratic biases allowed by the QPU."""
+        """Range of quadratic biases allowed by the QPU.
+
+        See the :ref:`property_qpu_extended_j_range` QPU property.
+        """
         try:
             return self._qpu_quadratic_range
         except AttributeError:
@@ -307,7 +321,7 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     @property
     def target_graph(self) -> nx.Graph:
-        """The QPU topology."""
+        """Selected QPU's :term:`working graph` in NetworkX format."""
         try:
             return self._target_graph
         except AttributeError:
@@ -331,7 +345,7 @@ class DWaveCliqueSampler(dimod.Sampler):
         return find_clique_embedding(variables, self.target_graph)
 
     def largest_clique(self):
-        """The clique embedding with the maximum number of source variables.
+        """Return the clique embedding with the maximum number of variables.
 
         Returns:
             dict: The clique embedding with the maximum number of source
@@ -365,15 +379,15 @@ class DWaveCliqueSampler(dimod.Sampler):
 
         Args:
             bqm (:class:`~dimod.BinaryQuadraticModel`):
-                Any binary quadratic model with up to
+                Any :term:`binary quadratic model` with up to
                 :attr:`.largest_clique_size` variables. This BQM is embedded
-                using a clique embedding.
+                using a :term:`clique` embedding.
 
             chain_strength (float/mapping/callable, optional):
                 Sets the coupling strength between qubits representing variables
                 that form a :term:`chain`. Mappings should specify the required
-                chain strength for each variable. Callables should accept the BQM
-                and embedding and return a float or mapping. By default,
+                chain strength for each variable. Callables should accept the
+                BQM and embedding and return a float or mapping. By default,
                 ``chain_strength`` is calculated with
                 :func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
@@ -382,14 +396,14 @@ class DWaveCliqueSampler(dimod.Sampler):
                 per solver in :attr:`.parameters`. The
                 :ref:`qpu_index_solver_properties` and
                 :ref:`qpu_solver_parameters` sections describe the parameters
-                and properties supported on the D-Wave
-                system. Note that ``auto_scale`` is not supported by this
-                sampler, because it scales the problem as part of the embedding
-                process.
+                and properties supported on D-Wave quantum computers. Note that
+                the :ref:`parameter_qpu_auto_scale` parameter is not supported
+                by this sampler because it scales the problem as part of the
+                embedding process.
 
         Returns:
-            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
-            :class:`~concurrent.futures.Future`-like object.
+            :class:`~dimod.SampleSet`: Sample set constructed from a
+            (non-blocking) :class:`~concurrent.futures.Future`-like object.
 
         """
 
