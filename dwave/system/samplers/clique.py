@@ -154,8 +154,10 @@ class DWaveCliqueSampler(dimod.Sampler):
             Actual failover (i.e., selection of a new solver) has to be handled
             by the user. A convenience method :meth:`.trigger_failover` is
             available for this. Note that hardware graphs vary between QPUs, so
-            triggering failover results in regenerated :attr:`.nodelist`,
-            :attr:`.edgelist`, :attr:`.properties` and :attr:`.parameters`.
+            triggering failover results in regenerated
+            :attr:`~dwave.system.samplers.DWaveSampler.nodelist`,
+            :attr:`~dwave.system.samplers.DWaveSampler.edgelist`,
+            :attr:`.properties` and :attr:`.parameters`.
 
             .. versionchanged:: 1.16.0
 

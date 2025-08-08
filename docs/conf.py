@@ -45,7 +45,8 @@ language = "en"
 
 add_module_names = False
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'sdk_index.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'sdk_index.rst',
+                    'README.rst',]
 
 linkcheck_retries = 2
 linkcheck_anchors = False
@@ -80,8 +81,8 @@ html_theme_options = {
 html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}  # remove ads
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-    'networkx': ('https://networkx.github.io/documentation/stable/', None),
-    'numpy': ('http://numpy.org/doc/stable/', None),
+    'networkx': ('https://networkx.org/documentation/stable/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'dwave': ('https://docs.dwavequantum.com/en/latest/', None),
     }
 

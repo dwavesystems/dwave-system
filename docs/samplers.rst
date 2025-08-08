@@ -129,6 +129,7 @@ Properties
 
    LeapHybridCQMSampler.properties
    LeapHybridCQMSampler.parameters
+   LeapHybridCQMSampler.default_solver
 
 
 Methods
