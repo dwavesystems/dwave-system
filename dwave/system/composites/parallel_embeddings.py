@@ -356,11 +356,12 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
         if "initial_states" in kwargs:
             initial_states = kwargs.pop("initial_states")
-            kwargs["initial_state"] = {}
-            for embedding, state in zip(self.embeddings, initial_states):
-                kwargs["initial_state"].update(
-                    {u: state[v] for v, chain in embedding.items() for u in chain}
-                )
+            kwargs["initial_state"] = {
+                u: state[v]
+                for embedding, state in zip(self.embeddings, initial_states)
+                for v, chain in embedding.items()
+                for u in chain
+            }
 
         for embedding, bqm, chain_strength in zip(
             self.embeddings, bqms, chain_strengths
