@@ -65,17 +65,39 @@ Minor-embedding in :term:`Zephyr`-structured target graphs.
 Utilities
 =========
 
+The following **modules** provide functions for embedding and chains; for
+example, functions such as :func:`~dwave.embedding.transforms.embed_bqm`,
+:func:`~dwave.embedding.utils.chain_break_frequency` and
+:func:`~dwave.embedding.chain_strength.uniform_torque_compensation`.
 
 .. autosummary::
+   :recursive:
    :toctree: generated/
+   :template: autosummary_module_functions.rst
 
-   embed_bqm
-   embed_ising
-   embed_qubo
-   unembed_sampleset
+   chain_breaks
+   chain_strength
+   transforms
+   utils
 
-Diagnostics
-===========
+Classes
+-------
+
+The following classes are provided.
+
+.. autosummary::
+    :recursive:
+    :nosignatures:
+    :toctree: generated
+    :template: autosummary_class.rst
+
+    EmbeddedStructure
+    ~chain_breaks.MinimizeEnergy
+
+Diagnostic Functions
+--------------------
+
+These diagnostics functions are also provided.
 
 .. autosummary::
    :toctree: generated/
@@ -85,56 +107,15 @@ Diagnostics
    is_valid_embedding
    verify_embedding
 
-Chain Strength
-==============
-
-.. automodule:: dwave.embedding.chain_strength
-.. currentmodule:: dwave.embedding
-
-.. autosummary::
-   :toctree: generated/
-
-   chain_strength.uniform_torque_compensation
-   chain_strength.scaled
-
-Chain-Break Resolution
-======================
-
-.. automodule:: dwave.embedding.chain_breaks
-.. currentmodule:: dwave.embedding
-
-Generators
-----------
-
-.. autosummary::
-   :toctree: generated/
-
-   chain_breaks.discard
-   chain_breaks.majority_vote
-   chain_breaks.weighted_random
-
-Callable Objects
-----------------
-
-.. autosummary::
-   :toctree: generated/
-
-   chain_breaks.MinimizeEnergy
-
 Exceptions
 ==========
 
 .. autosummary::
    :toctree: generated/
 
-   exceptions.EmbeddingError
-   exceptions.MissingChainError
    exceptions.ChainOverlapError
    exceptions.DisconnectedChainError
+   exceptions.EmbeddingError
    exceptions.InvalidNodeError
+   exceptions.MissingChainError
    exceptions.MissingEdgeError
-
-Classes
-=======
-
-.. autoclass:: EmbeddedStructure

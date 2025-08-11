@@ -7,28 +7,6 @@ Warnings
 The ``dwave-system`` package supports various warning classes and provides the
 ability to configure warning handling.
 
-
-Supported Warnings
-==================
-
-The following warnings are currently supported.
-
-.. currentmodule:: dwave.system.warnings
-
-.. autoclass:: ChainBreakWarning
-.. autoclass:: ChainLengthWarning
-.. autoclass:: ChainStrengthWarning
-.. autoclass:: EnergyScaleWarning
-.. autoclass:: TooFewSamplesWarning
-
-Related Information
--------------------
-
-*   :ref:`qpu_embedding_intro` and :ref:`qpu_embedding_guidance` describe chains
-    and how to deal with broken chains.
-*   :ref:`qpu_basic_config` and :ref:`qpu_solver_configuration` provide basic
-    and advanced information on configuring QPU parameters and best practices.
-
 Configuring Warnings
 ====================
 
@@ -53,17 +31,41 @@ structured to represent variable ``a`` with a long chain.
 >>> "warnings" in sampleset.info
 True
 
-.. currentmodule:: dwave.system.warnings
+Supported Warnings and Exceptions
+=================================
 
-.. autoclass:: WarningAction
-.. autoclass:: WarningHandler
+The following classes are currently supported.
+
+.. .. currentmodule:: dwave.system.warnings
+.. currentmodule:: dwave.system
 
 .. autosummary::
-    :toctree: generated/
+    :recursive:
+    :nosignatures:
+    :toctree: generated
+    :template: autosummary_class.rst
 
-    WarningHandler.chain_break
-    WarningHandler.chain_length
-    WarningHandler.chain_strength
-    WarningHandler.energy_scale
-    WarningHandler.too_few_samples
-    WarningHandler.issue
+    ~warnings.WarningAction
+    ~warnings.WarningHandler
+    ~warnings.ChainBreakWarning
+    ~warnings.ChainLengthWarning
+    ~warnings.ChainStrengthWarning
+    ~warnings.EnergyScaleWarning
+    ~warnings.TooFewSamplesWarning
+
+The following functions are supported.
+
+.. autosummary::
+   :recursive:
+   :toctree: generated/
+   :template: autosummary_module_functions.rst
+
+   warnings
+
+Related Information
+===================
+
+*   :ref:`qpu_embedding_intro` and :ref:`qpu_embedding_guidance` describe chains
+    and how to deal with broken chains.
+*   :ref:`qpu_basic_config` and :ref:`qpu_solver_configuration` provide basic
+    and advanced information on configuring QPU parameters and best practices.
