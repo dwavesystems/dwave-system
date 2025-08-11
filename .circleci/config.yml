@@ -92,7 +92,10 @@ jobs:
             . env/bin/activate
             make -C docs/ html doctest
 
-      - run: 
+      - store_artifacts:
+          path: docs/_build/html
+
+      - run:
           name: linkcheck
           command: |
             . env/bin/activate
