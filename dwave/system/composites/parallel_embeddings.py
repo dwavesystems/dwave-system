@@ -25,6 +25,8 @@ See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
+from typing import Optional, List
+
 import networkx as nx
 
 import dimod
@@ -214,9 +216,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
                 self.nodelist = list(embeddings[0].keys())
             else:
                 nodeset = set(self.nodelist)
-                if not all(
-                    nodeset.issubset(emb) for emb in embeddings
-                ):
+                if not all(nodeset.issubset(emb) for emb in embeddings):
                     raise ValueError(
                         "source graph is inconsistent with the embeddings specified"
                     )
@@ -245,7 +245,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
             # The child_sampler may not preserve the graphical structure required
             # by the embedder. These might be passed as supplementary arguments.
-            if hasattr(child_sampler, 'to_networkx_graph'):
+            if hasattr(child_sampler, "to_networkx_graph"):
                 _embeddings = embedder(
                     source, child_sampler.to_networkx_graph(), **embedder_kwargs
                 )
@@ -265,14 +265,25 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         self.embeddings = properties["embeddings"] = _embeddings
 
     @dimod.bqm_structured
-    def sample(self, bqm, **kwargs):
+    def sample(
+        self,
+        bqm: dimod.BinaryQuadraticModel,
+        chain_strength: Optional[float] = None,
+        **kwargs
+    ) -> dimod.SampleSet:
         """Sample from the specified binary quadratic model. Samplesets are
         concatenated together in the the same order as the embeddings class variable,
         the info field is returned from the child sampler unmodified.
 
+        If the bqm or chain_strength varies by solver, or if a list of samplests
+        is desired as the output, use :code:`sample_as_list`.
+
         Args:
-            bqm (:class:`~dimod.BinaryQuadraticModel`):
+            bqm:
                 Binary quadratic model to be sampled from.
+
+            chain_strength:
+                The chain strength parameter of the bqm.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
@@ -283,31 +294,94 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         Examples:
             See class examples.
         """
+        if chain_strength is None:
+            chain_strength = None
+        chain_strengths = [chain_strength] * self.num_embeddings
+        bqms = [bqm] * self.num_embeddings
+        if "initial_state" in kwargs:
+            kwargs["initial_states"] = [
+                kwargs.pop("initial_state")
+            ] * self.num_embeddings
+
+        responses, info = self.sample_as_list(bqms, chain_strengths, **kwargs)
+
+        if self.num_embeddings == 1:
+            return responses[0]
+        else:
+            answer = dimod.concatenate(responses)
+            answer.info.update(info)
+            return answer
+
+    def sample_as_list(
+        self,
+        bqms: list[dimod.BinaryQuadraticModel],
+        chain_strengths: Optional[list] = None,
+        **kwargs
+    ) -> tuple[list[dimod.SampleSet], dict]:
+        """Sample from the specified binary quadratic models.
+
+        Samplesets are returned for every embedding, the binary quadratic model
+        solved on each embedding needn't be identical.
+        kwargs are passed unmodifiedto the child sampler, with the exception of
+        `initial_states` (one state per embedding) which is composed to a
+        single `initial_state` parameter for the child sampler analogous to
+        the bqm composition.
+
+        Args:
+            bqms:
+                Binary quadratic models to be sampled from. A list that
+                should be ordered to match self.embeddings.
+
+            chain_strengths:
+                The chain strength parameters for each bqm. A list that
+                should be ordered to match self.embeddings.
+
+            **kwargs:
+                Optional keyword arguments for the sampling method, specified per solver.
+
+        Returns:
+            A typle consisting of:
+            1. A list of :class:`~dimod.SampleSet`, one per embedding
+            2. The info field returned by the child sampler
+        Examples:
+            See class examples.
+        """
 
         # apply the embeddings to the given problem to tile it across the child sampler
-        embedded_bqm = dimod.BinaryQuadraticModel.empty(bqm.vartype)
+        embedded_bqm = dimod.BinaryQuadraticModel.empty(bqms[0].vartype)
 
         __, __, target_adjacency = self.target_structure
-        for embedding in self.embeddings:
+        if chain_strengths is None:
+            chain_strengths = [None] * self.num_embeddings
+
+        if "initial_states" in kwargs:
+            initial_states = kwargs.pop("initial_states")
+            kwargs["initial_state"] = {
+                u: state[v]
+                for embedding, state in zip(self.embeddings, initial_states)
+                for v, chain in embedding.items()
+                for u in chain
+            }
+
+        for embedding, bqm, chain_strength in zip(
+            self.embeddings, bqms, chain_strengths
+        ):
             embedded_bqm.update(
-                dwave.embedding.embed_bqm(bqm, embedding, target_adjacency)
+                dwave.embedding.embed_bqm(
+                    bqm, embedding, target_adjacency, chain_strength=chain_strength
+                )
             )
 
         # solve the problem on the child system
         tiled_response = self.child.sample(embedded_bqm, **kwargs)
 
         responses = []
-        for embedding in self.embeddings:
+        for embedding, bqm in zip(self.embeddings, bqms):
             responses.append(
                 dwave.embedding.unembed_sampleset(tiled_response, embedding, bqm)
             )
 
-        if self.num_embeddings == 1:
-            return responses[0]
-        else:
-            answer = dimod.concatenate(responses)
-            answer.info.update(tiled_response.info)
-            return answer
+        return responses, tiled_response.info
 
     @property
     def num_embeddings(self):
