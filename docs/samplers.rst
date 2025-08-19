@@ -25,7 +25,7 @@ DWaveSampler
 ============
 
 .. autoclass:: DWaveSampler
-   :show-inheritance:
+    :show-inheritance:
 
 Properties
 ----------
@@ -34,27 +34,32 @@ For parameters and properties of D-Wave systems, see the
 :ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters` sections.
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   DWaveSampler.properties
-   DWaveSampler.parameters
-   DWaveSampler.nodelist
-   DWaveSampler.edgelist
-   DWaveSampler.adjacency
-   DWaveSampler.structure
+    ~DWaveSampler.adjacency
+    ~DWaveSampler.edgelist
+    ~DWaveSampler.nodelist
+    ~DWaveSampler.parameters
+    ~DWaveSampler.properties
+    ~DWaveSampler.structure
+    ~DWaveSampler.warnings_default
 
 Methods
 -------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   DWaveSampler.sample
-   DWaveSampler.sample_ising
-   DWaveSampler.sample_qubo
-   DWaveSampler.validate_anneal_schedule
-   DWaveSampler.to_networkx_graph
-   DWaveSampler.close
+    ~DWaveSampler.close
+    ~DWaveSampler.remove_unknown_kwargs
+    ~DWaveSampler.sample
+    ~DWaveSampler.sample_ising
+    ~DWaveSampler.sample_qubo
+    ~DWaveSampler.to_networkx_graph
+    ~DWaveSampler.trigger_failover
+    ~DWaveSampler.valid_bqm_graph
+    ~DWaveSampler.validate_anneal_schedule
+
 
 DWaveCliqueSampler
 ==================
@@ -65,27 +70,29 @@ Properties
 ----------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   DWaveCliqueSampler.largest_clique_size
-   DWaveCliqueSampler.qpu_linear_range
-   DWaveCliqueSampler.qpu_quadratic_range
-   DWaveCliqueSampler.properties
-   DWaveCliqueSampler.parameters
-   DWaveCliqueSampler.target_graph
-
+    ~DWaveCliqueSampler.largest_clique_size
+    ~DWaveCliqueSampler.parameters
+    ~DWaveCliqueSampler.properties
+    ~DWaveCliqueSampler.qpu_linear_range
+    ~DWaveCliqueSampler.qpu_quadratic_range
+    ~DWaveCliqueSampler.target_graph
 
 Methods
 -------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   DWaveCliqueSampler.largest_clique
-   DWaveCliqueSampler.sample
-   DWaveCliqueSampler.sample_ising
-   DWaveCliqueSampler.sample_qubo
-   DWaveCliqueSampler.close
+    ~DWaveCliqueSampler.clique
+    ~DWaveCliqueSampler.close
+    ~DWaveCliqueSampler.largest_clique
+    ~DWaveCliqueSampler.remove_unknown_kwargs
+    ~DWaveCliqueSampler.sample
+    ~DWaveCliqueSampler.sample_ising
+    ~DWaveCliqueSampler.sample_qubo
+    ~DWaveCliqueSampler.trigger_failover
 
 
 LeapHybridSampler
@@ -97,24 +104,25 @@ Properties
 ----------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridSampler.properties
-   LeapHybridSampler.parameters
-   LeapHybridSampler.default_solver
-
+    ~LeapHybridSampler.default_solver
+    ~LeapHybridSampler.parameters
+    ~LeapHybridSampler.properties
 
 Methods
 -------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridSampler.sample
-   LeapHybridSampler.sample_ising
-   LeapHybridSampler.sample_qubo
-   LeapHybridSampler.min_time_limit
-   LeapHybridSampler.close
+    ~LeapHybridSampler.close
+    ~LeapHybridSampler.min_time_limit
+    ~LeapHybridSampler.remove_unknown_kwargs
+    ~LeapHybridSampler.sample
+    ~LeapHybridSampler.sample_ising
+    ~LeapHybridSampler.sample_qubo
+
 
 LeapHybridCQMSampler
 ====================
@@ -125,22 +133,22 @@ Properties
 ----------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridCQMSampler.properties
-   LeapHybridCQMSampler.parameters
-   LeapHybridCQMSampler.default_solver
-
+    ~LeapHybridCQMSampler.default_solver
+    ~LeapHybridCQMSampler.properties
+    ~LeapHybridCQMSampler.parameters
 
 Methods
 -------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridCQMSampler.sample_cqm
-   LeapHybridCQMSampler.min_time_limit
-   LeapHybridCQMSampler.close
+    ~LeapHybridCQMSampler.close
+    ~LeapHybridCQMSampler.min_time_limit
+    ~LeapHybridCQMSampler.sample_cqm
+
 
 LeapHybridNLSampler
 ====================
@@ -151,21 +159,22 @@ Properties
 ----------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridNLSampler.properties
-   LeapHybridNLSampler.parameters
-   LeapHybridNLSampler.default_solver
+    ~LeapHybridNLSampler.default_solver
+    ~LeapHybridNLSampler.parameters
+    ~LeapHybridNLSampler.properties
 
 Methods
 -------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridNLSampler.sample
-   LeapHybridNLSampler.estimated_min_time_limit
-   LeapHybridNLSampler.close
+    ~LeapHybridNLSampler.close
+    ~LeapHybridNLSampler.estimated_min_time_limit
+    ~LeapHybridNLSampler.sample
+
 
 LeapHybridDQMSampler
 ====================
@@ -176,19 +185,18 @@ Properties
 ----------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridDQMSampler.properties
-   LeapHybridDQMSampler.parameters
-   LeapHybridDQMSampler.default_solver
-
+    ~LeapHybridDQMSampler.default_solver
+    ~LeapHybridDQMSampler.parameters
+    ~LeapHybridDQMSampler.properties
 
 Methods
 -------
 
 .. autosummary::
-   :toctree: generated/
+    :toctree: generated/
 
-   LeapHybridDQMSampler.sample_dqm
-   LeapHybridDQMSampler.min_time_limit
-   LeapHybridDQMSampler.close
+    ~LeapHybridDQMSampler.close
+    ~LeapHybridDQMSampler.min_time_limit
+    ~LeapHybridDQMSampler.sample_dqm

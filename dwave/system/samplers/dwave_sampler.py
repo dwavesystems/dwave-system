@@ -241,8 +241,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             raise SolverNotFoundError("Solver with the requested features not available")
 
     warnings_default = WarningAction.IGNORE
-    """Defines the default behavior for ``warnings`` keyword arguments of the
-    :meth:`.sample_ising`  and :meth:`sample_qubo` methods.
+    """Defines default behavior for ``warnings`` keyword arguments of the
+    :meth:`~DWaveSampler.sample_ising`  and :meth:`~DWaveSampler.sample_qubo`
+    methods.
     """
 
     @property
