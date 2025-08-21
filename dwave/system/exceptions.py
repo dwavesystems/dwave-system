@@ -14,12 +14,12 @@
 
 
 class FailoverCondition(Exception):
-    """QPU or Solver API call failed with an error that might be mitigated by
-    retrying on a different solver.
+    """QPU or :term:`SAPI` call failed with an error that might be mitigated by
+    retrying on a different :term:`solver`.
     """
 
 
 class RetryCondition(FailoverCondition):
-    """QPU or Solver API call failed with an error that might be mitigated by
-    retrying on the same solver.
+    """QPU or :term:`SAPI` call failed with an error that might be mitigated by
+    retrying (on the same :term:`solver`).
     """

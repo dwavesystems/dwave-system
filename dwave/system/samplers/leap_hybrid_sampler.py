@@ -13,7 +13,8 @@
 #    limitations under the License.
 
 """
-A :ref:`dimod <index_dimod>` :term:`sampler` for Leap's hybrid solvers.
+:ref:`dimod <index_dimod>` :term:`samplers <sampler>` for the Leap service's
+:term:`hybrid` solvers.
 """
 
 import concurrent.futures
@@ -60,51 +61,44 @@ class _ScopedSamplerMixin(dimod.Scoped):
 
 
 class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
-    """A class for using Leap's cloud-based hybrid BQM solvers.
+    r"""Submits binary quadratic models to a hybrid solver in the Leap service.
 
-    Leap's quantum-classical hybrid binary quadratic models (BQM) solvers are
-    intended to solve arbitrary application problems formulated as BQMs.
+    The :term:`Leap` service's quantum-classical :term:`hybrid`
+    :term:`binary quadratic model` (BQM) solvers are intended to solve arbitrary
+    application problems formulated as BQMs.
 
-    You can configure your :term:`solver` selection and usage by setting parameters,
-    hierarchically, in a configuration file, as environment variables, or
-    explicitly as input arguments, as described in the
-    :ref:`D-Wave Cloud Client <index_cloud>` package.
-
-    :ref:`dwave-cloud-client <index_cloud>`'s
-    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
-    access to by :ref:`solver properties <opt_solver_bqm_properties>`
-    ``category=hybrid`` and ``supported_problem_type=bqm``. By default, online
-    hybrid BQM solvers are returned ordered by latest ``version``.
-
-    The default specification for filtering and ordering solvers by features is
-    available as :attr:`.default_solver` property. Explicitly specifying a
-    solver in a configuration file, an environment variable, or keyword
-    arguments overrides this specification. See the example below on how to
-    extend it instead.
+    You can configure your :term:`solver` selection as described in the
+    :ref:`cloud_configuration` section.\ [#]_
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to
+            :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
-        This example builds a random sparse graph and uses a hybrid solver to find a
-        maximum independent set.
+        This example samples a randomly generated binary quadratic model with 10
+        variables and 15 interactions.
 
-        >>> import dimod
-        >>> import networkx as nx
-        >>> import dwave_networkx as dnx
-        >>> import numpy as np
+        >>> from dimod.generators import gnm_random_bqm
         >>> from dwave.system import LeapHybridSampler
         ...
-        >>> # Create a maximum-independent set problem from a random graph
-        >>> problem_node_count = 300
-        >>> G = nx.random_geometric_graph(problem_node_count, radius=0.0005*problem_node_count)
-        >>> qubo = dnx.algorithms.independent_set.maximum_weighted_independent_set_qubo(G)
-        >>> bqm = dimod.BQM.from_qubo(qubo)
-        ...
-        >>> # Find a good solution
+        >>> bqm = gnm_random_bqm(10, 15, 'SPIN')
         >>> with LeapHybridSampler() as sampler:    # doctest: +SKIP
         ...     sampleset = sampler.sample(bqm)
+
+    .. [#]
+        :ref:`dwave-cloud-client <index_cloud>`'s
+        :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers
+        you have access to by
+        :ref:`solver properties <opt_solver_bqm_properties>` ``category=hybrid``
+        and ``supported_problem_type=bqm``. By default, online hybrid BQM
+        solvers are returned ordered by latest ``version``.
+
+        The default specification for filtering and ordering solvers by features
+        is available as :attr:`.default_solver` property. Explicitly specifying
+        a solver in a configuration file, an environment variable, or keyword
+        arguments overrides this specification.
+
     """
 
     _INTEGER_BQM_SIZE_THRESHOLD = 10000
@@ -147,10 +141,11 @@ class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
 
     @property
     def properties(self) -> Dict[str, Any]:
-        """Solver properties as returned by a SAPI query.
+        """Solver properties as returned by a :term:`SAPI` query.
 
-        :ref:`Solver properties <opt_solver_bqm_properties>`
-        are dependent on the selected solver and subject to change.
+        :ref:`Solver properties <opt_solver_bqm_properties>` are dependent on
+        the selected solver and subject to change; for example, new features may
+        add properties.
         """
         try:
             return self._properties
@@ -160,12 +155,15 @@ class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
 
     @property
     def parameters(self) -> Dict[str, list]:
-        """Solver parameters in the form of a dict, where keys are
-        keyword parameters accepted by a SAPI query and values are lists of properties in
+        """Solver parameters as returned by a :term:`SAPI` query.
+
+        Keys of the returned dict are keyword parameters accepted by a SAPI
+        query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridSampler.properties` for each key.
 
         :ref:`Solver parameters <opt_solver_bqm_properties>`
-        are dependent on the selected solver and subject to change.
+        are dependent on the selected solver and subject to change; for example,
+        new features may add parameters.
         """
         try:
             return self._parameters
@@ -180,8 +178,8 @@ class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
         """Sample from the specified binary quadratic model.
 
         Args:
-            bqm (:obj:`dimod.BinaryQuadraticModel`):
-                Binary quadratic model.
+            bqm (:obj:`~dimod.binary.BinaryQuadraticModel`):
+                :term:`Binary quadratic model`.
 
             time_limit (int):
                 Maximum run time, in seconds, to allow the solver to work on the
@@ -200,21 +198,13 @@ class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
             :class:`~concurrent.futures.Future`-like object.
 
         Examples:
-            This example builds a random sparse graph and uses a hybrid solver to
-            find a maximum independent set.
+            This example samples a randomly generated binary quadratic model
+            with 10 variables and 15 interactions.
 
-            >>> import dimod
-            >>> import networkx as nx
-            >>> import dwave_networkx as dnx
-            >>> import numpy as np
+            >>> from dimod.generators import gnm_random_bqm
+            >>> from dwave.system import LeapHybridSampler
             ...
-            >>> # Create a maximum-independent set problem from a random graph
-            >>> problem_node_count = 300
-            >>> G = nx.random_geometric_graph(problem_node_count, radius=0.0005*problem_node_count)
-            >>> qubo = dnx.algorithms.independent_set.maximum_weighted_independent_set_qubo(G)
-            >>> bqm = dimod.BQM.from_qubo(qubo)
-            ...
-            >>> # Find a good solution
+            >>> bqm = gnm_random_bqm(10, 15, 'SPIN')
             >>> with LeapHybridSampler() as sampler:    # doctest: +SKIP
             ...     sampleset = sampler.sample(bqm)
         """
@@ -265,20 +255,20 @@ class LeapHybridSampler(_ScopedSamplerMixin, dimod.Sampler):
     def min_time_limit(self, bqm):
         """Return the minimum ``time_limit`` accepted for the given problem.
 
-        The minimum time for a hybrid BQM solver is specified as a piecewise-linear
-        curve defined by a set of floating-point pairs, the ``minimum_time_limit``
-        field under :attr:`~dwave.system.samplers.LeapHybridSampler.properties`.
-        The first element in each pair is the number of problem variables; the
-        second is the minimum required time. The minimum time for any number of
-        variables is a linear interpolation calculated on two pairs that represent
-        the relevant range for the given number of variables.
+        The minimum time for a hybrid BQM solver is specified as a
+        piecewise-linear curve defined by a set of floating-point pairs,
+        the :ref:`property_bqm_minimum_time_limit` property.
+
+        Args:
+            bqm (:class:`~dimod.binary.BinaryQuadraticModel`):
+                A :term:`binary quadratic model`.
 
         Examples:
             For a solver where
-            `LeapHybridSampler().properties["minimum_time_limit"]` returns
-            `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, the minimum time for a
-            problem of 50 variables is 5 seconds (the linear interpolation of the
-            first two pairs that represent problems with between 1 to 100
+            ``LeapHybridSampler().properties["minimum_time_limit"]`` returns
+            ``[[1, 0.1], [100, 10.0], [1000, 20.0]]``, the minimum time for a
+            problem of 50 variables is 5 seconds (the linear interpolation of
+            the first two pairs that represent problems with between 1 to 100
             variables).
         """
 
@@ -289,31 +279,19 @@ LeapHybridBQMSampler = LeapHybridSampler
 
 
 class LeapHybridDQMSampler(_ScopedSamplerMixin):
-    """A class for using Leap's cloud-based hybrid DQM solvers.
+    r"""Submits discrete quadratic models to a hybrid solver in the Leap service.
 
-    Leap's quantum-classical hybrid DQM solvers are intended to solve arbitrary
-    application problems formulated as **discrete** quadratic models (DQM).
+    The :term:`Leap` service's quantum-classical :term:`hybrid`
+    :term:`discrete quadratic model` (DQM) solvers are intended to solve
+    arbitrary application problems formulated as DQMs.
 
-    You can configure your :term:`solver` selection and usage by setting parameters,
-    hierarchically, in a configuration file, as environment variables, or
-    explicitly as input arguments, as described in the
-    :ref:`D-Wave Cloud Client <index_cloud>` package.
-
-    :ref:`dwave-cloud-client <index_cloud>`'s
-    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
-    access to by :ref:`solver properties <opt_solver_dqm_properties>`
-    ``category=hybrid`` and ``supported_problem_type=dqm``. By default, online
-    hybrid DQM solvers are returned ordered by latest ``version``.
-
-    The default specification for filtering and ordering solvers by features is
-    available as :attr:`.default_solver` property. Explicitly specifying a
-    solver in a configuration file, an environment variable, or keyword
-    arguments overrides this specification. See the example in :class:`.LeapHybridSampler`
-    on how to extend it instead.
+    You can configure your :term:`solver` selection as described in the
+    :ref:`cloud_configuration` section.\ [#]_
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to
+            :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example solves a small, illustrative problem: a game of
@@ -321,8 +299,8 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
         with cases for rock, paper, scissors. Quadratic biases are set to
         produce a lower value of the DQM for cases of variable ``my_hand``
         interacting with cases of variable ``their_hand`` such that the former
-        wins over the latter; for example, the interaction of ``rock-scissors`` is
-        set to -1 while ``scissors-rock`` is set to +1.
+        wins over the latter; for example, the interaction of ``rock-scissors``
+        is set to -1 while ``scissors-rock`` is set to +1.
 
         >>> import dimod
         >>> from dwave.system import LeapHybridDQMSampler
@@ -349,6 +327,19 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
         ...     print(f"{} beats {}".format(cases[sampleset.first.sample['my_hand']],
         ...                                 cases[sampleset.first.sample['their_hand']]))
         rock beats scissors
+
+    .. [#]
+        :ref:`dwave-cloud-client <index_cloud>`'s
+        :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers
+        you have access to by
+        :ref:`solver properties <opt_solver_dqm_properties>` ``category=hybrid``
+        and ``supported_problem_type=dqm``. By default, online hybrid DQM
+        solvers are returned ordered by latest ``version``.
+
+        The default specification for filtering and ordering solvers by features
+        is available as :attr:`.default_solver` property. Explicitly specifying
+        a solver in a configuration file, an environment variable, or keyword
+        arguments overrides this specification.
     """
 
     @classproperty
@@ -388,10 +379,11 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
 
     @property
     def properties(self) -> Dict[str, Any]:
-        """Solver properties as returned by a SAPI query.
+        """Solver properties as returned by a :term:`SAPI` query.
 
-        :ref:`Solver properties <opt_solver_dqm_properties>`
-        are dependent on the selected solver and subject to change.
+        :ref:`Solver properties <opt_solver_dqm_properties>` are dependent on
+        the selected solver and subject to change; for example, new features may
+        add properties.
         """
         try:
             return self._properties
@@ -401,14 +393,16 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
 
     @property
     def parameters(self) -> Dict[str, list]:
-        """Solver parameters in the form of a dict, where keys
-        are keyword parameters accepted by a SAPI query and values are lists of
-        properties in
+        """Solver parameters as returned by a :term:`SAPI` query.
+
+        Keys of the returned dict are keyword parameters accepted by a SAPI
+        query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties` for each
         key.
 
         :ref:`Solver parameters <opt_solver_dqm_properties>`
-        are dependent on the selected solver and subject to change.
+        are dependent on the selected solver and subject to change; for example,
+        new features may add parameters.
         """
         try:
             return self._parameters
@@ -424,28 +418,25 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
         """Sample from the specified discrete quadratic model.
 
         Args:
-            dqm (:obj:`dimod.DiscreteQuadraticModel`):
-                Discrete quadratic model (DQM).
-
-                Note that if `dqm` is a :class:`dimod.CaseLabelDQM`, then
-                :meth:`~dimod.CaseLabelDQM.map_sample` will need to be used to
-                restore the case labels in the returned sample set.
+            dqm (:class:`~dimod.DiscreteQuadraticModel`):
+                Discrete quadratic model (:term:`DQM`).
+                If ``dqm`` is a :class:`~dimod.CaseLabelDQM` class, use the
+                :meth:`~dimod.CaseLabelDQM.map_sample` method to restore case
+                labels in the returned sample set.
 
             time_limit (int, optional):
                 Maximum run time, in seconds, to allow the solver to work on the
                 problem. Must be at least the minimum required for the number of
                 problem variables, which is calculated and set by default.
-
                 :meth:`~dwave.system.samplers.LeapHybridDQMSampler.min_time_limit`
                 calculates (and describes) the minimum time for your problem.
 
             compress (binary, optional):
                 Compresses the DQM data when set to True. Use if your problem
                 somewhat exceeds the maximum allowed size. Compression tends to
-                be slow and more effective on homogenous data, which in this
-                case means it is more likely to help on DQMs with many identical
-                integer-valued biases than ones with random float-valued biases,
-                for example.
+                be slow and more effective on homogenous data; for example, it
+                is more likely to help on DQMs with many identical
+                integer-valued biases than ones with random float-valued biases.
 
             compressed (binary, optional):
                 Deprecated; please use ``compress`` instead.
@@ -508,26 +499,23 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
         yield sampleset
 
     def min_time_limit(self, dqm):
-        """Return the minimum `time_limit` accepted for the given problem.
+        """Return the minimum ``time_limit`` accepted for the given problem.
 
         The minimum time for a hybrid DQM solver is specified as a
         piecewise-linear curve defined by a set of floating-point pairs,
-        the ``minimum_time_limit`` field under
-        :attr:`~dwave.system.samplers.LeapHybridDQMSampler.properties`.
-        The first element in each pair is a combination of the numbers of
-        interactions, variables, and cases that reflects the "density" of
-        connectivity between the problem's variables;
-        the second is the minimum required time. The minimum time for any
-        particular problem size is a linear interpolation calculated on
-        two pairs that represent the relevant range for the given problem.
+        the :ref:`property_dqm_minimum_time_limit` property.
+
+        Args:
+            dqm (:class:`~dimod.DiscreteQuadraticModel`):
+                A :term:`discrete quadratic model`.
 
         Examples:
             For a solver where
-            `LeapHybridDQMSampler().properties["minimum_time_limit"]` returns
-            `[[1, 0.1], [100, 10.0], [1000, 20.0]]`, the minimum time for a
-            problem of "density" 50 is 5 seconds (the linear interpolation of the
-            first two pairs that represent problems with "density" between 1 to
-            100).
+            ``LeapHybridDQMSampler().properties["minimum_time_limit"]`` returns
+            ``[[1, 0.1], [100, 10.0], [1000, 20.0]]``, the minimum time for a
+            problem of "density" 50 is 5 seconds (the linear interpolation of
+            the first two pairs that represent problems with "density" between 1
+            to 100).
         """
         ec = (dqm.num_variable_interactions() * dqm.num_cases() /
               max(dqm.num_variables(), 1))
@@ -537,26 +525,19 @@ class LeapHybridDQMSampler(_ScopedSamplerMixin):
 
 
 class LeapHybridCQMSampler(_ScopedSamplerMixin):
-    """A class for using Leap's cloud-based hybrid CQM solvers.
+    r"""Submits constrained quadratic models to a hybrid solver in the Leap service.
 
-    Leap's quantum-classical hybrid CQM solvers are intended to solve
-    application problems formulated as
-    :ref:`constrained quadratic models (CQM) <concept_models_cqm>`.
+    The :term:`Leap` service's quantum-classical :term:`hybrid`
+    :term:`constrained quadratic model` (CQM) solvers are intended to solve
+    arbitrary application problems formulated as CQMs.
 
-    You can configure your :term:`solver` selection and usage by setting parameters,
-    hierarchically, in a configuration file, as environment variables, or
-    explicitly as input arguments, as described in the
-    :ref:`D-Wave Cloud Client <index_cloud>` package.
-
-    :ref:`dwave-cloud-client <index_cloud>`'s
-    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you have
-    access to by :ref:`solver properties <opt_solver_cqm_properties>`
-    ``category=hybrid`` and ``supported_problem_type=cqm``. By default, online
-    hybrid CQM solvers are returned ordered by latest ``version``.
+    You can configure your :term:`solver` selection as described in the
+    :ref:`cloud_configuration` section.\ [#]_
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to
+            :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example solves a simple problem of finding the rectangle with the
@@ -600,6 +581,19 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
         The best (lowest-energy) solution found has :math:`i=j=2` as expected,
         a solution that is feasible because all the constraints (one in this
         example) are satisfied.
+
+    .. [#]
+        :ref:`dwave-cloud-client <index_cloud>`'s
+        :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers
+        you have access to by
+        :ref:`solver properties <opt_solver_cqm_properties>` ``category=hybrid``
+        and ``supported_problem_type=cqm``. By default, online hybrid CQM
+        solvers are returned ordered by latest ``version``.
+
+        The default specification for filtering and ordering solvers by features
+        is available as :attr:`.default_solver` property. Explicitly specifying
+        a solver in a configuration file, an environment variable, or keyword
+        arguments overrides this specification.
     """
 
     def __init__(self, **config):
@@ -639,10 +633,11 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
 
     @property
     def properties(self) -> Dict[str, Any]:
-        """Solver properties as returned by a SAPI query.
+        """Solver properties as returned by a :term:`SAPI` query.
 
         :ref:`Solver properties <opt_solver_cqm_properties>`
-        are dependent on the selected solver and subject to change.
+        are dependent on the selected solver and subject to change; for example,
+        new features may add properties.
         """
         try:
             return self._properties
@@ -652,14 +647,16 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
 
     @property
     def parameters(self) -> Dict[str, List[str]]:
-        """Solver parameters in the form of a dict, where keys
-        are keyword parameters accepted by a SAPI query and values are lists of
-        properties in
+        """Solver parameters as returned by a :term:`SAPI` query.
+
+        Keys of the returned dict are keyword parameters accepted by a SAPI
+        query and values are lists of properties in
         :attr:`~dwave.system.samplers.LeapHybridCQMSampler.properties` for each
         key.
 
-        :ref:`Solver parameters <opt_solver_cqm_properties>`
-        are dependent on the selected solver and subject to change.
+        :ref:`Solver parameters <opt_solver_cqm_properties>` are dependent on
+        the selected solver and subject to change; for example, new features may
+        add parameters.
         """
         try:
             return self._parameters
@@ -675,14 +672,13 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
         """Sample from the specified constrained quadratic model.
 
         Args:
-            cqm (:obj:`dimod.ConstrainedQuadraticModel`):
-                Constrained quadratic model (CQM).
+            cqm (:obj:`~dimod.ConstrainedQuadraticModel`):
+                Constrained quadratic model (:term:`CQM`).
 
             time_limit (int, optional):
                 Maximum run time, in seconds, to allow the solver to work on the
                 problem. Must be at least the minimum required for the problem,
                 which is calculated and set by default.
-
                 :meth:`~dwave.system.samplers.LeapHybridCQMSampler.min_time_limit`
                 calculates (and describes) the minimum time for your problem.
 
@@ -772,7 +768,38 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
         return self.solver.sample_cqm(sapi_problem_id, time_limit=time_limit, **kwargs).sampleset
 
     def min_time_limit(self, cqm: dimod.ConstrainedQuadraticModel) -> float:
-        """Return the minimum `time_limit`, in seconds, accepted for the given problem."""
+        """Return the minimum ``time_limit``, in seconds, accepted for the given
+        problem.
+
+        This minimum runtime is always at least the minimum specified by the CQM
+        solver's :ref:`property_cqm_minimum_time_limit_s` property. As the size
+        and complexity of the CQM increases, the minimum runtime may increase.
+        This method calculates, for the given CQM, the minimum runtime as a
+        function of its number of variables, constraints, and biases, weighted
+        by solver properties such as
+        :ref:`property_cqm_num_variables_multiplier` and others described in the
+        :ref:`opt_solver_cqm_properties` section. See the code for the
+        calculation.
+
+        Args:
+            cqm (:class:`~dimod.ConstrainedQuadraticModel`):
+                A :term:`constrained quadratic model`.
+
+        Examples:
+            This example generates a small CQM that requires only the minimum
+            runtime of the :ref:`property_cqm_minimum_time_limit_s` property and
+            a more complex CQM that requires a larger minimum ``time_limit``.
+
+            >>> from dimod.generators import bin_packing
+            >>> from dwave.system import LeapHybridCQMSampler
+            ...
+            >>> cqm = bin_packing([5]*5, 10)
+            >>> sampler.min_time_limit(cqm) > sampler.properties["minimum_time_limit_s"]  # doctest: +SKIP
+            False
+            >>> cqm = bin_packing([5]*5, 10)
+            >>> sampler.min_time_limit(cqm) > sampler.properties["minimum_time_limit_s"]  # doctest: +SKIP
+            True
+        """
 
         # todo: remove the hard-coded defaults
         num_variables_multiplier = self.properties.get('num_variables_multiplier', 1.57e-04)
@@ -793,31 +820,23 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
 
 
 class LeapHybridNLSampler(_ScopedSamplerMixin):
-    r"""A class for using Leap's cloud-based hybrid nonlinear-model solvers.
+    r"""Submits nonlinear models to a hybrid solver in the Leap service.
 
-    Leap's quantum-classical hybrid nonlinear-model solvers are intended to
-    solve application problems formulated as
-    :ref:`nonlinear models <concept_models_nonlinear>`.
+    The :term:`Leap` service's quantum-classical :term:`hybrid`
+    :term:`nonlinear model` solvers are intended to solve arbitrary application
+    problems formulated as :ref:`nonlinear models <concept_models_nonlinear>`.
 
-    You can configure your :term:`solver` selection and usage by setting
-    parameters, hierarchically, in a configuration file, as environment
-    variables, or explicitly as input arguments, as described in the
-    :ref:`D-Wave Cloud Client <index_cloud>` package.
-
-    :ref:`dwave-cloud-client <index_cloud>`'s
-    :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers you
-    have access to by
-    :ref:`solver properties <opt_solver_nl_properties>`
-    ``category=hybrid`` and ``supported_problem_type=nl``. By default, online
-    hybrid nonlinear-model solvers are returned ordered by latest ``version``.
+    You can configure your :term:`solver` selection as described in the
+    :ref:`cloud_configuration` section.\ [#]_
 
     Args:
         **config:
-            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to
+            :meth:`~dwave.cloud.client.Client.from_config`.
 
     Examples:
         This example submits a model for a
-        :class:`flow-shop-scheduling <dwave.optimization.generators.flow_shop_scheduling>`
+        :func:`flow-shop-scheduling <dwave.optimization.generators.flow_shop_scheduling>`
         problem.
 
         >>> from dwave.optimization.generators import flow_shop_scheduling
@@ -832,6 +851,20 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
         ...           f"objective value {model.objective.state(0)} for order "
         ...           f"{job_order.state(0)}.")
         State 0 of 8 has an objective value 50.0 for order [1. 2. 0.].
+
+    .. [#]
+        :ref:`dwave-cloud-client <index_cloud>`'s
+        :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers
+        you have access to by
+        :ref:`solver properties <opt_solver_nl_properties>` ``category=hybrid``
+        and ``supported_problem_type=nl``. By default, online hybrid NL
+        solvers are returned ordered by latest ``version``.
+
+        The default specification for filtering and ordering solvers by features
+        is available as :attr:`.default_solver` property. Explicitly specifying
+        a solver in a configuration file, an environment variable, or keyword
+        arguments overrides this specification.
+
     """
 
     def __init__(self, **config):
@@ -869,12 +902,11 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
         """Close the underlying cloud client to release system resources such as
         threads.
 
-        .. note::
+        The method blocks for all the currently scheduled work (sampling
+        requests) to finish.
 
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
-
-        See: :meth:`~dwave.cloud.client.Client.close`.
+        See also:
+            :meth:`~dwave.cloud.client.Client.close`.
         """
         super().close()
         self._executor.shutdown()
@@ -887,10 +919,11 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
     @property
     def properties(self) -> Dict[str, Any]:
-        """Solver properties as returned by a SAPI query.
+        """Solver properties as returned by a :term:`SAPI` query.
 
         :ref:`Solver properties <opt_solver_nl_properties>`
-        are dependent on the selected solver and subject to change.
+        are dependent on the selected solver and subject to change; for example,
+        new features may add properties.
         """
         try:
             return self._properties
@@ -900,13 +933,16 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
     @property
     def parameters(self) -> Dict[str, List[str]]:
-        """Solver parameters in the form of a dict, where keys
-        are keyword parameters accepted by a SAPI query and values are lists of
-        properties in :attr:`~dwave.system.samplers.LeapHybridNLSampler.properties`
-        for each key.
+        """Solver parameters as returned by a :term:`SAPI` query.
 
-        :ref:`Solver parameters <opt_solver_nl_properties>`
-        are dependent on the selected solver and subject to change.
+        Keys of the returned dict are keyword parameters accepted by a SAPI
+        query and values are lists of properties in
+        :attr:`~dwave.system.samplers.LeapHybridNLSampler.properties` for each
+        key.
+
+        :ref:`Solver parameters <opt_solver_nl_properties>` are dependent on
+        the selected solver and subject to change; for example, new features may
+        add parameters.
         """
         try:
             return self._parameters
@@ -927,14 +963,13 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
         """Sample from the specified nonlinear model.
 
         Args:
-            model (:class:`~dwave.optimization.Model`):
+            model (:class:`~dwave.optimization.model.Model`):
                 Nonlinear model.
 
             time_limit (float, optional):
                 Maximum runtime, in seconds, the solver should work on the
-                problem. Should be at least the estimated minimum required for the
-                problem, which is calculated and set by default.
-
+                problem. Should be at least the estimated minimum required for
+                the problem, which is calculated and set by default.
                 :meth:`~dwave.system.samplers.LeapHybridNLSampler.estimated_min_time_limit`
                 estimates the minimum time for your problem.  For ``time_limit``
                 values shorter than the estimated minimum, runtime (and charge
@@ -946,8 +981,9 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
         Returns:
             :class:`~concurrent.futures.Future` [SampleResult]:
-                Named tuple, in a Future, containing the nonlinear model and general
-                result information such as timing and the identity of the problem data.
+                Named tuple, in a Future, containing the nonlinear model and
+                general result information such as timing and the identity of
+                the problem data.
 
         .. versionchanged:: 1.31.0
             The return value includes timing information as part of the ``info``
@@ -998,9 +1034,15 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
         return result
 
     def estimated_min_time_limit(self, nlm: dwave.optimization.Model) -> float:
-        """Return the minimum required time, in seconds, estimated for the given problem.
+        """Return the minimum required time, in seconds, estimated for the given
+        problem.
 
-         Runtime (and charge time) is not guaranteed to be shorter than this minimum time.
+        Runtime (and charge time) is not guaranteed to be shorter than this
+        minimum time.
+
+        Args:
+            nlm (:class:`~dwave.optimization.model.Model`):
+                A :term:`nonlinear model`.
         """
 
         num_nodes_multiplier = self.properties.get('num_nodes_multiplier', 8.306792043756981e-05)

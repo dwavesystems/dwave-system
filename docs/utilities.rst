@@ -4,6 +4,8 @@
 Utilities
 =========
 
+.. todo:: add dwave_sampler.qpu_graph post https://github.com/dwavesystems/dwave-system/pull/585
+
 .. automodule:: dwave.system.utilities
 
 .. currentmodule:: dwave.system
