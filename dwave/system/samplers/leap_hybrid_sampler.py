@@ -857,7 +857,7 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
         :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers
         you have access to by
         :ref:`solver properties <opt_solver_nl_properties>` ``category=hybrid``
-        and ``supported_problem_type=nl``. By default, online hybrid CQM
+        and ``supported_problem_type=nl``. By default, online hybrid NL
         solvers are returned ordered by latest ``version``.
 
         The default specification for filtering and ordering solvers by features
