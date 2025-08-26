@@ -18,6 +18,7 @@ import json
 import threading
 import unittest
 
+from packaging.specifiers import SpecifierSet
 from parameterized import parameterized_class
 
 import dimod
@@ -123,8 +124,8 @@ class TestSamplerInterface(unittest.TestCase):
             pid_post = ss.wait_id()
             self.assertEqual(pid, pid_post)
 
-    @unittest.skipIf(tuple(map(int, cc_version.split('.'))) < (0, 13, 5),
-                     "'dwave-cloud-client>=0.13.5' required")
+    @unittest.skipUnless(cc_version in SpecifierSet('>=0.13.5', prereleases=True),
+                         "'dwave-cloud-client>=0.13.5' required")
     def test_problem_data_id_available(self):
         problem = self.problem_gen()
         ss = getattr(self.sampler, self.sample_meth)(problem)
