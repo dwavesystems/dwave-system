@@ -246,7 +246,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         try:
             return solvers[0]
         except IndexError:
-            raise SolverNotFoundError("Solver with the requested features not available")
+            raise SolverNotFoundError("Solver with the requested features not available") from None
 
     warnings_default = WarningAction.IGNORE
     """Defines the default behavior for :meth:`.sample_ising`'s  and
