@@ -26,6 +26,7 @@ extensions = [
 ]
 
 autosummary_generate = True
+templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 source_suffix = '.rst'

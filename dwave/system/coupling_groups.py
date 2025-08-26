@@ -11,6 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+"""Provides functions related to the ``per_group_coupling_range`` property."""
 
 import dwave_networkx as dnx
 

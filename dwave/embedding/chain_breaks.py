@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""Unembedding samples with broken chains."""
+"""Provides functions that unembed samples with broken chains."""
 
 from collections.abc import Callable
 from heapq import heapify, heappop
@@ -52,8 +52,8 @@ def broken_chains(samples, chains):
         >>> samples = np.array([[-1, +1, -1, +1], [-1, -1, +1, +1]], dtype=np.int8)
         >>> chains = [[0, 1], [2, 3]]
         >>> dwave.embedding.broken_chains(samples, chains)
-        array([[True, True],
-               [ False,  False]])
+        array([[ True,  True],
+               [False, False]])
 
         >>> chains = [[0, 2], [1, 3]]
         >>> dwave.embedding.broken_chains(samples, chains)
