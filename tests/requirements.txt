@@ -1,3 +1,4 @@
+packaging>=15.2     # in `SpecifierSet` test
 parameterized==0.7.4
 
 coverage>=7.0.0     # native namespace package support added in 7.0.0

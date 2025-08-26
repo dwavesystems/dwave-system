@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Add support for the new solver identity concept available in
+    ``dwave-cloud-client>=0.14.0``.

@@ -163,19 +163,14 @@ class TestMissingQubits(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            with Client.from_config() as client:
-                solvers = client.get_solvers(qpu=True)
+            # select a QPU solver with the smallest yield
+            cls.qpu = DWaveSampler(solver=dict(
+                order_by=lambda solver: solver.num_active_qubits / solver.num_qubits
+            ))
 
-            if not solvers:
-                raise unittest.SkipTest("no qpu found")
-
-            # select a QPU with less than 100% yield
-            for solver in solvers:
-                if solver.num_active_qubits < solver.num_qubits:
-                    cls.qpu = DWaveSampler(solver=solver.id)
-                    return
-
-            raise unittest.SkipTest("no qpu with less than 100% yield found")
+            # double-check the yield is below 100%
+            if cls.qpu.solver.num_active_qubits >= cls.qpu.solver.num_qubits:
+                raise unittest.SkipTest("no qpu with less than 100% yield found")
 
         except (ValueError, ConfigFileError, SolverNotFoundError):
             raise unittest.SkipTest("no qpu available")
