@@ -234,7 +234,8 @@ workflows:
               python-version: &python-versions ["3.9", "3.10", "3.11", "3.12", &latest-python "3.13"]
               dependency-specifiers:
                 - "dwave-cloud-client~=0.12.0"
-                - "dwave-cloud-client~=0.13.5"
+                - "dwave-cloud-client~=0.13.6"
+                - "dwave-cloud-client~=0.14.0rc"
               integration-test-python-version: &integration-python-versions [*latest-python]
             exclude:
               - python-version: "3.13"
@@ -261,6 +262,6 @@ workflows:
       - deploy:
           filters:
             tags:
-              only: /^[0-9]+(\.[0-9]+)*(\.dev([0-9]+)?)?$/
+              only: /^[0-9]+(\.[0-9]+)*(\.dev|rc([0-9]+)?)?$/
             branches:
               ignore: /.*/
