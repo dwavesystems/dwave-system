@@ -14,9 +14,6 @@
 
 """
 A :ref:`dimod <index_dimod>` :term:`sampler` for D-Wave quantum computers.
-
-See :ref:`Ocean Glossary <index_concepts>`
-for explanations of technical terms in descriptions of Ocean tools.
 """
 
 from __future__ import annotations
@@ -46,25 +43,31 @@ __all__ = ['DWaveSampler', 'qpu_graph']
 
 
 def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
-    """Converts node and edge lists to a dwave-networkx compatible graph.
+    """Convert node and edge lists to a ``dwave-networkx`` graph.
 
-    Creates a D-Wave Chimera, Pegasus or Zephyr graph compatible with
-    dwave-networkx libraries. 
+    Creates a QPU topology (Chimera, Pegasus or Zephyr) graph compatible with
+    Ocean software's :ref:`index_dnx`.
 
     Args:
         topology_type (string):
-            The type of lattice. Valid strings are `chimera`, `pegasus`
-            and `zephyr`.
+            Type of lattice. Valid strings are `chimera`, `pegasus` and
+            `zephyr`.
         topology_shape(iterable of ints):
-            Specifies dimensions of the lattice.
+            Dimensions of the lattice.
         nodelist (list of ints):
-            List of nodes in the graph. Node labeling is integer,
-            and compatible with the topology_type linear labeling scheme.
+            List of nodes in the graph. Node labeling is integer and compatible
+            with the linear labeling scheme for the specified ``topology_type``.
         edgelist (list of Tuples):
-            List of edges in the graph, each edge consisting of a pair
-            of nodes.
+            List of edges in the graph, with each edge consisting of a pair of
+            nodes.
+
+    See also:
+            :func:`dwave_networkx.chimera_graph`,
+            :func:`dwave_networkx.pegasus_graph`,
+            :func:`dwave_networkx.zephyr_graph` for descriptions of the lattice
+            parameters and indexing.
     """
-    
+
     if topology_type == 'chimera':
         if not (1 <= len(topology_shape) <=3):
             raise ValueError('topology_shape is incompatible with a chimera lattice.')
@@ -103,27 +106,30 @@ def _get_solver_id(solver: StructuredSolver) -> str:
 
 
 class DWaveSampler(dimod.Sampler, dimod.Structured):
-    """A class for using D-Wave quantum computers as samplers for binary quadratic models.
+    r"""Submits binary quadratic models directly to D-Wave quantum computers.
 
-    You can configure your :term:`solver` selection and usage by setting parameters,
-    hierarchically, in a configuration file, as environment variables, or
-    explicitly as input arguments. For more information, see the
-    :ref:`D-Wave Cloud Client <index_cloud>` package's
+    Linear and quadratic terms of the :term:`binary quadratic model` (BQM) must
+    map directly to qubit and coupler indices of the selected :term:`QPU`.
+    Typically this mapping (:term:`minor-embedding`) is handled by software
+    (e.g., the :class:`.EmbeddingComposite` class) but for small problems can be
+    manual.
+    You can configure your :term:`solver` selection and usage by setting
+    parameters, hierarchically, in a configuration file, as environment
+    variables, or explicitly as input arguments. For more information, see the
     :meth:`~dwave.cloud.client.Client.get_solvers` method. By default, online
-    D-Wave systems are returned ordered by highest number of qubits.
+    QPUs are returned ordered by highest number of qubits.
 
     Args:
         failover (bool, optional, default=False):
-            Signal a failover condition if a sampling error occurs. When ``True``,
-            raises :exc:`~dwave.system.exceptions.FailoverCondition` or
-            :exc:`~dwave.system.exceptions.RetryCondition` on sampleset resolve
-            to signal failover.
-
-            Actual failover, i.e. selection of a new solver, has to be handled
-            by the user. A convenience method :meth:`.trigger_failover` is available
-            for this. Note that hardware graphs vary between QPUs, so triggering
-            failover results in regenerated :attr:`.nodelist`,  :attr:`.edgelist`, 
-            :attr:`.properties` and :attr:`.parameters`.
+            Signal a failover condition if a sampling error occurs. When
+            ``True``, raises :exc:`~dwave.system.exceptions.FailoverCondition`
+            or :exc:`~dwave.system.exceptions.RetryCondition` on sampleset
+            :meth:`~dimod.SampleSet.resolve` to signal failover.
+            Actual failover (i.e., selection of a new solver) has to be handled
+            by the user. A convenience method :meth:`.trigger_failover` is
+            available for this. Note that hardware graphs vary between QPUs, so
+            triggering failover results in regenerated :attr:`.nodelist`,
+            :attr:`.edgelist`, :attr:`.properties` and :attr:`.parameters`.
 
             .. versionchanged:: 1.16.0
 
@@ -141,7 +147,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                Ignored since 1.16.0. See note for ``failover`` parameter above.
 
         **config:
-            Keyword arguments passed to :meth:`~dwave.cloud.client.Client.from_config`.
+            Keyword arguments passed to
+            :meth:`~dwave.cloud.client.Client.from_config`.
 
     .. versionadded:: 1.29.0
         Support for context manager protocol.
@@ -168,16 +175,15 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     Examples:
         This example submits a two-variable Ising problem mapped directly to two
-        adjacent qubits on a D-Wave system. ``qubit_a`` is the first qubit in
+        adjacent qubits on a :term:`QPU`. ``qubit_a`` is the first qubit in
         the QPU's indexed list of qubits and ``qubit_b`` is one of the qubits
-        coupled to it. Other required parameters for communication with the system, such
-        as its URL and an authentication token, are implicitly set in a configuration file
-        or as environment variables, as described in the
-        :ref:`ocean_sapi_access_basic` section.
-        Given sufficient reads (here 100), the quantum
-        computer should return the best solution, :math:`{1, -1}` on ``qubit_a`` and
-        ``qubit_b``, respectively, as its first sample (samples are ordered from
-        lowest energy).
+        coupled to it. Other required parameters for communication with the
+        system, such as its URL and an authentication token, are implicitly set
+        in a configuration file or as environment variables, as described in the
+        :ref:`ocean_sapi_access_basic` section. Given sufficient reads (here
+        100), the quantum computer should return the best solution,
+        :math:`{1, -1}` on ``qubit_a`` and ``qubit_b``, respectively, as its
+        first sample (samples are ordered from lowest energy).
 
         >>> from dwave.system import DWaveSampler
         ...
@@ -190,9 +196,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
         True
 
-    See the :ref:`index_concepts` section
-    for explanations of technical terms in descriptions of Ocean tools.
 
+        For additional examples, see:
+
+        *   :ref:`Beginner examples <qpu_index_examples_beginner>` of using
+            :class:`.DWaveSampler`.
+        *   :ref:`qpu_basic_config`.
     """
     def __init__(self, failover=False, retry_interval=-1, **config):
         # strongly prefer QPU solvers; requires kwarg-level override
@@ -216,12 +225,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Close the underlying cloud client to release system resources such as
         threads.
 
-        .. note::
+        The method blocks for all the currently scheduled work (sampling
+        requests) to finish.
 
-            The method blocks for all the currently scheduled work (sampling
-            requests) to finish.
-
-        See: :meth:`~dwave.cloud.client.Client.close`.
+        See also:
+            :meth:`~dwave.cloud.client.Client.close`.
         """
         self.client.close()
 
@@ -229,7 +237,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Get the least penalized solver from the list of solvers filtered and
         ordered according to user config.
 
-        Note: we need to partially replicate :class:`dwave.cloud.Client.get_solver` logic.
+        Note: we need to partially replicate
+        :class:`dwave.cloud.Client.get_solver` logic.
         """
         if penalty is None:
             penalty = {}
@@ -249,31 +258,27 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             raise SolverNotFoundError("Solver with the requested features not available") from None
 
     warnings_default = WarningAction.IGNORE
-    """Defines the default behavior for :meth:`.sample_ising`'s  and
-    :meth:`sample_qubo`'s `warnings` kwarg.
+    """Defines default behavior for ``warnings`` keyword arguments of the
+    :meth:`~DWaveSampler.sample_ising`  and :meth:`~DWaveSampler.sample_qubo`
+    methods.
     """
 
     @property
     def properties(self):
-        """dict: D-Wave solver properties as returned by a SAPI query.
+        """dict: Solver properties as returned by a :term:`SAPI` query.
 
-        Solver properties are dependent on the selected D-Wave solver and subject to change;
-        for example, new released features may add properties. The
+        Solver properties are dependent on the selected solver and subject to
+        change; for example, new features may add properties. The
         :ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters`
-        sections describe the parameters and properties supported on the D-Wave system.
+        sections describe the parameters and properties supported on D-Wave
+        quantum computers.
 
         Examples:
 
             >>> from dwave.system import DWaveSampler
-            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
-            ...     sampler.properties
-            {'anneal_offset_ranges': [[-0.2197463755538704, 0.03821687759418928],
-              [-0.2242514597680286, 0.01718456460967399],
-              [-0.20860153999435985, 0.05511969218508182],
-            # Snipped above response for brevity
-
-        See the :ref:`Ocean Glossary <index_concepts>` section
-        for explanations of technical terms in descriptions of Ocean tools.
+            >>> with DWaveSampler() as sampler:
+            ...     print(sampler.properties['category'])
+            qpu
 
         """
         try:
@@ -284,29 +289,25 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     @property
     def parameters(self):
-        """dict[str, list]: D-Wave solver parameters in the form of a dict, where keys are
-        keyword parameters accepted by a SAPI query and values are lists of properties in
+        """dict[str, list]: Solver parameters as returned by a :term:`SAPI`
+        query.
+
+        Keys of the returned dict are keyword parameters accepted by a SAPI
+        query and values are lists of properties in
         :attr:`~DWaveSampler.properties` for each key.
 
-        Solver parameters are dependent on the selected D-Wave solver and subject to change;
-        for example, new released features may add parameters. The
+        Solver parameters are dependent on the selected solver and subject to
+        change; for example, new features may add parameters. The
         :ref:`qpu_index_solver_properties` and :ref:`qpu_solver_parameters`
-        sections describe the parameters and properties supported on the D-Wave system.
+        sections describe the parameters and properties supported on D-Wave
+        quantum computers.
 
         Examples:
 
             >>> from dwave.system import DWaveSampler
-            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
-            ...     sampler.parameters
-            {'anneal_offsets': ['parameters'],
-             'anneal_schedule': ['parameters'],
-             'annealing_time': ['parameters'],
-             'answer_mode': ['parameters'],
-             'auto_scale': ['parameters'],
-             # Snipped above response for brevity
-
-        See the :ref:`Ocean Glossary <index_concepts>` section
-        for explanations of technical terms in descriptions of Ocean tools.
+            >>> with DWaveSampler() as sampler:
+            ...     'auto_scale' in sampler.parameters
+            True
 
         """
         try:
@@ -321,18 +322,18 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     @property
     def edgelist(self):
-        """list: List of active couplers for the D-Wave solver.
+        """list: List of active couplers for the solver.
+
+        Active couplers are those that are included in the
+        :ref:`working graph <topologies_working_graph>`.
 
         Examples:
-            First 5 entries of the coupler list for one Advantage system.
+            First coupler for a selected Advantage2 system.
 
             >>> from dwave.system import DWaveSampler
-            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
-            ...     sampler.edgelist[:5]
-            [(30, 31), (30, 45), (30, 2940), (30, 2955), (30, 2970)]
-
-        See the :ref:`index_concepts` section
-        for explanations of technical terms in descriptions of Ocean tools.
+            >>> with DWaveSampler(topology_type='zephyr') as sampler:
+            ...     sampler.edgelist[0]
+            (0, 1)
 
         """
         # Assumption: cloud client nodes are always integer-labelled
@@ -345,18 +346,18 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
     @property
     def nodelist(self):
-        """list: List of active qubits for the D-Wave solver.
+        """list: List of active qubits for the solver.
+
+        Active qubits are those that are included in the
+        :ref:`working graph <topologies_working_graph>`.
 
         Examples:
-            First 5 entries of the node list for one Advantage system.
+            First three qubits for a selected Advantage2 system.
 
             >>> from dwave.system import DWaveSampler
-            >>> with DWaveSampler() as sampler:     # doctest: +SKIP
-            ...     sampler.nodelist[:5]
-            [30, 31, 32, 33, 34]
-
-        See the :ref:`index_concepts` section
-        for explanations of technical terms in descriptions of Ocean tools.
+            >>> with DWaveSampler(topology_type='zephyr') as sampler:
+            ...     sampler.nodelist[:3]
+            [0, 1, 2]
 
         """
         # Assumption: cloud client nodes are always integer-labelled
@@ -402,7 +403,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
 
         Args:
             bqm (:class:`~dimod.BinaryQuadraticModel`):
-                The binary quadratic model. Must match 
+                The :term:`binary quadratic model`. Must match
                 :attr:`~DWaveSampler.nodelist` and :attr:`~DWaveSampler.edgelist`.
 
             warnings (:class:`~dwave.system.warnings.WarningAction`, optional):
@@ -411,15 +412,16 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                 ignore warnings.
 
             **kwargs:
-                Optional keyword arguments for the sampling method, specified per solver in
-                :attr:`.parameters`. The :ref:`qpu_index_solver_properties` and
+                Optional keyword arguments for the sampling method, specified
+                per solver in :attr:`.parameters`. The
+                :ref:`qpu_index_solver_properties` and
                 :ref:`qpu_solver_parameters` sections describe the parameters
-                and properties supported on the D-Wave system.
+                and properties supported on D-Wave quantum computers.
 
         Returns:
-            :class:`~dimod.SampleSet`: Sample set constructed from a (non-blocking)
-            :class:`~concurrent.futures.Future`-like object.
-            In it this sampler also provides timing information in the `info`
+            :class:`~dimod.SampleSet`: Sample set constructed from a
+            (non-blocking) :class:`~concurrent.futures.Future`-like object.
+            In it this sampler also provides timing information in the ``info``
             field as described in the :ref:`qpu_sapi_qpu_timing` section.
 
         Examples:
@@ -441,9 +443,6 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             ...                                      num_reads=100)
             ...     print(sampleset.first.sample[qubit_a] == 1 and sampleset.first.sample[qubit_b] == -1)
             True
-
-        See the :ref:`index_concepts` section
-        for explanations of technical terms in descriptions of Ocean tools.
 
         """
 
@@ -516,39 +515,33 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         return super().sample_ising(h, *args, **kwargs)
 
     def validate_anneal_schedule(self, anneal_schedule):
-        """Raise an exception if the specified schedule is invalid for the sampler.
+        """Raise an exception if the specified schedule is invalid for the
+        sampler.
 
         Args:
             anneal_schedule (list):
-                An anneal schedule variation is defined by a series of pairs of floating-point
-                numbers identifying points in the schedule at which to change slope. The first
-                element in the pair is time t in microseconds; the second, normalized persistent
-                current s in the range [0,1]. The resulting schedule is the piecewise-linear curve
-                that connects the provided points.
+                An anneal schedule is defined by a series of pairs of
+                floating-point numbers identifying points in the schedule at
+                which to change slope. The first element in the pair is time,
+                :math:`t` in microseconds; the second, normalized anneal
+                fraction (persistent current) :math:`s` in the range [0,1]. The
+                resulting schedule is the piecewise-linear curve that connects
+                the provided points.
+
+                An anneal schedule must satisfy the conditions described in the
+                :ref:`parameter_qpu_anneal_schedule` section.
 
         Raises:
-            ValueError: If the schedule violates any of the conditions listed below.
+            ValueError: If the schedule violates any of the conditions
+                described in the :ref:`parameter_qpu_anneal_schedule` section.
 
-            RuntimeError: If the sampler does not accept the `anneal_schedule` parameter or
-                if it does not have `annealing_time_range` or `max_anneal_schedule_points`
-                properties.
-
-        As described in the :ref:`qpu_index_solver_properties` section,
-        an anneal schedule must satisfy the following conditions:
-
-            * Time t must increase for all points in the schedule.
-            * For forward annealing, the first point must be (0,0) and the anneal fraction s must
-              increase monotonically.
-            * For reverse annealing, the anneal fraction s must start and end at s=1.
-            * In the final point, anneal fraction s must equal 1 and time t must not exceed the
-              maximum  value in the `annealing_time_range` property.
-            * The number of points must be >=2.
-            * The upper bound is system-dependent; check the `max_anneal_schedule_points` property.
-              For reverse annealing, the maximum number of points allowed is one more than the
-              number given by this property.
+            RuntimeError: If the sampler does not accept the ``anneal_schedule``
+                parameter or if it does not have
+                :ref:`property_qpu_annealing_time_range` or
+                :ref:`property_qpu_max_anneal_schedule_points` properties.
 
         Examples:
-            This example sets a quench schedule on a D-Wave system.
+            This example sets a quench schedule on a D-Wave quantum computer.
 
             >>> from dwave.system import DWaveSampler
             >>> with DWaveSampler() as sampler:     # doctest: +SKIP
@@ -608,25 +601,27 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         max_slope = 1.0 / min_anneal_time
         for (t0, s0), (t1, s1) in zip(anneal_schedule, anneal_schedule[1:]):
             if round(abs((s0 - s1) / (t0 - t1)),10) > max_slope:
-                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))  
-        
+                raise ValueError("the maximum slope cannot exceed {}".format(max_slope))
+
     def to_networkx_graph(self):
-        """Converts DWaveSampler's structure to a Chimera, Pegasus or Zephyr NetworkX graph.
+        """Output the QPU's :term:`working graph` in NetworkX format.
 
         Returns:
             :class:`networkx.Graph`:
-                Either a Chimera lattice of shape [m, n, t], a Pegasus 
-                lattice of shape [m] or a Zephyr lattice of size [m,t].
+                Either a :ref:`Chimera lattice <topology_intro_chimera>`, a
+                :ref:`Pegasus lattice <topology_intro_pegasus>` or a
+                :ref:`Zephyr lattice <topology_intro_zephyr>`.
 
         Examples:
-            This example converts a selected D-Wave system solver to a graph
-            and verifies it has over 5000 nodes.
+            This example converts a selected :term:`QPU` to a graph and verifies
+            that it has a greater number of edges (couplers) than nodes
+            (qubits).
 
             >>> from dwave.system import DWaveSampler
             ...
-            >>> with DWaveSampler() as sampler:         # doctest: +SKIP
+            >>> with DWaveSampler() as sampler:
             ...     g = sampler.to_networkx_graph()
-            ...     len(g.nodes) > 5000
+            ...     len(g.edges) > len(g.nodes)
             True
         """
         return qpu_graph(self.properties['topology']['type'],
