@@ -73,6 +73,7 @@ When making a contribution to ``dwave-system`` that will affect users, create
 a new release note file by running
 
 .. code-block:: bash
+
     reno new your-short-descriptor-here
 
 You can then edit the file created under ``releasenotes/notes/``.
