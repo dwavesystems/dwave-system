@@ -17,6 +17,7 @@ from typing import Tuple
 
 import dimod
 import networkx as nx
+import numpy as np
 
 from minorminer.busclique import find_clique_embedding, busgraph_cache
 from dwave.preprocessing import ScaleComposite
@@ -100,9 +101,9 @@ class _QubitCouplingComposite(dimod.ComposedSampler):
 
             if (min_coupling_range < min_lim or max_coupling_range > max_lim):
                 # scaling
-                inv_scalar = max(min_coupling_range / min_lim,
-                                 max_coupling_range / max_lim)
-                scalar = 1.0 / inv_scalar
+                inv_scalar = max(np.longdouble(min_coupling_range) / min_lim,
+                                 np.longdouble(max_coupling_range) / max_lim)
+                scalar = np.longdouble(1.0) / inv_scalar
 
                 bqm.scale(scalar,
                           ignored_variables=[],
