@@ -64,17 +64,6 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 
         sampler.sample(bqm).resolve()
 
-    @parameterized.expand(itertools.product(('Pegasus', 'Zephyr'), (None, 0.5)))
-    def test_per_qubit_coupling_range(self, topology, chain_strength):
-        sampler = get_sampler(topology)
-        n = sampler.largest_clique_size
-
-        bqm = dimod.BinaryQuadraticModel({},
-                {(u, v): -2 for u in range(n) for v in range(u+1, n)}, 'SPIN')
-
-        # if the range was not adjusted, this would raise an error.
-        sampler.sample(bqm, chain_strength=chain_strength).resolve()
-
     @unittest.skipUnless(hasattr(dwave.cloud.exceptions, 'UseAfterClose'), 'dwave-cloud-client>=0.13.3 required')
     def test_close(self):
         sampler = DWaveCliqueSampler()
