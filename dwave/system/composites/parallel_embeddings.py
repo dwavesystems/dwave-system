@@ -276,7 +276,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         the info field is returned from the child sampler unmodified.
 
         If the bqm or chain_strength varies by solver, or if a list of samplests
-        is desired as the output, use :code:`sample_as_list`.
+        is desired as the output, use :code:`sample_multiple`.
 
         Args:
             bqm:
@@ -301,7 +301,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
                 kwargs.pop("initial_state")
             ] * self.num_embeddings
 
-        responses, info = self.sample_as_list(bqms, chain_strengths, **kwargs)
+        responses, info = self.sample_multiple(bqms, chain_strengths, **kwargs)
 
         if self.num_embeddings == 1:
             return responses[0]
@@ -310,16 +310,16 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         answer.info.update(info)
         return answer
 
-    def sample_as_list(
+    def sample_multiple(
         self,
         bqms: list[dimod.BinaryQuadraticModel],
         chain_strengths: Optional[list] = None,
-        **kwargs
+        initial_states: Optional[list] = None**kwargs,
     ) -> tuple[list[dimod.SampleSet], dict]:
         """Sample from the specified binary quadratic models.
 
         Samplesets are returned for every embedding, the binary quadratic model
-        solved on each embedding needn't be identical. Keyword arguments are passed 
+        solved on each embedding needn't be identical. Keyword arguments are passed
         unmodified to the child sampler, with the exception of
         `initial_states` (one state per embedding) which is composed to a
         single `initial_state` parameter for the child sampler analogous to
@@ -333,6 +333,10 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             chain_strengths:
                 The chain strength parameters for each bqm. A list that
                 should be ordered to match ``self.embeddings``.
+
+            initial_states:
+                initial state for each bqm. A list that should be ordered
+                to match ``self.embeddings``.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
