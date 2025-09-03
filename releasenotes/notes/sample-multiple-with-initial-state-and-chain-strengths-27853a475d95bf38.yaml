@@ -1,0 +1,8 @@
+---
+features:
+  - | 
+    chain_strength and initial_state are now supported as sampling options in
+    ParallelEmbeddingComposite.
+    ParallelEmbeddingComposite is updated with an ew sample_multiple helper
+    function to allow different bqms, initial_states and chain_strengths on
+    all embeddings.
