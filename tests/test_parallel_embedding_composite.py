@@ -577,9 +577,8 @@ class TestTiling(unittest.TestCase):
         embeddings = [{i: (i, t + i) for i in range(3)}]
         sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
         ss = sampler.sample_ising(h, J, chain_strength=1)
-        self.assertEqual(
-            ss.record.energy, -1.25, "Sufficient chain_strength finds the ground state"
-        )
+        with self.subTest("Sufficient chain_strength finds the ground state"):
+            self.assertEqual(ss.record.energy, -1.25)
         ss = sampler.sample_ising(h, J, chain_strength=0)  # 6-loop embedded model
         self.assertEqual(
             ss.record.energy,
@@ -592,15 +591,24 @@ class TestTiling(unittest.TestCase):
         nr = 1
         nc = 1
         sampler = MockDWaveSampler(topology_type="chimera", topology_shape=[nr, nc, t])
+
         class MockDWaveSamplerAlt(MockDWaveSampler):
-            """ Replace when initial_state tuple functionality in MockDWaveSampler is
-            corrected. """
+            """Replace when initial_state tuple functionality in MockDWaveSampler is
+            corrected."""
+
             def sample(self, bqm, **kwargs):
-                initial_state = kwargs.pop('initial_state')
-                initial_state_tuple = [(i, initial_state[i]) if i in initial_state else (i, 3) for i in self.nodelist]
-                return super().sample(bqm=bqm, initial_state=initial_state_tuple,**kwargs)
-        
-        sampler = MockDWaveSamplerAlt(topology_type="chimera", topology_shape=[nr, nc, t])
+                initial_state = kwargs.pop("initial_state")
+                initial_state_tuple = [
+                    (i, initial_state[i]) if i in initial_state else (i, 3)
+                    for i in self.nodelist
+                ]
+                return super().sample(
+                    bqm=bqm, initial_state=initial_state_tuple, **kwargs
+                )
+
+        sampler = MockDWaveSamplerAlt(
+            topology_type="chimera", topology_shape=[nr, nc, t]
+        )
         embeddings = [
             {0: (cell * 2 * t,), 1: (cell * 2 * t + t,)} for cell in range(nr * nc)
         ]

@@ -177,7 +177,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         embedder=None,
         embedder_kwargs=None,
         one_to_iterable=False,
-        child_structure_search=dimod.child_structure_dfs
+        child_structure_search=dimod.child_structure_dfs,
     ):
         self.parameters = child_sampler.parameters.copy()
         self.properties = properties = {"child_properties": child_sampler.properties}
@@ -269,7 +269,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         self,
         bqm: dimod.BinaryQuadraticModel,
         chain_strength: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ) -> dimod.SampleSet:
         """Sample from the specified binary quadratic model. Samplesets are
         concatenated together in the the same order as the embeddings class variable,
@@ -300,7 +300,6 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
             kwargs["initial_states"] = [
                 kwargs.pop("initial_state")
             ] * self.num_embeddings
-
         responses, info = self.sample_multiple(bqms, chain_strengths, **kwargs)
 
         if self.num_embeddings == 1:
@@ -314,7 +313,8 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         self,
         bqms: list[dimod.BinaryQuadraticModel],
         chain_strengths: Optional[list] = None,
-        initial_states: Optional[list] = None**kwargs,
+        initial_states: Optional[list] = None,
+        **kwargs,
     ) -> tuple[list[dimod.SampleSet], dict]:
         """Sample from the specified binary quadratic models.
 
@@ -356,8 +356,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         if not chain_strengths:
             chain_strengths = [None] * self.num_embeddings
 
-        if "initial_states" in kwargs:
-            initial_states = kwargs.pop("initial_states")
+        if initial_states is not None and any(i_s for i_s in initial_states):
             kwargs["initial_state"] = {
                 u: state[v]
                 for embedding, state in zip(self.embeddings, initial_states)
