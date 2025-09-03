@@ -25,7 +25,7 @@ See the :ref:`index_concepts` section
 for explanations of technical terms in descriptions of Ocean tools.
 """
 
-from typing import Optional, List
+from typing import Optional
 
 import networkx as nx
 
@@ -307,10 +307,10 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
 
         if self.num_embeddings == 1:
             return responses[0]
-        else:
-            answer = dimod.concatenate(responses)
-            answer.info.update(info)
-            return answer
+
+        answer = dimod.concatenate(responses)
+        answer.info.update(info)
+        return answer
 
     def sample_as_list(
         self,
@@ -321,8 +321,8 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         """Sample from the specified binary quadratic models.
 
         Samplesets are returned for every embedding, the binary quadratic model
-        solved on each embedding needn't be identical.
-        kwargs are passed unmodifiedto the child sampler, with the exception of
+        solved on each embedding needn't be identical. Keyword arguments are passed 
+        unmodified to the child sampler, with the exception of
         `initial_states` (one state per embedding) which is composed to a
         single `initial_state` parameter for the child sampler analogous to
         the bqm composition.
@@ -330,11 +330,11 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         Args:
             bqms:
                 Binary quadratic models to be sampled from. A list that
-                should be ordered to match self.embeddings.
+                should be ordered to match ``self.embeddings``.
 
             chain_strengths:
                 The chain strength parameters for each bqm. A list that
-                should be ordered to match self.embeddings.
+                should be ordered to match ``self.embeddings``.
 
             **kwargs:
                 Optional keyword arguments for the sampling method, specified per solver.
@@ -351,7 +351,7 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         embedded_bqm = dimod.BinaryQuadraticModel.empty(bqms[0].vartype)
 
         __, __, target_adjacency = self.target_structure
-        if chain_strengths is None:
+        if not chain_strengths:
             chain_strengths = [None] * self.num_embeddings
 
         if "initial_states" in kwargs:
