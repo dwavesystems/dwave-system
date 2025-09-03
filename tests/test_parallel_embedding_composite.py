@@ -620,7 +620,7 @@ class TestTiling(unittest.TestCase):
             self.assertTrue(ss.record.sample.size == len(h) * len(embeddings))
             self.assertTrue(np.all(ss.record.sample == 1))
 
-    def test_sample_as_list(self):
+    def test_sample_multiple(self):
         # Two identical models, with two different chain strengths (see test chain_strength):
         t = 3
         mock_sampler = MockDWaveSampler(
@@ -635,7 +635,7 @@ class TestTiling(unittest.TestCase):
         ]  # Shift second embedding one cell down.
         sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
         bqms = [dimod.BinaryQuadraticModel("SPIN").from_ising(h, J)] * 2
-        ss, info = sampler.sample_as_list(bqms=bqms, chain_strengths=[1, 0])
+        ss, info = sampler.sample_multiple(bqms=bqms, chain_strengths=[1, 0])
         self.assertEqual(len(ss), len(embeddings))
         self.assertEqual(type(info), dict)
         self.assertEqual(
@@ -652,7 +652,7 @@ class TestTiling(unittest.TestCase):
         J_ferro = {k: -abs(v) for k, v in J.items()}
         bqms[0] = dimod.BinaryQuadraticModel("SPIN").from_ising(h, J_ferro)
         # check None works for chain strengths:
-        ss, info = sampler.sample_as_list(bqms=bqms)
+        ss, info = sampler.sample_multiple(bqms=bqms)
         self.assertEqual(
             ss[0].record.energy,
             -3.75,
