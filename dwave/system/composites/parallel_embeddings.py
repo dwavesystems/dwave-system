@@ -294,8 +294,6 @@ class ParallelEmbeddingComposite(dimod.Composite, dimod.Structured, dimod.Sample
         Examples:
             See class examples.
         """
-        if chain_strength is None:
-            chain_strength = None
         chain_strengths = [chain_strength] * self.num_embeddings
         bqms = [bqm] * self.num_embeddings
         if "initial_state" in kwargs:

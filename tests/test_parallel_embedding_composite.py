@@ -14,6 +14,7 @@
 
 import unittest
 import random
+from unittest import mock
 
 import numpy as np
 import networkx as nx
@@ -585,6 +586,39 @@ class TestTiling(unittest.TestCase):
             2.25,
             "Ground state by ExactSolver is chain broken and voted back to excited state.",
         )
+
+    def test_initial_state(self):
+        t = 2
+        nr = 1
+        nc = 1
+        sampler = MockDWaveSampler(topology_type="chimera", topology_shape=[nr, nc, t])
+        class MockDWaveSamplerAlt(MockDWaveSampler):
+            """ Replace when initial_state tuple functionality in MockDWaveSampler is
+            corrected. """
+            def sample(self, bqm, **kwargs):
+                initial_state = kwargs.pop('initial_state')
+                initial_state_tuple = [(i, initial_state[i]) if i in initial_state else (i, 3) for i in self.nodelist]
+                return super().sample(bqm=bqm, initial_state=initial_state_tuple,**kwargs)
+        
+        sampler = MockDWaveSamplerAlt(topology_type="chimera", topology_shape=[nr, nc, t])
+        embeddings = [
+            {0: (cell * 2 * t,), 1: (cell * 2 * t + t,)} for cell in range(nr * nc)
+        ]
+        h = {0: 1, 1: 1}
+        J = {(0, 1): -2}
+        initial_state = {i: 1 for i in range(2)}  # local minima.
+        with mock.patch.object(sampler, "exact_solver_cutoff", 0):  # Steepest decent.
+            # QPU format initial states:
+            psampler = ParallelEmbeddingComposite(sampler, embeddings=embeddings)
+            ss = psampler.sample_ising(
+                h=h,
+                J=J,
+                num_reads=1,
+                answer_mode="raw",
+                initial_state=initial_state,
+            )
+            self.assertTrue(ss.record.sample.size == len(h) * len(embeddings))
+            self.assertTrue(np.all(ss.record.sample == 1))
 
     def test_sample_as_list(self):
         # Two identical models, with two different chain strengths (see test chain_strength):
