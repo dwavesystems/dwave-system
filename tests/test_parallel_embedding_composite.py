@@ -14,6 +14,7 @@
 
 import unittest
 import random
+from unittest import mock
 
 import numpy as np
 import networkx as nx
@@ -22,7 +23,7 @@ import dimod
 import dwave_networkx as dnx
 
 from dwave.system.testing import MockDWaveSampler
-from dwave.system.composites import TilingComposite, ParallelEmbeddingComposite
+from dwave.system.composites import ParallelEmbeddingComposite
 from dwave.preprocessing import SpinReversalTransformComposite
 from minorminer.utils.parallel_embeddings import find_sublattice_embeddings
 from minorminer import find_embedding
@@ -136,7 +137,7 @@ class TestParallelEmbeddings(unittest.TestCase):
         self.assertGreater(
             len(sampleset), 1
         )  # Equal to the number of parallel embeddings
-        
+
         embedder = find_sublattice_embeddings
         embedder_kwargs = {
             "max_num_emb": None,
@@ -268,10 +269,24 @@ class TestTiling(unittest.TestCase):
             sum(response.record.num_occurrences) == expected_number_of_cells * num_reads
         )
 
-    def test_sample_ising(self):
-        mock_sampler = MockDWaveSampler()  # C4 structured sampler
-        # sampler = TilingComposite(mock_sampler, 2, 2) Legacy
-        tile = dnx.chimera_graph(m=2, n=2)
+    def test_tile_around_hole(self):
+
+        # Create a Chimera C4 structured sampler with a node missing, so that
+        # we have a defect pattern:
+        # OOOX
+        # OOOO
+        # OOOO
+        # OOOO
+        # where O: complete cell, X: incomplete cell
+        chimera_shape = [4, 4, 4]
+        mock_sampler = MockDWaveSampler(
+            broken_nodes=[8 * 3], topology_type="chimera", topology_shape=chimera_shape
+        )
+        hardware_graph = dnx.chimera_graph(*chimera_shape)  # C4
+
+        # Tile with 2x2 cells:
+        # sampler = TilingComposite(mock_sampler, 2, 2, 4)
+        tile = dnx.chimera_graph(2, 2, 4)
         embedder = find_sublattice_embeddings
         embedder_kwargs = {
             "tile": tile,
@@ -285,28 +300,6 @@ class TestTiling(unittest.TestCase):
             embedder_kwargs=embedder_kwargs,
         )
 
-        h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
-        J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
-
-        response = sampler.sample_ising(h, J, num_reads=2)
-
-        self.assertEqual(len(sampler.embeddings)*num_reads, sum(response.record.num_occurrences))
-        self.assertTrue(set(np.unique(response.record.sample)).issubset({-1,1}))
-
-    def test_tile_around_hole(self):
-
-        # Create a Chimera C4 structured sampler with a node missing, so that
-        # we have a defect pattern:
-        # OOOX
-        # OOOO
-        # OOOO
-        # OOOO
-        # where O: complete cell, X: incomplete cell
-        mock_sampler = MockDWaveSampler(broken_nodes=[8 * 3])
-        hardware_graph = dnx.chimera_graph(4)  # C4
-
-        # Tile with 2x2 cells:
-        sampler = TilingComposite(mock_sampler, 2, 2, 4)
         # Given the above chimera graph, check that the embeddings are as
         # follows:
         # 00XX
@@ -387,9 +380,9 @@ class TestTiling(unittest.TestCase):
         # 0011  3344 7788
         # 2211  5566 99XX
         # 22XX  5566 99XX
-        
+
         # For additional insight try:
-        # import matplotlib.pyplot as plt  
+        # import matplotlib.pyplot as plt
         # from dwave_networkx import draw_parallel_embeddings
 
         # draw_parallel_embeddings(mock_sampler.to_networkx_graph(), sampler.embeddings)
@@ -493,7 +486,14 @@ class TestTiling(unittest.TestCase):
         h = {node: random.uniform(-1, 1) for node in sampler.structure.nodelist}
         J = {(u, v): random.uniform(-1, 1) for u, v in sampler.structure.edgelist}
 
+        num_reads = 2
         response = sampler.sample_ising(h, J)
+        response = sampler.sample_ising(h, J, num_reads=num_reads)
+
+        self.assertEqual(
+            len(sampler.embeddings) * num_reads, sum(response.record.num_occurrences)
+        )
+        self.assertTrue(set(np.unique(response.record.sample)).issubset({-1, 1}))
 
         # nothing failed and we got at least one response back per tile
         self.assertGreaterEqual(len(response), len(sampler.embeddings))
@@ -566,3 +566,108 @@ class TestTiling(unittest.TestCase):
         __, num_columns = response.record.sample.shape
 
         self.assertEqual(num_columns, 2)
+
+    def test_chain_strength(self):
+        t = 3
+        mock_sampler = MockDWaveSampler(
+            topology_type="chimera", topology_shape=[1, 1, t]
+        )  # A structured solver for K_{3,3}
+        h = {i: -0.25 for i in range(3)}
+        J = {(i, (i + 1) % 3): 1 for i in range(3)}
+        embeddings = [{i: (i, t + i) for i in range(3)}]
+        sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+        ss = sampler.sample_ising(h, J, chain_strength=1)
+        with self.subTest("Sufficient chain_strength finds the ground state"):
+            self.assertEqual(ss.record.energy, -1.25)
+        ss = sampler.sample_ising(h, J, chain_strength=0)  # 6-loop embedded model
+        self.assertEqual(
+            ss.record.energy,
+            2.25,
+            "Ground state by ExactSolver is chain broken and voted back to excited state.",
+        )
+
+    def test_initial_state(self):
+        t = 2
+        nr = 1
+        nc = 1
+        sampler = MockDWaveSampler(topology_type="chimera", topology_shape=[nr, nc, t])
+
+        class MockDWaveSamplerAlt(MockDWaveSampler):
+            """Replace when initial_state tuple functionality in MockDWaveSampler is
+            corrected."""
+
+            def sample(self, bqm, **kwargs):
+                initial_state = kwargs.pop("initial_state")
+                initial_state_tuple = [
+                    (i, initial_state[i]) if i in initial_state else (i, 3)
+                    for i in self.nodelist
+                ]
+                return super().sample(
+                    bqm=bqm, initial_state=initial_state_tuple, **kwargs
+                )
+
+        sampler = MockDWaveSamplerAlt(
+            topology_type="chimera", topology_shape=[nr, nc, t]
+        )
+        embeddings = [
+            {0: (cell * 2 * t,), 1: (cell * 2 * t + t,)} for cell in range(nr * nc)
+        ]
+        h = {0: 1, 1: 1}
+        J = {(0, 1): -2}
+        initial_state = {i: 1 for i in range(2)}  # local minima.
+        with mock.patch.object(sampler, "exact_solver_cutoff", 0):  # Steepest decent.
+            # QPU format initial states:
+            psampler = ParallelEmbeddingComposite(sampler, embeddings=embeddings)
+            ss = psampler.sample_ising(
+                h=h,
+                J=J,
+                num_reads=1,
+                answer_mode="raw",
+                initial_state=initial_state,
+            )
+            self.assertTrue(ss.record.sample.size == len(h) * len(embeddings))
+            self.assertTrue(np.all(ss.record.sample == 1))
+
+    def test_sample_multiple(self):
+        # Two identical models, with two different chain strengths (see test chain_strength):
+        t = 3
+        mock_sampler = MockDWaveSampler(
+            topology_type="chimera", topology_shape=[2, 1, t]
+        )  # A structured solver with two K_{3,3} cells
+        h = {i: -0.25 for i in range(3)}
+        J = {(i, (i + 1) % 3): 1 for i in range(3)}
+        embedding0 = {i: (i, t + i) for i in range(3)}
+        embeddings = [
+            embedding0,
+            {k: tuple(q + 2 * t for q in v) for k, v in embedding0.items()},
+        ]  # Shift second embedding one cell down.
+        sampler = ParallelEmbeddingComposite(mock_sampler, embeddings=embeddings)
+        bqms = [dimod.BinaryQuadraticModel("SPIN").from_ising(h, J)] * 2
+        ss, info = sampler.sample_multiple(bqms=bqms, chain_strengths=[1, 0])
+        self.assertEqual(len(ss), len(embeddings))
+        self.assertEqual(type(info), dict)
+        self.assertEqual(
+            ss[0].record.energy,
+            -1.25,
+            "Sufficient chain_strength finds the ground state",
+        )
+        self.assertEqual(
+            ss[1].record.energy,
+            2.25,
+            "Ground state by ExactSolver is chain broken and voted back to excited state.",
+        )
+        # solve a frustrated and unfrustrated model:
+        J_ferro = {k: -abs(v) for k, v in J.items()}
+        bqms[0] = dimod.BinaryQuadraticModel("SPIN").from_ising(h, J_ferro)
+        # check None works for chain strengths:
+        ss, info = sampler.sample_multiple(bqms=bqms)
+        self.assertEqual(
+            ss[0].record.energy,
+            -3.75,
+            "Sufficient chain_strength finds the ground state",
+        )
+        self.assertEqual(
+            ss[1].record.energy,
+            -1.25,
+            "Sufficient chain_strength finds the ground state",
+        )
