@@ -574,7 +574,8 @@ class LeapHybridCQMSampler(_ScopedSamplerMixin):
         >>> from dwave.system import LeapHybridCQMSampler   # doctest: +SKIP
         >>> with LeapHybridCQMSampler() as sampler:         # doctest: +SKIP
         ...     sampleset = sampler.sample_cqm(cqm)
-        ...     print(sampleset.first)
+        ...     feasible_results = sampleset.filter(lambda d: d.is_feasible)
+        ...     print(feasible_results.first)
         Sample(sample={'i': 2.0, 'j': 2.0}, energy=-4.0, num_occurrences=1,
         ...            is_feasible=True, is_satisfied=array([ True]))
 
