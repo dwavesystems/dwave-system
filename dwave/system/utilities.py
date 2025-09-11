@@ -164,7 +164,7 @@ def anneal_schedule_with_offset(
             1-dimensional |array-like|_. If set ``anneal_schedule`` must be
             ``None`` and values must be provided for ``s``, ``A``, and ``c``.
 
-        c: Normalized annealing bias, :math:`c(s)`, as a 1-dimensional
+        c: Normalized control bias, :math:`c(s)`, as a 1-dimensional
             |array-like|_. If set ``anneal_schedule`` must be ``None`` and
             values must be provided for ``s``, ``A``, and ``B``.
 
@@ -270,7 +270,7 @@ def energy_scales_custom_schedule(
         B: Energy applied to the problem Hamiltonian, :math:`B(s)`, as a
             1-dimensional |array-like|_. If set ``anneal_schedule`` must be
             ``None`` and values must be provided for ``s``, ``A``, and ``c``.
-        c: Normalized annealing bias, :math:`c(s)`, as a 1-dimensional
+        c: Normalized control bias, :math:`c(s)`, as a 1-dimensional
             |array-like|_. If set ``anneal_schedule`` must be ``None`` and
             values must be provided for ``s``, ``A``, and ``B``.
         custom_schedule:
