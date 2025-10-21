@@ -75,9 +75,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         parameter_warnings (bool, optional, default=True):
             The MockSampler is adaptive with respect to ``num_reads``,
-            ``answer_mode`` and ``label`` parameters. By default ``initial_state``
-            can also be mocked, if dwave-samplers is installed. All other parameters
-            are ignored and a warning will be raised by default.
+            ``answer_mode`` and ``label`` parameters. All other parameters are
+            ignored and a warning will be raised by default.
 
         substitute_sampler (:class:`~dimod.Sampler`, optional, default=SteepestDescentSampler()):
             The sampler to be used as a substitute when executing the mock sampler. 
@@ -89,7 +88,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         substitute_kwargs (dict, optional, default={}):
             A dictionary of keyword arguments to pass to the `substitute_sampler`'s 
             `sample` method. This allows users to configure the substitute sampler 
-            with specific parameters like `num_reads`, `initial_state`, or other 
+            with specific parameters like `num_reads` or other
             sampler-specific options. If not provided, an empty dictionary is used 
             by default.
 
@@ -150,8 +149,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         
         self.mocked_parameters={'answer_mode',
                                 'num_reads',
-                                'label',
-                                'initial_state'}
+                                'label'}
 
         EXACT_SOLVER_CUTOFF_DEFAULT = 16
 
@@ -354,7 +352,22 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
+        """ Emulate limited `DWaveSampler.sample` behaviour, for testing purposes.
 
+        The purpose of this routine is not to emulate the QPU sampling distribution,
+        but to reproduce the interface sufficiently for testing. Note that it
+        returns only ground states or local minima under default operation
+        without sensitivity to a majority of the possible QPU kwargs.
+        In specific contexts a more realistic sampler can be proposed, overloading
+        the MockDWaveSampler class and/or the sample function. See for example
+        the dwave-experimental testing module.
+
+        Args:
+            bqm: A `dimod.BinaryQuadraticModel` binary quadratic model.
+
+        Returns:
+            A `dimod.SampleSet`.
+        """
         # Check kwargs compatibility with parameters and substitute sampler:
         for kw in kwargs:
             if kw in self.parameters:
@@ -394,20 +407,8 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         num_reads = kwargs.get('num_reads', substitute_kwargs.get('num_reads', 1))
         substitute_kwargs['num_reads'] = num_reads
 
-        if 'initial_state' in kwargs:
-            initial_state = kwargs['initial_state']
-            # Initial state format is a list of (qubit,values)
-            # value=3 denotes an unused variable (should be absent
-            # from bqm). 
-            # Convert to format for substitute (NB: plural key)
-            substitute_kwargs['initial_states'] = (
-                np.array([pair[1] for pair in initial_state
-                          if pair[1]!=3],dtype=float),
-                [pair[0] for pair in initial_state if pair[1]!=3])
-
         sampler_kwargs = kwargs.copy()
         sampler_kwargs.update(substitute_kwargs)
-
         ss = self.substitute_sampler.sample(bqm, **sampler_kwargs)
         ss.info.update(info)
         # determine ground state exactly for small problems

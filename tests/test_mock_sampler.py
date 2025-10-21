@@ -16,6 +16,7 @@
 import os
 import unittest
 from unittest import mock
+import warnings
 
 import numpy as np
 import dimod
@@ -37,14 +38,26 @@ class TestMockDWaveSampler(unittest.TestCase):
             raise unittest.SkipTest("no QPU available")
 
         mock = MockDWaveSampler()
+        # Some properties/parameters like vyfc are harmlessly removed.
+        # Some newer generation processor properties/parameters are harmlessly
+        # removed.
+        # Sufficient to warn, so downgrade from assertion. Note that
+        # this test only runs in the presence of a client connection anyway.
+        comp = {'properties': {'MockDWaveSampler': set(mock.properties), 'default DWaveSampler': set(sampler.properties)},
+                'parameters': {'MockDWaveSampler': set(mock.parameters), 'default DWaveSampler': set(sampler.parameters)}}
+        for k, v in comp.items():
+            for a,b in [('MockDWaveSampler', 'default DWaveSampler'), ('default DWaveSampler', 'MockDWaveSampler')]:
+                diff = v[a].difference(v[b])
+                if len(diff) > 0:
+                    warnings.warn(f'{k} of {a} absent from {b}: {diff}: '
+                                  'Features are added or deprecated across generations', UserWarning)
 
-        self.assertEqual(set(mock.properties), set(sampler.properties))
-        self.assertEqual(set(mock.parameters), set(sampler.parameters))
-
-        #Check extraction of nodelist, edgelist and properties from 
+        # Check extraction of nodelist, edgelist, properties and parameters
         mock = MockDWaveSampler.from_qpu_sampler(sampler)
-        self.assertEqual(mock.nodelist.sort(),sampler.nodelist.sort())
-        self.assertEqual(mock.edgelist.sort(),sampler.edgelist.sort())
+        self.assertEqual(mock.nodelist.sort(), sampler.nodelist.sort())
+        self.assertEqual(mock.edgelist.sort(), sampler.edgelist.sort())
+        self.assertTrue(all(mock.properties[k] == v for k,v in sampler.properties.items()))  # NB, update not replacement.
+        self.assertTrue(all(mock.parameters[k] == v for k,v in sampler.parameters.items()))  # NB, update not replacement.
 
     def test_sampler(self):
         sampler = MockDWaveSampler()
@@ -53,7 +66,8 @@ class TestMockDWaveSampler(unittest.TestCase):
 
     def test_mock_parameters(self):
         # Single cell Chimera (DW2000Q) solver:
-        sampler = MockDWaveSampler(topology_type='chimera', topology_shape = [1,1,4])
+        sampler = MockDWaveSampler(topology_type='chimera', topology_shape = [1,1,4],
+                                   substitute_kwargs = dict(initial_states = ([1], [0])))
         num_reads = 10
         ss = sampler.sample_ising({0: -1}, {}, num_reads=num_reads)
         self.assertEqual(sum(ss.record.num_occurrences),num_reads)
@@ -63,13 +77,13 @@ class TestMockDWaveSampler(unittest.TestCase):
         self.assertEqual(len(ss.record.num_occurrences), num_reads)
 
         # disable exact ground state calc
+        sampler = MockDWaveSampler(topology_type='chimera', topology_shape = [1,1,4],
+                                   substitute_kwargs = dict(initial_states = ([1, 1], [0, 4])))
         with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
             #QPU format initial states:
-            initial_state = [(i,1) if i%4==0 else (i,3) for i in range(8)]
             ss = sampler.sample_ising({0: 1, 4: 1}, {(0, 4): -2},
                                       num_reads=1,
-                                      answer_mode='raw',
-                                      initial_state=initial_state)
+                                      answer_mode='raw')
             #The initialized state is a local minima, and should
             #be returned under greedy descent mocking:
             self.assertEqual(ss.record.energy[0],0)
@@ -84,7 +98,6 @@ class TestMockDWaveSampler(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             sampler = MockDWaveSampler(topology_type="chimera123")
         sampler = MockDWaveSampler(parameter_warnings=False)
-        import warnings
         with warnings.catch_warnings():
             warnings.simplefilter(action="error", category=UserWarning)
             ss = sampler.sample_ising({0 : -1}, {}, annealing_time=123)
@@ -92,26 +105,21 @@ class TestMockDWaveSampler(unittest.TestCase):
     def test_ground_override(self):
         # bqm with a local minimum at (-1, -1)
         bqm = dimod.BQM.from_ising({'a': -1, 'b': -1}, {'ab': -2})
+        cutoff = 2 * bqm.num_variables # More than sufficient for first sample to be GS.
         local_minimum = [-1, -1]    # energy: 0
         ground_state = [1, 1]       # energy: -4
-        local_minimum_state = list(zip(bqm.variables, local_minimum))
-
+        local_minimum_state = (local_minimum, bqm.variables)
         # simple two connected variables sampler (path(2))
         sampler = MockDWaveSampler(nodelist=['a', 'b'], edgelist=[('a', 'b')],
-                                   exact_solver_cutoff=len(bqm.variables))
-
+                                   exact_solver_cutoff=cutoff,
+                                   substitute_kwargs = dict(initial_states=local_minimum_state))
         # disable exact ground state calc and start from a local minimum -> greedy should stay stuck
         with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
-            ss = sampler.sample(bqm, initial_state=local_minimum_state)
+            ss = sampler.sample(bqm)
             np.testing.assert_array_equal(ss.record[0].sample, local_minimum)
 
-        # boundary on which exact ground state calc kicks in
-        with mock.patch.object(sampler, 'exact_solver_cutoff', len(bqm.variables)):
-            ss = sampler.sample(bqm, initial_state=local_minimum_state)
-            np.testing.assert_array_equal(ss.record[0].sample, ground_state)
-
-        # double-check the default
-        self.assertEqual(sampler.exact_solver_cutoff, len(bqm.variables))
+        # double-check the default is overridden, but ground state sampling survives
+        self.assertEqual(sampler.exact_solver_cutoff, cutoff)
         ss = sampler.sample(bqm)
         np.testing.assert_array_equal(ss.record[0].sample, ground_state)
 
