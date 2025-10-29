@@ -75,11 +75,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
         parameter_warnings (bool, optional, default=True):
             The MockSampler is adaptive with respect to ``num_reads``,
-            ``answer_mode`` and ``max_answers`` and ``label`` 
-            parameters. By default ``initial_state`` can also be mocked, if
-            dwave-greedy is installed. All other parameters are ignored and a 
-            warning will be raised by default.
-        
+            ``answer_mode`` and ``label`` parameters. By default ``initial_state``
+            can also be mocked, if dwave-samplers is installed. All other parameters
+            are ignored and a warning will be raised by default.
+
         substitute_sampler (:class:`~dimod.Sampler`, optional, default=SteepestDescentSampler()):
             The sampler to be used as a substitute when executing the mock sampler. 
             By default, :class:`~dwave.samplers.SteepestDescentSampler` is employed, which performs a 
@@ -101,12 +100,12 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             a brute-force :class:`~dimod.ExactSolver`). Only small cutoffs
             should be used since solution time increases exponentially with
             problem size.
-            
+
             - When ``substitute_sampler`` is not provided, the default value is 
             ``EXACT_SOLVER_CUTOFF_DEFAULT`` (e.g., 16).
             - When ``substitute_sampler`` is provided, the default value is 
             ``0``, disabling exact ground state calculation.
-            
+
             Set ``exact_solver_cutoff`` to zero to disable exact ground state
             calculation explicitly.
 
@@ -150,7 +149,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                  **config):
         
         self.mocked_parameters={'answer_mode',
-                                'max_answers',
                                 'num_reads',
                                 'label',
                                 'initial_state'}
@@ -260,7 +258,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
             'flux_drift_compensation': ['parameters'],
             'h_gain_schedule': ['parameters'],
             'initial_state': ['parameters'],
-            'max_answers': ['parameters'],
             'num_reads': ['parameters'],
             'programming_thermalization': ['parameters'],
             'readout_thermalization': ['parameters'],
@@ -301,8 +298,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 'initial_state':
                 'Initial states to use for a reverse-anneal request, as a list '
                 'of qubit index and state.',
-                'max_answers':
-                'Maximum number of answers to return.',
                 'num_reads':
                 'Number of states to read (answers to return), as a positive '
                 'integer.',
@@ -321,7 +316,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
                 'annealing, as a boolean flag.'
                 'fast_anneal': 
                 'Activation of the fast-anneal protocol, as a boolean flag.'},
-            'vfyc': False,
             'anneal_offset_step': -0.0001500217998314891,
             'anneal_offset_step_phi0': 1.4303846404537006e-05,
             'annealing_time_range': [0.5, 2000.0],
@@ -426,11 +420,6 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         if answer_mode is None or answer_mode == 'histogram':
             # Default for DWaveSampler() is 'histogram'
             ss = ss.aggregate()
-
-        max_answers = kwargs.get('max_answers')
-        if max_answers is not None:
-            # Truncate sampleset if requested. Do not reorder (per DWaveSampler())
-            ss = ss.truncate(max_answers)
 
         return ss
 

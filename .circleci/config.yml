@@ -40,7 +40,9 @@ jobs:
       - run: &run-python-tests
           name: run unittests
           command: |
-            . env/bin/activate
+            # activate venv on both unix and windows installs (assumes bash, and requires extglob set)
+            shopt -s extglob
+            . env/+(bin|Scripts)/activate
             if [[ << parameters.integration-test-python-version >> != << parameters.python-version >> ]]; then
               export SKIP_INT_TESTS=1
             fi
@@ -155,6 +157,8 @@ jobs:
     parameters:
       python-version:
         type: string
+      integration-test-python-version:
+        type: string
 
     executor:
       name: win/default
@@ -185,10 +189,8 @@ jobs:
             pip install -r requirements.txt -r tests\requirements.txt
 
       - run:
-          name: Run tests
-          command: |
-            env\Scripts\activate.ps1
-            coverage run -m unittest discover
+          <<: *run-python-tests
+          shell: bash -eo pipefail
 
   build-dist:
     docker:
@@ -282,6 +284,7 @@ workflows:
           matrix:
             parameters:
               python-version: *python-versions
+              integration-test-python-version: *integration-python-versions
 
       - test-doctest
       - build-dist

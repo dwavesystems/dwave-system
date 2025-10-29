@@ -43,7 +43,7 @@ edges = set(tuple(edge) for edge in C16.edges)
 edges.update([(v, u) for u, v in edges])  # solver has bi-directional
 
 
-class MockSolver():
+class MockSolver:
     nodes = set(range(2048))
     edges = edges
     properties = {'readout_thermalization_range': [0.0, 10000.0],
@@ -52,7 +52,6 @@ class MockSolver():
                   'parameters': {'programming_thermalization': '',
                                  'anneal_offsets': '',
                                  'num_reads': '',
-                                 'max_answers': '',
                                  'readout_thermalization': '',
                                  'beta': '',
                                  'answer_mode': '',
