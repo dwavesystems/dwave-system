@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    Remove ``vfyc`` solver property and ``max_answers`` solver parameter from
+    ``DWaveMockSampler`` to reflect the current state of solver properties
+    returned by SAPI. See `#600 <https://github.com/dwavesystems/dwave-system/pull/600>`_.

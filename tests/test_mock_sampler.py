@@ -61,10 +61,6 @@ class TestMockDWaveSampler(unittest.TestCase):
         ss = sampler.sample_ising({0: -1}, {}, num_reads=num_reads,
                                   answer_mode='raw')
         self.assertEqual(len(ss.record.num_occurrences), num_reads)
-        
-        ss = sampler.sample_ising({0: -1}, {}, num_reads=num_reads,
-                                  answer_mode='raw', max_answers=2)
-        self.assertEqual(len(ss.record.num_occurrences), 2)
 
         # disable exact ground state calc
         with mock.patch.object(sampler, 'exact_solver_cutoff', 0):
