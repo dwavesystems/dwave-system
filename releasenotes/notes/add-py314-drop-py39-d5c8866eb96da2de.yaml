@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Add support for Python 3.14.
+upgrade:
+  - |
+    Drop support for Python 3.9.

@@ -36,7 +36,7 @@ install_requires = ['dimod>=0.12.20,<0.14.0',
                     'scipy>=1.7.3',
                     ]
 
-python_requires = '>=3.9'
+python_requires = '>=3.10'
 
 packages = find_namespace_packages(include=['dwave.*'])
 
@@ -45,11 +45,11 @@ classifiers = [
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
 ]
 
 setup(
