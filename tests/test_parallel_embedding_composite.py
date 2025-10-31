@@ -598,13 +598,15 @@ class TestTiling(unittest.TestCase):
 
             def sample(self, bqm, **kwargs):
                 initial_state = kwargs.pop("initial_state")
-                initial_state_tuple = [
-                    (i, initial_state[i]) if i in initial_state else (i, 3)
-                    for i in self.nodelist
-                ]
-                return super().sample(
-                    bqm=bqm, initial_state=initial_state_tuple, **kwargs
-                )
+                self.substitute_kwargs.update(
+                    dict(
+                        initial_states=(
+                            list(initial_state.values()),
+                            list(initial_state.keys()),
+                        )
+                    )
+                )  # Format for default substitute solver
+                return super().sample(bqm=bqm, **kwargs)
 
         sampler = MockDWaveSamplerAlt(
             topology_type="chimera", topology_shape=[nr, nc, t]

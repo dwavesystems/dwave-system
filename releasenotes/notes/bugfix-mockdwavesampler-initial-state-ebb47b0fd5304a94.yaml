@@ -1,0 +1,16 @@
+---
+prelude: >
+    The initial_state format for MockDWaveSampler().sample does not match that
+    used by DWaveSampler(), and the handling in context of other parameters is
+    also different. Some tests have been modified to work around the use of this
+    parameter, it is not used elsewhere in the codebase, therefore the simplest
+    solution is to remove it as a mocked parameter.
+    Overloading of MockDWaveSampler for specific testing contexts is
+    is recommended: depenendence on e.g. flux_biases, anneal_schedule,
+    initial_state should be context specific.
+fixes:
+  - |
+    Fix handling of initial_state kwarg for the sampling routine: instead of
+    handling this parameter incorrectly an warning is thrown (parameter not
+    mocked), as per other unsupported arguments.
+    See `#587 <https://github.com/dwavesystems/dwave-system/issues/587>`_.
