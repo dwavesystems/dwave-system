@@ -13,4 +13,4 @@ fixes:
     Fix handling of initial_state kwarg for the sampling routine: instead of
     handling this parameter incorrectly an warning is thrown (parameter not
     mocked), as per other unsupported arguments.
-    https://github.com/dwavesystems/dwave-system/issues/587
+    See `#587 <https://github.com/dwavesystems/dwave-system/issues/587>`_.

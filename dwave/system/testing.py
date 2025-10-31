@@ -352,7 +352,7 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
 
     @dimod.bqm_structured
     def sample(self, bqm, **kwargs):
-        """ Emulate limited `DWaveSampler.sample` behaviour, for testing purposes.
+        """Emulate limited `DWaveSampler.sample` behaviour, for testing purposes.
 
         The purpose of this routine is not to emulate the QPU sampling distribution,
         but to reproduce the interface sufficiently for testing. Note that it
@@ -363,10 +363,10 @@ class MockDWaveSampler(dimod.Sampler, dimod.Structured):
         the dwave-experimental testing module.
 
         Args:
-            bqm: A `dimod.BinaryQuadraticModel` binary quadratic model.
+            bqm: A :class:`dimod.BinaryQuadraticModel` binary quadratic model.
 
         Returns:
-            A `dimod.SampleSet`.
+            A :class:`dimod.SampleSet`.
         """
         # Check kwargs compatibility with parameters and substitute sampler:
         for kw in kwargs:
