@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Add ``.wait_id`` method to a future returned by ``LeapHybridNLSampler``.

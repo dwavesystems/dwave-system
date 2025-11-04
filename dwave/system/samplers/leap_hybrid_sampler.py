@@ -1032,6 +1032,12 @@ class LeapHybridNLSampler(_ScopedSamplerMixin):
 
         result = self._executor.submit(collect)
 
+        if not hasattr(result, 'wait_id'):
+            # the id is stored in the info field, but we add it to the result
+            # future to be consistent with the other samplers here (and to
+            # enable early id retrieval)
+            result.wait_id = future.wait_id
+
         return result
 
     def estimated_min_time_limit(self, nlm: dwave.optimization.Model) -> float:
