@@ -111,6 +111,9 @@ class TestNLSampler(unittest.TestCase):
             upload_nlm.assert_called_with(
                 model, max_num_states=sampler.properties['maximum_number_of_states'])
 
+        with self.subTest('problem_id available via wait_id'):
+            self.assertEqual(result.wait_id(), mock_problem_id)
+
         with self.subTest('timing returned in sample result'):
             self.assertIsInstance(result, concurrent.futures.Future)
             self.assertIsInstance(result.result(), LeapHybridNLSampler.SampleResult)

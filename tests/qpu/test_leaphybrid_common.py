@@ -17,7 +17,9 @@ import os
 import json
 import threading
 import unittest
+from functools import partial
 
+import numpy
 from packaging.specifiers import SpecifierSet
 from parameterized import parameterized_class
 
@@ -26,7 +28,9 @@ from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.package_info import __version__ as cc_version
 from dwave.cloud.testing import isolated_environ
 
-from dwave.system import LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler
+from dwave.optimization import Model
+from dwave.system import (
+    LeapHybridSampler, LeapHybridDQMSampler, LeapHybridCQMSampler, LeapHybridNLSampler)
 
 
 @parameterized_class(
@@ -90,11 +94,25 @@ class TestLegacySolverSelection(unittest.TestCase):
         sampler.close()
 
 
+def _get_toy_nl_model():
+    # create a simple model
+    model = Model()
+    x = model.list(5)
+    W = model.constant(numpy.arange(25).reshape((5, 5)))
+    model.minimize(W[x, :][:, x].sum())
+    return model
+
+
 @parameterized_class(
-    ("sampler_cls", "sample_meth", "problem_gen"), [
-        (LeapHybridSampler, "sample", lambda self: dimod.BQM.from_qubo({})),
-        (LeapHybridDQMSampler, "sample_dqm", lambda self: dimod.DQM.from_numpy_vectors([0], [0], ([], [], []))),
-        (LeapHybridCQMSampler, "sample_cqm", lambda self: dimod.CQM.from_bqm(dimod.BQM.from_qubo({'ab': 1}))),
+    ("sampler_cls", "sample_meth", "resolve_meth", "result_meth", "problem_gen"), [
+        (LeapHybridSampler, "sample", "resolve", lambda self, fut: fut,
+         lambda self: dimod.BQM.from_qubo({})),
+        (LeapHybridDQMSampler, "sample_dqm", "resolve", lambda self, fut: fut,
+         lambda self: dimod.DQM.from_numpy_vectors([0], [0], ([], [], []))),
+        (LeapHybridCQMSampler, "sample_cqm", "resolve", lambda self, fut: fut,
+         lambda self: dimod.CQM.from_bqm(dimod.BQM.from_qubo({'ab': 1}))),
+        (LeapHybridNLSampler, "sample", "result", lambda self, fut: fut.result(),
+         lambda self: _get_toy_nl_model()),
     ])
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestSamplerInterface(unittest.TestCase):
@@ -110,28 +128,37 @@ class TestSamplerInterface(unittest.TestCase):
     def tearDownClass(cls):
         cls.sampler.close()
 
-    def test_sampleset_wait_id_availability(self):
+    def test_wait_id_availability(self):
         # verify https://github.com/dwavesystems/dwave-system/issues/540 is fixed
         problem = self.problem_gen()
-        ss = getattr(self.sampler, self.sample_meth)(problem)
+        fut = getattr(self.sampler, self.sample_meth)(problem)
+        resolve = getattr(fut, self.resolve_meth)
+        result = partial(self.result_meth, fut)
 
-        with self.subTest("sampleset.wait_id() exists"):
-            pid = ss.wait_id()
+        with self.subTest("wait_id() exists"):
+            pid = fut.wait_id()
             self.assertIsInstance(pid, str)
 
-        with self.subTest("sampleset.wait_id() exists post-resolve"):
-            ss.resolve()
-            pid_post = ss.wait_id()
+        with self.subTest("wait_id() exists post-resolve"):
+            resolve()
+            pid_post = fut.wait_id()
             self.assertEqual(pid, pid_post)
+
+        # verify https://github.com/dwavesystems/dwave-system/issues/602
+        with self.subTest("wait_id() result equal to info.problem_id"):
+            pid = fut.wait_id()
+            resolve()
+            self.assertEqual(pid, result().info['problem_id'])
 
     @unittest.skipUnless(cc_version in SpecifierSet('>=0.13.5', prereleases=True),
                          "'dwave-cloud-client>=0.13.5' required")
     def test_problem_data_id_available(self):
         problem = self.problem_gen()
-        ss = getattr(self.sampler, self.sample_meth)(problem)
+        fut = getattr(self.sampler, self.sample_meth)(problem)
+        result = partial(self.result_meth, fut)
 
-        self.assertIn('problem_id', ss.info)
-        self.assertIn('problem_data_id', ss.info)
+        self.assertIn('problem_id', result().info)
+        self.assertIn('problem_data_id', result().info)
 
     def test_close(self):
         n_initial = threading.active_count()

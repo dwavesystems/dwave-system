@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Add ``.wait_id`` method to a future returned by ``LeapHybridNLSampler``.
+    See `#602 <https://github.com/dwavesystems/dwave-system/issues/602>`_.
