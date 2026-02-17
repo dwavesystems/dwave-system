@@ -12,7 +12,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-r"""Some notes on the parameter-estimation methods provided below:
+r"""Provides temperature estimation and flux-bias offset utility functions.
+
+Some notes on the parameter-estimation methods provided below:
 
 -   :func:`fluxbias_to_h` and :func:`h_to_fluxbias`
 
