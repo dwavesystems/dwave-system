@@ -50,6 +50,13 @@ class TestEmbeddingComposite(unittest.TestCase):
 
         dimod.testing.assert_sampler_api(sampler)
 
+    def test_sample_rejects_cqm(self):
+        sampler = EmbeddingComposite(MockDWaveSampler())
+        cqm = dimod.ConstrainedQuadraticModel()
+
+        with self.assertRaisesRegex(TypeError, "binary quadratic model"):
+            sampler.sample(cqm)
+
     def test_sample_ising(self):
         sampler = EmbeddingComposite(MockDWaveSampler())
 
