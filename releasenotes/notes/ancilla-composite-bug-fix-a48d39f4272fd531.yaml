@@ -1,0 +1,5 @@
+
+fixes:
+  - Bug fix for AncillaComposite. There was an unwanted zero-dimensional array as a scalar. 
+
+
