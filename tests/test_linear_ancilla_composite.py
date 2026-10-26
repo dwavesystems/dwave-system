@@ -117,3 +117,10 @@ class TestLinearAncillaComposite(unittest.TestCase):
         for qubit, flux_bias in enumerate(flux_biases):
             if flux_bias != 0:
                 self.assertNotIn(qubit, self.linear_problem.variables)
+
+    def test_zero_dim_bug(self):
+        """bug arising from a zero-dimensional array passed as a scalar (issue #618)"""
+        
+        sampler = LinearAncillaComposite(self.qpu)
+        q1, q2 = sampler.edgelist[0]
+        sampler.sample_ising({q1: 0.1, q2: -0.1}, {})  # rises error if bug is present
