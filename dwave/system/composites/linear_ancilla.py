@@ -188,7 +188,7 @@ class LinearAncillaComposite(dimod.ComposedSampler, dimod.Structured):
                         variable,
                         ancilla,
                         (bias - h_tolerance * np.sign(bias))
-                        * np.sign([flux_biases[ancilla]]),
+                        * np.sign(flux_biases[ancilla]),
                     )
                 else:
                     # Ancilla sharing is limited to flux biases with appropiate sign

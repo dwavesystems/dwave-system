@@ -1,0 +1,7 @@
+
+fixes:
+  - Fix ancillary qubit coupling calculation in ``LinearAncillaComposite`` for
+    shared ancillary qubits. Previously, sampling would fail in this case.
+    See `#618 <https://github.com/dwavesystems/dwave-system/issues/618>`_.
+
+
