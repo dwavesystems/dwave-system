@@ -121,6 +121,7 @@ class TestLinearAncillaComposite(unittest.TestCase):
     def test_zero_dim_bug(self):
         """bug arising from a zero-dimensional array passed as a scalar (issue #618)"""
         
-        sampler = LinearAncillaComposite(self.qpu)
+        qpu = MockDWaveSampler(nodelist=[0,1,2], edgelist=[(0,1), (0,2), (1,2)])
+        sampler = LinearAncillaComposite(qpu)
         q1, q2 = sampler.edgelist[0]
         sampler.sample_ising({q1: 0.1, q2: -0.1}, {})  # rises error if bug is present
