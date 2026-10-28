@@ -93,18 +93,6 @@ def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
     return G
 
 
-def _get_solver_id(solver: StructuredSolver) -> str:
-    """Return a unique solver string identifier, derived from solver's name or
-    solver's identity (if available)."""
-
-    # only available in cloud-client>=0.14
-    if hasattr(solver, 'identity'):
-        return str(solver.identity)
-
-    # used until cloud-client==0.14, deprecated since
-    return solver.id
-
-
 class DWaveSampler(dimod.Sampler, dimod.Structured):
     r"""Submits binary quadratic models directly to D-Wave quantum computers.
 
@@ -250,7 +238,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         solvers = self.client.get_solvers(refresh=refresh, order_by=order_by, **filters)
 
         # we now just need to de-prioritize penalized solvers
-        solvers.sort(key=lambda solver: penalty.get(_get_solver_id(solver), 0))
+        solvers.sort(key=lambda solver: penalty.get(solver.identity.to_id(), 0))
 
         try:
             return solvers[0]
@@ -369,7 +357,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Trigger a failover and connect to a new solver."""
 
         # penalize the solver that just failed
-        self._solver_penalty[_get_solver_id(self.solver)] += 1
+        self._solver_penalty[self.solver.identity.to_id()] += 1
 
         # select the next solver in user-defined preference order, but try to
         # avoid the penalized (failed) ones
