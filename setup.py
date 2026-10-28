@@ -25,7 +25,7 @@ exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
 install_requires = ['dimod>=0.12.20,<0.14.0',
-                    'dwave-cloud-client>=0.12.0,<0.15.0',
+                    'dwave-cloud-client>=0.14.0,<0.15.0',
                     'dwave-graphs>=1,<2',
                     'dwave-optimization>=0.1.0,<0.9',
                     'dwave-preprocessing>=0.5.0',

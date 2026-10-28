@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    Minimum supported version of the ``dwave-cloud-client`` is now ``0.14.0``.
+    The support for older clients has been dropped primarily due to breaking
+    SAPI changes regarding the solver identity field.
