@@ -27,6 +27,7 @@ from dwave.cloud import exceptions
 from dwave.cloud import computation
 from dwave.cloud.testing import mocks
 from dwave.cloud.solver import StructuredSolver
+from dwave.cloud.api.models import Region
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.samplers.dwave_sampler import Client
@@ -438,6 +439,64 @@ class TestDWaveSamplerFailover(unittest.TestCase):
             solver_def = dict(topology__type='chimera')
             with self.assertRaises(exceptions.SolverNotFoundError):
                 DWaveSampler(failover=True, token='mock', solver=solver_def)
+
+
+class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
+    @mock.patch('dwave.system.samplers.dwave_sampler.get_regions')
+    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    def test_failover_regions_init(self, mock_client, mock_get_regions):
+        with self.subTest("single default region"):
+            with DWaveSampler(failover_regions=False) as sampler:
+                self.assertEqual(len(sampler._clients), 1)
+
+        with self.subTest("single explicit region"):
+            mock_client.reset_mock()
+            region = 'mock-region-1'
+            with DWaveSampler(failover_regions=[region]) as sampler:
+                self.assertEqual(len(sampler._clients), 1)
+                self.assertEqual(mock_client.from_config.call_args.kwargs.get('region'), region)
+
+        with self.subTest("explicit list of regions"):
+            mock_client.reset_mock()
+            regions = ['mock-region-1', 'mock-region-2']
+            default_region = regions[0]
+            mock_client.from_config.return_value.__enter__.return_value.config.region = default_region
+            with DWaveSampler(failover_regions=regions) as sampler:
+                self.assertEqual(len(sampler._clients), len(regions))
+                calls = mock_client.from_config.call_args_list
+                calls.pop(0)    # first client is used to fetch regions properly
+                self.assertEqual(len(calls), len(regions))
+                for i, region in enumerate(regions):
+                    self.assertEqual(calls[i].kwargs.get('region'), region)
+
+        with self.subTest("explicit list of regions with explicit default region"):
+            mock_client.reset_mock()
+            regions = ['mock-region-1', 'mock-region-2']
+            default_region = regions[-1]
+            mock_client.from_config.return_value.__enter__.return_value.config.region = default_region
+            with DWaveSampler(failover_regions=regions, region=default_region) as sampler:
+                self.assertEqual(len(sampler._clients), len(regions))
+                calls = mock_client.from_config.call_args_list
+                calls.pop(0)    # first client is used to fetch regions properly
+                self.assertEqual(len(calls), len(regions))
+                # just verify the default client matches the default region
+                self.assertEqual(sampler.failover_regions[0], default_region)
+                self.assertEqual(calls[0].kwargs.get('region'), default_region)
+
+        with self.subTest("all available regions"):
+            mock_client.reset_mock()
+            regions = ['mock-region-1', 'mock-region-2']
+            default_region = regions[0]
+            mock_get_regions.return_value = [
+                Region(code=r, name=r, endpoint=r) for r in regions]
+            mock_client.from_config.return_value.__enter__.return_value.config.region = default_region
+            with DWaveSampler(failover_regions=True) as sampler:
+                self.assertEqual(len(sampler._clients), len(regions))
+                calls = mock_client.from_config.call_args_list
+                calls.pop(0)    # first client is used to fetch regions properly
+                self.assertEqual(len(calls), len(regions))
+                for i, region in enumerate(regions):
+                    self.assertEqual(calls[i].kwargs.get('region'), region)
 
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
