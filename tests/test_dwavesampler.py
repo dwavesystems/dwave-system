@@ -12,6 +12,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import contextlib
+import textwrap
 import unittest
 from uuid import uuid4
 from unittest import mock
@@ -25,9 +27,10 @@ import dwave.graphs
 
 from dwave.cloud import exceptions
 from dwave.cloud import computation
-from dwave.cloud.testing import mocks
+from dwave.cloud.testing import mocks, isolated_environ, iterable_mock_open
 from dwave.cloud.solver import StructuredSolver
 from dwave.cloud.api.models import Region
+from dwave.cloud.config.constants import DEFAULT_REGION
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
 from dwave.system.samplers.dwave_sampler import Client
@@ -497,6 +500,264 @@ class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
                 self.assertEqual(len(calls), len(regions))
                 for i, region in enumerate(regions):
                     self.assertEqual(calls[i].kwargs.get('region'), region)
+
+
+class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
+    """Verify sampler/client(s) initialization when (region) config is loaded
+    from environment variables, config files and/or kwargs.
+
+    A real `Client` is used, but all network access (regions and solvers
+    fetching) is mocked out.
+    """
+
+    metadata_api_endpoint = 'https://mock.dwavesys.com/metadata/v1/'
+
+    # note: DEFAULT_REGION has to be available in the mock metadata api, as it's
+    # used when region is not defined; also, we don't want it to be the first
+    # region returned by the metadata api (so we can test region prioritization)
+    region_codes = ['mock-region-1', 'mock-region-2', DEFAULT_REGION]
+
+    config_body = textwrap.dedent(f"""
+        [defaults]
+        token = mock-token
+
+        [default]
+        metadata_api_endpoint = {metadata_api_endpoint}
+
+        [regional]
+        metadata_api_endpoint = {metadata_api_endpoint}
+        region = {region_codes[0]}
+    """)
+
+    def setUp(self):
+        self.regions = [Region(code=code, name=code,
+                               endpoint=f'https://{code}.mock.dwavesys.com/sapi/v2/')
+                        for code in self.region_codes]
+        self.endpoints = {r.code: r.endpoint for r in self.regions}
+
+        def start(patcher):
+            self.addCleanup(patcher.stop)
+            return patcher.start()
+
+        # prevent run-time env vars and config files interfering with tests
+        start(isolated_environ(remove_dwave=True))
+        start(mock.patch('dwave.cloud.config.loaders.get_configfile_paths', lambda **kw: []))
+
+        # token is required for client init, but it's otherwise irrelevant here
+        start(isolated_environ(add={'DWAVE_API_TOKEN': 'mock-token'}))
+
+        # mock regions fetch from metadata api (used by both `Client` endpoint
+        # resolution and `get_regions` in the sampler)
+        self.fetch_regions = start(mock.patch(
+            'dwave.cloud.regions._fetch_available_regions', return_value=self.regions))
+
+        # mock solvers fetch from solver api
+        solver = StructuredSolver(data=mocks.qpu_pegasus_solver_data(4), client=None)
+        start(mock.patch.object(Client, 'create_session', lambda client: mock.Mock()))
+        start(mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [solver]))
+
+    @contextlib.contextmanager
+    def config_file(self, body=None):
+        """Simulate a config file, referenced via `DWAVE_CONFIG_FILE` env var."""
+        if body is None:
+            body = self.config_body
+        with isolated_environ(add={'DWAVE_CONFIG_FILE': 'mock-config-file'}):
+            with mock.patch('dwave.cloud.config.loaders.open', iterable_mock_open(body)):
+                yield
+
+    @contextlib.contextmanager
+    def sampler(self, **kwargs):
+        """Create a sampler, and make sure all clients are closed on exit."""
+        sampler = DWaveSampler(**kwargs)
+        try:
+            yield sampler
+        finally:
+            sampler.close()
+
+    def assert_regions_fetched_from(self, metadata_api_endpoint):
+        self.assertTrue(self.fetch_regions.called)
+        for call in self.fetch_regions.call_args_list:
+            self.assertEqual(call.kwargs['config'].metadata_api_endpoint,
+                             metadata_api_endpoint)
+
+    def assert_clients_consistent(self, sampler):
+        # default client is the first one, and client regions match failover regions
+        self.assertIs(sampler.client, sampler._clients[0])
+        self.assertEqual([client.config.region for client in sampler._clients],
+                         sampler.failover_regions)
+
+    def verify_metadata_api_endpoint(self):
+        # DWaveSampler() with nonstandard metadata api endpoint configured
+        with self.subTest("default region"):
+            self.fetch_regions.reset_mock()
+            with self.sampler() as sampler:
+                self.assertEqual(len(sampler._clients), 1)
+                self.assertEqual(sampler.client.config.metadata_api_endpoint,
+                                 self.metadata_api_endpoint)
+                self.assertEqual(sampler.client.config.region, DEFAULT_REGION)
+                self.assertEqual(sampler.client.config.endpoint,
+                                 self.endpoints[DEFAULT_REGION])
+                self.assert_regions_fetched_from(self.metadata_api_endpoint)
+
+        with self.subTest("explicit region"):
+            self.fetch_regions.reset_mock()
+            region = self.region_codes[0]
+            with self.sampler(region=region) as sampler:
+                self.assertEqual(len(sampler._clients), 1)
+                self.assertEqual(sampler.client.config.metadata_api_endpoint,
+                                 self.metadata_api_endpoint)
+                self.assertEqual(sampler.client.config.region, region)
+                self.assertEqual(sampler.client.config.endpoint, self.endpoints[region])
+                self.assert_regions_fetched_from(self.metadata_api_endpoint)
+
+    def test_metadata_api_endpoint_from_env(self):
+        with isolated_environ(add={'DWAVE_METADATA_API_ENDPOINT': self.metadata_api_endpoint}):
+            self.verify_metadata_api_endpoint()
+
+    def test_metadata_api_endpoint_from_config_file(self):
+        with self.config_file():
+            self.verify_metadata_api_endpoint()
+
+    def test_metadata_api_endpoint_from_env_over_config_file(self):
+        # env var overrides the value from config file
+        config_body = textwrap.dedent("""
+            [defaults]
+            metadata_api_endpoint = https://unused.mock.dwavesys.com/metadata/v1/
+        """)
+        with self.config_file(config_body):
+            with isolated_environ(add={'DWAVE_METADATA_API_ENDPOINT': self.metadata_api_endpoint}):
+                self.verify_metadata_api_endpoint()
+
+    def test_profile_from_config_file(self):
+        with self.config_file():
+            with self.subTest("region from profile"):
+                self.fetch_regions.reset_mock()
+                region = self.region_codes[0]
+                with self.sampler(profile='regional') as sampler:
+                    self.assertEqual(len(sampler._clients), 1)
+                    self.assertEqual(sampler.client.config.metadata_api_endpoint,
+                                     self.metadata_api_endpoint)
+                    self.assertEqual(sampler.client.config.region, region)
+                    self.assertEqual(sampler.client.config.endpoint, self.endpoints[region])
+                    self.assert_regions_fetched_from(self.metadata_api_endpoint)
+
+            with self.subTest("region kwarg overrides region from profile"):
+                self.fetch_regions.reset_mock()
+                region = self.region_codes[1]
+                with self.sampler(profile='regional', region=region) as sampler:
+                    self.assertEqual(len(sampler._clients), 1)
+                    self.assertEqual(sampler.client.config.metadata_api_endpoint,
+                                     self.metadata_api_endpoint)
+                    self.assertEqual(sampler.client.config.region, region)
+                    self.assertEqual(sampler.client.config.endpoint, self.endpoints[region])
+                    self.assert_regions_fetched_from(self.metadata_api_endpoint)
+
+            with self.subTest("nonexisting profile"):
+                with self.assertRaises(ValueError):
+                    DWaveSampler(profile='nonexisting')
+
+    def test_failover_regions_all_from_nonstandard_metadata_api(self):
+        # with `failover_regions=True`, regions are fetched from the metadata
+        # api endpoint configured via env or config file
+
+        @contextlib.contextmanager
+        def endpoint_from_env():
+            with isolated_environ(add={'DWAVE_METADATA_API_ENDPOINT': self.metadata_api_endpoint}):
+                yield
+
+        @contextlib.contextmanager
+        def endpoint_from_file():
+            with self.config_file():
+                yield
+
+        for source in (endpoint_from_env, endpoint_from_file):
+            with self.subTest(source=source.__name__):
+                self.fetch_regions.reset_mock()
+                with source(), self.sampler(failover_regions=True) as sampler:
+                    # all regions from the metadata api are used, default region first
+                    self.assertEqual(len(sampler._clients), len(self.regions))
+                    self.assertEqual(sampler.failover_regions[0], DEFAULT_REGION)
+                    self.assertEqual(set(sampler.failover_regions), set(self.region_codes))
+                    self.assert_regions_fetched_from(self.metadata_api_endpoint)
+                    self.assert_clients_consistent(sampler)
+                    # all clients use the configured metadata api endpoint, and
+                    # each client's solver api endpoint is resolved from it
+                    for client in sampler._clients:
+                        self.assertEqual(client.config.metadata_api_endpoint,
+                                         self.metadata_api_endpoint)
+                        self.assertEqual(client.config.endpoint,
+                                         self.endpoints[client.config.region])
+
+    def test_failover_regions_prioritize_configured_region(self):
+        # when region is defined (kwarg, env var, or config file), it's the first
+        # in the list of failover regions, regardless of how failover_regions are
+        # defined (all available, or an explicit list)
+        region = self.region_codes[1]
+        self.assertNotEqual(region, DEFAULT_REGION)
+
+        @contextlib.contextmanager
+        def region_from_kwarg():
+            yield dict(region=region)
+
+        @contextlib.contextmanager
+        def region_from_env():
+            with isolated_environ(add={'DWAVE_API_REGION': region}):
+                yield {}
+
+        @contextlib.contextmanager
+        def region_from_file():
+            config_body = textwrap.dedent(f"""
+                [defaults]
+                region = {region}
+            """)
+            with self.config_file(config_body):
+                yield {}
+
+        @contextlib.contextmanager
+        def region_from_profile():
+            config_body = textwrap.dedent(f"""
+                [unused]
+                region = {self.region_codes[0]}
+
+                [regional]
+                region = {region}
+            """)
+            with self.config_file(config_body):
+                yield dict(profile='regional')
+
+        # explicit failover regions list, in which `region` is not first
+        explicit_regions = list(reversed(self.region_codes))
+        self.assertNotEqual(explicit_regions[0], region)
+
+        for source in (region_from_kwarg, region_from_env, region_from_file, region_from_profile):
+            for failover_regions in (True, explicit_regions):
+                with self.subTest(source=source.__name__, failover_regions=failover_regions):
+                    with source() as kwargs, self.sampler(failover_regions=failover_regions, **kwargs) as sampler:
+                        self.assertEqual(sampler.failover_regions[0], region)
+                        self.assertEqual(set(sampler.failover_regions), set(self.region_codes))
+                        self.assertEqual(len(sampler._clients), len(self.region_codes))
+                        self.assertEqual(sampler.client.config.region, region)
+                        self.assert_clients_consistent(sampler)
+
+    def test_failover_regions_exclude_configured_region(self):
+        # configured region has to be in the explicit list of failover regions
+        region = self.region_codes[0]
+        failover_regions = self.region_codes[1:]
+        self.assertNotIn(region, failover_regions)
+
+        with self.subTest("region from kwarg"):
+            with self.assertRaises(ValueError):
+                DWaveSampler(failover_regions=failover_regions, region=region)
+
+        with self.subTest("region from env"):
+            with isolated_environ(add={'DWAVE_API_REGION': region}):
+                with self.assertRaises(ValueError):
+                    DWaveSampler(failover_regions=failover_regions)
+
+        with self.subTest("region from config file"):
+            with self.config_file():
+                with self.assertRaises(ValueError):
+                    DWaveSampler(failover_regions=failover_regions, profile='regional')
 
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):
