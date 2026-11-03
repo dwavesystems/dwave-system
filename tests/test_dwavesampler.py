@@ -96,8 +96,31 @@ class MockSolver:
         return future
 
 
+def mock_client_class():
+    # client class mock that ensures instances returned via from_config have a
+    # get_solvers() that returns mock solvers bound to the client instance
+
+    MockClient = mock.MagicMock()
+    client = MockClient.from_config.return_value
+    client.get_solvers.side_effect = \
+        lambda *args, **kwargs: [mock.MagicMock(client=client)]
+    return MockClient
+
+
+def patch_client():
+    return mock.patch('dwave.system.samplers.dwave_sampler.Client',
+                      new_callable=mock_client_class)
+
+
+def mock_fetch_solvers(*solvers):
+    # _fetch_solvers impl that returns solvers with bound clients
+    def _fetch_solvers(client, *args, **kwargs):
+        return [type(solver)(client=client, data=solver.data) for solver in solvers]
+    return _fetch_solvers
+
+
 class TestDWaveSampler(unittest.TestCase):
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def setUp(self, MockClient):
 
         # using the mock
@@ -105,7 +128,7 @@ class TestDWaveSampler(unittest.TestCase):
 
         self.sampler.solver = MockSolver()
 
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_init_default(self, MockClient):
         """QPU with the highest number of qubits chosen by default."""
 
@@ -115,7 +138,7 @@ class TestDWaveSampler(unittest.TestCase):
             client='qpu',
             defaults={'solver': {'order_by': '-num_active_qubits'}})
 
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_init_generic_behavior(self, MockClient):
         """Generic solver behavior (default prior to 0.10.0) can be forced."""
 
@@ -125,7 +148,7 @@ class TestDWaveSampler(unittest.TestCase):
             client='base',
             defaults={'solver': {'order_by': '-num_active_qubits'}})
 
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_init_solver(self, MockClient):
         """QPU can be explicitly selected (old default usage example)"""
 
@@ -138,7 +161,7 @@ class TestDWaveSampler(unittest.TestCase):
             solver=solver,
             defaults={'solver': {'order_by': '-num_active_qubits'}})
 
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_close(self, MockClient):
         """DWaveSampler.close() will close the underlying client."""
 
@@ -147,7 +170,7 @@ class TestDWaveSampler(unittest.TestCase):
 
         MockClient.from_config.return_value.close.assert_called_once()
 
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_context_manager(self, MockClient):
         """DWaveSampler() can be used as a context manager and the underlying
         client is closed on exit.
@@ -322,7 +345,7 @@ class TestDWaveSampler(unittest.TestCase):
 
 
 class TestDWaveSamplerFailover(unittest.TestCase):
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_failover_off(self, MockClient):
         sampler = DWaveSampler(failover=False)
 
@@ -340,7 +363,7 @@ class TestDWaveSamplerFailover(unittest.TestCase):
         (exceptions.SolverAuthenticationError, exceptions.SolverAuthenticationError),   # auth error propagated
         (KeyError, KeyError),   # unrelated errors propagated
     ])
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_async_failover(self, source_exc, target_exc, MockClient):
         sampler = DWaveSampler(failover=True)
 
@@ -385,24 +408,24 @@ class TestDWaveSamplerFailover(unittest.TestCase):
         p6 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(6), client=None)
         c4 = StructuredSolver(data=mocks.qpu_chimera_solver_data(4), client=None)
 
-        with mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [p4, p6, c4]):
+        with mock.patch.object(Client, '_fetch_solvers', mock_fetch_solvers(p4, p6, c4)):
 
             # verify we get solvers in order that respects user (in this case default)
             # sort order -- by number of qubits descending
             sampler = DWaveSampler(failover=True, token='mock')
 
             # expected solver order (after each failover) is: p6, p4, c4
-            self.assertEqual(sampler.solver, p6)
+            self.assertEqual(sampler.solver.identity, p6.identity)
 
             sampler.trigger_failover()
-            self.assertEqual(sampler.solver, p4)
+            self.assertEqual(sampler.solver.identity, p4.identity)
 
             sampler.trigger_failover()
-            self.assertEqual(sampler.solver, c4)
+            self.assertEqual(sampler.solver.identity, c4.identity)
 
             # verify wrap-around in case all solvers fail same number of times
             sampler.trigger_failover()
-            self.assertEqual(sampler.solver, p6)
+            self.assertEqual(sampler.solver.identity, p6.identity)
 
     @mock.patch.object(Client, 'create_session', lambda client: mock.Mock())
     def test_failover_config_invariance(self):
@@ -414,20 +437,20 @@ class TestDWaveSamplerFailover(unittest.TestCase):
         p4 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(4), client=None)
         c4 = StructuredSolver(data=mocks.qpu_chimera_solver_data(4), client=None)
 
-        with mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [p4, c4, p1, c1]):
+        with mock.patch.object(Client, '_fetch_solvers', mock_fetch_solvers(p4, c4, p1, c1)):
 
             # request chimeras only, preferring smaller ones
             solver_def = dict(topology__type='chimera', order_by='num_active_qubits')
             sampler = DWaveSampler(failover=True, token='mock', solver=solver_def)
 
-            self.assertEqual(sampler.solver, c1)
+            self.assertEqual(sampler.solver.identity, c1.identity)
 
             sampler.trigger_failover()
-            self.assertEqual(sampler.solver, c4)
+            self.assertEqual(sampler.solver.identity, c4.identity)
 
             # verify wrap-around
             sampler.trigger_failover()
-            self.assertEqual(sampler.solver, c1)
+            self.assertEqual(sampler.solver.identity, c1.identity)
 
     @mock.patch.object(Client, 'create_session', lambda client: mock.Mock())
     def test_solver_not_found(self):
@@ -436,7 +459,7 @@ class TestDWaveSamplerFailover(unittest.TestCase):
         # only pegasus is available
         p1 = StructuredSolver(data=mocks.qpu_pegasus_solver_data(1), client=None)
 
-        with mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [p1]):
+        with mock.patch.object(Client, '_fetch_solvers', mock_fetch_solvers(p1)):
 
             # but we request a chimera
             solver_def = dict(topology__type='chimera')
@@ -446,7 +469,7 @@ class TestDWaveSamplerFailover(unittest.TestCase):
 
 class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
     @mock.patch('dwave.system.samplers.dwave_sampler.get_regions')
-    @mock.patch('dwave.system.samplers.dwave_sampler.Client')
+    @patch_client()
     def test_failover_regions_init(self, mock_client, mock_get_regions):
         with self.subTest("single default region"):
             with DWaveSampler(failover_regions=False) as sampler:
@@ -551,10 +574,10 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
         self.fetch_regions = start(mock.patch(
             'dwave.cloud.regions._fetch_available_regions', return_value=self.regions))
 
-        # mock solvers fetch from solver api
+        # mock solvers fetch from solver api (one solver per client/region)
         solver = StructuredSolver(data=mocks.qpu_pegasus_solver_data(4), client=None)
         start(mock.patch.object(Client, 'create_session', lambda client: mock.Mock()))
-        start(mock.patch.object(Client, '_fetch_solvers', lambda *pa, **kw: [solver]))
+        start(mock.patch.object(Client, '_fetch_solvers', mock_fetch_solvers(solver)))
 
     @contextlib.contextmanager
     def config_file(self, body=None):
@@ -583,6 +606,7 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
     def assert_clients_consistent(self, sampler):
         # default client is the first one, and client regions match failover regions
         self.assertIs(sampler.client, sampler._clients[0])
+        self.assertIs(sampler.solver.client, sampler.client)
         self.assertEqual([client.config.region for client in sampler._clients],
                          sampler.failover_regions)
 
@@ -738,6 +762,20 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
                         self.assertEqual(len(sampler._clients), len(self.region_codes))
                         self.assertEqual(sampler.client.config.region, region)
                         self.assert_clients_consistent(sampler)
+
+    def test_failover_across_regions(self):
+        # on failover, the active client follows the selected solver, cycling
+        # through regions in failover_regions order
+        with self.sampler(failover=True, failover_regions=self.region_codes) as sampler:
+            # default region (resolved on client init) is prioritized
+            self.assertEqual(sampler.failover_regions[0], DEFAULT_REGION)
+            self.assertEqual(set(sampler.failover_regions), set(self.region_codes))
+
+            for _ in range(2):      # verify wrap-around as well
+                for client in sampler._clients:
+                    self.assertIs(sampler.client, client)
+                    self.assertIs(sampler.solver.client, client)
+                    sampler.trigger_failover()
 
     def test_failover_regions_exclude_configured_region(self):
         # configured region has to be in the explicit list of failover regions

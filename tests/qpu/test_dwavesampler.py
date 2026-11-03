@@ -196,15 +196,24 @@ class TestMissingQubits(unittest.TestCase):
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestClientSelection(unittest.TestCase):
 
+    @staticmethod
+    def patch_client(mock_client):
+        client = mock_client.return_value
+        client.get_solvers.side_effect = \
+            lambda *args, **kwargs: [mock.MagicMock(client=client)]
+
     def test_client_type(self):
         with mock.patch('dwave.cloud.client.qpu.Client') as qpu:
+            self.patch_client(qpu)
             self.assertEqual(DWaveSampler().client, qpu())
             self.assertEqual(DWaveSampler(client='qpu').client, qpu())
 
         with mock.patch('dwave.cloud.client.sw.Client') as sw:
+            self.patch_client(sw)
             self.assertEqual(DWaveSampler(client='sw').client, sw())
 
         with mock.patch('dwave.cloud.client.hybrid.Client') as hybrid:
+            self.patch_client(hybrid)
             self.assertEqual(DWaveSampler(client='hybrid').client, hybrid())
 
     def test_base_client(self):

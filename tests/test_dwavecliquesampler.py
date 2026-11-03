@@ -150,6 +150,15 @@ class TestDWaveCliqueSampler(unittest.TestCase):
 class TestFailover(unittest.TestCase):
 
     @staticmethod
+    def patch_client(mock_client):
+        """Patch mock `Client` class so that mock client instances return a list
+        with a fresh mock solver, bound to the client, on each `get_solvers()` call.
+        """
+        client = mock_client.from_config.return_value
+        client.get_solvers.side_effect = \
+            lambda *args, **kwargs: [unittest.mock.MagicMock(client=client)]
+
+    @staticmethod
     def patch_solver(solver, exc):
         """Patch mock `solver` to fail with `exc` on sampleset resolve."""
 
@@ -174,6 +183,7 @@ class TestFailover(unittest.TestCase):
 
     @unittest.mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_default(self, mock_client):
+        self.patch_client(mock_client)
         sampler = DWaveCliqueSampler()
 
         self.patch_solver(sampler.child.solver, exceptions.SolverOfflineError)
@@ -192,6 +202,7 @@ class TestFailover(unittest.TestCase):
     ])
     @unittest.mock.patch('dwave.system.samplers.dwave_sampler.Client')
     def test_async_failover(self, source_exc, target_exc, mock_client):
+        self.patch_client(mock_client)
         sampler = DWaveCliqueSampler(failover=True)
 
         self.patch_solver(sampler.child.solver, source_exc)
