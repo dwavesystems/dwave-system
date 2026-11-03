@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import copy
 import collections.abc as abc
+import warnings
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
@@ -41,6 +42,10 @@ if TYPE_CHECKING:
     from dwave.cloud.solver import StructuredSolver
 
 __all__ = ['DWaveSampler', 'qpu_graph']
+
+
+class SolverAccessFailoverWarning(Warning):
+    """Region failover triggered due to solver metadata fetch error."""
 
 
 def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
@@ -317,7 +322,12 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         # build the combined list of all solvers across failover regions
         solvers = []
         for client in self._clients:
-            solvers.extend(self._get_solvers(client, refresh=refresh))
+            try:
+                solvers.extend(self._get_solvers(client, refresh=refresh))
+            except (RequestTimeout, PollingTimeout, SolverError, InvalidAPIResponseError):
+                warnings.warn(f"Skipping all solvers in region {client.config.region!r} "
+                              "due to solver metadata access error.",
+                              category=SolverAccessFailoverWarning, stacklevel=2)
 
         # we now just need to de-prioritize penalized solvers
         solvers.sort(key=lambda solver: penalty.get(self._solver_id(solver), 0))
