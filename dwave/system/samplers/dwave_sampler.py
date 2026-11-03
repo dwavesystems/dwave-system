@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 import dimod
 import dwave.graphs
 from dimod.exceptions import BinaryQuadraticModelStructureError
+from dwave.cloud.api.exceptions import InternalServerError
 from dwave.cloud.client import Client
 from dwave.cloud.exceptions import (
     SolverError, SolverAuthenticationError, InvalidAPIResponseError,
@@ -324,7 +325,8 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for client in self._clients:
             try:
                 solvers.extend(self._get_solvers(client, refresh=refresh))
-            except (RequestTimeout, PollingTimeout, SolverError, InvalidAPIResponseError):
+            except (RequestTimeout, PollingTimeout,
+                    SolverError, InvalidAPIResponseError, InternalServerError):
                 warnings.warn(f"Skipping all solvers in region {client.config.region!r} "
                               "due to solver metadata access error.",
                               category=SolverAccessFailoverWarning, stacklevel=2)

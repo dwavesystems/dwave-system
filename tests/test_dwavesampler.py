@@ -15,6 +15,7 @@
 import contextlib
 import textwrap
 import unittest
+import warnings
 from uuid import uuid4
 from unittest import mock
 from concurrent.futures import Future
@@ -27,13 +28,14 @@ import dwave.graphs
 
 from dwave.cloud import exceptions
 from dwave.cloud import computation
+from dwave.cloud.api.exceptions import InternalServerError
 from dwave.cloud.testing import mocks, isolated_environ, iterable_mock_open
 from dwave.cloud.solver import StructuredSolver
 from dwave.cloud.api.models import Region
 from dwave.cloud.config.constants import DEFAULT_REGION
 
 from dwave.system.samplers import DWaveSampler, qpu_graph
-from dwave.system.samplers.dwave_sampler import Client
+from dwave.system.samplers.dwave_sampler import Client, SolverAccessFailoverWarning
 from dwave.system.warnings import EnergyScaleWarning, TooFewSamplesWarning
 from dwave.system.exceptions import FailoverCondition, RetryCondition
 
@@ -779,6 +781,110 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
                     self.assertIs(sampler.client, client)
                     self.assertIs(sampler.solver.client, client)
                     sampler.trigger_failover()
+
+    def fetch_solvers_with_unreachable_regions(self, regions, exc=exceptions.RequestTimeout):
+        # Client.fetch_solvers mock that raises `exc` in `regions`
+        fetch_solvers = Client._fetch_solvers
+
+        def _fetch_solvers(client, *args, **kwargs):
+            if client.config.region in regions:
+                raise exc
+            return fetch_solvers(client, *args, **kwargs)
+
+        return mock.patch.object(Client, '_fetch_solvers', _fetch_solvers)
+
+    def assert_access_warnings(self, cm, regions):
+        # exactly one `SolverAccessFailoverWarning` should be raised per region
+        warned = [str(w.message) for w in cm.warnings
+                  if issubclass(w.category, SolverAccessFailoverWarning)]
+        self.assertEqual(len(warned), len(regions))
+        for region in regions:
+            self.assertTrue(any(repr(region) in msg for msg in warned),
+                            f"no warning for region {region!r} in {warned!r}")
+
+    @parameterized.expand([
+        (exceptions.RequestTimeout,),
+        (exceptions.PollingTimeout,),
+        (exceptions.SolverError,),
+        (exceptions.InvalidAPIResponseError,),
+        (InternalServerError,),
+    ])
+    def test_unreachable_region_skipped_on_init(self, exc):
+        # solver metadata access error in the preferred region doesn't fail
+        # sampler init; a solver from the next failover region is selected instead
+        unreachable = [DEFAULT_REGION]      # preferred (default) region is down
+
+        with self.fetch_solvers_with_unreachable_regions(unreachable, exc=exc):
+            with self.assertWarns(SolverAccessFailoverWarning) as cm:
+                with self.sampler(failover=True, failover_regions=self.region_codes) as sampler:
+                    self.assertEqual(sampler.failover_regions[0], DEFAULT_REGION)
+                    self.assertEqual(len(sampler._clients), len(self.region_codes))
+
+                    # client for the unreachable region is skipped, the next one is used
+                    self.assertIs(sampler.client, sampler._clients[1])
+                    self.assertIs(sampler.solver.client, sampler.client)
+                    self.assertNotIn(sampler.client.config.region, unreachable)
+
+        self.assert_access_warnings(cm, unreachable)
+
+    def test_unreachable_region_skipped_on_failover(self):
+        # a region that becomes unreachable after sampler init is skipped on
+        # failover, and used again once it's back
+        with self.sampler(failover=True, failover_regions=self.region_codes) as sampler:
+            clients = sampler._clients
+            self.assertIs(sampler.client, clients[0])
+            unreachable = [clients[1].config.region]
+
+            with self.fetch_solvers_with_unreachable_regions(unreachable):
+                with self.assertWarns(SolverAccessFailoverWarning) as cm:
+                    sampler.trigger_failover()
+
+                # second region skipped, third selected
+                self.assertIs(sampler.client, clients[2])
+                self.assertIs(sampler.solver.client, sampler.client)
+                self.assert_access_warnings(cm, unreachable)
+
+            # region is back; being the least penalized, it's selected next
+            with warnings.catch_warnings():
+                warnings.simplefilter('error', SolverAccessFailoverWarning)
+                sampler.trigger_failover()
+
+            self.assertIs(sampler.client, clients[1])
+            self.assertIs(sampler.solver.client, sampler.client)
+
+    def test_all_regions_unreachable(self):
+        # solver selection fails only if solvers can't be fetched from any region
+        unreachable = self.region_codes
+
+        with self.subTest("on init"):
+            close = mock.patch.object(DWaveSampler, 'close', autospec=True,
+                                      side_effect=DWaveSampler.close)
+            with self.fetch_solvers_with_unreachable_regions(unreachable), close as mock_close:
+                with self.assertWarns(SolverAccessFailoverWarning) as cm:
+                    with self.assertRaises(exceptions.SolverNotFoundError):
+                        DWaveSampler(failover=True, failover_regions=self.region_codes)
+
+            self.assert_access_warnings(cm, unreachable)
+            # clients are released on init failure
+            mock_close.assert_called_once()
+
+        with self.subTest("on failover"):
+            with self.sampler(failover=True, failover_regions=self.region_codes) as sampler:
+                solver = sampler.solver
+                with self.fetch_solvers_with_unreachable_regions(unreachable):
+                    with self.assertWarns(SolverAccessFailoverWarning) as cm:
+                        with self.assertRaises(exceptions.SolverNotFoundError):
+                            sampler.trigger_failover()
+
+                self.assert_access_warnings(cm, unreachable)
+                # failed failover doesn't change the active solver
+                self.assertIs(sampler.solver, solver)
+
+    def test_unrelated_solver_fetch_errors_propagate(self):
+        # only solver metadata access errors trigger region skipping
+        with self.fetch_solvers_with_unreachable_regions([DEFAULT_REGION], exc=KeyError):
+            with self.assertRaises(KeyError):
+                DWaveSampler(failover=True, failover_regions=self.region_codes)
 
     def test_failover_regions_exclude_configured_region(self):
         # configured region has to be in the explicit list of failover regions
