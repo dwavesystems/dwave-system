@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from numbers import Number
+from collections import abc
 from typing import Tuple
 
 import dimod
@@ -167,6 +167,16 @@ class DWaveCliqueSampler(dimod.Sampler):
                became non-blocking (asynchronous), Setting ``failover=True`` had
                no effect.
 
+        failover_regions (bool/list, optional, default=False):
+            When failover is enabled (with ``failover=True``), the failover
+            solvers are, by default, picked from the default/configured region.
+            To enable failover across multiple regions, set ``failover_regions=True``
+            (to use all available regions), or specify the exact list of regions
+            from which a failover solver is selected with :meth:`.trigger_failover`
+            (e.g. ``failover_regions=['na-east-1', 'na-west-1']``).
+
+            .. versionadded:: 1.37.0
+
         retry_interval (number, optional, default=-1):
             Ignored, but kept for backward compatibility.
 
@@ -217,10 +227,14 @@ class DWaveCliqueSampler(dimod.Sampler):
 
     """
     def __init__(self, *,
-                 failover: bool = False, retry_interval: Number = -1,
-                 **config):
-        self.child = DWaveSampler(
-            failover=failover, retry_interval=retry_interval, **config)
+                 failover: bool = False,
+                 failover_regions: bool | abc.Sequence[str] = False,
+                 retry_interval: float = -1,
+                 **config) -> None:
+        self.child = DWaveSampler(failover=failover,
+                                  failover_regions=failover_regions,
+                                  retry_interval=retry_interval,
+                                  **config)
 
     def close(self):
         """Close the child sampler to release system resources such as threads.
