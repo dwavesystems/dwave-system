@@ -260,11 +260,22 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                     self.failover_regions.remove(region)
                     self.failover_regions.insert(0, region)
 
-            self._clients = [Client.from_config(**(config | dict(region=region)))
-                             for region in self.failover_regions]
+            # when creating multiple clients, make sure there're no lingering
+            # (unclosed) ones in case one init fails
+            self._clients = []
+            for region in self.failover_regions:
+                try:
+                    self._clients.append(Client.from_config(**(config | dict(region=region))))
+                except:
+                    self.close()
+                    raise
 
         self.client = self._clients[0]
-        self.solver = self._get_solver(penalty=self._solver_penalty)
+        try:
+            self.solver = self._get_solver(penalty=self._solver_penalty)
+        except:
+            self.close()
+            raise
 
     def close(self):
         """Close the underlying cloud client to release system resources such as
