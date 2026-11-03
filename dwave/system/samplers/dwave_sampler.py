@@ -217,6 +217,9 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             raise TypeError("mapping expected for 'defaults'")
         defaults.update(solver=dict(order_by='-num_active_qubits'))
 
+        if failover_regions and not failover:
+            raise ValueError("'failover_regions' can't be set unless 'failover=True'")
+
         self.failover = failover
         self.retry_interval = retry_interval
         self.failover_regions = failover_regions

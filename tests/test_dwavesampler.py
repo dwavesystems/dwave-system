@@ -478,7 +478,7 @@ class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
         with self.subTest("single explicit region"):
             mock_client.reset_mock()
             region = 'mock-region-1'
-            with DWaveSampler(failover_regions=[region]) as sampler:
+            with DWaveSampler(failover=True, failover_regions=[region]) as sampler:
                 self.assertEqual(len(sampler._clients), 1)
                 self.assertEqual(mock_client.from_config.call_args.kwargs.get('region'), region)
 
@@ -487,7 +487,7 @@ class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
             regions = ['mock-region-1', 'mock-region-2']
             default_region = regions[0]
             mock_client.from_config.return_value.__enter__.return_value.config.region = default_region
-            with DWaveSampler(failover_regions=regions) as sampler:
+            with DWaveSampler(failover=True, failover_regions=regions) as sampler:
                 self.assertEqual(len(sampler._clients), len(regions))
                 calls = mock_client.from_config.call_args_list
                 calls.pop(0)    # first client is used to fetch regions properly
@@ -500,7 +500,7 @@ class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
             regions = ['mock-region-1', 'mock-region-2']
             default_region = regions[-1]
             mock_client.from_config.return_value.__enter__.return_value.config.region = default_region
-            with DWaveSampler(failover_regions=regions, region=default_region) as sampler:
+            with DWaveSampler(failover=True, failover_regions=regions, region=default_region) as sampler:
                 self.assertEqual(len(sampler._clients), len(regions))
                 calls = mock_client.from_config.call_args_list
                 calls.pop(0)    # first client is used to fetch regions properly
@@ -516,7 +516,7 @@ class TestDWaveSamplerMultiRegionFailover(unittest.TestCase):
             mock_get_regions.return_value = [
                 Region(code=r, name=r, endpoint=r) for r in regions]
             mock_client.from_config.return_value.__enter__.return_value.config.region = default_region
-            with DWaveSampler(failover_regions=True) as sampler:
+            with DWaveSampler(failover=True, failover_regions=True) as sampler:
                 self.assertEqual(len(sampler._clients), len(regions))
                 calls = mock_client.from_config.call_args_list
                 calls.pop(0)    # first client is used to fetch regions properly
@@ -697,7 +697,7 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
         for source in (endpoint_from_env, endpoint_from_file):
             with self.subTest(source=source.__name__):
                 self.fetch_regions.reset_mock()
-                with source(), self.sampler(failover_regions=True) as sampler:
+                with source(), self.sampler(failover=True, failover_regions=True) as sampler:
                     # all regions from the metadata api are used, default region first
                     self.assertEqual(len(sampler._clients), len(self.regions))
                     self.assertEqual(sampler.failover_regions[0], DEFAULT_REGION)
@@ -756,12 +756,15 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
         for source in (region_from_kwarg, region_from_env, region_from_file, region_from_profile):
             for failover_regions in (True, explicit_regions):
                 with self.subTest(source=source.__name__, failover_regions=failover_regions):
-                    with source() as kwargs, self.sampler(failover_regions=failover_regions, **kwargs) as sampler:
-                        self.assertEqual(sampler.failover_regions[0], region)
-                        self.assertEqual(set(sampler.failover_regions), set(self.region_codes))
-                        self.assertEqual(len(sampler._clients), len(self.region_codes))
-                        self.assertEqual(sampler.client.config.region, region)
-                        self.assert_clients_consistent(sampler)
+                    with source() as kwargs:
+                        with self.sampler(
+                            failover=True, failover_regions=failover_regions, **kwargs
+                        ) as sampler:
+                            self.assertEqual(sampler.failover_regions[0], region)
+                            self.assertEqual(set(sampler.failover_regions), set(self.region_codes))
+                            self.assertEqual(len(sampler._clients), len(self.region_codes))
+                            self.assertEqual(sampler.client.config.region, region)
+                            self.assert_clients_consistent(sampler)
 
     def test_failover_across_regions(self):
         # on failover, the active client follows the selected solver, cycling
@@ -785,17 +788,21 @@ class TestDWaveSamplerMultiRegionFailoverConfig(unittest.TestCase):
 
         with self.subTest("region from kwarg"):
             with self.assertRaises(ValueError):
-                DWaveSampler(failover_regions=failover_regions, region=region)
+                DWaveSampler(failover=True,  failover_regions=failover_regions, region=region)
 
         with self.subTest("region from env"):
             with isolated_environ(add={'DWAVE_API_REGION': region}):
                 with self.assertRaises(ValueError):
-                    DWaveSampler(failover_regions=failover_regions)
+                    DWaveSampler(failover=True, failover_regions=failover_regions)
 
         with self.subTest("region from config file"):
             with self.config_file():
                 with self.assertRaises(ValueError):
-                    DWaveSampler(failover_regions=failover_regions, profile='regional')
+                    DWaveSampler(failover=True, failover_regions=failover_regions, profile='regional')
+
+        with self.subTest("failover_regions given without failover"):
+            with self.assertRaises(ValueError):
+                DWaveSampler(failover_regions=True)
 
 
 class TestDWaveSamplerAnnealSchedule(unittest.TestCase):

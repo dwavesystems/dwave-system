@@ -245,18 +245,18 @@ class TestMultiRegionFailover(unittest.TestCase):
 
     def test_metadata_api_with_default_region(self):
         with DWaveSampler(metadata_api_endpoint=constants.DEFAULT_METADATA_API_ENDPOINT,
-                          failover_regions=True) as sampler:
+                          failover=True, failover_regions=True) as sampler:
             self.assertEqual(len(sampler.failover_regions), len(self.regions))
             self.assertEqual(sampler.client.config.region, constants.DEFAULT_REGION)
 
     def test_metadata_api_with_explicit_region(self):
         region = self.regions[-1].code
         with DWaveSampler(metadata_api_endpoint=constants.DEFAULT_METADATA_API_ENDPOINT,
-                          failover_regions=True, region=region) as sampler:
+                          failover=True, failover_regions=True, region=region) as sampler:
             self.assertEqual(sampler.client.config.region, region)
 
     def test_explicit_regions_list(self):
         regions = [r.code for r in self.regions[:2]]
-        with DWaveSampler(failover_regions=regions) as sampler:
+        with DWaveSampler(failover=True, failover_regions=regions) as sampler:
             self.assertEqual(sampler.client.config.region, regions[0])
             self.assertEqual(len(sampler._clients), len(regions))
