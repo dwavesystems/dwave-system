@@ -22,6 +22,8 @@ import numpy
 import dimod
 from dwave.cloud.exceptions import ConfigFileError, SolverNotFoundError
 from dwave.cloud.client import Client
+from dwave.cloud.config import constants
+from dwave.cloud.regions import get_regions
 
 from dwave.system.samplers import DWaveSampler
 
@@ -194,15 +196,24 @@ class TestMissingQubits(unittest.TestCase):
 @unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
 class TestClientSelection(unittest.TestCase):
 
+    @staticmethod
+    def patch_client(mock_client):
+        client = mock_client.return_value
+        client.get_solvers.side_effect = \
+            lambda *args, **kwargs: [mock.MagicMock(client=client)]
+
     def test_client_type(self):
         with mock.patch('dwave.cloud.client.qpu.Client') as qpu:
+            self.patch_client(qpu)
             self.assertEqual(DWaveSampler().client, qpu())
             self.assertEqual(DWaveSampler(client='qpu').client, qpu())
 
         with mock.patch('dwave.cloud.client.sw.Client') as sw:
+            self.patch_client(sw)
             self.assertEqual(DWaveSampler(client='sw').client, sw())
 
         with mock.patch('dwave.cloud.client.hybrid.Client') as hybrid:
+            self.patch_client(hybrid)
             self.assertEqual(DWaveSampler(client='hybrid').client, hybrid())
 
     def test_base_client(self):
@@ -213,3 +224,39 @@ class TestClientSelection(unittest.TestCase):
             self.assertEqual(type(DWaveSampler(client='base').client), Client)
         except (ValueError, ConfigFileError):
             raise unittest.SkipTest("no API token available")
+
+
+@unittest.skipIf(os.getenv('SKIP_INT_TESTS'), "Skipping integration test.")
+class TestMultiRegionFailover(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            with DWaveSampler() as sampler:
+                cls.regions = get_regions(sampler.client.config)
+        except (ValueError, ConfigFileError, SolverNotFoundError):
+            raise unittest.SkipTest("no qpu available")
+
+    def test_default(self):
+        with DWaveSampler() as sampler:
+            self.assertFalse(sampler.failover_regions)
+            self.assertEqual(sampler._clients, [sampler.client])
+            self.assertEqual(sampler.client.config.region, constants.DEFAULT_REGION)
+
+    def test_metadata_api_with_default_region(self):
+        with DWaveSampler(metadata_api_endpoint=constants.DEFAULT_METADATA_API_ENDPOINT,
+                          failover=True, failover_regions=True) as sampler:
+            self.assertEqual(len(sampler.failover_regions), len(self.regions))
+            self.assertEqual(sampler.client.config.region, constants.DEFAULT_REGION)
+
+    def test_metadata_api_with_explicit_region(self):
+        region = self.regions[-1].code
+        with DWaveSampler(metadata_api_endpoint=constants.DEFAULT_METADATA_API_ENDPOINT,
+                          failover=True, failover_regions=True, region=region) as sampler:
+            self.assertEqual(sampler.client.config.region, region)
+
+    def test_explicit_regions_list(self):
+        regions = [r.code for r in self.regions[:2]]
+        with DWaveSampler(failover=True, failover_regions=regions) as sampler:
+            self.assertEqual(sampler.client.config.region, regions[0])
+            self.assertEqual(len(sampler._clients), len(regions))

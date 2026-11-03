@@ -20,18 +20,21 @@ from __future__ import annotations
 
 import copy
 import collections.abc as abc
+import warnings
 from collections import defaultdict
-from typing import Optional, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import dimod
 import dwave.graphs
 from dimod.exceptions import BinaryQuadraticModelStructureError
+from dwave.cloud.api.exceptions import InternalServerError
 from dwave.cloud.client import Client
 from dwave.cloud.exceptions import (
     SolverError, SolverAuthenticationError, InvalidAPIResponseError,
     RequestTimeout, PollingTimeout, ProblemUploadError, ProblemStructureError,
     SolverNotFoundError,
 )
+from dwave.cloud.regions import get_regions
 
 from dwave.system.exceptions import FailoverCondition, RetryCondition
 from dwave.system.warnings import WarningHandler, WarningAction
@@ -40,6 +43,10 @@ if TYPE_CHECKING:
     from dwave.cloud.solver import StructuredSolver
 
 __all__ = ['DWaveSampler', 'qpu_graph']
+
+
+class SolverAccessFailoverWarning(Warning):
+    """Region failover triggered due to solver metadata fetch error."""
 
 
 def qpu_graph(topology_type, topology_shape, nodelist, edgelist):
@@ -127,6 +134,16 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
                became non-blocking (asynchronous), Setting ``failover=True`` had
                no effect.
 
+        failover_regions (bool/list, optional, default=False):
+            When failover is enabled (with ``failover=True``), the failover
+            solvers are, by default, picked from the default/configured region.
+            To enable failover across multiple regions, set ``failover_regions=True``
+            (to use all available regions), or specify the exact list of regions
+            from which a failover solver is selected with :meth:`.trigger_failover`
+            (e.g. ``failover_regions=['na-east-1', 'na-west-1']``).
+
+            .. versionadded:: 1.37.0
+
         retry_interval (number, optional, default=-1):
             Ignored, but kept for backward compatibility.
 
@@ -191,7 +208,11 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             :class:`.DWaveSampler`.
         *   :ref:`qpu_basic_config`.
     """
-    def __init__(self, failover=False, retry_interval=-1, **config):
+    def __init__(self,
+                 failover: bool = False,
+                 failover_regions: bool | abc.Sequence[str] = False,
+                 retry_interval: float = -1,
+                 **config) -> None:
         # strongly prefer QPU solvers; requires kwarg-level override
         config.setdefault('client', 'qpu')
 
@@ -202,12 +223,65 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
             raise TypeError("mapping expected for 'defaults'")
         defaults.update(solver=dict(order_by='-num_active_qubits'))
 
+        if failover_regions and not failover:
+            raise ValueError("'failover_regions' can't be set unless 'failover=True'")
+
         self.failover = failover
         self.retry_interval = retry_interval
+        self.failover_regions = failover_regions
         self._solver_penalty = defaultdict(int)
 
-        self.client = Client.from_config(**config)
-        self.solver = self._get_solver(penalty=self._solver_penalty)
+        if not failover_regions:
+            # single (default) region is used for failover
+            self._clients = [Client.from_config(**config)]
+
+        elif isinstance(failover_regions, abc.Sequence) and len(failover_regions) == 1:
+            # single (user-defined) region is used for failover
+            config['region'] = failover_regions[0]
+            self._clients = [Client.from_config(**config)]
+
+        else:
+            # the multi-region failover flow
+
+            # note: to support the full range of `**config` options, we either need to
+            # instantiate a Client from_config, or replicate the nontrivial logic here.
+            # In interest of simplicity, we'll just create a throw-away Client.
+            with Client.from_config(**config) as client:
+                regions = get_regions(client.config)
+                if not isinstance(failover_regions, abc.Sequence):
+                    self.failover_regions = [region.code for region in regions]
+                else:
+                    self.failover_regions = list(failover_regions)
+
+                # region from kwargs/config/env is resolved on client init
+                region = client.config.region
+
+            if region is not None:
+                if region not in self.failover_regions:
+                    raise ValueError(
+                        f"Specified {region=} is not available in "
+                        f"failover regions: {self.failover_regions}")
+                else:
+                    # prioritize the user-specified region
+                    self.failover_regions.remove(region)
+                    self.failover_regions.insert(0, region)
+
+            # when creating multiple clients, make sure there're no lingering
+            # (unclosed) ones in case one init fails
+            self._clients = []
+            for region in self.failover_regions:
+                try:
+                    self._clients.append(Client.from_config(**(config | dict(region=region))))
+                except:
+                    self.close()
+                    raise
+
+        self.client = self._clients[0]
+        try:
+            self.solver = self._get_solver(penalty=self._solver_penalty)
+        except:
+            self.close()
+            raise
 
     def close(self):
         """Close the underlying cloud client to release system resources such as
@@ -219,9 +293,24 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         See also:
             :meth:`~dwave.cloud.client.Client.close`.
         """
-        self.client.close()
+        for client in self._clients:
+            client.close()
 
-    def _get_solver(self, *, refresh: bool = False, penalty: Optional[Dict[str, int]] = None):
+    @staticmethod
+    def _solver_id(solver: StructuredSolver) -> str:
+        """Combine solver region and stringified solver identity."""
+        return f"{solver.client.config.region}:{solver.identity.to_id()}"
+
+    @staticmethod
+    def _get_solvers(client: Client, refresh: bool = False) -> list[StructuredSolver]:
+        """Returns a filtered list of solvers, using DWaveSampler's filters."""
+        # the only solver filters used by `DWaveSampler` are those
+        # propagated to `Client.from_config` on construction
+        filters = copy.deepcopy(client.config.solver)
+        order_by = filters.pop('order_by', 'avg_load')
+        return client.get_solvers(refresh=refresh, order_by=order_by, **filters)
+
+    def _get_solver(self, *, refresh: bool = False, penalty: dict[str, int] | None = None):
         """Get the least penalized solver from the list of solvers filtered and
         ordered according to user config.
 
@@ -231,19 +320,28 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         if penalty is None:
             penalty = {}
 
-        # the only solver filters used by `DWaveSampler` are those
-        # propagated to `Client.from_config` on construction
-        filters = copy.deepcopy(self.client.config.solver)
-        order_by = filters.pop('order_by', 'avg_load')
-        solvers = self.client.get_solvers(refresh=refresh, order_by=order_by, **filters)
+        # build the combined list of all solvers across failover regions
+        solvers = []
+        for client in self._clients:
+            try:
+                solvers.extend(self._get_solvers(client, refresh=refresh))
+            except (RequestTimeout, PollingTimeout,
+                    SolverError, InvalidAPIResponseError, InternalServerError):
+                warnings.warn(f"Skipping all solvers in region {client.config.region!r} "
+                              "due to solver metadata access error.",
+                              category=SolverAccessFailoverWarning, stacklevel=2)
 
         # we now just need to de-prioritize penalized solvers
-        solvers.sort(key=lambda solver: penalty.get(solver.identity.to_id(), 0))
+        solvers.sort(key=lambda solver: penalty.get(self._solver_id(solver), 0))
 
         try:
-            return solvers[0]
+            solver = solvers[0]
         except IndexError:
             raise SolverNotFoundError("Solver with the requested features not available") from None
+
+        # update the active client before returning the least penalized solver
+        self.client = solver.client
+        return solver
 
     warnings_default = WarningAction.IGNORE
     """Defines default behavior for ``warnings`` keyword arguments of the
@@ -357,7 +455,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Trigger a failover and connect to a new solver."""
 
         # penalize the solver that just failed
-        self._solver_penalty[self.solver.identity.to_id()] += 1
+        self._solver_penalty[self._solver_id(self.solver)] += 1
 
         # select the next solver in user-defined preference order, but try to
         # avoid the penalized (failed) ones

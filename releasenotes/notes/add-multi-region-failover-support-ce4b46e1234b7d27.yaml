@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Add support for failover across multiple regions.
+    See `#616 <https://github.com/dwavesystems/dwave-system/issues/616>`_.
