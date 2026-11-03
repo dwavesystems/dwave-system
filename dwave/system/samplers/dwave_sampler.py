@@ -276,6 +276,20 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         for client in self._clients:
             client.close()
 
+    @staticmethod
+    def _solver_id(solver: StructuredSolver) -> str:
+        """Combine solver region and stringified solver identity."""
+        return f"{solver.client.config.region}:{solver.identity.to_id()}"
+
+    @staticmethod
+    def _get_solvers(client: Client, refresh: bool = False) -> list[StructuredSolver]:
+        """Returns a filtered list of solvers, using DWaveSampler's filters."""
+        # the only solver filters used by `DWaveSampler` are those
+        # propagated to `Client.from_config` on construction
+        filters = copy.deepcopy(client.config.solver)
+        order_by = filters.pop('order_by', 'avg_load')
+        return client.get_solvers(refresh=refresh, order_by=order_by, **filters)
+
     def _get_solver(self, *, refresh: bool = False, penalty: dict[str, int] | None = None):
         """Get the least penalized solver from the list of solvers filtered and
         ordered according to user config.
@@ -286,19 +300,22 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         if penalty is None:
             penalty = {}
 
-        # the only solver filters used by `DWaveSampler` are those
-        # propagated to `Client.from_config` on construction
-        filters = copy.deepcopy(self.client.config.solver)
-        order_by = filters.pop('order_by', 'avg_load')
-        solvers = self.client.get_solvers(refresh=refresh, order_by=order_by, **filters)
+        # build the combined list of all solvers across failover regions
+        solvers = []
+        for client in self._clients:
+            solvers.extend(self._get_solvers(client, refresh=refresh))
 
         # we now just need to de-prioritize penalized solvers
-        solvers.sort(key=lambda solver: penalty.get(solver.identity.to_id(), 0))
+        solvers.sort(key=lambda solver: penalty.get(self._solver_id(solver), 0))
 
         try:
-            return solvers[0]
+            solver = solvers[0]
         except IndexError:
             raise SolverNotFoundError("Solver with the requested features not available") from None
+
+        # update the active client before returning the least penalized solver
+        self.client = solver.client
+        return solver
 
     warnings_default = WarningAction.IGNORE
     """Defines default behavior for ``warnings`` keyword arguments of the
@@ -412,7 +429,7 @@ class DWaveSampler(dimod.Sampler, dimod.Structured):
         """Trigger a failover and connect to a new solver."""
 
         # penalize the solver that just failed
-        self._solver_penalty[self.solver.identity.to_id()] += 1
+        self._solver_penalty[self._solver_id(self.solver)] += 1
 
         # select the next solver in user-defined preference order, but try to
         # avoid the penalized (failed) ones
