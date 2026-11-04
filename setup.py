@@ -37,7 +37,7 @@ install_requires = ['dimod>=0.12.20,<0.14.0',
                     'scipy>=1.13',      # oldest that supports numpy 2
                     ]
 
-python_requires = '>=3.10'
+python_requires = '>=3.11'
 
 packages = find_namespace_packages(include=['dwave.*'])
 
@@ -46,7 +46,6 @@ classifiers = [
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
