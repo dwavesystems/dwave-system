@@ -25,7 +25,7 @@ exec(open(os.path.join(".", "dwave", "system", "package_info.py")).read())
 
 
 install_requires = ['dimod>=0.12.20,<0.14.0',
-                    'dwave-cloud-client>=0.14.0,<0.15.0',
+                    'dwave-cloud-client>=0.14.1,<0.15.0',
                     'dwave-graphs>=1,<2',
                     'dwave-optimization>=0.1.0,<0.9',
                     'dwave-preprocessing>=0.5.0',
@@ -37,7 +37,7 @@ install_requires = ['dimod>=0.12.20,<0.14.0',
                     'scipy>=1.13',      # oldest that supports numpy 2
                     ]
 
-python_requires = '>=3.10'
+python_requires = '>=3.11'
 
 packages = find_namespace_packages(include=['dwave.*'])
 
@@ -46,11 +46,11 @@ classifiers = [
     'Operating System :: OS Independent',
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
 ]
 
 setup(

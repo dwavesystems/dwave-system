@@ -1,0 +1,9 @@
+---
+upgrade:
+  - |
+    Drop support for Python 3.10.
+  - |
+    The minimum supported version of the ``dwave-cloud-client`` is ``0.14.1``,
+    as that's the first version that supports Python 3.14.
+features:
+  - Add support for Python 3.15.

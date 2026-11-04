@@ -1,18 +1,18 @@
-dimod==0.12.22
-dwave-optimization==0.6.4
+dimod==0.12.23
+dwave-optimization==0.8.0
 dwave-preprocessing==0.6.11
-dwave-cloud-client==0.14.6
-dwave-graphs==1.0
-dwave-samplers==1.7.0
+dwave-cloud-client==0.14.8
+dwave-graphs==1.2.0
+dwave-samplers==1.8.0
 homebase==1.0.1
-minorminer==0.2.22
-networkx==3.4.2         # latest that supports 3.10 (and numpy 2)
+minorminer==0.2.23
 
-numpy==2.2.6; python_version < '3.11'    # latest that supports 3.10
-numpy==2.4.6; python_version >= '3.11'   # latest as of June 2026
+networkx==3.6.1         # latest version that supports 3.11 (and numpy 2)
 
-scipy==1.15.3; python_version < '3.11'
-scipy==1.16.2; python_version >= '3.11'
+numpy==2.4.6; python_version < '3.12'       # latest that supports 3.11
+numpy==2.5.4; python_version >= '3.12'
+scipy==1.17.1; python_version < '3.12'      # latest that supports 3.11
+scipy==1.18.1; python_version >= '3.12'
 
 # dev requirements
 reno==4.1.0
