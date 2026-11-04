@@ -66,13 +66,13 @@ r"""Some notes on the parameter-estimation methods provided below:
 """
 
 import warnings
-import numpy as np
-import networkx as nx
+from collections import defaultdict
+from typing import List, Literal, Optional, Tuple, Union
 
 import dimod
+import networkx as nx
+import numpy as np
 from scipy import optimize
-from typing import Tuple, Union, Optional, Literal, List
-from collections import defaultdict
 
 __all__ = [
     "background_susceptibility_bqm",
@@ -948,10 +948,10 @@ def maximum_pseudolikelihood(
                     "Bootstraps require uniform sample_weights (num_occurrences)"
                 )
             prng = np.random.RandomState(seed)
-            num_samples = en1.shape[0]
+            num_samples = en1.shape[-2]  # en1 is (reads, sites) or (bqms, reads, sites)
             x_bootstraps = []
             for _ in range(num_bootstrap_samples):
-                indices = prng.choice(num_samples, num_bootstrap_samples, replace=True)
+                indices = prng.choice(num_samples, num_samples, replace=True)
                 if en1.ndim == 2:
                     x_bs, _ = maximum_pseudolikelihood(
                         en1=en1[indices, :],

@@ -1,0 +1,8 @@
+fixes:
+  - |
+    Fix the bootstrap estimates returned by ``maximum_pseudolikelihood()``, and
+    so by ``maximum_pseudolikelihood_temperature()`` and
+    ``fast_effective_temperature()``. Each resample now draws as many reads as
+    the sample set contains. Previously it drew ``num_bootstrap_samples`` reads,
+    and with multiple BQMs it drew them only from the first ``len(bqms)`` reads.
+    See `#614 <https://github.com/dwavesystems/dwave-system/issues/614>`_.

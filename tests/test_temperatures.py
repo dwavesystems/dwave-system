@@ -13,24 +13,24 @@
 #    limitations under the License.
 
 import unittest
-import numpy as np
-import dimod
 import warnings
 from itertools import product
 
+import dimod
+import numpy as np
+
 from dwave.system.temperatures import (
+    Ip_in_units_of_B,
+    background_susceptibility_bqm,
+    background_susceptibility_ising,
+    effective_field,
+    fast_effective_temperature,
+    fluxbias_to_h,
+    freezeout_effective_temperature,
+    h_to_fluxbias,
     maximum_pseudolikelihood,
     maximum_pseudolikelihood_temperature,
-    effective_field,
-    freezeout_effective_temperature,
-    fast_effective_temperature,
-    Ip_in_units_of_B,
-    h_to_fluxbias,
-    fluxbias_to_h,
-    background_susceptibility_ising,
-    background_susceptibility_bqm,
 )
-
 from dwave.system.testing import MockDWaveSampler
 
 
@@ -312,17 +312,32 @@ class TestTemperatures(unittest.TestCase):
             self.assertEqual(T, 0)
 
     def test_bootstrap_errors(self):
-        en1 = np.array([2] * 25 + [-2] * 75)
+        en1 = np.tile([2, -2, -2, -2], 250)
         num_bootstrap_samples = 100
 
         T, Tb = maximum_pseudolikelihood_temperature(
-            en1=en1[:, np.newaxis], num_bootstrap_samples=num_bootstrap_samples
+            en1=en1[:, np.newaxis], num_bootstrap_samples=num_bootstrap_samples, seed=0
         )
 
-        # Add test to check bootstrap estimator implementation.
         # T = 1/np.arctanh(0.5). With high probability bootstrapped values
         # are finite and will throw no warnings.
         self.assertTrue(len(Tb) == num_bootstrap_samples)
+
+        # With a fraction q = 0.25 of positive fields, 1/T = arctanh(1 - 2q) has
+        # standard error 1/(2*sqrt(len(en1)*q*(1 - q))) = 0.037.
+        self.assertAlmostEqual(np.std(1 / Tb), 0.037, delta=0.01)
+
+    def test_bootstrap_errors_multiple_bqms(self):
+        # The fields of test_bootstrap_errors for two BQMs, each acting on its own site.
+        fields = np.tile([2, -2, -2, -2], 250)
+        en1 = np.zeros((2, len(fields), 2))
+        en1[0, :, 0] = fields
+        en1[1, :, 1] = fields
+
+        _, xb = maximum_pseudolikelihood(en1=en1, num_bootstrap_samples=100, seed=0)
+
+        # Each parameter has the standard error found in test_bootstrap_errors.
+        np.testing.assert_allclose(np.std(xb, axis=0), 0.037, atol=0.01)
 
     def test_sample_weights(self):
         n = 3
