@@ -7,10 +7,12 @@ dwave-samplers==1.8.0
 homebase==1.0.1
 minorminer==0.2.23
 
-# latest versions that support 3.11 (and numpy 2)
-networkx==3.6.1
-numpy==2.4.6
-scipy==1.17.1
+networkx==3.6.1         # latest version that supports 3.11 (and numpy 2)
+
+numpy==2.4.6; python_version < '3.12'       # latest that supports 3.11
+numpy==2.5.4; python_version >= '3.12'
+scipy==1.17.1; python_version < '3.12'      # latest that supports 3.11
+scipy==1.18.1; python_version >= '3.12'
 
 # dev requirements
 reno==4.1.0
