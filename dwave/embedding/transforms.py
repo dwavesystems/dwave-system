@@ -529,13 +529,16 @@ def _relabel_sampleset(target_sampleset: dimod.SampleSet,
                        chain_break_fraction: bool = False,
                        return_embedding: bool = False
                        ) -> dimod.SampleSet:
-    """Unembed a sample set in the special case of 1-to-1 variable embedding."""
+    """Unembed a sample set in the special case of 1-to-1 variable embedding.
+
+    The input sample set is not modified.
+    """
 
     if embedding.max_chain_length != 1:
         raise TypeError("Embedding without chains required for relabeling")
 
     mapping = {next(iter(c)): n for n, c in embedding.items()}
-    source_sampleset = target_sampleset.relabel_variables(mapping, inplace=True)
+    source_sampleset = target_sampleset.relabel_variables(mapping, inplace=False)
 
     # to make the unembedding interface backwards-compatible
     if chain_break_fraction:
@@ -561,7 +564,7 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
 
     Args:
         target_sampleset (:class:`~dimod.SampleSet`):
-            Sample set from the target BQM.
+            Sample set from the target BQM. The input sample set is not modified.
 
         embedding (dict):
             Mapping from :term:`source graph` to :term:`target graph` as a dict
@@ -616,7 +619,9 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
     """
 
     # short-circuit the expensive unembedding in case of a simple 1-1 mapping
-    if hasattr(embedding, 'max_chain_length') and embedding.max_chain_length == 1:
+    if (chain_break_method is None
+            and hasattr(embedding, 'max_chain_length')
+            and embedding.max_chain_length == 1):
         return _relabel_sampleset(target_sampleset=target_sampleset,
                                   embedding=embedding,
                                   source_bqm=source_bqm,
@@ -630,9 +635,15 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
         # we want to apply multiple CBM and then combine
         samplesets = [unembed_sampleset(target_sampleset, embedding,
                                         source_bqm, chain_break_method=cbm,
-                                        chain_break_fraction=chain_break_fraction)
+                                        chain_break_fraction=chain_break_fraction,
+                                        return_embedding=return_embedding)
                       for cbm in chain_break_method]
         sampleset = dimod.sampleset.concatenate(samplesets)
+        if return_embedding:
+            sampleset.info.update(samplesets[0].info)
+            sampleset.info['embedding_context']['chain_break_method'] = [
+                getattr(method, '__name__', type(method).__name__)
+                for method in chain_break_method]
 
         # Add a new data field tracking which came from
         # todo: add this functionality to dimod
@@ -675,7 +686,9 @@ def unembed_sampleset(target_sampleset, embedding, source_bqm,
 
     if return_embedding:
         embedding_context = dict(embedding=embedding,
-                                 chain_break_method=chain_break_method.__name__)
+                                 chain_break_method=getattr(
+                                     chain_break_method, '__name__',
+                                     type(chain_break_method).__name__))
         info.update(embedding_context=embedding_context)
 
     return dimod.SampleSet.from_samples_bqm((unembedded, variables),

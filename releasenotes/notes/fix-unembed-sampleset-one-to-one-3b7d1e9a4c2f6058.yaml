@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fix the one-to-one fast path of `~dwave.embedding.unembed_sampleset()` so it
+    no longer relabels the caller's target sample set in place, and so an explicit
+    ``chain_break_method`` (including a list of methods) is honored instead of
+    being bypassed.
