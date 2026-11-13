@@ -44,6 +44,15 @@ __all__ = ('EmbeddingComposite',
            )
 
 
+def _validate_bqm(bqm):
+    if not isinstance(bqm, dimod.BinaryQuadraticModel):
+        raise TypeError(
+            "Embedding composites only accept binary quadratic models (BQMs). "
+            "For constrained quadratic models (CQMs), use an appropriate sampler "
+            "such as LeapHybridCQMSampler."
+        )
+
+
 class EmbeddingComposite(dimod.ComposedSampler):
     """Maps problems to a structured sampler.
 
@@ -238,6 +247,8 @@ class EmbeddingComposite(dimod.ComposedSampler):
             See the example in the :class:`.EmbeddingComposite` class.
 
         """
+        _validate_bqm(bqm)
+
         if return_embedding is None:
             return_embedding = self.return_embedding_default
 
@@ -517,6 +528,8 @@ class LazyFixedEmbeddingComposite(EmbeddingComposite, dimod.Structured):
             :obj:`~dimod.SampleSet`
 
         """
+        _validate_bqm(bqm)
+
         if self.embedding is None:
             # get an embedding using the current find_embedding function
             embedding_parameters = parameters.pop('embedding_parameters', None)
@@ -668,6 +681,8 @@ class AutoEmbeddingComposite(EmbeddingComposite):
                                                      **kwargs)
 
     def sample(self, bqm, **parameters):
+        _validate_bqm(bqm)
+
         child = self.child
 
         # we want to pass only the parameters relevent to the child sampler
