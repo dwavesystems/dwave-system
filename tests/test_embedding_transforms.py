@@ -238,6 +238,116 @@ class TestUnembedSampleSet(unittest.TestCase):
 
         np.testing.assert_array_equal(ss.record.chain_break_method, [0, 0, 1])
 
+    @parameterized.expand([
+        (dimod.SPIN, False),
+        (dimod.SPIN, True),
+        (dimod.BINARY, False),
+        (dimod.BINARY, True),
+    ])
+    def test_one_to_one_fast_path_non_mutating(self, vartype, chain_break_fraction):
+        source_bqm = dimod.BinaryQuadraticModel({0: 0.7, 1: -0.2}, {(0, 1): -1.3}, 0.4, vartype)
+        target_edges = [(0, 1)]
+        embedding = dwave.embedding.EmbeddedStructure(target_edges, {0: [1], 1: [0]})
+
+        target_bqm = embedding.embed_bqm(source_bqm)
+        target_response = dimod.ExactSolver().sample(target_bqm)
+
+        orig_variables = list(target_response.variables)
+        orig_samples = target_response.record.sample.copy()
+        orig_energies = target_response.record.energy.copy()
+
+        unembedded1 = dwave.embedding.unembed_sampleset(
+            target_response, embedding, source_bqm,
+            chain_break_fraction=chain_break_fraction, return_embedding=True)
+
+        self.assertEqual(list(target_response.variables), orig_variables)
+        npt.assert_array_equal(target_response.record.sample, orig_samples)
+        npt.assert_allclose(target_response.record.energy, orig_energies)
+
+        unembedded2 = dwave.embedding.unembed_sampleset(
+            target_response, embedding, source_bqm,
+            chain_break_fraction=chain_break_fraction, return_embedding=True)
+
+        self.assertEqual(list(target_response.variables), orig_variables)
+        npt.assert_array_equal(target_response.record.sample, orig_samples)
+        npt.assert_allclose(target_response.record.energy, orig_energies)
+
+        npt.assert_array_equal(unembedded1.record.sample, unembedded2.record.sample)
+        npt.assert_allclose(unembedded1.record.energy, unembedded2.record.energy)
+
+        npt.assert_allclose(unembedded1.record.energy, source_bqm.energies(unembedded1))
+        npt.assert_allclose(unembedded2.record.energy, source_bqm.energies(unembedded2))
+
+        if chain_break_fraction:
+            npt.assert_array_equal(unembedded1.record.chain_break_fraction,
+                                   np.zeros(len(unembedded1)))
+            npt.assert_array_equal(unembedded2.record.chain_break_fraction,
+                                   np.zeros(len(unembedded2)))
+
+    def test_one_to_one_explicit_chain_break_methods(self):
+        source_bqm = dimod.BinaryQuadraticModel({0: 0.7, 1: -0.2}, {(0, 1): -1.3}, 0.4, dimod.SPIN)
+        target_edges = [(0, 1)]
+        embedding = dwave.embedding.EmbeddedStructure(target_edges, {0: [1], 1: [0]})
+
+        target_bqm = embedding.embed_bqm(source_bqm)
+        target_response = dimod.ExactSolver().sample(target_bqm)
+
+        methods = [dwave.embedding.majority_vote, dwave.embedding.discard]
+        ss = dwave.embedding.unembed_sampleset(
+            target_response, embedding, source_bqm,
+            chain_break_method=methods, return_embedding=True)
+
+        self.assertEqual(len(ss), 2 * len(target_response))
+        expected_methods = np.array([0] * len(target_response) + [1] * len(target_response))
+        npt.assert_array_equal(ss.record.chain_break_method, expected_methods)
+        npt.assert_allclose(ss.record.energy, source_bqm.energies(ss))
+        self.assertIn('embedding_context', ss.info)
+        self.assertEqual(ss.info['embedding_context']['embedding'], embedding)
+
+    def test_one_to_one_custom_chain_break_method(self):
+        source_bqm = dimod.BinaryQuadraticModel({0: 0.7, 1: -0.2}, {(0, 1): -1.3}, 0.4, dimod.SPIN)
+        target_edges = [(0, 1)]
+        embedding = dwave.embedding.EmbeddedStructure(target_edges, {0: [1], 1: [0]})
+
+        target_bqm = embedding.embed_bqm(source_bqm)
+        target_response = dimod.ExactSolver().sample(target_bqm)
+
+        def positive_first_variable(sampleset, chains):
+            samples, indices = dwave.embedding.majority_vote(sampleset, chains)
+            keep = samples[:, 0] > 0
+            return samples[keep], indices[keep]
+
+        ss = dwave.embedding.unembed_sampleset(
+            target_response, embedding, source_bqm,
+            chain_break_method=positive_first_variable)
+
+        self.assertEqual(len(ss), 2)
+        self.assertTrue(all(sample[0] == 1 for sample in ss.samples()))
+        npt.assert_allclose(ss.record.energy, source_bqm.energies(ss))
+
+    @parameterized.expand([(False,), (True,)])
+    def test_one_to_one_callable_chain_break_method(self, multiple):
+        source_bqm = dimod.BinaryQuadraticModel(
+            {0: 0.7, 1: -0.2}, {(0, 1): -1.3}, 0.4, dimod.SPIN)
+        embedding = dwave.embedding.EmbeddedStructure([(0, 1)], {0: [1], 1: [0]})
+        target_response = dimod.ExactSolver().sample(embedding.embed_bqm(source_bqm))
+        minimize = dwave.embedding.MinimizeEnergy(source_bqm, embedding)
+        method = [dwave.embedding.majority_vote, minimize] if multiple else minimize
+
+        result = dwave.embedding.unembed_sampleset(
+            target_response, embedding, source_bqm,
+            chain_break_method=method, return_embedding=True)
+
+        npt.assert_allclose(result.record.energy, source_bqm.energies(result))
+        if multiple:
+            npt.assert_array_equal(result.record.chain_break_method, [0] * 4 + [1] * 4)
+            expected_names = ['majority_vote', 'MinimizeEnergy']
+        else:
+            self.assertEqual(len(result), 4)
+            expected_names = 'MinimizeEnergy'
+        self.assertEqual(
+            result.info['embedding_context']['chain_break_method'], expected_names)
+
 
 class TestEmbedBQM(unittest.TestCase):
     def test_embed_bqm_empty(self):
